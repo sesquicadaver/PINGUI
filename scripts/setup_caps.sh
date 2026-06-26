@@ -8,7 +8,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 if [[ ! -d .venv ]]; then
-  echo "ERROR: .venv not found. Run ./scripts/run_dev.sh first." >&2
+  echo "ERROR: .venv not found. Run ./pingui.sh --deploy first." >&2
   exit 1
 fi
 

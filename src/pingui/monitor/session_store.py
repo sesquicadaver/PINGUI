@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from pingui.models import HostSessionData, RouteSnapshot
+from pingui.config import MAX_HOSTS, ConfigError, validate_session_host
+from pingui.models import TIMEOUT_IP, HopNode, HostSessionData, RouteSnapshot
+from pingui.monitor.route_history import record_last_known, route_with_last_known_ips
 
 MAX_PING_SAMPLES = 50
 
@@ -18,12 +20,67 @@ class SessionStore:
     def hosts(self) -> list[str]:
         return list(self._data.keys())
 
+    def host_count(self) -> int:
+        return len(self._data)
+
+    def can_add_host(self) -> bool:
+        return len(self._data) < MAX_HOSTS
+
+    def add_host(self, host: str, *, enabled: bool = False) -> str:
+        """Register a target in the session list."""
+        normalized = validate_session_host(host, self.hosts())
+        if normalized in self._data:
+            msg = f"Host already in list: {normalized}"
+            raise ConfigError(msg)
+        self._data[normalized] = HostSessionData(enabled=enabled)
+        return normalized
+
+    def remove_host(self, host: str) -> None:
+        if host not in self._data:
+            msg = f"Unknown host: {host}"
+            raise ConfigError(msg)
+        del self._data[host]
+
+    def set_enabled(self, host: str, enabled: bool) -> None:
+        self._data[host].enabled = enabled
+
+    def rename_host(self, old: str, new: str) -> str:
+        others = [h for h in self.hosts() if h != old]
+        normalized = validate_session_host(new, others)
+        self._data[normalized] = self._data.pop(old)
+        return normalized
+
     def get(self, host: str) -> HostSessionData:
         return self._data[host]
 
+    def inactive_route(self, host: str) -> list[HopNode]:
+        """Previous route with last known IPs filled in for timeout hops."""
+        data = self._data[host]
+        return route_with_last_known_ips(
+            data.previous_route,
+            data.last_known_by_hop,
+        )
+
     def update_route(self, host: str, snapshot: RouteSnapshot) -> None:
-        """Replace current route snapshot for host."""
-        self._data[host].current_route = list(snapshot.nodes)
+        """Replace current route; retain enriched previous hop list on change."""
+        data = self._data[host]
+        old_ips = self._route_ips(data.current_route)
+        new_ips = snapshot.route_ips()
+        if data.current_route and old_ips != new_ips:
+            data.previous_route = route_with_last_known_ips(
+                data.current_route,
+                data.last_known_by_hop,
+            )
+        record_last_known(data.last_known_by_hop, snapshot.nodes)
+        data.current_route = list(snapshot.nodes)
+
+    @staticmethod
+    def _route_ips(route: list[HopNode]) -> list[str]:
+        return [
+            n.ip
+            for n in route
+            if not n.is_timeout and n.ip != TIMEOUT_IP
+        ]
 
     def append_ping_samples(self, host: str, snapshot: RouteSnapshot) -> None:
         """Append RTT samples from snapshot, trimming history per IP."""

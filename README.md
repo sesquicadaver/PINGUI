@@ -10,24 +10,29 @@ Linux desktop-додаток для моніторингу маршрутів і
 - Python ≥ 3.11
 - Права `CAP_NET_RAW` або root для ICMP
 
-## Розгортання та запуск
+## Запуск (з кореня репозиторію)
 
 ```bash
-chmod +x scripts/deploy.sh
-./scripts/deploy.sh              # перше розгортання (лог + CI-перевірки)
-./scripts/deploy.sh --run        # запуск GUI (тихо, без зайвого виводу)
+chmod +x pingui.sh
+./pingui.sh              # GUI
+./pingui.sh --deploy     # розгортання venv, cap_net_raw, CI
+./pingui.sh --destroy    # видалити .venv та локальні кеші
+./pingui.sh --help       # довідка
 ```
 
-`--run` відкриває лише інтерфейс програми. Під капотом — мінімальна перевірка venv/cap_net_raw
-без pip-логів, тестів і підказок у терміналі.
+`./pingui.sh` без ключів відкриває лише інтерфейс (тиха підготовка venv/cap_net_raw).
 
-Перше повне розгортання (один раз):
+У GUI: **Додати**, **Змінити**, **Видалити**, **Зберегти** — редагування списку цілей (до 10).
+Трасування лише для цілей із увімкненим чекбоксом. Список зберігається у YAML конфіг.
+Неактивний ланцюг показує останні відомі IP hop-ів (навіть якщо в trace був таймаут).
+
+Перше розгортання:
 
 ```bash
-./scripts/deploy.sh
+./pingui.sh --deploy
 ```
 
-Опції: `--skip-tests`, `--force-venv`, `--help`.
+Опції розгортання: `--skip-tests`, `--force-venv` (лише з `--deploy`).
 
 ## CLI
 
@@ -38,7 +43,7 @@ python -m pingui --config config/hosts.example.yaml --interval 2 --max-hops 15
 
 | Параметр | Опис |
 |----------|------|
-| `--config` | YAML зі списком 1–10 хостів |
+| `--config` | YAML зі списком 0–10 хостів |
 | `--interval` | Пауза між циклами (с) |
 | `--max-hops` | Максимум TTL |
 | `--timeout` | Таймаут probe (с) |
@@ -53,7 +58,7 @@ python scripts/check_imports.py
 
 ## Manual QA чекліст
 
-- [ ] Запуск з venv і валідним `config/hosts.example.yaml`
+- [ ] `./pingui.sh --deploy`, потім `./pingui.sh`
 - [ ] Граф оновлюється для виділеного хоста
 - [ ] Перемикання хоста у списку перемальовує граф
 - [ ] Лог фіксує зміну маршруту (якщо трапиться)

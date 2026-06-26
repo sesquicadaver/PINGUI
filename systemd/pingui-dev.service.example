@@ -6,8 +6,8 @@ Wants=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=/path/to/PINGUI
-ExecStart=/path/to/PINGUI/.venv/bin/python -m pingui --config /path/to/PINGUI/config/hosts.example.yaml
-# Розгортання: /path/to/PINGUI/scripts/deploy.sh
+ExecStart=/path/to/PINGUI/pingui.sh
+# Розгортання: /path/to/PINGUI/pingui.sh --deploy
 Restart=on-failure
 RestartSec=5
 

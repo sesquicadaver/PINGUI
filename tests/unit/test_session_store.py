@@ -52,3 +52,57 @@ def test_skips_timeout_nodes_in_history() -> None:
     store.append_ping_samples("x", snap)
     assert "*" not in store.get("x").ping_history
     assert store.avg_ping("x", "1.1.1.1") == 20.0
+
+
+def test_previous_route_on_change() -> None:
+    store = SessionStore(["h"])
+    first = _snapshot("h", ["10.0.0.1", "10.0.0.2"])
+    second = _snapshot("h", ["10.0.0.9", "10.0.0.2"])
+    store.update_route("h", first)
+    assert store.get("h").previous_route == []
+    store.update_route("h", second)
+    assert len(store.get("h").previous_route) == 2
+    assert store.get("h").previous_route[0].ip == "10.0.0.1"
+
+
+def test_inactive_route_fills_timeout_from_last_known() -> None:
+    store = SessionStore(["h"])
+    snap_known = RouteSnapshot(
+        target="h",
+        target_ip="2.2.2.2",
+        nodes=[
+            HopNode(1, "1.1.1.1", 10.0),
+            HopNode(2, "2.2.2.2", 20.0),
+        ],
+    )
+    snap_timeout = RouteSnapshot(
+        target="h",
+        target_ip="2.2.2.2",
+        nodes=[HopNode(1, "1.1.1.1", 10.0), HopNode.timeout(2)],
+    )
+    snap_changed = _snapshot("h", ["9.9.9.9", "2.2.2.2"])
+    store.update_route("h", snap_known)
+    store.update_route("h", snap_timeout)
+    store.update_route("h", snap_changed)
+    inactive = store.inactive_route("h")
+    assert inactive[1].ip == "2.2.2.2"
+
+
+def test_remove_host() -> None:
+    store = SessionStore(["a.example", "b.example"])
+    store.remove_host("a.example")
+    assert store.hosts() == ["b.example"]
+
+
+def test_add_host_respects_limit() -> None:
+    store = SessionStore(["only.example"])
+    added = store.add_host("8.8.8.8")
+    assert added == "8.8.8.8"
+    assert "8.8.8.8" in store.hosts()
+
+
+def test_set_enabled_flag() -> None:
+    store = SessionStore(["h.example"])
+    assert not store.get("h.example").enabled
+    store.set_enabled("h.example", True)
+    assert store.get("h.example").enabled

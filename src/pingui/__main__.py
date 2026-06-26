@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import logging
 import sys
 from pathlib import Path
 
@@ -80,6 +79,7 @@ def main(argv: list[str] | None = None) -> int:
 
     return run_app(
         hosts,
+        config_path=args.config,
         interval_seconds=args.interval,
         max_hops=args.max_hops,
         timeout=args.timeout,

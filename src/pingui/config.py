@@ -8,7 +8,7 @@ from pathlib import Path
 
 import yaml
 
-MIN_HOSTS = 1
+MIN_HOSTS = 0
 MAX_HOSTS = 10
 
 
@@ -32,9 +32,32 @@ def _is_valid_host(value: str) -> bool:
     return all(c in allowed for c in value)
 
 
+def normalize_host_entry(entry: str) -> str:
+    """Validate and normalize a single host entry."""
+    host = entry.strip()
+    if not _is_valid_host(host):
+        msg = f"Invalid host entry: {entry!r}"
+        raise ConfigError(msg)
+    return host
+
+
+def validate_session_host(host: str, existing: list[str]) -> str:
+    """Validate a host for in-session addition (dedup + MAX_HOSTS)."""
+    normalized = normalize_host_entry(host)
+    key = normalized.lower()
+    seen = {h.lower() for h in existing}
+    if key in seen:
+        msg = f"Duplicate host: {normalized}"
+        raise ConfigError(msg)
+    if len(existing) >= MAX_HOSTS:
+        msg = f"Maximum {MAX_HOSTS} hosts allowed in one session"
+        raise ConfigError(msg)
+    return normalized
+
+
 def load_hosts_config(path: Path | str) -> list[str]:
     """
-    Load 1–10 host targets from YAML config.
+    Load 0–10 host targets from YAML config.
 
     Expected format::
 
@@ -79,6 +102,32 @@ def load_hosts_config(path: Path | str) -> list[str]:
         normalized.append(host)
 
     return normalized
+
+
+def save_hosts_config(path: Path | str, hosts: list[str]) -> None:
+    """Write host list to YAML (0–10 entries)."""
+    if not 0 <= len(hosts) <= MAX_HOSTS:
+        msg = f"hosts count must be between 0 and {MAX_HOSTS}, got {len(hosts)}"
+        raise ConfigError(msg)
+
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for entry in hosts:
+        host = normalize_host_entry(entry)
+        key = host.lower()
+        if key in seen:
+            msg = f"Duplicate host: {host}"
+            raise ConfigError(msg)
+        seen.add(key)
+        normalized.append(host)
+
+    config_path = Path(path)
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {"hosts": normalized}
+    config_path.write_text(
+        yaml.safe_dump(payload, allow_unicode=True, sort_keys=False),
+        encoding="utf-8",
+    )
 
 
 def resolve_host_ipv4(host: str) -> str:

@@ -18,6 +18,7 @@ Linux-додаток: моніторинг до 10 цілей, traceroute-под
 
 ```
 PINGUI/
+├── pingui.sh
 ├── pyproject.toml
 ├── README.md
 ├── ROADMAP.md
@@ -49,7 +50,7 @@ PINGUI/
 │   ├── contract/
 │   └── integration/
 ├── scripts/
-│   ├── run_dev.sh
+│   ├── run_dev.sh          # wrapper → ../pingui.sh
 │   └── ci_venv.sh
 └── systemd/
     └── pingui-dev.service.example

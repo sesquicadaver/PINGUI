@@ -45,4 +45,7 @@ class HostSessionData:
     """In-memory session state for one monitored host."""
 
     current_route: list[HopNode] = field(default_factory=list)
+    previous_route: list[HopNode] = field(default_factory=list)
+    last_known_by_hop: dict[int, HopNode] = field(default_factory=dict)
     ping_history: dict[str, list[float]] = field(default_factory=dict)
+    enabled: bool = False

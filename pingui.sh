@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# PINGUI — розгортання та запуск.
+# PINGUI — єдина точка входу з кореня репозиторію.
 #
-#   ./scripts/deploy.sh           повне розгортання (лог + тести)
-#   ./scripts/deploy.sh --run     лише GUI (без зайвого виводу)
-#   ./scripts/deploy.sh --skip-tests
-#   ./scripts/deploy.sh --force-venv
+#   ./pingui.sh              запуск GUI (тиха підготовка venv)
+#   ./pingui.sh --deploy     повне розгортання + CI-перевірки
+#   ./pingui.sh --destroy    видалити .venv та локальні артефакти
+#   ./pingui.sh --help       довідка
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
 VENV="${ROOT}/.venv"
@@ -15,43 +15,78 @@ PYTHON=""
 PIP="${VENV}/bin/pip"
 CONFIG="${ROOT}/config/hosts.example.yaml"
 
-RUN_APP=0
+MODE="run"
 SKIP_TESTS=0
 FORCE_VENV=0
 QUIET=0
 
+usage() {
+  cat <<'EOF'
+PINGUI — монітор маршрутів Linux
+
+Запуск (з кореня репозиторію):
+
+  ./pingui.sh
+      Запуск GUI. Мінімальна перевірка venv і cap_net_raw, без зайвого виводу.
+
+  ./pingui.sh --deploy
+      Повне розгортання: системні пакети (apt), venv (--copies), cap_net_raw,
+      ruff + mypy + pytest. Опції лише з --deploy:
+        --skip-tests   без pytest/ruff/mypy
+        --force-venv   перестворити .venv
+
+  ./pingui.sh --destroy
+      Видалити .venv, кеші (__pycache__, .pytest_cache, .mypy_cache, .ruff_cache),
+      .coverage, build/dist, *.egg-info.
+      Системні пакети apt і стан ОС до розгортання не змінюються.
+
+  ./pingui.sh --help
+      Ця довідка.
+
+Після розгортання список цілей редагується в GUI (Зберегти → config/hosts.example.yaml).
+EOF
+}
+
 for arg in "$@"; do
   case "$arg" in
-    --run) RUN_APP=1 ;;
-    --skip-tests) SKIP_TESTS=1 ;;
-    --force-venv) FORCE_VENV=1 ;;
-    -h|--help)
-      cat <<'EOF'
-  ./scripts/deploy.sh              розгортання + CI-перевірки
-  ./scripts/deploy.sh --run        запуск GUI (тиха підготовка)
-  ./scripts/deploy.sh --skip-tests розгортання без тестів
-  ./scripts/deploy.sh --force-venv перестворити .venv
-EOF
-      exit 0
+    --deploy) MODE="deploy" ;;
+    --destroy) MODE="destroy" ;;
+    --help|-h) MODE="help" ;;
+    --skip-tests)
+      [[ "$MODE" == deploy ]] || {
+        echo "Опція --skip-tests лише з --deploy" >&2
+        exit 1
+      }
+      SKIP_TESTS=1
+      ;;
+    --force-venv)
+      [[ "$MODE" == deploy ]] || {
+        echo "Опція --force-venv лише з --deploy" >&2
+        exit 1
+      }
+      FORCE_VENV=1
+      ;;
+    --run)
+      echo "Застаріло: ./pingui.sh --run → просто ./pingui.sh" >&2
+      MODE="run"
       ;;
     *)
-      echo "Невідомий аргумент: $arg (див. --help)" >&2
+      echo "Невідомий аргумент: $arg (див. ./pingui.sh --help)" >&2
       exit 1
       ;;
   esac
 done
 
-if [[ "$RUN_APP" -eq 1 ]]; then
+if [[ "$MODE" == run ]]; then
   QUIET=1
-  SKIP_TESTS=1
 fi
 
 log() {
-  [[ "$QUIET" -eq 0 ]] && printf '[deploy] %s\n' "$*"
+  [[ "$QUIET" -eq 0 ]] && printf '[pingui] %s\n' "$*"
 }
 
 die() {
-  printf '[deploy] ПОМИЛКА: %s\n' "$*" >&2
+  printf '[pingui] ПОМИЛКА: %s\n' "$*" >&2
   exit 1
 }
 
@@ -88,7 +123,7 @@ venv_uses_symlinks() {
 }
 
 resolve_python() {
-  PYTHON="$(venv_python_binary)" || die "Не знайдено Python у .venv."
+  PYTHON="$(venv_python_binary)" || die "Не знайдено Python у .venv. Запустіть: ./pingui.sh --deploy"
   PIP="${VENV}/bin/pip"
 }
 
@@ -175,7 +210,7 @@ verify_icmp_permission() {
     log "raw ICMP доступний"
     return 0
   fi
-  die "Немає доступу до raw ICMP. Запустіть: ./scripts/deploy.sh (без --run) для налаштування cap_net_raw."
+  die "Немає доступу до raw ICMP. Запустіть: ./pingui.sh --deploy"
 }
 
 run_quality_gates() {
@@ -188,7 +223,12 @@ run_quality_gates() {
 }
 
 prepare_runtime() {
-  ensure_venv
+  if [[ ! -d "$VENV" ]]; then
+    require_python
+    ensure_venv
+  else
+    ensure_venv
+  fi
   resolve_python
   if ! pingui_importable || [[ "$FORCE_VENV" -eq 1 ]]; then
     install_python_packages
@@ -230,12 +270,29 @@ full_deploy() {
   log "Готово."
 }
 
+destroy_artifacts() {
+  require_linux
+  log "Видалення .venv та локальних артефактів (системні пакети не видаляються)"
+  rm -rf "${VENV}"
+  rm -rf "${ROOT}/.pytest_cache" "${ROOT}/.mypy_cache" "${ROOT}/.ruff_cache"
+  rm -f "${ROOT}/.coverage"
+  rm -rf "${ROOT}/build" "${ROOT}/dist"
+  shopt -s nullglob
+  rm -rf "${ROOT}"/*.egg-info
+  shopt -u nullglob
+  find "${ROOT}/src" "${ROOT}/tests" -type d -name __pycache__ -print0 2>/dev/null \
+    | xargs -0 rm -rf 2>/dev/null || true
+  log "Готово."
+}
+
 main() {
-  if [[ "$RUN_APP" -eq 1 ]]; then
-    run_gui
-  else
-    full_deploy
-  fi
+  case "$MODE" in
+    help) usage ;;
+    run) run_gui ;;
+    deploy) full_deploy ;;
+    destroy) destroy_artifacts ;;
+    *) die "Невідомий режим: $MODE" ;;
+  esac
 }
 
 main "$@"

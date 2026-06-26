@@ -54,7 +54,7 @@ def check_raw_icmp_permission() -> None:
     except PermissionError as exc:
         msg = (
             "Raw ICMP requires root or cap_net_raw. "
-            "Run: ./scripts/deploy.sh"
+            "Run: ./pingui.sh --deploy"
         )
         raise RawIcmpPermissionError(msg) from exc
 
