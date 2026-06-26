@@ -31,3 +31,4 @@ src/*.egg-info/
 # App artifacts
 route_map.html
 *.log
+/.omx
