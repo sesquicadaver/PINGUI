@@ -54,7 +54,7 @@ def check_raw_icmp_permission() -> None:
     except PermissionError as exc:
         msg = (
             "Raw ICMP requires root or cap_net_raw. "
-            "Run: sudo setcap cap_net_raw+ep .venv/bin/python3"
+            "Run: ./scripts/deploy.sh"
         )
         raise RawIcmpPermissionError(msg) from exc
 

@@ -52,7 +52,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    setup_logging(logging.DEBUG if args.verbose else logging.INFO)
+    setup_logging(verbose=args.verbose)
 
     if args.interval <= 0:
         print("Config error: --interval must be positive", file=sys.stderr)
@@ -83,6 +83,7 @@ def main(argv: list[str] | None = None) -> int:
         interval_seconds=args.interval,
         max_hops=args.max_hops,
         timeout=args.timeout,
+        quiet=not args.verbose,
     )
 
 

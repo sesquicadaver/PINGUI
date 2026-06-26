@@ -10,30 +10,24 @@ Linux desktop-додаток для моніторингу маршрутів і
 - Python ≥ 3.11
 - Права `CAP_NET_RAW` або root для ICMP
 
-## Швидкий старт (venv)
+## Розгортання та запуск
 
 ```bash
-chmod +x scripts/run_dev.sh scripts/ci_venv.sh scripts/check_caps.sh
-./scripts/run_dev.sh
+chmod +x scripts/deploy.sh
+./scripts/deploy.sh              # перше розгортання (лог + CI-перевірки)
+./scripts/deploy.sh --run        # запуск GUI (тихо, без зайвого виводу)
 ```
 
-Або вручну:
+`--run` відкриває лише інтерфейс програми. Під капотом — мінімальна перевірка venv/cap_net_raw
+без pip-логів, тестів і підказок у терміналі.
+
+Перше повне розгортання (один раз):
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-python -m pingui --config config/hosts.example.yaml
+./scripts/deploy.sh
 ```
 
-## Raw ICMP capabilities
-
-Без sudo надайте capability інтерпретатору venv:
-
-```bash
-sudo setcap cap_net_raw+ep .venv/bin/python3
-./scripts/check_caps.sh
-```
+Опції: `--skip-tests`, `--force-venv`, `--help`.
 
 ## CLI
 
