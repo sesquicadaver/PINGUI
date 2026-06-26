@@ -1,0 +1,14 @@
+[Unit]
+Description=PINGUI dev session (venv, in-memory route monitor)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/path/to/PINGUI
+ExecStart=/path/to/PINGUI/.venv/bin/python -m pingui --config /path/to/PINGUI/config/hosts.example.yaml
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

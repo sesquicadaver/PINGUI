@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Tooling
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.omx/state/
+.omx/tmux-hook.json
+src/*.egg-info/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# App artifacts
+route_map.html
+*.log
