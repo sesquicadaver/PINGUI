@@ -35,6 +35,7 @@ where = ["src"]
 
 [tool.coverage.run]
 source = ["pingui"]
+concurrency = ["thread"]
 omit = [
     "*/pingui/__main__.py",
     "*/pingui/ui/app.py",

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # CI pipeline: venv → ruff → mypy → pytest (no network tests by default).
+# Еквівалент як ./pingui.sh --deploy (без apt/setcap).
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"

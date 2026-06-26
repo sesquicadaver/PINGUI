@@ -13,5 +13,7 @@
 
 ## Test plan
 
-- [ ] `./scripts/ci_venv.sh` passes in venv
+- [ ] `./pingui.sh --deploy` passes in venv (or `./scripts/ci_venv.sh`)
 - [ ] Manual QA checklist in README (if UI/network touched)
+
+Link Living Spec matrix: [docs/LIVING_SPEC.md](docs/LIVING_SPEC.md)

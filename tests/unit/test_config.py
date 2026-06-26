@@ -69,3 +69,14 @@ def test_validate_session_host() -> None:
         validate_session_host("8.8.8.8", ["8.8.8.8"])
     with pytest.raises(ConfigError, match="Maximum"):
         validate_session_host("1.1.1.1", [f"h{i}.example" for i in range(10)])
+
+
+def test_save_hosts_config_rejects_duplicate() -> None:
+    with pytest.raises(ConfigError, match="Duplicate"):
+        save_hosts_config(Path("unused.yaml"), ["8.8.8.8", "8.8.8.8"])
+
+
+def test_save_hosts_config_rejects_too_many() -> None:
+    hosts = [f"10.0.0.{i}" for i in range(11)]
+    with pytest.raises(ConfigError, match="between 0 and 10"):
+        save_hosts_config(Path("unused.yaml"), hosts)

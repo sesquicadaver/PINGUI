@@ -31,4 +31,6 @@ src/*.egg-info/
 # App artifacts
 route_map.html
 *.log
-/.omx
+
+# Agent / local workspace (not part of the product)
+.omx/

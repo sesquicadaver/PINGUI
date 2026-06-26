@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import pytest
+
+from pingui.config import ConfigError
 from pingui.models import HopNode, RouteSnapshot
 from pingui.monitor.session_store import MAX_PING_SAMPLES, SessionStore
 
@@ -106,3 +109,22 @@ def test_set_enabled_flag() -> None:
     assert not store.get("h.example").enabled
     store.set_enabled("h.example", True)
     assert store.get("h.example").enabled
+
+
+def test_remove_unknown_host() -> None:
+    store = SessionStore(["a.example"])
+    with pytest.raises(ConfigError, match="Unknown"):
+        store.remove_host("missing.example")
+
+
+def test_rename_host() -> None:
+    store = SessionStore(["old.example"])
+    renamed = store.rename_host("old.example", "new.example")
+    assert renamed == "new.example"
+    assert store.hosts() == ["new.example"]
+
+
+def test_add_host_duplicate() -> None:
+    store = SessionStore(["8.8.8.8"])
+    with pytest.raises(ConfigError, match="Duplicate"):
+        store.add_host("8.8.8.8")
