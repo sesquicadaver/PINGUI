@@ -10,7 +10,6 @@ from pathlib import Path
 from pingui.config import load_hosts_config
 from pingui.icmp.raw_socket import RawIcmpPermissionError, check_raw_icmp_permission
 from pingui.logging_setup import setup_logging
-from pingui.ui.app import run_app
 
 DEFAULT_CONFIG = Path("config/hosts.example.yaml")
 
@@ -76,6 +75,8 @@ def main(argv: list[str] | None = None) -> int:
     except RawIcmpPermissionError as exc:
         print(str(exc), file=sys.stderr)
         return 1
+
+    from pingui.ui.app import run_app
 
     return run_app(
         hosts,

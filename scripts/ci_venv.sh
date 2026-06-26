@@ -8,6 +8,8 @@ python3 -m venv .venv
 .venv/bin/pip install -U pip
 .venv/bin/pip install -e ".[dev]"
 
+export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-offscreen}"
+
 .venv/bin/ruff check src tests
 .venv/bin/mypy src/pingui
 .venv/bin/pytest tests -m "not network" --cov=pingui --cov-report=term-missing --cov-fail-under=80
