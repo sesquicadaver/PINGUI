@@ -91,16 +91,36 @@ PINGUI/
 ├── scripts/                  # CI, cap_net_raw, import graph
 ├── systemd/                  # приклад service unit
 └── docs/
-    ├── LIVING_SPEC.md        # матриця вимог → модуль → тести
-    └── MVP_SPEC.md           # звод MVP-вимог
+    ├── README.md             # індекс документації
+    ├── USER_GUIDE.md
+    ├── ARCHITECTURE.md
+    ├── DEPLOYMENT.md
+    ├── DEVELOPMENT.md
+    ├── TESTING.md
+    ├── MODULES.md
+    ├── CONFIGURATION.md
+    ├── CONTRIBUTING.md
+    ├── MVP_SPEC.md
+    └── LIVING_SPEC.md
 ```
 
 Детальний план і backlog: [ROADMAP.md](ROADMAP.md).
 
 ## Документація
 
+Повний пакет: **[docs/README.md](docs/README.md)**
+
 | Файл | Призначення |
 |------|-------------|
-| [docs/MVP_SPEC.md](docs/MVP_SPEC.md) | Функціональні вимоги MVP |
-| [docs/LIVING_SPEC.md](docs/LIVING_SPEC.md) | Living Spec (оновлюється з кожною фічею) |
-| [ROADMAP.md](ROADMAP.md) | Фази розробки та backlog |
+| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | Посібник користувача GUI |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Розгортання, cap_net_raw, systemd |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Архітектура та потоки даних |
+| [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Розробка та стандарти коду |
+| [docs/TESTING.md](docs/TESTING.md) | Тести та CI |
+| [docs/MODULES.md](docs/MODULES.md) | Довідник модулів |
+| [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | YAML, CLI, env |
+| [docs/MVP_SPEC.md](docs/MVP_SPEC.md) | Вимоги MVP |
+| [docs/LIVING_SPEC.md](docs/LIVING_SPEC.md) | Living Spec |
+| [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | Участь у розробці |
+| [ROADMAP.md](ROADMAP.md) | Фази та backlog |
+| [CHANGELOG.md](CHANGELOG.md) | Історія змін |

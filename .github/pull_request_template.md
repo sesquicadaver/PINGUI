@@ -17,3 +17,5 @@
 - [ ] Manual QA checklist in README (if UI/network touched)
 
 Link Living Spec matrix: [docs/LIVING_SPEC.md](docs/LIVING_SPEC.md)
+
+Documentation index: [docs/README.md](docs/README.md)

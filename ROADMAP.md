@@ -23,8 +23,17 @@ PINGUI/
 ├── README.md
 ├── ROADMAP.md
 ├── docs/
-│   ├── LIVING_SPEC.md
-│   └── MVP_SPEC.md
+│   ├── README.md           # індекс документації
+│   ├── USER_GUIDE.md
+│   ├── ARCHITECTURE.md
+│   ├── DEPLOYMENT.md
+│   ├── DEVELOPMENT.md
+│   ├── TESTING.md
+│   ├── MODULES.md
+│   ├── CONFIGURATION.md
+│   ├── CONTRIBUTING.md
+│   ├── MVP_SPEC.md
+│   └── LIVING_SPEC.md
 ├── config/
 │   └── hosts.example.yaml
 ├── src/pingui/
