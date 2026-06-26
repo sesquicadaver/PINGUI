@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pingui"
+version = "0.1.0"
+description = "Linux desktop route and ping monitor with topological visualization"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "PINGUI Team" }]
+dependencies = [
+    "PyQt6>=6.6",
+    "matplotlib>=3.8",
+    "networkx>=3.2",
+    "scapy>=2.5",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.1",
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "types-PyYAML>=6.0",
+]
+
+[project.scripts]
+pingui = "pingui.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.coverage.run]
+source = ["pingui"]
+omit = [
+    "*/pingui/__main__.py",
+    "*/pingui/ui/app.py",
+    "*/pingui/logging_setup.py",
+]
+
+[tool.coverage.report]
+fail_under = 80
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "network: tests requiring live network and raw ICMP privileges",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["pingui"]
+mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = ["scapy.*", "matplotlib.*", "matplotlib", "networkx.*", "numpy.*", "numpy"]
+ignore_missing_imports = true
+follow_imports = "skip"
