@@ -1,0 +1,231 @@
+Головне рішення: Оскільки збереження історії між запусками та експорт звітів не потрібні, архітектура програми максимально спрощується. Всі дані про пінг та маршрути зберігаються виключно в оперативній пам'яті (In-Memory) в межах поточної сесії за допомогою стандартних структур даних Python (dict та list).
+Нижче наведено фінальний, готовий до реалізації псевдокод для Linux-додатка. Він повністю закриває технічне завдання для 10 паралельних хостів у межах однієї робочої сесії.
+------------------------------
+## Оптимізована структура даних (In-Memory)
+Для збереження поточної сесії у головному класі UI буде створено простий словник:
+
+self.session_data = {
+    "google.com": {
+        "current_route": [...],  # Останній відомий маршрут
+        "ping_history": {        # Історія пінгу для кожної IP-адреси (для розрахунку середнього)
+            "8.8.8.8": [12.5, 14.2, 11.8],
+            "216.58.215.14": [22.1, 25.4]
+        }
+    }
+}
+
+------------------------------
+## Фінальний псевдокод програми
+
+import sysimport timefrom PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QListWidget, QTextEditfrom PyQt6.QtCore import QThread, pyqtSignalfrom matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvasimport matplotlib.pyplot as pltimport networkx as nx
+# --- 1. ФОНОВИЙ ПОТІК МОНІТОРИНГУ ---class LightweightMonitorWorker(QThread):
+    """
+    Фоновий потік, який безперервно циклічно опитує 10 хостів.
+    Не зачіпає диск, працює тільки з мережею та RAM.
+    """
+    # Надсилає: (хост, поточний_маршрут)
+    data_received = pyqtSignal(str, list)
+    # Надсилає: (хост, старий_маршрут, новий_маршрут)
+    route_changed = pyqtSignal(str, list, list)
+
+    def __init__(self, hosts):
+        super().__init__()
+        self.hosts = hosts
+        self.is_running = True
+        self.last_known_routes = {host: [] for host in hosts}
+
+    def run(self):
+        import raw_icmp_lib  # Гіпотетична або власна обгортка над scapy/sockets
+        
+        while self.is_running:
+            for host in self.hosts:
+                if not self.is_running: 
+                    break
+                
+                current_route = []
+                # Виконуємо легке швидке трасування (макс. 20 хопів)
+                for ttl in range(1, 21):
+                    node = raw_icmp_lib.ping_hop(host, ttl, timeout=0.5)
+                    
+                    if node:
+                        current_route.append({
+                            "hop": ttl,
+                            "ip": node["ip"],
+                            "ping": node["rtt_ms"]
+                        })
+                        if node["is_target"]: 
+                            break
+                    else:
+                        # Вузол прихований або таймаут
+                        current_route.append({
+                            "hop": ttl,
+                            "ip": "*",
+                            "ping": None
+                        })
+
+                # Витягуємо тільки реальні IP для аналізу змін структури
+                current_ips = [n["ip"] for n in current_route if n["ip"] != "*"]
+                old_ips = self.last_known_routes[host]
+
+                # Перевіряємо, чи змінився шлях порівняно з попереднім колом
+                if old_ips and current_ips != old_ips:
+                    self.route_changed.emit(host, old_ips, current_ips)
+
+                # Оновлюємо локальний кеш потоку та відправляємо дані в GUI
+                self.last_known_routes[host] = current_ips
+                self.data_received.emit(host, current_route)
+            
+            # Коротка пауза перед наступним колом опитування всіх 10 хостів
+            time.sleep(1)
+
+    def stop(self):
+        self.is_running = False
+
+# --- 2. ГОЛОВНЕ ВІКНО ПРОГРАМИ (GUI) ---class SessionMonitorApp(QMainWindow):
+    def __init__(self, host_list):
+        super().__init__()
+        self.setWindowTitle("Сесійний монітор маршрутів Linux (In-Memory)")
+        self.resize(1100, 700)
+
+        # Сховище сесії: живе, поки відкрита програма
+        self.session_storage = {
+            host: {"current_route": [], "ping_history": {}} 
+            for host in host_list
+        }
+
+        # Створення інтерфейсу (Спліттер: Зліва керування/логи, Справа - графіка)
+        main_layout = QHBoxLayout()
+        left_layout = QVBoxLayout()
+
+        # Список хостів
+        self.ui_host_list = QListWidget()
+        self.ui_host_list.addItems(host_list)
+        self.ui_host_list.setCurrentRow(0)  # Виділяємо перший за замовчуванням
+        self.ui_host_list.itemClicked.connect(self.redraw_current_host)
+
+        # Консоль логів змін маршруту
+        self.ui_logs = QTextEdit()
+        self.ui_logs.setReadOnly(True)
+        self.ui_logs.setPlaceholderText("Логи змін маршрутів відображатимуться тут...")
+
+        left_layout.addWidget(self.ui_host_list, stretch=1)
+        left_layout.addWidget(self.ui_logs, stretch=2)
+
+        # Полотно для малювання карти топології (Matplotlib)
+        self.figure, self.ax = plt.subplots()
+        self.canvas = FigureCanvas(self.figure)
+
+        main_layout.addLayout(left_layout, stretch=1)
+        main_layout.addWidget(self.canvas, stretch=2)
+
+        central_widget = QWidget()
+        central_widget.setLayout(main_layout)
+        self.setCentralWidget(central_widget)
+
+        # Запуск фонового потоку
+        self.worker = LightweightMonitorWorker(host_list)
+        self.worker.data_received.connect(self.process_new_metrics)
+        self.worker.route_changed.connect(self.display_route_alert)
+        self.worker.start()
+
+    def process_new_metrics(self, host, route_data):
+        """ Accumulate statistics in RAM and trigger redraw if host is active. """
+        # 1. Оновлюємо поточний зріз маршруту
+        self.session_storage[host]["current_route"] = route_data
+
+        # 2. Додаємо пінг до історії для розрахунку середнього значення
+        history = self.session_storage[host]["ping_history"]
+        for node in route_data:
+            if node["ip"] != "*" and node["ping"] is not None:
+                if node["ip"] not in history:
+                    history[node["ip"]] = []
+                # Зберігаємо останні 50 вимірів, щоб не переповнювати пам'ять
+                history[node["ip"]].append(node["ping"])
+                if len(history[node["ip"]]) > 50:
+                    history[node["ip"]].pop(0)
+
+        # 3. Перемальовуємо екран, якщо прийшли дані саме по тому хосту, на який дивиться юзер
+        if self.ui_host_list.currentItem().text() == host:
+            self.redraw_current_host()
+
+    def redraw_current_host(self):
+        """ Builds a topological map with node pings using NetworkX. """
+        active_host = self.ui_host_list.currentItem().text()
+        data = self.session_storage[active_host]
+        
+        if not data["current_route"]:
+            return
+
+        self.ax.clear()
+        graph = nx.DiGraph()
+        
+        prev_node = "localhost"
+        graph.add_node(prev_node, label="Ваш ПК")
+
+        for node in data["current_route"]:
+            ip = node["ip"]
+            hop = node["hop"]
+            
+            if ip == "*":
+                node_id = f"star_{hop}"
+                node_label = f"Hop {hop}\n*"
+                color = "#d3d3d3"  # Сірий для прихованих нод
+            else:
+                node_id = ip
+                # Рахуємо середній пінг з історії в RAM
+                pings = data["ping_history"].get(ip, [0])
+                avg_ping = sum(pings) / len(pings)
+                
+                node_label = f"Hop {hop}\n{ip}\n{int(avg_ping)} ms"
+                
+                # Колірна індикація якості зв'язку
+                if avg_ping < 50: color = "#98fb98"     # Зелений (ок)
+                elif avg_ping < 150: color = "#ffa500"  # Помаранчевий (середній)
+                else: color = "#ff6347"                 # Червоний (поганий)
+
+            graph.add_node(node_id, label=node_label, color=color)
+            graph.add_edge(prev_node, node_id)
+            prev_node = node_id
+
+        # Візуалізація топологічного ланцюжка (карти)
+        # Створюємо фіксоване лінійне розташування зліва направо або зверху вниз
+        pos = nx.multipartite_layout(graph, subset_key=None) # Або легкий spring_layout
+        pos = nx.spring_layout(graph, seed=42) 
+        
+        labels = nx.get_node_attributes(graph, 'label')
+        colors = [nx.get_node_attributes(graph, 'color').get(n, '#lightblue') for n in graph.nodes()]
+
+        nx.draw(graph, pos, ax=self.ax, with_labels=True, labels=labels,
+                node_color=colors, node_size=2200, font_size=7, 
+                font_weight="bold", edge_color="#888888", arrows=True)
+
+        self.canvas.draw()
+
+    def display_route_alert(self, host, old_route, new_route):
+        """ Appends an instant text warning into UI text area. """
+        timestamp = time.strftime('%H:%M:%S')
+        old_str = " -> ".join(old_route) if old_route else "Початок моніторингу"
+        new_str = " -> ".join(new_route)
+        
+        alert_text = f"[{timestamp}] ⚠️ ЗМІНА МАРШРУТУ до {host}:\n❌ Було: {old_str}\n✅ Стало: {new_str}\n\n"
+        self.ui_logs.append(alert_text)
+
+    def closeEvent(self, event):
+        # Безпечно гасимо мережевий потік під Linux при закритті вікна
+        self.worker.stop()
+        self.worker.wait()
+        event.accept()
+
+# --- 3. ТОЧКА ВХОДУ ---if __name__ == "__main__":
+    # Рівно 10 паралельних цілей
+    targets = [
+        "8.8.8.8", "1.1.1.1", "google.com", "cloudflare.com", 
+        "github.com", "ukr.net", "kernel.org", "debian.org",
+        "ubuntu.com", "monitoring_target_10.local"
+    ]
+    
+    app = QApplication(sys.argv)
+    main_window = SessionMonitorApp(targets)
+    main_window.show()
+    sys.exit(app.exec())
+

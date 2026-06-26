@@ -1,0 +1,168 @@
+Головне рішення: Для розробки паралельного десктопного моніторингу до 10 хостів під Linux з графічним інтерфейсом найкраще використати PyQt6/PySide6 (фреймворк Qt) у поєднанні з асинхронністю через asyncio або багатопотоковістю QThread. Оскільки точність локації неважлива, замість мапи можна будувати топологічний граф мережі прямо в додатку за допомогою бібліотеки matplotlib або вбудованих засобів Qt.
+Нижче наведено псевдокод повноцінного архітектурного паттерну для Linux-додатка, який працює без заморожування GUI.
+------------------------------
+## 1. Ядро моніторингу (Асинхронний бекграунд-потік)
+Для паралельного опитування 10 хостів використовується окремий потік QThread. Це гарантує, що важкі мережеві операції трасування не блокуватимуть інтерфейс користувача.
+
+import timefrom PyQt6.QtCore import QThread, pyqtSignal# Псевдобібліотеки мережі та легкого кешу локаційimport raw_icmp_scanner import simple_geoip 
+class MultiHostMonitorWorker(QThread):
+    """
+    Фоновий робочий потік. Паралельно опитує до 10 хостів 
+    та надсилає результати в GUI через сигнали.
+    """
+    # Сигнали для передачі даних у головне вікно GUI
+    metrics_updated = pyqtSignal(str, list)  # (hostname, route_data_list)
+    route_changed = pyqtSignal(str, list, list)  # (hostname, old_route, new_route)
+
+    def __init__(self, hostnames):
+        super().__init__()
+        self.hostnames = hostnames  # Список до 10 хостів
+        self.is_running = True
+        self.history_routes = {}  # Кеш маршрутів для виявлення змін {host: [ips]}
+
+    def run(self):
+        while self.is_running:
+            for host in self.hostnames:
+                if not self.is_running: break
+                
+                # Виконуємо трасування (в реальності краще запускати пулом потоків)
+                current_route = self._trace_host(host)
+                current_ips = [node["ip"] for node in current_route if node["ip"] != "Timeout"]
+                
+                # Перевірка на зміну маршруту
+                if host in self.history_routes and self.history_routes[host] != current_ips:
+                    self.route_changed.emit(host, self.history_routes[host], current_ips)
+                
+                self.history_routes[host] = current_ips
+                
+                # Надсилаємо свіжі метрики в GUI для оновлення графів/таблиць
+                self.metrics_updated.emit(host, current_route)
+                
+            time.sleep(2)  # Пауза між циклами моніторингу
+
+    def _trace_host(self, host):
+        # Логіка traceroute з TTL пакетів (аналогічно до попереднього прикладу)
+        route = []
+        for ttl in range(1, 15):  # Для локальних задач 15 хопів зазвичай достатньо
+            node_data = raw_icmp_scanner.ping_hop(host, ttl, timeout=1.0)
+            if node_data:
+                # Оскільки точність неважлива, беремо країну/місто з безкоштовної local-бд
+                node_data["geo"] = simple_geoip.get_coarse_location(node_data["ip"])
+                route.append(node_data)
+                if node_data["is_target"]: break
+            else:
+                route.append({"hop": ttl, "ip": "Timeout", "ping": None, "geo": None})
+        return route
+
+    def stop(self):
+        self.is_running = False
+
+## 2. Графічний інтерфейс користувача (PyQt6 UI)
+Компонент інтерфейсу керує відображенням списку хостів, малює топологічну схему (карту нод) за допомогою інтегрованого графіка та виводить логи змін.
+
+from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QListWidget, QTextEditfrom matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvasimport matplotlib.pyplot as pltimport networkx as nx  # Зручна бібліотека для побудови топологічних графів (карт)
+class LinuxMonitorApp(QMainWindow):
+    def __init__(self, targets):
+        super().__init__()
+        self.setWindowTitle("Linux Multi-Host Route & Ping Monitor")
+        self.resize(1024, 768)
+
+        # Ініціалізація віджетів
+        self.main_widget = QWidget()
+        self.setCentralWidget(self.main_widget)
+        main_layout = QHBoxLayout(self.main_widget)
+
+        # Ліва панель: список хостів та логи змін
+        left_panel = QVBoxLayout()
+        self.host_list = QListWidget()
+        self.host_list.addItems(targets)
+        self.log_area = QTextEdit()
+        self.log_area.setReadOnly(True)
+        left_panel.addWidget(self.host_list)
+        left_panel.addWidget(self.log_area)
+
+        # Права панель: карта маршруту (топологічний граф замість гео-мапи)
+        self.figure, self.ax = plt.subplots()
+        self.canvas = FigureCanvas(self.figure)
+        
+        main_layout.addLayout(left_panel, stretch=1)
+        main_layout.addWidget(self.canvas, stretch=2)
+
+        # Запуск фонового моніторингу
+        self.worker = MultiHostMonitorWorker(targets)
+        self.worker.metrics_updated.connect(self.update_ui_canvas)
+        self.worker.route_changed.connect(self.log_route_alert)
+        self.worker.start()
+
+    def update_ui_canvas(self, host, route_data):
+        """
+        Малює топологічну карту вузлів для обраного хосту.
+        """
+        # Відображаємо карту тільки для того хосту, який зараз виділений користувачем
+        if self.host_list.currentItem() and self.host_list.currentItem().text() != host:
+            return
+
+        self.ax.clear()
+        G = nx.DiGraph()  # Орієнтований граф маршруту
+
+        previous_node = "Your PC"
+        G.add_node(previous_node, label="Home")
+
+        for node in route_data:
+            node_name = node["ip"]
+            if node_name == "Timeout":
+                node_name = f"Unknown_{node['hop']}"
+
+            # Формуємо підпис: IP + Пінг + Груба локація
+            geo_str = f" ({node['geo']['country']})" if node["geo"] else ""
+            ping_str = f"\n{int(node['ping'])}ms" if node["ping"] else "\nLoss"
+            
+            G.add_node(node_name, label=f"Hop {node['hop']}\n{node_name}{geo_str}{ping_str}")
+            G.add_edge(previous_node, node_name)
+            previous_node = node_name
+
+        # Малюємо граф у вигляді лінійного ланцюжка або дерева
+        pos = nx.spring_layout(G)
+        labels = nx.get_node_attributes(G, 'label')
+        
+        nx.draw(G, pos, ax=self.ax, with_labels=True, labels=labels, 
+                node_color="lightblue", node_size=2000, font_size=8, font_weight="bold", arrows=True)
+        
+        self.canvas.draw()
+
+    def log_route_alert(self, host, old_route, new_route):
+        """
+        Виводить сповіщення у вікно логів при зміні маршруту.
+        """
+        timestamp = time.strftime('%H:%M:%S')
+        log_msg = f"[{timestamp}] ALERT [{host}]: Маршрут змінився!\nСтарий: {old_route}\nНовий: {new_route}\n\n"
+        self.log_area.append(log_msg)
+
+    def closeEvent(self, event):
+        # Коректне завершення потоку при закритті вікна під Linux
+        self.worker.stop()
+        self.worker.wait()
+        event.accept()
+
+## 3. Точка входу (Main)
+
+import sys
+if __name__ == "__main__":
+    # Список з 10 хостів для паралельного моніторингу
+    monitored_hosts = [
+        "google.com", "cloudflare.com", "github.com", 
+        "8.8.8.8", "1.1.1.1", "ukr.net", 
+        "amazon.com", "bbc.com", "linode.com", "digitalocean.com"
+    ]
+    
+    app = QApplication(sys.argv)
+    window = LinuxMonitorApp(monitored_hosts)
+    window.show()
+    sys.exit(app.exec())
+
+------------------------------
+## Специфіка реалізації під Linux:
+
+* Root-права: Для відправки сирих ICMP пакетів (raw sockets) у Linux вашому застосунку знадобляться права root. Щоб запускати додаток без sudo, скомпілюйте бінарник або скрипт і видайте йому спроможність ядра Linux (capabilities) командою: sudo setcap cap_net_raw+ep /path/to/your/python_or_binary.
+* Побудова карти: Замість важких гео-мап, зв'язка NetworkX + Matplotlib намалює легку топологічну схему ("нода за нодою"), яка ідеально підходить для відображення структури трасування.
+* База даних: Оскільки додаток локальний (десктопний), замість розгортання окремого сервера БД (як-от InfluxDB), статистику найкраще писати в локальний файл бази даних SQLite, використовуючи стандартний Python-модуль sqlite3. [1] 
