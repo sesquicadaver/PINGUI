@@ -1,16 +1,14 @@
 # PINGUI
 
-Linux desktop-додаток для моніторингу маршрутів і пінгу до 10 цілей одночасно.
-Дані зберігаються **лише в RAM** протягом сесії. Візуалізація — топологічний граф
-(Matplotlib) у PyQt6.
+Крос-платформний монітор маршрутів і RTT до 10 цілей одночасно.
+Дані зберігаються **лише в RAM** протягом сесії.
 
-## Вимоги
+| Редакція | Платформа | Запуск | Особливості |
+|----------|-----------|--------|-------------|
+| **Python** | Linux | `./pingui.sh` | PyQt6, Matplotlib-граф, scapy raw ICMP |
+| **Java** | Linux, macOS, Windows | `./java/pingui-java.sh` | JavaFX, traceroute/tracert, без cap_net_raw |
 
-- Linux (raw ICMP)
-- Python ≥ 3.11
-- Права `CAP_NET_RAW` або root для ICMP
-
-## Швидкий старт
+## Python (Linux) — швидкий старт
 
 ```bash
 chmod +x pingui.sh
@@ -27,7 +25,26 @@ chmod +x pingui.sh
 
 Опції лише з `--deploy`: `--skip-tests`, `--force-venv`.
 
-## GUI
+## Java (cross-platform) — швидкий старт
+
+```bash
+cd java
+chmod +x pingui-java.sh
+./pingui-java.sh --test    # перша збірка + тести
+./pingui-java.sh           # GUI
+```
+
+Потрібні: **JDK 21+**, системний `traceroute` (Linux/macOS) або `tracert` (Windows).
+
+Документація: [java/README.md](java/README.md), [docs/JAVA.md](docs/JAVA.md).
+
+## Python — вимоги
+
+- Linux (raw ICMP)
+- Python ≥ 3.11
+- Права `CAP_NET_RAW` або root для ICMP
+
+## Python — GUI
 
 - **Додати / Змінити / Видалити / Зберегти** — редагування списку цілей (до 10 у списку).
 - **Чекбокс** — увімкнути трасування для цілі (не більше 10 активних одночасно).
@@ -83,9 +100,13 @@ GitHub Actions: `.github/workflows/ci.yml` — той самий `ci_venv.sh` + 
 
 ```
 PINGUI/
-├── pingui.sh                 # єдина точка входу
+├── pingui.sh                 # Python: Linux launcher
+├── java/                     # Java: cross-platform edition
+│   ├── pingui-java.sh
+│   ├── build.gradle.kts
+│   └── src/main/java/io/pingui/
 ├── pyproject.toml
-├── config/hosts.example.yaml
+├── config/hosts.example.yaml # Python config
 ├── src/pingui/               # пакет додатку
 ├── tests/                    # unit, contract, integration
 ├── scripts/                  # CI, cap_net_raw, import graph
@@ -121,6 +142,8 @@ PINGUI/
 | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | YAML, CLI, env |
 | [docs/MVP_SPEC.md](docs/MVP_SPEC.md) | Вимоги MVP |
 | [docs/LIVING_SPEC.md](docs/LIVING_SPEC.md) | Living Spec |
+| [docs/JAVA.md](docs/JAVA.md) | Java-редакція (cross-platform) |
+| [java/README.md](java/README.md) | Запуск і розробка Java |
 | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | Участь у розробці |
 | [ROADMAP.md](ROADMAP.md) | Фази та backlog |
 | [CHANGELOG.md](CHANGELOG.md) | Історія змін |

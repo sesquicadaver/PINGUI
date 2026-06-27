@@ -16,6 +16,8 @@
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Контрибутор | PR, anti-stub, Living Spec |
 | [MVP_SPEC.md](MVP_SPEC.md) | Усі | Функціональні вимоги MVP |
 | [LIVING_SPEC.md](LIVING_SPEC.md) | Усі | Матриця вимога → модуль → тести |
+| [JAVA.md](JAVA.md) | Усі | Java cross-platform edition |
+| [../java/README.md](../java/README.md) | Усі | Запуск Java, Gradle, CLI |
 
 ## Документи в корені репозиторію
 
@@ -31,10 +33,12 @@
 
 **Розробник:** README → ARCHITECTURE → DEVELOPMENT → TESTING → MODULES
 
+**Cross-platform (Java):** README → [JAVA.md](JAVA.md) → [../java/README.md](../java/README.md)
+
 **Рев'ю PR:** CONTRIBUTING → LIVING_SPEC → TESTING
 
 ## Версія та стан
 
-- **Версія пакету:** 0.1.0 (`pyproject.toml`)
-- **MVP:** завершено (in-memory, PyQt6, до 10 цілей)
-- **Coverage gate:** ≥ 80% (`fail_under` у `pyproject.toml`)
+- **Python MVP:** завершено (PyQt6, Linux, до 10 цілей)
+- **Java edition:** MVP (`java/`, Java 21 + JavaFX, traceroute/tracert)
+- **Python coverage gate:** ≥ 80%

@@ -7,6 +7,13 @@
 
 ### Added
 
+- **Java edition** (`java/`): cross-platform desktop monitor on Java 21 + JavaFX.
+  - `ProcessRouteProbe` via traceroute/tracert (no cap_net_raw).
+  - Gradle build, `pingui-java.sh`, JUnit tests, GitHub Actions `java-ci.yml`.
+  - Docs: `java/README.md`, `docs/JAVA.md`.
+
+### Added (prior)
+
 - Повний пакет документації у `docs/` (архітектура, розгортання, тести, API).
 
 ## [0.1.0] - 2026-06-26

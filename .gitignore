@@ -34,3 +34,9 @@ route_map.html
 
 # Agent / local workspace (not part of the product)
 .omx/
+
+# Java / Gradle
+java/.gradle/
+java/build/
+java/bin/
+java/out/

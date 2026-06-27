@@ -71,6 +71,21 @@
 
 ---
 
+## Java edition (`java/`)
+
+| Вимога | Модуль | Тести | Статус |
+|--------|--------|-------|--------|
+| Cross-platform traceroute | `probe.ProcessRouteProbe` | `ProcessRouteProbeParserTest` | done |
+| Monitor cycle | `monitor.MonitorService` | `RoutePollerTest` | done |
+| Session store parity | `monitor.SessionStore` | via poller tests | done |
+| JavaFX GUI CRUD | `ui.MainController` | manual | done |
+| Gradle CI | `.github/workflows/java-ci.yml` | CI on push | done |
+| Topological graph | — | — | backlog |
+
+Деталі: [JAVA.md](JAVA.md).
+
+---
+
 ## Anti-stub checklist (PR)
 
 - [ ] Немає необґрунтованих `pass` / `return None` / `Mock` у `src/pingui/`

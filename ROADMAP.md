@@ -19,6 +19,10 @@ Linux-додаток: моніторинг до 10 цілей у списку, I
 ```
 PINGUI/
 ├── pingui.sh
+├── java/                     # cross-platform Java edition
+│   ├── pingui-java.sh
+│   ├── build.gradle.kts
+│   └── src/main/java/io/pingui/
 ├── pyproject.toml
 ├── README.md
 ├── ROADMAP.md
@@ -84,8 +88,20 @@ PINGUI/
 | P6 | Інтеграція, CLI, logging | ✅ |
 | P7 | CI, anti-stub, coverage ≥ 80% | ✅ |
 | P8 | Linux deployment helpers | ✅ |
+| **P9** | **Java cross-platform edition** | **✅ MVP** |
 
 ---
+
+## Фаза P9 — Java (cross-platform)
+
+| ID | Задача | Статус |
+|----|--------|--------|
+| J-P9-01 | Gradle + JavaFX scaffold (`java/`) | done |
+| J-P9-02 | Models, config, monitor port | done |
+| J-P9-03 | ProcessRouteProbe (traceroute/tracert) | done |
+| J-P9-04 | JavaFX GUI + pingui-java.sh | done |
+| J-P9-05 | JUnit tests + java-ci.yml | done |
+| J-P9-06 | JavaFX graph parity | backlog |
 
 ## Backlog (після MVP)
 
@@ -97,6 +113,9 @@ PINGUI/
 | B-04 | Folium geo-map у окремому view |
 | B-05 | TimescaleDB/InfluxDB backend |
 | B-06 | Jitter/loss statistics по hop |
+| **J-01** | **Java: JavaFX topological graph** |
+| **J-02** | **Java: jpackage installers** |
+| **J-03** | **Java: optional raw ICMP (JNA)** |
 
 ---
 
