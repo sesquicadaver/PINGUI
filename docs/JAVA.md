@@ -44,7 +44,7 @@ Python використовує scapy + raw ICMP. Java-редакція — **`P
 `MainController` (JavaFX):
 
 - `ListView<HostItem>` + CheckBox у комірці
-- Текстовий route view (inactive + current)
+- **GraphCanvas** — вертикальний граф, inactive/active колонки
 - Log `TextArea`
 
 Оновлення з worker — через `Platform.runLater()`.
@@ -77,8 +77,8 @@ GitHub Actions: `.github/workflows/java-ci.yml` (JDK 21, `./gradlew test`).
 | F-02 | GUI CRUD | ✅ |
 | F-03 | Trace enabled only | ✅ |
 | F-04 | Max 10 active | ✅ |
-| F-05 | Vertical graph | ⏳ backlog (текстовий view) |
-| F-06 | Inactive column | ✅ (текст) |
+| F-05 | Vertical graph | ✅ JavaFX GraphCanvas |
+| F-06 | Inactive column | ✅ дві колонки |
 | F-07 | Last known IP | ✅ |
 | F-08 | Route change log | ✅ |
 | F-09 | ICMP | ✅ via traceroute (не raw) |
@@ -87,5 +87,5 @@ GitHub Actions: `.github/workflows/java-ci.yml` (JDK 21, `./gradlew test`).
 ## Майбутнє
 
 - Raw ICMP через JNA (Linux parity)
-- JavaFX graph component
 - Fat JAR / jpackage distributables
+- JaCoCo ≥80%, CI matrix Windows/macOS

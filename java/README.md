@@ -53,10 +53,9 @@ cd java
 - Список до **10 цілей**, чекбокс = активне трасування
 - **Додати / Змінити / Видалити / Зберегти** → YAML
 - Лог змін маршруту та помилок
-- Відображення попереднього та поточного маршруту (текстовий вигляд)
+- **Граф маршруту (JavaFX)**: згори вниз, дві колонки (inactive / active), кольори RTT, avg ping у підписах
 
-> **Примітка:** топологічний граф Matplotlib — лише в Python-редакції.
-> Java-версія показує маршрут текстом; граф JavaFX — у backlog.
+> Топологічний граф вирівняний з Python `GraphCanvas` (Canvas замість Matplotlib).
 
 ## Архітектура
 
@@ -77,7 +76,7 @@ io.pingui
 |--------|--------|------|
 | Платформа | Linux | Linux, macOS, Windows |
 | ICMP | scapy raw socket + cap_net_raw | traceroute/tracert subprocess |
-| GUI | PyQt6 + Matplotlib graph | JavaFX, текстовий route view |
+| GUI | PyQt6 + Matplotlib graph | JavaFX + GraphCanvas |
 | Worker | QThread | ScheduledExecutorService |
 | Запуск | `./pingui.sh` | `./java/pingui-java.sh` |
 
@@ -91,11 +90,11 @@ cd java
 ./gradlew run
 ```
 
-JUnit 5, без мережевих тестів за замовчуванням (парсер traceroute покритий unit-тестами).
+JUnit 5 (21+ тестів: config, probe, monitor, ui layout).
 
 ## Backlog (Java)
 
-- JavaFX Canvas — топологічний граф як у Python
 - JNA raw ICMP на Linux (опційно, для parity з scapy)
 - jpackage — нативні інсталятори (.deb, .msi, .dmg)
 - Спільний CI matrix з Python
+- JaCoCo coverage gate

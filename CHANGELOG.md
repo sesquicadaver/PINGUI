@@ -7,7 +7,11 @@
 
 ### Added
 
-- **Java edition** (`java/`): cross-platform desktop monitor on Java 21 + JavaFX.
+- **Java parity sprint:** JavaFX `GraphCanvas` (vertical route graph, dual columns, ping colors).
+- Unit tests: `SessionStore`, `RouteHistory`, `MonitorService`, `PingColor`, `RouteGraphLayout`.
+- `--verbose` → `LoggingSetup` (SLF4J levels).
+
+### Added (prior)
   - `ProcessRouteProbe` via traceroute/tracert (no cap_net_raw).
   - Gradle build, `pingui-java.sh`, JUnit tests, GitHub Actions `java-ci.yml`.
   - Docs: `java/README.md`, `docs/JAVA.md`.

@@ -17,6 +17,7 @@ public final class PinguiApplication extends Application {
     @Override
     public void start(Stage stage) throws Exception {
         AppOptions options = parseOptions(getParameters().getNamed());
+        LoggingSetup.configure(options.verbose());
         List<String> hosts = HostsConfig.load(options.configPath());
         controller = new MainController(options, hosts);
         Scene scene = controller.createScene();
@@ -60,6 +61,14 @@ public final class PinguiApplication extends Application {
     }
 
     public static void main(String[] args) {
+        boolean verbose = false;
+        for (String arg : args) {
+            if ("--verbose".equals(arg)) {
+                verbose = true;
+                break;
+            }
+        }
+        LoggingSetup.configure(verbose);
         List<String> raw = new ArrayList<>(List.of(args));
         List<String> fxArgs = new ArrayList<>();
         for (int i = 0; i < raw.size(); i++) {

@@ -3,7 +3,6 @@ package io.pingui.ui;
 import io.pingui.AppOptions;
 import io.pingui.config.ConfigError;
 import io.pingui.config.HostsConfig;
-import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
@@ -41,7 +40,7 @@ public final class MainController {
     private final ListView<HostItem> hostList = new ListView<>(hostItems);
     private final TextField hostInput = new TextField();
     private final TextArea logArea = new TextArea();
-    private final TextArea routeArea = new TextArea();
+    private final GraphCanvas graphCanvas = new GraphCanvas();
     private final Label statusLabel = new Label("Очікування даних…");
     private boolean updatingList;
 
@@ -76,9 +75,6 @@ public final class MainController {
         hostInput.setPromptText("IP або hostname…");
         logArea.setEditable(false);
         logArea.setWrapText(true);
-        routeArea.setEditable(false);
-        routeArea.setWrapText(true);
-        routeArea.setPromptText("Маршрут виділеної цілі…");
 
         Button addButton = new Button("Додати");
         Button editButton = new Button("Змінити");
@@ -96,9 +92,10 @@ public final class MainController {
         VBox.setVgrow(logArea, Priority.ALWAYS);
         left.setPadding(new Insets(8));
 
-        VBox right = new VBox(8, new Label("Маршрут"), routeArea);
-        VBox.setVgrow(routeArea, Priority.ALWAYS);
+        VBox right = new VBox(8, new Label("Граф маршруту"), graphCanvas);
+        VBox.setVgrow(graphCanvas, Priority.ALWAYS);
         right.setPadding(new Insets(8));
+        graphCanvas.setMinSize(400, 400);
 
         BorderPane root = new BorderPane();
         root.setLeft(left);
@@ -260,31 +257,14 @@ public final class MainController {
     private void redrawRoute() {
         HostItem selected = hostList.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            routeArea.clear();
+            graphCanvas.renderRoute(List.of(), ip -> null, List.of());
             return;
         }
         String host = selected.getHost();
-        List<HopNode> inactive = store.inactiveRoute(host);
-        List<HopNode> current = store.get(host).getCurrentRoute();
-        StringBuilder builder = new StringBuilder();
-        builder.append("Попередній (сірий):\n");
-        builder.append(formatRoute(inactive)).append("\n\n");
-        builder.append("Поточний:\n");
-        builder.append(formatRoute(current));
-        routeArea.setText(builder.toString());
-    }
-
-    private String formatRoute(List<HopNode> nodes) {
-        if (nodes.isEmpty()) {
-            return "  (немає даних)";
-        }
-        StringBuilder builder = new StringBuilder();
-        builder.append("  Ваш ПК\n");
-        for (HopNode node : nodes) {
-            String ping = node.pingMs() != null ? String.format(" %.1f ms", node.pingMs()) : "";
-            builder.append("    ↓ hop ").append(node.hop()).append(": ").append(node.ip()).append(ping).append('\n');
-        }
-        return builder.toString();
+        graphCanvas.renderRoute(
+                store.get(host).getCurrentRoute(),
+                ip -> store.avgPing(host, ip),
+                store.inactiveRoute(host));
     }
 
     private void appendLog(String message) {
