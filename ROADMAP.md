@@ -114,7 +114,7 @@ PINGUI/
 | B-05 | TimescaleDB/InfluxDB backend |
 | B-06 | Jitter/loss statistics по hop |
 | **J-01** | **Java: JavaFX topological graph** | ✅ |
-| **J-02** | **Java: jpackage installers** | ❌ |
+| **J-02** | **Java: jpackage installers** | ✅ Linux .deb |
 | **J-03** | **Java: optional raw ICMP (JNA)** | ❌ |
 
 ---

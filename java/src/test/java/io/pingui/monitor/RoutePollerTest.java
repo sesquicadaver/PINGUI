@@ -36,4 +36,19 @@ class RoutePollerTest {
                 poller.pollHostRoute("8.8.8.8", List.of("10.0.0.1", "8.8.8.8"), 20, 0.5);
         assertTrue(outcome.routeChanged());
     }
+
+    @Test
+    void pollHandlesIoFailure() {
+        RoutePoller poller = new RoutePoller(FailingRouteProbe.io("network down"));
+        HostPollOutcome outcome = poller.pollHostRoute("8.8.8.8", List.of("10.0.0.1"), 20, 0.5);
+        assertEquals("network down", outcome.error());
+        assertEquals(List.of("10.0.0.1"), outcome.currentIps());
+    }
+
+    @Test
+    void pollHandlesRuntimeFailure() {
+        RoutePoller poller = new RoutePoller(FailingRouteProbe.runtime("bad state"));
+        HostPollOutcome outcome = poller.pollHostRoute("8.8.8.8", List.of(), 20, 0.5);
+        assertEquals("bad state", outcome.error());
+    }
 }

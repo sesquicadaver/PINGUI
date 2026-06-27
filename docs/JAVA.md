@@ -64,10 +64,12 @@ hosts:
 ## Збірка та CI
 
 ```bash
-cd java && ./gradlew test build
+cd java && ./gradlew test build          # тести + JaCoCo gate (≥80%)
+cd java && ./gradlew jpackageDeb         # Linux .deb
+cd java && ./pingui-java.sh --package    # те саме через launcher
 ```
 
-GitHub Actions: `.github/workflows/java-ci.yml` (JDK 21, `./gradlew test`).
+GitHub Actions: `.github/workflows/java-ci.yml` (JDK 21, `./gradlew test jacocoTestReport jacocoTestCoverageVerification`).
 
 ## Матриця parity з MVP
 
@@ -87,5 +89,5 @@ GitHub Actions: `.github/workflows/java-ci.yml` (JDK 21, `./gradlew test`).
 ## Майбутнє
 
 - Raw ICMP через JNA (Linux parity)
-- Fat JAR / jpackage distributables
-- JaCoCo ≥80%, CI matrix Windows/macOS
+- jpackage .msi / .dmg у CI matrix (Linux .deb — ✅)
+- CI matrix Windows/macOS

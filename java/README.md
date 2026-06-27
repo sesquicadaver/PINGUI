@@ -20,7 +20,8 @@ cd java
 chmod +x pingui-java.sh
 ./pingui-java.sh              # GUI
 ./pingui-java.sh --test       # unit-тести
-./pingui-java.sh --build      # збірка + тести
+./pingui-java.sh --build      # збірка + тести + JaCoCo gate
+./pingui-java.sh --package    # Linux .deb через jpackage
 ./pingui-java.sh --help
 ```
 
@@ -88,13 +89,26 @@ io.pingui
 cd java
 ./gradlew test
 ./gradlew run
+./gradlew jpackageDeb   # Linux .deb → build/dist/
 ```
 
-JUnit 5 (21+ тестів: config, probe, monitor, ui layout).
+JUnit 5 (27+ тестів: config, probe, monitor, ui layout, CLI options).
+
+## Пакування (jpackage)
+
+На Linux з JDK 21+ (містить `jpackage`):
+
+```bash
+./pingui-java.sh --package
+# або
+./gradlew installDist jpackageDeb
+ls build/dist/pingui_0.1.0_amd64.deb
+```
+
+Інсталятор включає JavaFX та залежності з `installDist`.
 
 ## Backlog (Java)
 
 - JNA raw ICMP на Linux (опційно, для parity з scapy)
-- jpackage — нативні інсталятори (.deb, .msi, .dmg)
+- jpackage для Windows (.msi) / macOS (.dmg) у CI matrix
 - Спільний CI matrix з Python
-- JaCoCo coverage gate

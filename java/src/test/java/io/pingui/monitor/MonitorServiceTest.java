@@ -40,4 +40,45 @@ class MonitorServiceTest {
         assertEquals("8.8.8.8", hostRef.get());
         service.close();
     }
+
+    @Test
+    void emitsProbeError() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<String> messageRef = new AtomicReference<>();
+        MonitorService service = new MonitorService(0.05, 20, 0.5, FailingRouteProbe.io("timeout"));
+        service.setListener(new MonitorService.Listener() {
+            @Override
+            public void onDataReceived(String host, RouteSnapshot snap) {}
+
+            @Override
+            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
+
+            @Override
+            public void onProbeError(String host, String message) {
+                messageRef.set(message);
+                latch.countDown();
+            }
+        });
+        service.addHost("8.8.8.8", true);
+        assertTrue(latch.await(3, TimeUnit.SECONDS));
+        assertEquals("timeout", messageRef.get());
+        service.close();
+    }
+
+    @Test
+    void hostManagementGuards() {
+        MonitorService service = new MonitorService(1.0, 20, 0.5, new FakeRouteProbe(
+                new RouteSnapshot("a", "1.1.1.1", List.of(new HopNode(1, "1.1.1.1", 1.0, false)))));
+        service.addHost("a", false);
+        assertEquals(List.of("a"), service.hosts());
+        assertEquals(List.of(), service.enabledHosts());
+        assertTrue(service.canAddHost());
+        service.setHostEnabled("a", true);
+        assertEquals(List.of("a"), service.enabledHosts());
+        service.renameHost("a", "b");
+        assertEquals(List.of("b"), service.hosts());
+        service.removeHost("b");
+        assertEquals(List.of(), service.hosts());
+        service.close();
+    }
 }

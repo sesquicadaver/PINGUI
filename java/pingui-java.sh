@@ -29,6 +29,9 @@ case "$CMD" in
   --build|build)
     exec ./gradlew build "$@"
     ;;
+  --package|package)
+    exec ./gradlew jpackage "$@"
+    ;;
   --run|run)
     if [[ $# -gt 0 ]]; then
       exec ./gradlew run --args="$*" -q

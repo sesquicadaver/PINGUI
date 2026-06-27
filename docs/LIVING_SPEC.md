@@ -79,12 +79,13 @@
 | Monitor cycle | `monitor.MonitorService` | `RoutePollerTest` | done |
 | Session store parity | `monitor.SessionStore` | via poller tests | done |
 | JavaFX GUI CRUD | `ui.MainController` | manual | done |
-| Gradle CI | `.github/workflows/java-ci.yml` | CI on push | done |
+| Gradle CI + JaCoCo | `.github/workflows/java-ci.yml`, `build.gradle.kts` | CI + `jacocoTestCoverageVerification` | done |
+| jpackage Linux .deb | `build.gradle.kts` `jpackageDeb`, `pingui-java.sh --package` | manual / local | done |
 | Topological graph | `ui.GraphCanvas`, `RouteGraphLayout` | `PingColorTest`, `RouteGraphLayoutTest` | done |
 | SessionStore parity | `monitor.SessionStore` | `SessionStoreTest` | done |
 | Route history | `monitor.RouteHistory` | `RouteHistoryTest` | done |
 | Monitor cycle callbacks | `monitor.MonitorService` | `MonitorServiceTest` | done |
-| Verbose CLI logging | `LoggingSetup` | manual | done |
+| Verbose CLI logging | `LoggingSetup` | `LoggingSetupTest` | done |
 
 Деталі: [JAVA.md](JAVA.md).
 

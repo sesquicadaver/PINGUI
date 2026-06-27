@@ -1,6 +1,8 @@
 package io.pingui.monitor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -75,5 +77,31 @@ class SessionStoreTest {
     void removeUnknownHostThrows() {
         SessionStore store = new SessionStore(List.of("a"));
         assertThrows(ConfigError.class, () -> store.removeHost("missing"));
+    }
+
+    @Test
+    void avgPingReturnsNullWhenEmpty() {
+        SessionStore store = new SessionStore(List.of("h"));
+        assertNull(store.avgPing("h", "1.1.1.1"));
+    }
+
+    @Test
+    void avgPingComputesMean() {
+        SessionStore store = new SessionStore(List.of("h"));
+        store.appendPingSamples(
+                "h",
+                new RouteSnapshot("h", "1.1.1.1", List.of(new HopNode(1, "1.1.1.1", 10.0, false))));
+        store.appendPingSamples(
+                "h",
+                new RouteSnapshot("h", "1.1.1.1", List.of(new HopNode(1, "1.1.1.1", 20.0, false))));
+        assertEquals(15.0, store.avgPing("h", "1.1.1.1"));
+    }
+
+    @Test
+    void canAddHostRespectsLimit() {
+        List<String> hosts =
+                java.util.stream.IntStream.range(0, 10).mapToObj(i -> "10.0.0." + i).toList();
+        SessionStore store = new SessionStore(hosts);
+        assertFalse(store.canAddHost());
     }
 }

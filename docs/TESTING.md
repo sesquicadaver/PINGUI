@@ -71,6 +71,17 @@ Integration-тести GUI створюють `QApplication` перед `MainWin
 | `test_tracer.py` (contract) | trace_route з mock transport |
 | `test_worker_store.py` (contract) | worker → store flow |
 
+## Java edition (`java/`)
+
+```bash
+cd java && ./gradlew test jacocoTestReport jacocoTestCoverageVerification
+cd java && ./pingui-java.sh --package   # Linux .deb (локально)
+```
+
+JaCoCo gate ≥80% instruction coverage (JavaFX UI та `ProcessRouteProbe.trace` виключені — тестуються parser/unit окремо).
+
+CI: `.github/workflows/java-ci.yml`.
+
 ## Import graph
 
 ```bash

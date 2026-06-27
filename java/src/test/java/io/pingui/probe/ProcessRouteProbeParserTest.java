@@ -25,6 +25,15 @@ class ProcessRouteProbeParserTest {
     }
 
     @Test
+    void parseUnixLinesWithoutRtt() {
+        List<String> lines = List.of(" 1  10.0.0.2");
+        List<HopNode> nodes = ProcessRouteProbe.parseUnix(lines);
+        assertEquals(1, nodes.size());
+        assertEquals("10.0.0.2", nodes.get(0).ip());
+        assertEquals(null, nodes.get(0).pingMs());
+    }
+
+    @Test
     void parseWindowsLines() {
         List<String> lines =
                 List.of(

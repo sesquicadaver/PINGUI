@@ -18,4 +18,10 @@ class RouteChangeDetectorTest {
         var result = RouteChangeDetector.detect(List.of("10.0.0.1"), List.of("192.168.1.1"));
         assertTrue(result.changed());
     }
+
+    @Test
+    void noChangeWhenEqual() {
+        var result = RouteChangeDetector.detect(List.of("10.0.0.1", "8.8.8.8"), List.of("10.0.0.1", "8.8.8.8"));
+        assertFalse(result.changed());
+    }
 }

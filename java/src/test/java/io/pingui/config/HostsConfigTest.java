@@ -34,4 +34,14 @@ class HostsConfigTest {
                 .toList();
         assertThrows(ConfigError.class, () -> HostsConfig.validateSessionHost("9.9.9.9", ten));
     }
+
+    @Test
+    void rejectsMissingConfigFile() {
+        assertThrows(ConfigError.class, () -> HostsConfig.load(tempDir.resolve("missing.yaml")));
+    }
+
+    @Test
+    void rejectsInvalidHostEntry() {
+        assertThrows(ConfigError.class, () -> HostsConfig.normalizeHostEntry("bad host!"));
+    }
 }
