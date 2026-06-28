@@ -19,9 +19,9 @@ C:\...\PINGUI\java> pingui-java.bat --build
 
 **Симптом:** `gradlew.bat build --build` / `Unknown command-line option '--build'`.
 
-**Причина:** у cmd `shift` не зберігається після `goto`; `%*` на мітці `:do_build` містить усі оригінальні аргументи.
+**Причина:** у cmd `%*` **ніколи** не змінюється після `shift` (v5 помилково робив `set PINGUI_EXTRA=%*`).
 
-**Рішення:** `git pull` (launcher v5); або `gradlew.bat build` напряму.
+**Рішення:** `git pull` (launcher **v6**, цикл `shift`/`%~1`). Або `gradlew.bat build` напряму.
 
 ---
 
