@@ -4,11 +4,15 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import QMessageLogContext, QtMsgType, qInstallMessageHandler
 from PyQt6.QtWidgets import QApplication
 
 from pingui.ui.main_window import MainWindow
+
+if TYPE_CHECKING:
+    from pingui.persistence.timeseries.base import TimeSeriesBackend
 
 
 def _quiet_qt_messages(
@@ -37,6 +41,7 @@ def run_app(
     quiet: bool = True,
     session_db_path: Path | None = None,
     geo_map_enabled: bool = True,
+    timeseries_backend: TimeSeriesBackend | None = None,
 ) -> int:
     """Create QApplication and run main window event loop."""
     if quiet:
@@ -50,6 +55,7 @@ def run_app(
         timeout=timeout,
         session_db_path=session_db_path,
         geo_map_enabled=geo_map_enabled,
+        timeseries_backend=timeseries_backend,
     )
     window.show()
     return app.exec()

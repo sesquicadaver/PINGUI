@@ -29,6 +29,7 @@ from pingui.models import RouteSnapshot
 from pingui.monitor.session_store import SessionStore
 from pingui.monitor.worker import LightweightMonitorWorker
 from pingui.persistence.session_db import SessionDatabase
+from pingui.persistence.timeseries.base import TimeSeriesBackend
 from pingui.ui.graph_canvas import GraphCanvas
 from pingui.ui.map_view import RouteMapView
 
@@ -47,6 +48,7 @@ class MainWindow(QMainWindow):
         timeout: float = 0.5,
         session_db_path: Path | None = None,
         geo_map_enabled: bool = True,
+        timeseries_backend: TimeSeriesBackend | None = None,
     ) -> None:
         super().__init__()
         self.setWindowTitle("PINGUI — Сесійний монітор маршрутів Linux")
@@ -56,7 +58,11 @@ class MainWindow(QMainWindow):
             SessionDatabase(session_db_path) if session_db_path is not None else None
         )
 
-        self._store = SessionStore(hosts, session_db=self._session_db)
+        self._store = SessionStore(
+            hosts,
+            session_db=self._session_db,
+            timeseries=timeseries_backend,
+        )
         self._last_update: datetime | None = None
         self._updating_list = False
 

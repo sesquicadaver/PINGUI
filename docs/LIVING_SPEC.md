@@ -2,7 +2,7 @@
 
 Матриця відповідності «вимога → модуль → тести». Оновлюється при кожній фічі.
 
-**Останнє оновлення:** 2026-06-26 · **Coverage:** ≥ 80% · **Тестів:** 89+ · **Документація:** [README.md](README.md)
+**Останнє оновлення:** 2026-06-26 · **Coverage:** ≥ 80% · **Тестів:** 97+ · **Документація:** [README.md](README.md)
 
 Джерело вимог MVP: [MVP_SPEC.md](MVP_SPEC.md).
 
@@ -44,6 +44,7 @@
 | Worker: цикл run(), сигнали Qt | `monitor/worker.py` | `tests/integration/test_worker_run.py` | done |
 | Worker → store контракт | `monitor/worker.py`, `session_store.py` | `tests/contract/test_worker_store.py` | done |
 | SQLite session persistence (optional) | `persistence/session_db.py` | `tests/unit/test_session_db.py` | done |
+| Time-series backend Influx/Timescale | `persistence/timeseries/` | `tests/unit/test_timeseries.py` | done |
 | Session export CSV/HTML | `export/session_report.py` | `tests/unit/test_session_export.py` | done |
 
 ---

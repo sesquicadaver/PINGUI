@@ -28,6 +28,10 @@ dev = [
     "mypy>=1.10",
     "types-PyYAML>=6.0",
 ]
+timeseries = [
+    "influxdb-client>=1.40",
+    "psycopg[binary]>=3.1",
+]
 
 [project.scripts]
 pingui = "pingui.__main__:main"
@@ -79,6 +83,10 @@ module = [
     "folium.*",
     "folium",
     "PyQt6.QtWebEngineWidgets",
+    "influxdb_client",
+    "influxdb_client.*",
+    "psycopg",
+    "psycopg.*",
 ]
 ignore_missing_imports = true
 follow_imports = "skip"

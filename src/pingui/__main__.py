@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -13,6 +14,8 @@ from pingui.icmp.raw_socket import RawIcmpPermissionError, check_raw_icmp_permis
 from pingui.logging_setup import setup_logging
 from pingui.monitor.session_store import SessionStore
 from pingui.persistence.session_db import SessionDatabase
+from pingui.persistence.timeseries.base import TimeSeriesBackend, TimeSeriesConfigError
+from pingui.persistence.timeseries.factory import create_timeseries_backend
 
 DEFAULT_CONFIG = Path("config/hosts.example.yaml")
 
@@ -84,6 +87,37 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Disable folium geo-map tab in GUI",
     )
+    parser.add_argument(
+        "--ts-backend",
+        choices=("influx", "timescale"),
+        default=None,
+        help="Optional time-series backend for RTT/route metrics",
+    )
+    parser.add_argument(
+        "--influx-url",
+        default=None,
+        help="InfluxDB URL (or INFLUXDB_URL env)",
+    )
+    parser.add_argument(
+        "--influx-token",
+        default=None,
+        help="InfluxDB token (or INFLUXDB_TOKEN env)",
+    )
+    parser.add_argument(
+        "--influx-org",
+        default=None,
+        help="InfluxDB org (or INFLUXDB_ORG env)",
+    )
+    parser.add_argument(
+        "--influx-bucket",
+        default=None,
+        help="InfluxDB bucket (or INFLUXDB_BUCKET env)",
+    )
+    parser.add_argument(
+        "--timescale-dsn",
+        default=None,
+        help="PostgreSQL/Timescale DSN (or PINGUI_TIMESCALE_DSN env)",
+    )
     return parser
 
 
@@ -104,6 +138,21 @@ def _export_reports(
     finally:
         store.close()
     return 0
+
+
+def _build_timeseries_backend(args: argparse.Namespace) -> TimeSeriesBackend | None:
+    try:
+        return create_timeseries_backend(
+            args.ts_backend,
+            influx_url=args.influx_url or os.environ.get("INFLUXDB_URL"),
+            influx_token=args.influx_token or os.environ.get("INFLUXDB_TOKEN"),
+            influx_org=args.influx_org or os.environ.get("INFLUXDB_ORG"),
+            influx_bucket=args.influx_bucket or os.environ.get("INFLUXDB_BUCKET"),
+            timescale_dsn=args.timescale_dsn or os.environ.get("PINGUI_TIMESCALE_DSN"),
+        )
+    except TimeSeriesConfigError as exc:
+        print(f"Config error: {exc}", file=sys.stderr)
+        raise SystemExit(1) from exc
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -141,6 +190,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     configure_geoip(enabled=not args.no_geoip, hints_path=args.geoip_hints)
+    timeseries_backend = _build_timeseries_backend(args)
 
     from pingui.ui.app import run_app
 
@@ -153,6 +203,7 @@ def main(argv: list[str] | None = None) -> int:
         quiet=not args.verbose,
         session_db_path=args.session_db,
         geo_map_enabled=not args.no_geo_map,
+        timeseries_backend=timeseries_backend,
     )
 
 

@@ -49,6 +49,8 @@ cd java && ./pingui-java.sh
 - Python ≥ 3.11
 - Права `CAP_NET_RAW` або root для ICMP
 
+Опційно: `pip install 'pingui[timeseries]'` для InfluxDB/Timescale backends.
+
 ## Python — GUI
 
 - **Додати / Змінити / Видалити / Зберегти** — редагування списку цілей (до 10 у списку).
@@ -78,6 +80,9 @@ cd java && ./pingui-java.sh
 | `--geoip-hints` | YAML з CIDR→країна для підписів hop-нод (default: `config/geoip_hints.yaml`) |
 | `--no-geoip` | Вимкнути країну в підписах графа |
 | `--no-geo-map` | Вимкнути вкладку Folium geo-map |
+| `--ts-backend` | `influx` або `timescale` — time-series backend для RTT/route |
+| `--influx-url`, `--influx-token`, `--influx-org`, `--influx-bucket` | InfluxDB 2.x (або `INFLUXDB_*` env) |
+| `--timescale-dsn` | PostgreSQL/Timescale DSN (або `PINGUI_TIMESCALE_DSN`) |
 | `--verbose` | Debug-лог |
 
 ## CI (локально)
