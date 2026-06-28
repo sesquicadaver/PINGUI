@@ -46,7 +46,7 @@ public final class GraphCanvas extends Region {
         this.previousRoute = previousRoute != null ? List.copyOf(previousRoute) : List.of();
         this.avgPingFn = avgPingFn != null ? avgPingFn : ip -> null;
         this.hopStatsFn = hopStatsFn != null ? hopStatsFn : hop -> null;
-        redraw();
+        scheduleRedraw();
     }
 
     public void renderRoute(
@@ -60,7 +60,15 @@ public final class GraphCanvas extends Region {
         this.staticViewMessage = message;
         this.currentRoute = List.of();
         this.previousRoute = List.of();
-        redraw();
+        scheduleRedraw();
+    }
+
+    private void scheduleRedraw() {
+        if (Platform.isFxApplicationThread()) {
+            redraw();
+        } else {
+            Platform.runLater(this::redraw);
+        }
     }
 
     @Override
@@ -68,8 +76,6 @@ public final class GraphCanvas extends Region {
         super.layoutChildren();
         double width = getWidth();
         double height = getHeight();
-        canvas.setWidth(width);
-        canvas.setHeight(height);
         if (width > 0 && height > 0) {
             redraw();
         }
@@ -81,8 +87,7 @@ public final class GraphCanvas extends Region {
         if (width <= 0 || height <= 0) {
             return;
         }
-        canvas.setWidth(width);
-        canvas.setHeight(height);
+        resizeCanvasBuffer(width, height);
         GraphicsContext gc = canvas.getGraphicsContext2D();
         gc.clearRect(0, 0, width, height);
         gc.setFill(Color.web("#fafafa"));
@@ -108,6 +113,16 @@ public final class GraphCanvas extends Region {
         for (GraphNode node : scene.nodes()) {
             drawNode(gc, node, width, height);
         }
+        requestLayout();
+    }
+
+    /** JavaFX Canvas may skip repainting when width/height are unchanged (common on Windows SW pipeline). */
+    private void resizeCanvasBuffer(double width, double height) {
+        if (canvas.getWidth() == width && canvas.getHeight() == height) {
+            canvas.setWidth(width + 1.0);
+        }
+        canvas.setWidth(width);
+        canvas.setHeight(height);
     }
 
     private static void drawNode(GraphicsContext gc, GraphNode node, double width, double height) {

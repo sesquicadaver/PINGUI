@@ -559,6 +559,10 @@ public final class MainController {
         }
         String oldStr = oldIps.isEmpty() ? "Початок моніторингу" : String.join(" -> ", oldIps);
         appendLog("⚠ ЗМІНА МАРШРУТУ до " + host + "\nБуло: " + oldStr + "\nСтало: " + String.join(" -> ", newIps));
+        HostItem selected = hostList.getSelectionModel().getSelectedItem();
+        if (selected != null && host.equals(selected.getHost()) && !easterEggActive) {
+            redrawRouteIfExtended();
+        }
     }
 
     private void syncHostMetrics(HostItem item) {
