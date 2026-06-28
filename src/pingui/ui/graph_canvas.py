@@ -11,7 +11,7 @@ from matplotlib.figure import Figure
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 
 from pingui.geoip import country_code_for_ip
-from pingui.models import TIMEOUT_IP, HopNode
+from pingui.models import TIMEOUT_IP, HopNode, HopStatsSummary
 
 LOCALHOST_ID = "localhost"
 INACTIVE_NODE = "#b0b0b0"
@@ -80,20 +80,41 @@ def _country_line(ip: str) -> str:
     return f"\n{code}" if code else ""
 
 
+def _stats_line(
+    hop: int,
+    hop_stats_fn: Callable[[int], HopStatsSummary | None] | None,
+) -> str:
+    if hop_stats_fn is None:
+        return ""
+    summary = hop_stats_fn(hop)
+    if summary is None:
+        return ""
+    parts: list[str] = []
+    if summary.jitter_ms is not None:
+        parts.append(f"j:{int(summary.jitter_ms)}")
+    parts.append(f"loss:{int(summary.loss_pct)}%")
+    return "\n" + " ".join(parts)
+
+
 def _node_label(
     node: HopNode,
     avg_ping_fn: Callable[[str], float | None],
+    hop_stats_fn: Callable[[int], HopStatsSummary | None] | None = None,
 ) -> str:
     if node.is_timeout or node.ip == TIMEOUT_IP:
+        stats = _stats_line(node.hop, hop_stats_fn)
+        if stats:
+            return f"Hop {node.hop}\n*{stats}"
         return f"Hop {node.hop}\n*"
     country = _country_line(node.ip)
+    stats = _stats_line(node.hop, hop_stats_fn)
     avg = avg_ping_fn(node.ip)
     if avg is not None:
-        return f"Hop {node.hop}\n{node.ip}{country}\n{int(avg)} ms"
+        return f"Hop {node.hop}\n{node.ip}{country}\n{int(avg)} ms{stats}"
     if node.ping_ms is not None:
-        return f"Hop {node.hop}\n{node.ip}{country}\n{int(node.ping_ms)} ms"
-    if country:
-        return f"Hop {node.hop}\n{node.ip}{country}"
+        return f"Hop {node.hop}\n{node.ip}{country}\n{int(node.ping_ms)} ms{stats}"
+    if country or stats:
+        return f"Hop {node.hop}\n{node.ip}{country}{stats}"
     return f"Hop {node.hop}\n{node.ip}"
 
 
@@ -138,6 +159,7 @@ def _chain_nodes(
     column: _ColumnLayout,
     inactive: bool,
     id_prefix: str,
+    hop_stats_fn: Callable[[int], HopStatsSummary | None] | None = None,
 ) -> tuple[list[_GraphNode], list[tuple[str, str]]]:
     """Build one vertical track inside its column."""
     nodes: list[_GraphNode] = []
@@ -162,7 +184,7 @@ def _chain_nodes(
     y_index += 1
 
     for node in route:
-        label = _node_label(node, avg_ping_fn)
+        label = _node_label(node, avg_ping_fn, hop_stats_fn)
         base_id = _hop_node_id(node.hop, node.ip, node.is_timeout)
         node_id = f"{id_prefix}_{base_id}"
         nodes.append(
@@ -268,6 +290,7 @@ class GraphCanvas(FigureCanvas):  # type: ignore[misc]
         route: list[HopNode],
         avg_ping_fn: Callable[[str], float | None],
         previous_route: list[HopNode] | None = None,
+        hop_stats_fn: Callable[[int], HopStatsSummary | None] | None = None,
     ) -> None:
         """Draw hop boxes top-down; previous route in left half if changed."""
         self._ax.clear()
@@ -289,6 +312,7 @@ class GraphCanvas(FigureCanvas):  # type: ignore[misc]
                 column=inactive_col,
                 inactive=True,
                 id_prefix="prev",
+                hop_stats_fn=None,
             )
 
         active_nodes, active_edges = _chain_nodes(
@@ -297,6 +321,7 @@ class GraphCanvas(FigureCanvas):  # type: ignore[misc]
             column=active_col,
             inactive=False,
             id_prefix="act",
+            hop_stats_fn=hop_stats_fn,
         )
 
         inactive_map = _node_by_id(inactive_nodes)

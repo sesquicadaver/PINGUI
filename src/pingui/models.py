@@ -10,6 +10,24 @@ if TYPE_CHECKING:
     pass
 
 TIMEOUT_IP = "*"
+MAX_HOP_RTT_SAMPLES = 50
+
+
+@dataclass(slots=True)
+class HopProbeStats:
+    """Aggregated probe outcomes for one TTL hop index."""
+
+    probes: int = 0
+    successes: int = 0
+    rtt_samples: list[float] = field(default_factory=list)
+
+
+@dataclass(frozen=True, slots=True)
+class HopStatsSummary:
+    """Derived jitter/loss metrics for display."""
+
+    jitter_ms: float | None
+    loss_pct: float
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,4 +66,5 @@ class HostSessionData:
     previous_route: list[HopNode] = field(default_factory=list)
     last_known_by_hop: dict[int, HopNode] = field(default_factory=dict)
     ping_history: dict[str, list[float]] = field(default_factory=dict)
+    hop_stats: dict[int, HopProbeStats] = field(default_factory=dict)
     enabled: bool = False

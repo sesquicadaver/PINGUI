@@ -58,7 +58,7 @@ cd java && ./pingui-java.sh
 - Граф: згори вниз; зліва — попередній маршрут (сірий), справа — поточний.
 - Вкладка **«Карта»** — Folium geo-map hop-ів (country centroids, polyline маршруту).
 - Неактивний ланцюг показує **останні відомі IP** hop-ів (навіть після таймауту в trace).
-- Підпис hop-ноди може містити **грубу країну** (offline GeoIP hints, напр. `US`, `LAN`).
+- Підпис hop-ноди може містити **грубу країну** (offline GeoIP hints, напр. `US`, `LAN`) та **jitter/loss** (`j:N loss:M%`).
 - Список зберігається у YAML (`config/hosts.example.yaml` за замовчуванням).
 
 ## CLI

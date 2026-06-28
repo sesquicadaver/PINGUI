@@ -385,6 +385,7 @@ class MainWindow(QMainWindow):
             data.current_route,
             avg_ping_fn=lambda ip: self._store.avg_ping(host, ip),
             previous_route=self._store.inactive_route(host),
+            hop_stats_fn=lambda hop: self._store.hop_stats_summary(host, hop),
         )
         self._map_view.render_route(data.current_route, target=host)
 

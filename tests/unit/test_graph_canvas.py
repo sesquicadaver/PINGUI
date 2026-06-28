@@ -7,7 +7,7 @@ import matplotlib
 matplotlib.use("Agg")
 
 from pingui.geoip import configure as configure_geoip
-from pingui.models import HopNode
+from pingui.models import HopNode, HopStatsSummary
 from pingui.ui.graph_canvas import (
     GraphCanvas,
     _box_height,
@@ -36,6 +36,18 @@ def test_node_label_compact() -> None:
     configure_geoip(enabled=False)
     assert _node_label(HopNode(4, "8.8.8.8", 5.0), lambda _ip: 5.0) == "Hop 4\n8.8.8.8\n5 ms"
     configure_geoip(enabled=True)
+
+
+def test_node_label_includes_hop_stats() -> None:
+    summary = HopStatsSummary(jitter_ms=3.0, loss_pct=10.0)
+
+    def stats_fn(hop: int) -> HopStatsSummary | None:
+        return summary if hop == 3 else None
+
+    node = HopNode(3, "8.8.8.8", 12.0)
+    label = _node_label(node, lambda _ip: 12.0, stats_fn)
+    assert "j:3" in label
+    assert "loss:10%" in label
 
 
 def test_dual_columns_do_not_overlap() -> None:

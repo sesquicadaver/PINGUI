@@ -5,7 +5,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from pingui.config import MAX_HOSTS, ConfigError, validate_session_host
-from pingui.models import TIMEOUT_IP, HopNode, HostSessionData, RouteSnapshot
+from pingui.models import (
+    TIMEOUT_IP,
+    HopNode,
+    HopProbeStats,
+    HopStatsSummary,
+    HostSessionData,
+    RouteSnapshot,
+)
+from pingui.monitor.hop_stats import record_hop_probe, summarize_hop_stats
 from pingui.monitor.route_history import record_last_known, route_with_last_known_ips
 from pingui.persistence.timeseries.base import PingSample, RouteEvent
 
@@ -114,6 +122,7 @@ class SessionStore:
 
     def append_ping_samples(self, host: str, snapshot: RouteSnapshot) -> None:
         """Append RTT samples from snapshot, trimming history per IP."""
+        self._record_hop_probes(host, snapshot)
         history = self._data[host].ping_history
         changed = False
         new_samples: list[PingSample] = []
@@ -144,6 +153,23 @@ class SessionStore:
         if not samples:
             return None
         return sum(samples) / len(samples)
+
+    def hop_stats_summary(self, host: str, hop: int) -> HopStatsSummary | None:
+        """Return jitter/loss summary for a hop index on the given host."""
+        stats = self._data[host].hop_stats.get(hop)
+        if stats is None:
+            return None
+        return summarize_hop_stats(stats)
+
+    def _record_hop_probes(self, host: str, snapshot: RouteSnapshot) -> None:
+        hop_stats = self._data[host].hop_stats
+        changed = False
+        for node in snapshot.nodes:
+            stats = hop_stats.setdefault(node.hop, HopProbeStats())
+            record_hop_probe(stats, node)
+            changed = True
+        if changed:
+            self._persist(host)
 
     def flush_all(self) -> None:
         """Write all hosts to SQLite when persistence is enabled."""

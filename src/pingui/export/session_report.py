@@ -20,6 +20,8 @@ ROUTE_CSV_FIELDS = (
     "ip",
     "ping_ms",
     "avg_ping_ms",
+    "jitter_ms",
+    "loss_pct",
     "is_timeout",
 )
 
@@ -35,6 +37,8 @@ class RouteRow:
     ip: str
     ping_ms: float | None
     avg_ping_ms: float | None
+    jitter_ms: float | None
+    loss_pct: float | None
     is_timeout: bool
 
 
@@ -64,6 +68,7 @@ def _rows_for_route(
     result: list[RouteRow] = []
     for node in route:
         avg = None if node.is_timeout or node.ip == "*" else store.avg_ping(host, node.ip)
+        summary = store.hop_stats_summary(host, node.hop)
         result.append(
             RouteRow(
                 host=host,
@@ -73,6 +78,8 @@ def _rows_for_route(
                 ip=node.ip,
                 ping_ms=node.ping_ms,
                 avg_ping_ms=avg,
+                jitter_ms=summary.jitter_ms if summary else None,
+                loss_pct=summary.loss_pct if summary else None,
                 is_timeout=node.is_timeout,
             )
         )
@@ -97,6 +104,8 @@ def export_session_csv(store: SessionStore, path: Path | str) -> None:
                     "ip": row.ip,
                     "ping_ms": "" if row.ping_ms is None else row.ping_ms,
                     "avg_ping_ms": "" if row.avg_ping_ms is None else row.avg_ping_ms,
+                    "jitter_ms": "" if row.jitter_ms is None else row.jitter_ms,
+                    "loss_pct": "" if row.loss_pct is None else row.loss_pct,
                     "is_timeout": int(row.is_timeout),
                 }
             )
@@ -142,7 +151,7 @@ def _render_html_body(hosts: list[str], rows: Iterable[RouteRow], generated: str
         sections.append("<table>")
         sections.append(
             "<tr><th>Route</th><th>Hop</th><th>IP</th>"
-            "<th>Ping ms</th><th>Avg ms</th><th>Timeout</th></tr>"
+            "<th>Ping ms</th><th>Avg ms</th><th>Jitter ms</th><th>Loss %</th><th>Timeout</th></tr>"
         )
         for row in host_rows:
             sections.append(
@@ -152,6 +161,8 @@ def _render_html_body(hosts: list[str], rows: Iterable[RouteRow], generated: str
                 f"<td>{html.escape(row.ip)}</td>"
                 f"<td>{'' if row.ping_ms is None else row.ping_ms}</td>"
                 f"<td>{'' if row.avg_ping_ms is None else row.avg_ping_ms}</td>"
+                f"<td>{'' if row.jitter_ms is None else row.jitter_ms}</td>"
+                f"<td>{'' if row.loss_pct is None else row.loss_pct}</td>"
                 f"<td>{'yes' if row.is_timeout else 'no'}</td>"
                 "</tr>"
             )

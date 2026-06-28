@@ -2,7 +2,7 @@
 
 Матриця відповідності «вимога → модуль → тести». Оновлюється при кожній фічі.
 
-**Останнє оновлення:** 2026-06-26 · **Coverage:** ≥ 80% · **Тестів:** 97+ · **Документація:** [README.md](README.md)
+**Останнє оновлення:** 2026-06-26 · **Coverage:** ≥ 80% · **Тестів:** 104+ · **Документація:** [README.md](README.md)
 
 Джерело вимог MVP: [MVP_SPEC.md](MVP_SPEC.md).
 
@@ -39,6 +39,7 @@
 | Детекція зміни маршруту | `monitor/route_change.py` | `tests/unit/test_route_change.py` | done |
 | Last known IP по hop | `monitor/route_history.py` | `tests/unit/test_route_history.py` | done |
 | SessionStore: route, ping history, previous | `monitor/session_store.py` | `tests/unit/test_session_store.py` | done |
+| Hop jitter/loss per TTL hop | `monitor/hop_stats.py` | `tests/unit/test_hop_stats.py` | done |
 | inactive_route з last known | `monitor/session_store.py` | `tests/unit/test_session_store.py` | done |
 | Worker: add/rename/remove, enabled only | `monitor/worker.py` | `tests/unit/test_worker.py` | done |
 | Worker: цикл run(), сигнали Qt | `monitor/worker.py` | `tests/integration/test_worker_run.py` | done |
