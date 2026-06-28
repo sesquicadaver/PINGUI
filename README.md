@@ -6,7 +6,7 @@
 | Редакція | Платформа | Запуск | Особливості |
 |----------|-----------|--------|-------------|
 | **Python** | Linux | `./pingui.sh` | PyQt6, Matplotlib-граф, scapy raw ICMP |
-| **Java** | Linux, macOS, Windows | `./java/pingui-java.sh` | JavaFX, traceroute/tracert, без cap_net_raw |
+| **Java** | Linux, macOS, Windows | `./pingui.sh --java` або `./java/pingui-java.sh` | JavaFX, traceroute/tracert, без cap_net_raw |
 
 ## Python (Linux) — швидкий старт
 
@@ -25,13 +25,18 @@ chmod +x pingui.sh
 
 Опції лише з `--deploy`: `--skip-tests`, `--force-venv`.
 
+| `./pingui.sh --java` | Java GUI (без venv; JDK 21+) |
+| `./pingui.sh --java --deploy` | Java: Gradle build + JaCoCo |
+| `./pingui.sh --java --test` | Java unit-тести |
+
 ## Java (cross-platform) — швидкий старт
 
 ```bash
-cd java
-chmod +x pingui-java.sh
-./pingui-java.sh --test    # перша збірка + тести
-./pingui-java.sh           # GUI
+./pingui.sh --java --deploy   # Gradle build + тести + JaCoCo (з кореня репо)
+./pingui.sh --java            # GUI
+# або напряму:
+cd java && ./pingui-java.sh --test
+cd java && ./pingui-java.sh
 ```
 
 Потрібні: **JDK 21+**, системний `traceroute` (Linux/macOS) або `tracert` (Windows).

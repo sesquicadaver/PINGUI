@@ -15,11 +15,15 @@
 
 ```bash
 chmod +x pingui.sh
-./pingui.sh --deploy    # перше розгортання
-./pingui.sh             # GUI
-./pingui.sh --destroy   # очистити venv і кеші
+./pingui.sh --deploy    # перше розгортання (Python)
+./pingui.sh             # Python GUI
+./pingui.sh --java      # Java GUI (cross-platform, без venv)
+./pingui.sh --java --deploy   # Java: build + тести + JaCoCo
+./pingui.sh --destroy   # очистити venv і кеші Python
 ./pingui.sh --help
 ```
+
+Java-редакція делегує до `java/pingui-java.sh`; Python `--destroy` не стосується Gradle-артефактів у `java/build/`.
 
 ### Режим `--deploy`
 

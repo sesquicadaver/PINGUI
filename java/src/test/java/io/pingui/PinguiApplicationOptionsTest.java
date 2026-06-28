@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.pingui.probe.ProbeMode;
 import java.nio.file.Path;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,7 @@ class PinguiApplicationOptionsTest {
         assertEquals(20, options.maxHops());
         assertEquals(0.5, options.timeoutSeconds());
         assertFalse(options.verbose());
+        assertEquals(ProbeMode.AUTO, options.probeMode());
     }
 
     @Test
@@ -35,6 +37,13 @@ class PinguiApplicationOptionsTest {
         assertEquals(10, options.maxHops());
         assertEquals(1.0, options.timeoutSeconds());
         assertTrue(options.verbose());
+        assertEquals(ProbeMode.AUTO, options.probeMode());
+    }
+
+    @Test
+    void parseProbeMode() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of("probe", "process"));
+        assertEquals(ProbeMode.PROCESS, options.probeMode());
     }
 
     @Test

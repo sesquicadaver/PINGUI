@@ -16,18 +16,28 @@
 
 ## Probe-шар
 
-Python використовує scapy + raw ICMP. Java-редакція — **`ProcessRouteProbe`**:
+Python використовує scapy + raw ICMP. Java підтримує два backend:
+
+| Backend | Клас | ОС | Вимоги |
+|---------|------|-----|--------|
+| **process** (за замовч.) | `ProcessRouteProbe` | Linux, macOS, Windows | `traceroute` / `tracert` у PATH |
+| **raw-icmp** (Linux) | `RawIcmpRouteProbe` | Linux | JNA + `CAP_NET_RAW` або root |
+| **auto** | `RouteProbeFactory` | Усі | Linux + cap → raw, інакше process |
+
+CLI: `--probe auto|process|raw` (default: `auto`).
+
+### ProcessRouteProbe (subprocess)
 
 | ОС | Команда |
 |----|---------|
 | Linux / macOS | `traceroute -n -w SEC -m N -q 1 HOST` |
 | Windows | `tracert -h N -w MS HOST` |
 
-Вивід парситься в `List<HopNode>`. Timeout-hop → `ip="*"`.
+### RawIcmpRouteProbe (JNA, Linux)
 
-Переваги: не потрібен root/capabilities, працює на desktop OS out-of-the-box.
+Інкрементальний TTL 1..N через raw ICMP socket (parity з Python `trace_route`).
 
-Обмеження: залежність від наявності traceroute; RTT на Windows може бути без ms у парсері.
+Потрібно: `sudo setcap cap_net_raw+ep` на JDK binary або запуск від root (аналог `./pingui.sh --deploy` для Python).
 
 ## Monitor-шар
 
@@ -83,11 +93,10 @@ GitHub Actions: `.github/workflows/java-ci.yml` (JDK 21, `./gradlew test jacocoT
 | F-06 | Inactive column | ✅ дві колонки |
 | F-07 | Last known IP | ✅ |
 | F-08 | Route change log | ✅ |
-| F-09 | ICMP | ✅ via traceroute (не raw) |
+| F-09 | ICMP | ✅ raw (Linux) або traceroute |
 | F-10 | CLI options | ✅ |
 
 ## Майбутнє
 
-- Raw ICMP через JNA (Linux parity)
 - jpackage .msi / .dmg у CI matrix (Linux .deb — ✅)
 - CI matrix Windows/macOS

@@ -115,7 +115,8 @@ PINGUI/
 | B-06 | Jitter/loss statistics по hop |
 | **J-01** | **Java: JavaFX topological graph** | ✅ |
 | **J-02** | **Java: jpackage installers** | ✅ Linux .deb |
-| **J-03** | **Java: optional raw ICMP (JNA)** | ❌ |
+| **J-04** | **Root launcher `./pingui.sh --java`** | ✅ |
+| **J-03** | **Java: optional raw ICMP (JNA)** | ✅ Linux |
 
 ---
 

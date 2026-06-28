@@ -1,8 +1,9 @@
 package io.pingui.monitor;
 
 import io.pingui.model.Models.RouteSnapshot;
-import io.pingui.probe.ProcessRouteProbe;
+import io.pingui.probe.ProbeMode;
 import io.pingui.probe.RouteProbe;
+import io.pingui.probe.RouteProbeFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,7 +36,11 @@ public final class MonitorService implements AutoCloseable {
     private Listener listener;
 
     public MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds) {
-        this(intervalSeconds, maxHops, timeoutSeconds, new ProcessRouteProbe());
+        this(intervalSeconds, maxHops, timeoutSeconds, ProbeMode.AUTO);
+    }
+
+    public MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds, ProbeMode probeMode) {
+        this(intervalSeconds, maxHops, timeoutSeconds, RouteProbeFactory.create(probeMode));
     }
 
     MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds, RouteProbe probe) {

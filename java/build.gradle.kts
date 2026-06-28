@@ -24,6 +24,8 @@ val appVersion = "0.1.0"
 dependencies {
     implementation("org.yaml:snakeyaml:2.3")
     implementation("org.slf4j:slf4j-simple:2.0.16")
+    implementation("net.java.dev.jna:jna:5.15.0")
+    implementation("net.java.dev.jna:jna-platform:5.15.0")
 
     testImplementation(platform("org.junit:junit-bom:$junitVersion"))
     testImplementation("org.junit.jupiter:junit-jupiter")
@@ -73,6 +75,9 @@ tasks.jacocoTestCoverageVerification {
                     exclude(
                         "io/pingui/PinguiApplication.class",
                         "io/pingui/probe/ProcessRouteProbe.class",
+                        "io/pingui/probe/icmp/LinuxJnaIcmpTransport*.class",
+                        "io/pingui/probe/icmp/LinuxCLibrary*.class",
+                        "io/pingui/probe/icmp/RawIcmpPermission.class",
                         "io/pingui/ui/MainController*.class",
                         "io/pingui/ui/GraphCanvas*.class",
                         "io/pingui/ui/HostItem*.class",

@@ -47,7 +47,9 @@ public final class MainController {
     public MainController(AppOptions options, List<String> initialHosts) {
         this.options = options;
         this.store = new SessionStore(initialHosts);
-        this.monitor = new MonitorService(options.intervalSeconds(), options.maxHops(), options.timeoutSeconds());
+        this.monitor =
+                new MonitorService(
+                        options.intervalSeconds(), options.maxHops(), options.timeoutSeconds(), options.probeMode());
         for (String host : initialHosts) {
             hostItems.add(new HostItem(host, false));
             monitor.addHost(host, false);

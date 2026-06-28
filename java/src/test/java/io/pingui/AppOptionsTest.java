@@ -3,6 +3,7 @@ package io.pingui;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
+import io.pingui.probe.ProbeMode;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 
@@ -15,5 +16,6 @@ class AppOptionsTest {
         assertEquals(20, options.maxHops());
         assertEquals(0.5, options.timeoutSeconds());
         assertFalse(options.verbose());
+        assertEquals(ProbeMode.AUTO, options.probeMode());
     }
 }

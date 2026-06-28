@@ -15,6 +15,16 @@
 
 ## Швидкий старт
 
+З кореня репозиторію:
+
+```bash
+./pingui.sh --java              # GUI
+./pingui.sh --java --deploy     # build + тести + JaCoCo
+./pingui.sh --java --test       # лише unit-тести
+```
+
+Або з каталогу `java/`:
+
 ```bash
 cd java
 chmod +x pingui-java.sh
@@ -45,6 +55,7 @@ cd java
 | `--interval` | `1.0` | Інтервал опитування (с) |
 | `--max-hops` | `20` | Максимум hop |
 | `--timeout` | `0.5` | Таймаут probe (с) |
+| `--probe` | `auto` | `auto`, `process`, `raw` (Linux cap) |
 | `--verbose` | off | Debug-лог |
 
 ## GUI
@@ -64,7 +75,7 @@ cd java
 io.pingui
 ├── config/          HostsConfig (YAML)
 ├── model/           HopNode, RouteSnapshot, HostSessionData
-├── probe/           RouteProbe → ProcessRouteProbe (traceroute/tracert)
+├── probe/           RouteProbeFactory → ProcessRouteProbe / RawIcmpRouteProbe (JNA)
 ├── monitor/         SessionStore, RoutePoller, MonitorService
 └── ui/              MainController (JavaFX)
 ```
@@ -109,6 +120,5 @@ ls build/dist/pingui_0.1.0_amd64.deb
 
 ## Backlog (Java)
 
-- JNA raw ICMP на Linux (опційно, для parity з scapy)
 - jpackage для Windows (.msi) / macOS (.dmg) у CI matrix
 - Спільний CI matrix з Python

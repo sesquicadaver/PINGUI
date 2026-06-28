@@ -64,6 +64,7 @@
 |--------|-----------------|-------|--------|
 | CLI парсинг і валідація | `__main__.py` | `tests/unit/test_main.py`, `test_main_cli_validation.py` | done |
 | Єдина точка входу | `pingui.sh` | manual QA | done |
+| Root Java entry | `pingui.sh --java` → `java/pingui-java.sh` | manual / `./pingui.sh --java --test` | done |
 | CI pipeline (venv) | `scripts/ci_venv.sh`, `.github/workflows/ci.yml` | CI on push/PR | done |
 | Import graph (no cycles) | `scripts/check_imports.py` | deploy / CI | done |
 | cap_net_raw helper | `scripts/setup_caps.sh`, `scripts/check_caps.sh` | manual | done |
@@ -76,6 +77,7 @@
 | Вимога | Модуль | Тести | Статус |
 |--------|--------|-------|--------|
 | Cross-platform traceroute | `probe.ProcessRouteProbe` | `ProcessRouteProbeParserTest` | done |
+| Linux raw ICMP (JNA) | `probe.RawIcmpRouteProbe`, `RouteProbeFactory` | `IcmpPacketTest`, `RawIcmpRouteProbeTest` | done |
 | Monitor cycle | `monitor.MonitorService` | `RoutePollerTest` | done |
 | Session store parity | `monitor.SessionStore` | via poller tests | done |
 | JavaFX GUI CRUD | `ui.MainController` | manual | done |

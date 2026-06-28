@@ -1,6 +1,7 @@
 package io.pingui;
 
 import io.pingui.config.HostsConfig;
+import io.pingui.probe.ProbeMode;
 import io.pingui.ui.MainController;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -40,10 +41,12 @@ public final class PinguiApplication extends Application {
         int maxHops = parseInt(params.get("max-hops"), defaults.maxHops());
         double timeout = parseDouble(params.get("timeout"), defaults.timeoutSeconds());
         boolean verbose = params.containsKey("verbose");
+        ProbeMode probeMode =
+                params.containsKey("probe") ? ProbeMode.parse(params.get("probe")) : defaults.probeMode();
         if (interval <= 0 || timeout <= 0 || maxHops < 1) {
             throw new IllegalArgumentException("Invalid CLI numeric options");
         }
-        return new AppOptions(config, interval, maxHops, timeout, verbose);
+        return new AppOptions(config, interval, maxHops, timeout, verbose, probeMode);
     }
 
     private static double parseDouble(String value, double fallback) {
@@ -108,6 +111,7 @@ public final class PinguiApplication extends Application {
                   --interval SEC    Poll interval (default: 1.0)
                   --max-hops N      Max TTL hops (default: 20)
                   --timeout SEC     Probe timeout (default: 0.5)
+                  --probe MODE      auto | process | raw (default: auto)
                   --verbose         Debug logging
                 """);
     }
