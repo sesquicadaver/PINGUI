@@ -29,6 +29,7 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 /** Main JavaFX window: host list, optional route graph and event log. */
@@ -37,6 +38,10 @@ public final class MainController {
             DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
     private static final double HOST_ROW_HEIGHT = 52.0;
     private static final double HOST_LIST_INSET = 4.0;
+    /** Minimum width for host row metrics (loss / min / avg / max). */
+    private static final double SIMPLE_PANEL_MIN_WIDTH = 500.0;
+    private static final double EXTENDED_WIDTH = 1100.0;
+    private static final double EXTENDED_HEIGHT = 700.0;
 
     private final AppOptions options;
     private final SessionStore store;
@@ -48,6 +53,7 @@ public final class MainController {
     private final GraphCanvas graphCanvas = new GraphCanvas();
     private final Label statusLabel = new Label("Очікування даних…");
     private final VBox graphPanel = new VBox(8);
+    private final VBox leftPanel = new VBox(8);
     private final BorderPane root = new BorderPane();
     private UiViewMode viewMode = UiViewMode.SIMPLE;
     private boolean updatingList;
@@ -107,18 +113,20 @@ public final class MainController {
 
         HBox modeBar = new HBox(12, new Label("Режим:"), simpleMode, extendedMode);
         HBox buttons = new HBox(8, addButton, editButton, removeButton, saveButton);
-        VBox left = new VBox(8, modeBar, hostList, hostInput, buttons, statusLabel, logArea);
+        leftPanel.getChildren().addAll(modeBar, hostList, hostInput, buttons, statusLabel, logArea);
         VBox.setVgrow(hostList, Priority.NEVER);
         VBox.setVgrow(logArea, Priority.ALWAYS);
-        left.setPadding(new Insets(8));
+        leftPanel.setPadding(new Insets(8));
+        leftPanel.setMinWidth(SIMPLE_PANEL_MIN_WIDTH);
+        hostList.setPrefWidth(SIMPLE_PANEL_MIN_WIDTH);
+        hostInput.setMaxWidth(Double.MAX_VALUE);
 
         graphPanel.getChildren().addAll(new Label("Граф маршруту"), graphCanvas);
         VBox.setVgrow(graphCanvas, Priority.ALWAYS);
         graphPanel.setPadding(new Insets(8));
         graphCanvas.setMinSize(400, 400);
 
-        root.setLeft(left);
-        BorderPane.setMargin(left, new Insets(0, 4, 0, 0));
+        root.setLeft(leftPanel);
 
         hostList.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, newItem) -> {
             if (newItem != null) {
@@ -132,12 +140,15 @@ public final class MainController {
         }
         syncControls();
         applyViewMode();
-        return new Scene(root, 640, 700);
+        return new Scene(root);
     }
 
     /** Call after {@code Stage.show()} so graph canvas has non-zero layout bounds. */
     public void onSceneShown() {
-        Platform.runLater(this::redrawRouteIfExtended);
+        Platform.runLater(() -> {
+            redrawRouteIfExtended();
+            fitWindowToContent();
+        });
     }
 
     public void shutdown() {
@@ -161,12 +172,35 @@ public final class MainController {
         statusLabel.setVisible(extended);
         statusLabel.setManaged(extended);
         root.setCenter(extended ? graphPanel : null);
-        if (root.getScene() != null && root.getScene().getWindow() != null) {
-            root.getScene().getWindow().setWidth(extended ? 1100 : 640);
-        }
+        BorderPane.setMargin(leftPanel, extended ? new Insets(0, 4, 0, 0) : Insets.EMPTY);
         if (extended) {
+            leftPanel.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+            root.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
             redrawRouteIfExtended();
+        } else {
+            leftPanel.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+            root.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
         }
+        fitWindowToContent();
+    }
+
+    private void fitWindowToContent() {
+        Platform.runLater(() -> {
+            Scene scene = root.getScene();
+            if (scene == null || scene.getWindow() == null) {
+                return;
+            }
+            if (viewMode == UiViewMode.SIMPLE) {
+                leftPanel.applyCss();
+                leftPanel.layout();
+                root.applyCss();
+                root.layout();
+                scene.getWindow().sizeToScene();
+            } else {
+                scene.getWindow().setWidth(EXTENDED_WIDTH);
+                scene.getWindow().setHeight(EXTENDED_HEIGHT);
+            }
+        });
     }
 
     private void configureHostList() {
@@ -180,6 +214,7 @@ public final class MainController {
     private void syncHostListHeight() {
         int rows = Math.max(1, hostItems.size());
         hostList.setPrefHeight(listHeightForRows(Math.min(rows, HostsConfig.MAX_HOSTS)));
+        fitWindowToContent();
     }
 
     private static double listHeightForRows(int rows) {
