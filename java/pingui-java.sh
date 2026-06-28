@@ -23,9 +23,6 @@ case "$CMD" in
   --help|-h|help)
     exec ./gradlew run --args="--help" -q
     ;;
-  --test|test)
-    exec ./gradlew test "$@"
-    ;;
   --build|build)
     exec ./gradlew build "$@"
     ;;

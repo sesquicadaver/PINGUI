@@ -2,7 +2,7 @@
 # PINGUI — Python edition (Linux): venv, cap_net_raw, PyQt6 GUI.
 #
 #   ./pingui.sh              GUI
-#   ./pingui.sh --deploy     повне розгортання + CI
+#   ./pingui.sh --deploy     розгортання venv + cap_net_raw
 #   ./pingui.sh --destroy    видалити .venv та локальні артефакти
 #   ./pingui.sh --help       довідка
 #
@@ -18,7 +18,6 @@ PIP="${VENV}/bin/pip"
 CONFIG="${ROOT}/config/hosts.example.yaml"
 
 MODE="run"
-SKIP_TESTS=0
 FORCE_VENV=0
 QUIET=0
 
@@ -39,9 +38,8 @@ PINGUI — монітор маршрутів (Python edition, Linux)
       Запуск GUI. Мінімальна перевірка venv і cap_net_raw, без зайвого виводу.
 
   ./pingui.sh --deploy
-      Повне розгортання: системні пакети (apt), venv (--copies), cap_net_raw,
-      ruff + mypy + pytest. Опції лише з --deploy:
-        --skip-tests   без pytest/ruff/mypy
+      Розгортання: системні пакети (apt), venv (--copies), cap_net_raw.
+      Опція лише з --deploy:
         --force-venv   перестворити .venv
 
   ./pingui.sh --destroy
@@ -63,10 +61,6 @@ for arg in "$@"; do
     --deploy) MODE="deploy" ;;
     --destroy) MODE="destroy" ;;
     --help|-h) MODE="help" ;;
-    --skip-tests)
-      [[ "$MODE" == deploy ]] || die "Опція --skip-tests лише з --deploy."
-      SKIP_TESTS=1
-      ;;
     --force-venv)
       [[ "$MODE" == deploy ]] || die "Опція --force-venv лише з --deploy."
       FORCE_VENV=1
@@ -169,7 +163,7 @@ install_python_packages() {
   [[ "$QUIET" -eq 1 ]] && quiet_flag=(-q)
   log "Встановлення Python-залежностей"
   "$PIP" install "${quiet_flag[@]}" -U pip
-  "$PIP" install "${quiet_flag[@]}" -e ".[dev]"
+  "$PIP" install "${quiet_flag[@]}" -e .
 }
 
 pingui_importable() {
@@ -211,15 +205,6 @@ verify_icmp_permission() {
   die "Немає доступу до raw ICMP. Запустіть: ./pingui.sh --deploy"
 }
 
-run_quality_gates() {
-  log "ruff + mypy + pytest"
-  export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-offscreen}"
-  "$VENV/bin/ruff" check src tests
-  "$VENV/bin/mypy" src/pingui
-  "$VENV/bin/pytest" tests -m "not network" --cov=pingui --cov-fail-under=80 -q
-  "$PYTHON" "${ROOT}/scripts/check_imports.py"
-}
-
 prepare_runtime() {
   if [[ ! -d "$VENV" ]]; then
     require_python
@@ -258,13 +243,6 @@ full_deploy() {
   install_system_packages
   prepare_runtime
   verify_icmp_permission
-
-  if [[ "$SKIP_TESTS" -eq 0 ]]; then
-    run_quality_gates
-  else
-    log "Пропуск тестів (--skip-tests)."
-  fi
-
   log "Готово."
 }
 
@@ -278,7 +256,7 @@ destroy_artifacts() {
   shopt -s nullglob
   rm -rf "${ROOT}"/*.egg-info
   shopt -u nullglob
-  find "${ROOT}/src" "${ROOT}/tests" -type d -name __pycache__ -print0 2>/dev/null \
+  find "${ROOT}/src" -type d -name __pycache__ -print0 2>/dev/null \
     | xargs -0 rm -rf 2>/dev/null || true
   log "Готово."
 }

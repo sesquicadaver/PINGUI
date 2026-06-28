@@ -16,8 +16,6 @@ if not "%CMD%"=="" shift
 if /I "%CMD%"=="--help" goto help
 if /I "%CMD%"=="-h" goto help
 if /I "%CMD%"=="help" goto help
-if /I "%CMD%"=="--test" goto test
-if /I "%CMD%"=="test" goto test
 if /I "%CMD%"=="--build" goto build
 if /I "%CMD%"=="build" goto build
 if /I "%CMD%"=="--package" goto package
@@ -28,10 +26,6 @@ goto run_cli
 
 :help
 call gradlew.bat run --args="--help" -q
-exit /b %ERRORLEVEL%
-
-:test
-call gradlew.bat test %*
 exit /b %ERRORLEVEL%
 
 :build

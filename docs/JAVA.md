@@ -71,12 +71,12 @@ hosts:
 
 Файл за замовч.: `java/config/hosts.example.yaml` (робоча директорія — `java/`).
 
-## Збірка та CI
+## Збірка
 
 **Linux / macOS**
 
 ```bash
-cd java && ./gradlew test build
+cd java && ./gradlew build
 cd java && ./pingui-java.sh --package    # jpackage (.deb / .dmg)
 ```
 
@@ -84,11 +84,11 @@ cd java && ./pingui-java.sh --package    # jpackage (.deb / .dmg)
 
 ```bat
 cd java
-gradlew.bat test build
+gradlew.bat build
 pingui-java.bat --package    REM .msi
 ```
 
-GitHub Actions: `.github/workflows/java-ci.yml` — matrix **ubuntu / windows / macos**, `./gradlew test jacocoTestCoverageVerification`.
+Тести та CI — гілка **`beta`**.
 
 ## Матриця parity з MVP
 
@@ -107,4 +107,4 @@ GitHub Actions: `.github/workflows/java-ci.yml` — matrix **ubuntu / windows / 
 
 ## Майбутнє
 
-- Спільний CI matrix з Python edition
+Див. backlog у гілці **`beta`**.

@@ -21,8 +21,7 @@
 cd java
 chmod +x pingui-java.sh
 ./pingui-java.sh              # GUI
-./pingui-java.sh --test       # unit-тести
-./pingui-java.sh --build      # збірка + тести + JaCoCo gate
+./pingui-java.sh --build      # збірка
 ./pingui-java.sh --package    # jpackage (.deb / .dmg / .msi)
 ./pingui-java.sh --help
 ```
@@ -32,8 +31,7 @@ chmod +x pingui-java.sh
 ```bat
 cd java
 pingui-java.bat              REM GUI
-pingui-java.bat --test       REM unit-тести
-pingui-java.bat --build      REM збірка + тести + JaCoCo gate
+pingui-java.bat --build      REM збірка
 pingui-java.bat --package    REM jpackage (.msi)
 pingui-java.bat --help
 ```
@@ -44,7 +42,6 @@ pingui-java.bat --help
 cd java
 ./gradlew run          # Linux / macOS
 gradlew.bat run        # Windows
-./gradlew test
 ```
 
 ## CLI
@@ -100,16 +97,16 @@ io.pingui
 
 Спільний формат конфігу YAML (`hosts:`) сумісний між редакціями.
 
-## Розробка
+## Збірка
 
 ```bash
 cd java
-./gradlew test
+./gradlew build
 ./gradlew run
 ./gradlew jpackageDeb   # Linux .deb → build/dist/
 ```
 
-JUnit 5 (27+ тестів: config, probe, monitor, ui layout, CLI options).
+Unit-тести та CI — гілка **`beta`**.
 
 ## Пакування (jpackage)
 
@@ -124,7 +121,3 @@ ls build/dist/    # pingui_0.1.0_amd64.deb | .msi | .dmg залежно від �
 ```
 
 Інсталятор включає JavaFX та залежності з `installDist`.
-
-## Backlog (Java)
-
-- Спільний CI matrix з Python

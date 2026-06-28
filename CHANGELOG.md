@@ -7,6 +7,7 @@
 
 ### Changed
 
+- **Гілки:** `main` — робочий код і документація; `beta` — повний репозиторій розробки (тести, CI, specs).
 - **Розділення launcherів:** `pingui.sh` — лише Python; Java — `java/pingui-java.sh` (Unix) / `java/pingui-java.bat` (Windows).
 
 ### Added

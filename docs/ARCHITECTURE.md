@@ -64,7 +64,6 @@ PINGUI — однопроцесний desktop-додаток: **PyQt6 GUI** + **
 
 - `LightweightMonitorWorker` — mutex (`threading.Lock`) на списки хостів, enabled, last_routes.
 - `SessionStore` — лише в GUI-потоці (оновлення через Qt signals/slots).
-- Coverage: `concurrency = ["thread"]` у pytest-cov.
 
 ## Залежності між пакетами
 
@@ -76,7 +75,7 @@ ui ← config, models, monitor
 __main__ ← config, icmp, ui, logging_setup
 ```
 
-Циклічні імпорти заборонені; перевірка: `scripts/check_imports.py`.
+Циклічні імпорти заборонені (перевірка — гілка **`beta`**, `scripts/check_imports.py`).
 
 ## ADR: Scapy для ICMP
 

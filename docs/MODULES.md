@@ -230,7 +230,6 @@ Root logger: ERROR (GUI) або DEBUG (`--verbose`).
 | Скрипт | Призначення |
 |--------|-------------|
 | `pingui.sh` | Deploy / GUI / destroy |
-| `scripts/ci_venv.sh` | CI pipeline |
 | `scripts/check_caps.sh` | ICMP permission smoke |
 | `scripts/setup_caps.sh` | Manual setcap |
-| `scripts/check_imports.py` | Cycle detection |
+| `scripts/timescale_schema.sql` | TimescaleDB schema |

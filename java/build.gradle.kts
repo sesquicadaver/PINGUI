@@ -1,7 +1,6 @@
 plugins {
     java
     application
-    jacoco
     id("org.openjfx.javafxplugin") version "0.1.0"
 }
 
@@ -18,7 +17,6 @@ repositories {
     mavenCentral()
 }
 
-val junitVersion = "5.11.4"
 val appVersion = "0.1.0"
 
 dependencies {
@@ -26,10 +24,6 @@ dependencies {
     implementation("org.slf4j:slf4j-simple:2.0.16")
     implementation("net.java.dev.jna:jna:5.15.0")
     implementation("net.java.dev.jna:jna-platform:5.15.0")
-
-    testImplementation(platform("org.junit:junit-bom:$junitVersion"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 javafx {
@@ -39,57 +33,6 @@ javafx {
 
 application {
     mainClass.set("io.pingui.PinguiApplication")
-}
-
-tasks.test {
-    useJUnitPlatform()
-    testLogging {
-        events("passed", "skipped", "failed")
-    }
-    finalizedBy(tasks.jacocoTestReport)
-}
-
-tasks.jacocoTestReport {
-    dependsOn(tasks.test)
-    reports {
-        xml.required.set(true)
-        html.required.set(true)
-    }
-}
-
-tasks.jacocoTestCoverageVerification {
-    dependsOn(tasks.jacocoTestReport)
-    violationRules {
-        rule {
-            element = "BUNDLE"
-            limit {
-                counter = "INSTRUCTION"
-                minimum = "0.80".toBigDecimal()
-            }
-        }
-    }
-    classDirectories.setFrom(
-        files(
-            classDirectories.files.map {
-                fileTree(it) {
-                    exclude(
-                        "io/pingui/PinguiApplication.class",
-                        "io/pingui/probe/ProcessRouteProbe.class",
-                        "io/pingui/probe/icmp/LinuxJnaIcmpTransport*.class",
-                        "io/pingui/probe/icmp/LinuxCLibrary*.class",
-                        "io/pingui/probe/icmp/RawIcmpPermission.class",
-                        "io/pingui/ui/MainController*.class",
-                        "io/pingui/ui/GraphCanvas*.class",
-                        "io/pingui/ui/HostItem*.class",
-                    )
-                }
-            },
-        ),
-    )
-}
-
-tasks.check {
-    dependsOn(tasks.jacocoTestCoverageVerification)
 }
 
 tasks.jar {

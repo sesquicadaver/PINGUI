@@ -3,6 +3,9 @@
 Крос-платформний монітор маршрутів і RTT до 10 цілей одночасно.
 Дані зберігаються **лише в RAM** протягом сесії.
 
+**Гілка `main`** — робочий код і документація для запуску.
+**Гілка `beta`** — повний репозиторій розробки (тести, CI, специфікації, roadmap).
+
 | Редакція | Платформа | Запуск | Особливості |
 |----------|-----------|--------|-------------|
 | **Python** | Linux | `./pingui.sh` | PyQt6, Matplotlib-граф, scapy raw ICMP |
@@ -12,18 +15,18 @@
 
 ```bash
 chmod +x pingui.sh
-./pingui.sh --deploy    # перше розгортання: venv, cap_net_raw, CI
+./pingui.sh --deploy    # перше розгортання: venv, cap_net_raw
 ./pingui.sh             # GUI
 ```
 
 | Команда | Опис |
 |---------|------|
 | `./pingui.sh` | Запуск GUI (тиха підготовка venv/cap, якщо потрібно) |
-| `./pingui.sh --deploy` | Повне розгортання + ruff, mypy, pytest (coverage ≥ 80%) |
+| `./pingui.sh --deploy` | Розгортання: venv, залежності, cap_net_raw |
 | `./pingui.sh --destroy` | Видалити `.venv` та локальні кеші |
 | `./pingui.sh --help` | Довідка |
 
-Опції лише з `--deploy`: `--skip-tests`, `--force-venv`.
+Опція лише з `--deploy`: `--force-venv`.
 
 ## Java (cross-platform) — швидкий старт
 
@@ -90,17 +93,6 @@ pingui-java.bat
 | `--timescale-dsn` | PostgreSQL/Timescale DSN (або `PINGUI_TIMESCALE_DSN`) |
 | `--verbose` | Debug-лог |
 
-## CI (локально)
-
-```bash
-./pingui.sh --deploy              # повний цикл (рекомендовано)
-# або окремо:
-./scripts/ci_venv.sh
-.venv/bin/python scripts/check_imports.py
-```
-
-GitHub Actions: `.github/workflows/ci.yml` — той самий `ci_venv.sh` + import graph.
-
 ## ICMP capabilities
 
 ```bash
@@ -131,24 +123,19 @@ PINGUI/
 ├── pyproject.toml
 ├── config/hosts.example.yaml # Python config
 ├── src/pingui/               # пакет додатку
-├── tests/                    # unit, contract, integration
-├── scripts/                  # CI, cap_net_raw, import graph
+├── scripts/                  # cap_net_raw, timescale schema
 ├── systemd/                  # приклад service unit
 └── docs/
     ├── README.md             # індекс документації
     ├── USER_GUIDE.md
     ├── ARCHITECTURE.md
     ├── DEPLOYMENT.md
-    ├── DEVELOPMENT.md
-    ├── TESTING.md
     ├── MODULES.md
     ├── CONFIGURATION.md
-    ├── CONTRIBUTING.md
-    ├── MVP_SPEC.md
-    └── LIVING_SPEC.md
+    └── JAVA.md
 ```
 
-Детальний план і backlog: [ROADMAP.md](ROADMAP.md).
+Розробка, тести та CI — гілка **`beta`**.
 
 ## Документація
 
@@ -159,14 +146,8 @@ PINGUI/
 | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | Посібник користувача GUI |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Розгортання, cap_net_raw, systemd |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Архітектура та потоки даних |
-| [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Розробка та стандарти коду |
-| [docs/TESTING.md](docs/TESTING.md) | Тести та CI |
 | [docs/MODULES.md](docs/MODULES.md) | Довідник модулів |
 | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | YAML, CLI, env |
-| [docs/MVP_SPEC.md](docs/MVP_SPEC.md) | Вимоги MVP |
-| [docs/LIVING_SPEC.md](docs/LIVING_SPEC.md) | Living Spec |
 | [docs/JAVA.md](docs/JAVA.md) | Java-редакція (cross-platform) |
-| [java/README.md](java/README.md) | Запуск і розробка Java |
-| [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | Участь у розробці |
-| [ROADMAP.md](ROADMAP.md) | Фази та backlog |
+| [java/README.md](java/README.md) | Запуск Java |
 | [CHANGELOG.md](CHANGELOG.md) | Історія змін |

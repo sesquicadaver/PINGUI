@@ -21,13 +21,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
-    "pytest>=8.0",
-    "pytest-cov>=4.1",
-    "ruff>=0.4",
-    "mypy>=1.10",
-    "types-PyYAML>=6.0",
-]
 timeseries = [
     "influxdb-client>=1.40",
     "psycopg[binary]>=3.1",
@@ -38,55 +31,3 @@ pingui = "pingui.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.coverage.run]
-source = ["pingui"]
-concurrency = ["thread"]
-omit = [
-    "*/pingui/__main__.py",
-    "*/pingui/ui/app.py",
-    "*/pingui/ui/map_view.py",
-    "*/pingui/logging_setup.py",
-]
-
-[tool.coverage.report]
-fail_under = 80
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-markers = [
-    "network: tests requiring live network and raw ICMP privileges",
-]
-
-[tool.ruff]
-target-version = "py311"
-line-length = 100
-src = ["src", "tests"]
-
-[tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM"]
-
-[tool.mypy]
-python_version = "3.12"
-strict = true
-packages = ["pingui"]
-mypy_path = "src"
-
-[[tool.mypy.overrides]]
-module = [
-    "scapy.*",
-    "matplotlib.*",
-    "matplotlib",
-    "networkx.*",
-    "numpy.*",
-    "numpy",
-    "folium.*",
-    "folium",
-    "PyQt6.QtWebEngineWidgets",
-    "influxdb_client",
-    "influxdb_client.*",
-    "psycopg",
-    "psycopg.*",
-]
-ignore_missing_imports = true
-follow_imports = "skip"
