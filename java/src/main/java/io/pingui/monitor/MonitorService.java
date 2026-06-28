@@ -1,5 +1,6 @@
 package io.pingui.monitor;
 
+import io.pingui.config.PingExpertEntry;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.probe.ProbeMode;
 import io.pingui.probe.RouteProbe;
@@ -27,7 +28,14 @@ public final class MonitorService implements AutoCloseable {
         void onProbeError(String host, String message);
     }
 
+    /** Supplies per-host expert ping settings for enrichment after trace. */
+    @FunctionalInterface
+    public interface PingExpertResolver {
+        PingExpertEntry resolve(String host);
+    }
+
     private final RoutePoller poller;
+    private final ExpertPingEnricher expertEnricher = new ExpertPingEnricher();
     private final ScheduledExecutorService scheduler;
     private final ExecutorService probePool;
     private final AtomicBoolean running = new AtomicBoolean(true);
@@ -39,6 +47,7 @@ public final class MonitorService implements AutoCloseable {
     private final int maxHops;
     private final double timeoutSeconds;
     private Listener listener;
+    private volatile PingExpertResolver expertResolver;
 
     public MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds) {
         this(intervalSeconds, maxHops, timeoutSeconds, ProbeMode.AUTO);
@@ -70,6 +79,10 @@ public final class MonitorService implements AutoCloseable {
 
     public void setListener(Listener listener) {
         this.listener = listener;
+    }
+
+    public void setExpertResolver(PingExpertResolver expertResolver) {
+        this.expertResolver = expertResolver;
     }
 
     public List<String> hosts() {
@@ -189,7 +202,15 @@ public final class MonitorService implements AutoCloseable {
             }
         }
         if (outcome.snapshot() != null && isKnownHost(host)) {
-            current.onDataReceived(host, outcome.snapshot());
+            RouteSnapshot snapshot = outcome.snapshot();
+            PingExpertResolver resolver = expertResolver;
+            if (resolver != null) {
+                PingExpertEntry expert = resolver.resolve(host);
+                if (expert != null && expert.isConfigured()) {
+                    snapshot = expertEnricher.enrich(snapshot, expert, timeoutSeconds);
+                }
+            }
+            current.onDataReceived(host, snapshot);
         }
     }
 

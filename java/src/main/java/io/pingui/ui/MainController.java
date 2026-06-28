@@ -2,7 +2,12 @@ package io.pingui.ui;
 
 import io.pingui.AppOptions;
 import io.pingui.config.ConfigError;
+import io.pingui.config.HostEntry;
 import io.pingui.config.HostsConfig;
+import io.pingui.config.PingExpertEntry;
+import io.pingui.config.ProfileDocument;
+import io.pingui.config.ProfilesConfig;
+import io.pingui.config.TracingProfile;
 import io.pingui.geoip.GeoCountry;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.monitor.HostTargetStats;
@@ -12,18 +17,23 @@ import java.io.IOException;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.BorderPane;
@@ -32,20 +42,20 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
-/** Main JavaFX window: host list, optional route graph and event log. */
+/** Main JavaFX window: profiles, host list, optional route graph and event log. */
 public final class MainController {
     private static final DateTimeFormatter TIME_FMT =
             DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
-    private static final double HOST_ROW_HEIGHT = 52.0;
+    private static final double HOST_ROW_HEIGHT = 56.0;
     private static final double HOST_LIST_INSET = 4.0;
-    /** Minimum width for host row metrics (loss / min / avg / max). */
-    private static final double SIMPLE_PANEL_MIN_WIDTH = 500.0;
+    private static final double SIMPLE_PANEL_MIN_WIDTH = 540.0;
     private static final double EXTENDED_WIDTH = 1100.0;
     private static final double EXTENDED_HEIGHT = 700.0;
 
     private final AppOptions options;
-    private final SessionStore store;
-    private final MonitorService monitor;
+    private ProfileDocument profileDocument;
+    private SessionStore store;
+    private MonitorService monitor;
     private final ObservableList<HostItem> hostItems = FXCollections.observableArrayList();
     private final ListView<HostItem> hostList = new ListView<>(hostItems);
     private final TextField hostInput = new TextField();
@@ -55,37 +65,22 @@ public final class MainController {
     private final VBox graphPanel = new VBox(8);
     private final VBox leftPanel = new VBox(8);
     private final BorderPane root = new BorderPane();
+    private final ComboBox<String> profileCombo = new ComboBox<>();
+    private final SimpleBooleanProperty expertMode = new SimpleBooleanProperty(false);
     private UiViewMode viewMode = UiViewMode.SIMPLE;
     private RadioButton extendedModeButton;
     private boolean updatingList;
+    private boolean switchingProfile;
 
-    public MainController(AppOptions options, List<String> initialHosts) {
+    public MainController(AppOptions options, ProfileDocument document) {
         this.options = options;
+        this.profileDocument = document;
+        applyCliOverridesToActiveProfile();
         GeoCountry.configure(options.geoipEnabled(), options.geoipHintsPath());
-        this.store = new SessionStore(initialHosts);
-        this.monitor =
-                new MonitorService(
-                        options.intervalSeconds(), options.maxHops(), options.timeoutSeconds(), options.probeMode());
-        for (String host : initialHosts) {
-            hostItems.add(new HostItem(host, false));
-            monitor.addHost(host, false);
-        }
-        monitor.setListener(new MonitorService.Listener() {
-            @Override
-            public void onDataReceived(String host, RouteSnapshot snapshot) {
-                Platform.runLater(() -> handleData(host, snapshot));
-            }
-
-            @Override
-            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {
-                Platform.runLater(() -> handleRouteChanged(host, oldIps, newIps));
-            }
-
-            @Override
-            public void onProbeError(String host, String message) {
-                Platform.runLater(() -> appendLog("Помилка [" + host + "]: " + message));
-            }
-        });
+        TracingProfile active = profileDocument.active();
+        this.store = SessionStore.fromEntries(active.hosts());
+        this.monitor = createMonitor(active);
+        rebuildHostItems(active.hosts());
     }
 
     public Scene createScene() {
@@ -101,7 +96,7 @@ public final class MainController {
         addButton.setOnAction(e -> onAddHost());
         editButton.setOnAction(e -> onEditHost());
         removeButton.setOnAction(e -> onRemoveHost());
-        saveButton.setOnAction(e -> onSaveHosts());
+        saveButton.setOnAction(e -> onSaveConfig());
         hostInput.setOnAction(e -> onAddHost());
 
         RadioButton simpleMode = new RadioButton("Простий");
@@ -112,9 +107,30 @@ public final class MainController {
         simpleMode.setSelected(true);
         modeGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> onViewModeSelected(newToggle));
 
-        HBox modeBar = new HBox(12, new Label("Режим:"), simpleMode, extendedModeButton);
+        CheckBox expertCheck = new CheckBox("Експерт");
+        expertCheck.selectedProperty().bindBidirectional(expertMode);
+        expertMode.addListener((obs, was, on) -> hostList.refresh());
+
+        Button newProfileButton = new Button("Новий профіль");
+        Button deleteProfileButton = new Button("Видалити профіль");
+        newProfileButton.setOnAction(e -> onNewProfile());
+        deleteProfileButton.setOnAction(e -> onDeleteProfile());
+        refreshProfileCombo();
+        profileCombo.setOnAction(e -> onProfileSelected());
+
+        HBox profileBar =
+                new HBox(
+                        8,
+                        new Label("Профіль:"),
+                        profileCombo,
+                        newProfileButton,
+                        deleteProfileButton);
+        profileCombo.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(profileCombo, Priority.ALWAYS);
+
+        HBox modeBar = new HBox(12, new Label("Режим:"), simpleMode, extendedModeButton, expertCheck);
         HBox buttons = new HBox(8, addButton, editButton, removeButton, saveButton);
-        leftPanel.getChildren().addAll(modeBar, hostList, hostInput, buttons, statusLabel, logArea);
+        leftPanel.getChildren().addAll(profileBar, modeBar, hostList, hostInput, buttons, statusLabel, logArea);
         VBox.setVgrow(hostList, Priority.NEVER);
         VBox.setVgrow(logArea, Priority.ALWAYS);
         leftPanel.setPadding(new Insets(8));
@@ -148,7 +164,6 @@ public final class MainController {
         return new Scene(root);
     }
 
-    /** Call after {@code Stage.show()} so graph canvas has non-zero layout bounds. */
     public void onSceneShown() {
         Platform.runLater(() -> {
             HostItem selected = hostList.getSelectionModel().getSelectedItem();
@@ -161,6 +176,171 @@ public final class MainController {
 
     public void shutdown() {
         monitor.close();
+    }
+
+    private MonitorService createMonitor(TracingProfile profile) {
+        MonitorService service =
+                new MonitorService(
+                        profile.intervalSeconds(),
+                        profile.maxHops(),
+                        profile.timeoutSeconds(),
+                        profile.probeMode());
+        service.setExpertResolver(store::getPingExpert);
+        service.setListener(
+                new MonitorService.Listener() {
+                    @Override
+                    public void onDataReceived(String host, RouteSnapshot snapshot) {
+                        Platform.runLater(() -> handleData(host, snapshot));
+                    }
+
+                    @Override
+                    public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {
+                        Platform.runLater(() -> handleRouteChanged(host, oldIps, newIps));
+                    }
+
+                    @Override
+                    public void onProbeError(String host, String message) {
+                        Platform.runLater(() -> appendLog("Помилка [" + host + "]: " + message));
+                    }
+                });
+        for (HostEntry entry : profile.hosts()) {
+            if (!HostViewRules.matches(entry.address())) {
+                service.addHost(entry.address(), entry.enabled());
+            }
+        }
+        return service;
+    }
+
+    private void applyCliOverridesToActiveProfile() {
+        TracingProfile active = profileDocument.active();
+        profileDocument.putProfile(
+                profileDocument.activeProfile(),
+                new TracingProfile(
+                        options.intervalSeconds(),
+                        options.maxHops(),
+                        options.timeoutSeconds(),
+                        options.probeMode(),
+                        active.hosts()));
+    }
+
+    private void rebuildHostItems(List<HostEntry> entries) {
+        hostItems.clear();
+        for (HostEntry entry : entries) {
+            HostItem item = new HostItem(entry.address(), entry.enabled());
+            item.setExpertConfigured(entry.pingExpert().isConfigured());
+            hostItems.add(item);
+        }
+    }
+
+    private void refreshProfileCombo() {
+        switchingProfile = true;
+        String active = profileDocument.activeProfile();
+        profileCombo.setItems(FXCollections.observableArrayList(profileDocument.profiles().keySet()));
+        profileCombo.getSelectionModel().select(active);
+        switchingProfile = false;
+    }
+
+    private void syncActiveProfileFromSession() {
+        TracingProfile current = profileDocument.active();
+        List<HostEntry> hosts = HostViewRules.entriesForConfig(store.toHostEntries());
+        profileDocument.putProfile(
+                profileDocument.activeProfile(),
+                new TracingProfile(
+                        current.intervalSeconds(),
+                        current.maxHops(),
+                        current.timeoutSeconds(),
+                        current.probeMode(),
+                        hosts));
+    }
+
+    private void onProfileSelected() {
+        if (switchingProfile) {
+            return;
+        }
+        String selected = profileCombo.getSelectionModel().getSelectedItem();
+        if (selected == null || selected.equals(profileDocument.activeProfile())) {
+            return;
+        }
+        try {
+            syncActiveProfileFromSession();
+            profileDocument.setActiveProfile(selected);
+            reloadActiveProfile();
+            appendLog("Завантажено профіль: " + selected);
+        } catch (ConfigError ex) {
+            appendLog(ex.getMessage());
+            refreshProfileCombo();
+        }
+    }
+
+    private void onNewProfile() {
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Новий профіль");
+        dialog.setHeaderText("Ім'я профілю трасування");
+        dialog.setContentText("Назва:");
+        Optional<String> result = dialog.showAndWait();
+        if (result.isEmpty() || result.get().isBlank()) {
+            return;
+        }
+        String name = result.get().strip();
+        if (profileDocument.hasProfile(name)) {
+            appendLog("Профіль уже існує: " + name);
+            return;
+        }
+        try {
+            syncActiveProfileFromSession();
+            profileDocument.putProfile(name, TracingProfile.defaults(List.of()));
+            profileDocument.setActiveProfile(name);
+            reloadActiveProfile();
+            refreshProfileCombo();
+            appendLog("Створено профіль: " + name);
+        } catch (ConfigError ex) {
+            appendLog(ex.getMessage());
+        }
+    }
+
+    private void onDeleteProfile() {
+        String active = profileDocument.activeProfile();
+        try {
+            syncActiveProfileFromSession();
+            profileDocument.removeProfile(active);
+            reloadActiveProfile();
+            refreshProfileCombo();
+            appendLog("Видалено профіль: " + active);
+        } catch (ConfigError ex) {
+            appendLog(ex.getMessage());
+        }
+    }
+
+    private void reloadActiveProfile() {
+        TracingProfile profile = profileDocument.active();
+        monitor.close();
+        store = SessionStore.fromEntries(profile.hosts());
+        monitor = createMonitor(profile);
+        rebuildHostItems(profile.hosts());
+        hostList.getSelectionModel().clearSelection();
+        if (!hostItems.isEmpty()) {
+            hostList.getSelectionModel().select(0);
+        }
+        syncControls();
+        redrawRouteIfExtended();
+        fitWindowToContent();
+    }
+
+    private void onOpenExpertPing(HostItem item, Void ignored) {
+        PingExpertEntry current = store.getPingExpert(item.getHost());
+        Optional<PingExpertEntry> updated = PingExpertDialog.show(item.getHost(), current);
+        if (updated.isEmpty()) {
+            return;
+        }
+        try {
+            store.setPingExpert(item.getHost(), updated.get());
+            item.setExpertConfigured(updated.get().isConfigured());
+            appendLog(
+                    "Expert ping [" + item.getHost() + "]: "
+                            + (updated.get().isConfigured() ? updated.get().args() : "скинуто"));
+        } catch (ConfigError ex) {
+            appendLog(ex.getMessage());
+        }
     }
 
     private void onViewModeSelected(Toggle toggle) {
@@ -216,7 +396,8 @@ public final class MainController {
         hostList.setMaxHeight(listHeightForRows(HostsConfig.MAX_HOSTS));
         hostItems.addListener((ListChangeListener.Change<? extends HostItem> change) -> syncHostListHeight());
         syncHostListHeight();
-        hostList.setCellFactory(list -> new HostListCell(this::onToggleEnabled));
+        hostList.setCellFactory(
+                list -> new HostListCell(this::onToggleEnabled, expertMode, this::onOpenExpertPing));
     }
 
     private void syncHostListHeight() {
@@ -319,12 +500,13 @@ public final class MainController {
         }
     }
 
-    private void onSaveHosts() {
+    private void onSaveConfig() {
         try {
-            HostsConfig.save(options.configPath(), HostViewRules.hostsForConfig(store.hosts()));
-            appendLog("Список цілей збережено: " + options.configPath());
+            syncActiveProfileFromSession();
+            ProfilesConfig.save(options.configPath(), profileDocument);
+            appendLog("Конфіг збережено (усі профілі): " + options.configPath());
         } catch (IOException | ConfigError ex) {
-            appendLog("Не вдалося зберегти список: " + ex.getMessage());
+            appendLog("Не вдалося зберегти конфіг: " + ex.getMessage());
         }
     }
 
@@ -377,7 +559,6 @@ public final class MainController {
         return null;
     }
 
-    /** In Simple mode, switch to Extended and show the static canvas message. */
     private boolean revealEasterEggForHost(String host) {
         String message = HostViewRules.messageFor(host);
         if (message == null) {

@@ -65,8 +65,10 @@ gradlew.bat run        # Windows
 
 Функціональність вирівняна з Python MVP:
 
+- **Профілі трасування**: кілька named-профілів у одному YAML (`active_profile` + `profiles`), перемикання в UI, «Новий / Видалити / Зберегти»
 - Список до **10 цілей**, чекбокс = активне трасування
-- **Додати / Змінити / Видалити / Зберегти** → YAML
+- **Додати / Змінити / Видалити / Зберегти** → YAML (усі профілі + expert ping)
+- **Режим «Експерт»**: кнопка **Exten.** біля кожного хоста → діалог параметрів `ping(8)` (iputils, див. `pingMan.txt`); опції `-c/-w/-W/-i` та інші ліміти часу/кількості виключені; «Застосувати до всього ланцюжка»
 - **Режим «Простий»** (за замовчуванням): компактне вікно під список цілей; **loss %**, **min/avg/max RTT**; кольоровий фон рядка
 - **Режим «Розширений»**: + граф маршруту + лог змін маршруту
 - Неактивні (без чекбокса) цілі — лише ім’я, без метрик
@@ -77,11 +79,11 @@ gradlew.bat run        # Windows
 
 ```
 io.pingui
-├── config/          HostsConfig (YAML)
+├── config/          ProfilesConfig, HostsConfig (legacy), PingExpertEntry
 ├── model/           HopNode, RouteSnapshot, HostSessionData
-├── probe/           RouteProbeFactory → ProcessRouteProbe / RawIcmpRouteProbe (JNA)
-├── monitor/         SessionStore, RoutePoller, MonitorService
-└── ui/              MainController (JavaFX)
+├── probe/           RouteProbeFactory, PingOptionCatalog, ProcessExpertPing
+├── monitor/         SessionStore, RoutePoller, ExpertPingEnricher, MonitorService
+└── ui/              MainController, PingExpertDialog (JavaFX)
 ```
 
 Деталі: [docs/JAVA.md](../docs/JAVA.md).
@@ -96,7 +98,28 @@ io.pingui
 | Worker | QThread | ScheduledExecutorService |
 | Запуск | `./pingui.sh` (Linux) | `java/pingui-java.sh` або `java/pingui-java.bat` (Windows) |
 
-Спільний формат конфігу YAML (`hosts:`) сумісний між редакціями.
+Спільний формат конфігу YAML: legacy `hosts:` або v2 `profiles:` (Java зберігає v2). Expert ping — лише Java UI.
+
+### Формат профілів (v2)
+
+```yaml
+active_profile: office
+profiles:
+  office:
+    interval: 1.0
+    max_hops: 20
+    timeout: 0.5
+    probe: auto
+    hosts:
+      - address: "8.8.8.8"
+        enabled: true
+        ping_expert:
+          chain: false
+          args: ["-4", "-s", "128"]
+  datacenter:
+    hosts:
+      - "10.0.0.1"
+```
 
 ## Збірка
 
@@ -107,7 +130,13 @@ cd java
 ./gradlew jpackageDeb   # Linux .deb → build/dist/
 ```
 
-Unit-тести та CI — гілка **`beta`**.
+Unit-тести (JUnit 5) для `ProfilesConfig`, `PingExpertValidator`, `ProcessExpertPing`:
+
+```bash
+cd java && ./gradlew test
+```
+
+Повний CI — гілка **`beta`**.
 
 ## Пакування (jpackage)
 

@@ -2,6 +2,8 @@ package io.pingui.monitor;
 
 import io.pingui.config.ConfigError;
 import io.pingui.config.HostsConfig;
+import io.pingui.config.HostEntry;
+import io.pingui.config.PingExpertEntry;
 import io.pingui.model.Models;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.HostSessionData;
@@ -25,6 +27,12 @@ public final class SessionStore {
         }
     }
 
+    public static SessionStore fromEntries(List<HostEntry> entries) {
+        SessionStore store = new SessionStore(List.of());
+        store.loadHostEntries(entries);
+        return store;
+    }
+
     public List<String> hosts() {
         return List.copyOf(data.keySet());
     }
@@ -38,12 +46,17 @@ public final class SessionStore {
     }
 
     public String addHost(String host, boolean enabled) {
+        return addHost(host, enabled, PingExpertEntry.empty());
+    }
+
+    public String addHost(String host, boolean enabled, PingExpertEntry pingExpert) {
         String normalized = HostsConfig.validateSessionHost(host, hosts());
         if (data.containsKey(normalized)) {
             throw new ConfigError("Host already in list: " + normalized);
         }
         HostSessionData session = new HostSessionData();
         session.setEnabled(enabled);
+        session.setPingExpert(pingExpert);
         data.put(normalized, session);
         return normalized;
     }
@@ -57,6 +70,33 @@ public final class SessionStore {
 
     public void setEnabled(String host, boolean enabled) {
         get(host).setEnabled(enabled);
+    }
+
+    public PingExpertEntry getPingExpert(String host) {
+        return get(host).getPingExpert();
+    }
+
+    public void setPingExpert(String host, PingExpertEntry expert) {
+        get(host).setPingExpert(expert);
+    }
+
+    public void loadHostEntries(List<HostEntry> entries) {
+        data.clear();
+        for (HostEntry entry : entries) {
+            HostSessionData session = new HostSessionData();
+            session.setEnabled(entry.enabled());
+            session.setPingExpert(entry.pingExpert());
+            data.put(entry.address(), session);
+        }
+    }
+
+    public List<HostEntry> toHostEntries() {
+        List<HostEntry> out = new ArrayList<>();
+        for (Map.Entry<String, HostSessionData> entry : data.entrySet()) {
+            HostSessionData session = entry.getValue();
+            out.add(new HostEntry(entry.getKey(), session.isEnabled(), session.getPingExpert()));
+        }
+        return List.copyOf(out);
     }
 
     public String renameHost(String oldHost, String newHost) {

@@ -1,11 +1,18 @@
-# Список цілей для моніторингу (0–10 хостів, IPv4 або DNS)
-hosts:
-  - "8.8.8.8"
-  - "1.1.1.1"
-  - "google.com"
-  - "cloudflare.com"
-  - "github.com"
-  - "ukr.net"
-  - "kernel.org"
-  - "debian.org"
-  - "ubuntu.com"
+# Профілі трасування (v2). Legacy `hosts:` list still loads as profile "default".
+active_profile: default
+profiles:
+  default:
+    interval: 1.0
+    max_hops: 20
+    timeout: 0.5
+    probe: auto
+    hosts:
+      - address: "8.8.8.8"
+      - address: "1.1.1.1"
+      - address: "google.com"
+      - address: "cloudflare.com"
+      - address: "github.com"
+      - address: "ukr.net"
+      - address: "kernel.org"
+      - address: "debian.org"
+      - address: "ubuntu.com"
