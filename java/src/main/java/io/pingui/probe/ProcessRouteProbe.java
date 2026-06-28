@@ -18,13 +18,80 @@ import java.util.regex.Pattern;
  * Uses the OS traceroute/tracert binary for cross-platform tracing without raw ICMP sockets.
  */
 public final class ProcessRouteProbe implements RouteProbe {
+    /** BSD/macOS and classic Linux traceroute; GNU inetutils uses different flags (no {@code -n}). */
+    enum TracerouteFlavor {
+        GNU_INETUTILS,
+        BSD
+    }
+
     private static final Pattern UNIX_LINE =
             Pattern.compile("^\\s*(\\d+)\\s+([^\\s]+)(?:\\s+([0-9.]+)\\s*ms)?.*");
     private static final Pattern WINDOWS_LINE =
             Pattern.compile("^\\s*(\\d+)\\s+(?:\\d+\\s*ms\\s+)*([*]|\\d+\\.\\d+\\.\\d+\\.\\d+)\\s*.*");
     private static final Pattern WINDOWS_RTT_MS = Pattern.compile("(\\d+(?:\\.\\d+)?)\\s*ms");
 
+    private static volatile TracerouteFlavor cachedFlavor;
+
     private final boolean windows = System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win");
+    private final TracerouteFlavor flavor;
+
+    ProcessRouteProbe() {
+        this(resolveFlavor());
+    }
+
+    ProcessRouteProbe(TracerouteFlavor flavor) {
+        this.flavor = flavor;
+    }
+
+    static TracerouteFlavor resolveFlavor() {
+        TracerouteFlavor local = cachedFlavor;
+        if (local != null) {
+            return local;
+        }
+        synchronized (ProcessRouteProbe.class) {
+            if (cachedFlavor == null) {
+                cachedFlavor = detectFlavor(System.getProperty("os.name", ""), readTracerouteVersion());
+            }
+            return cachedFlavor;
+        }
+    }
+
+    static TracerouteFlavor detectFlavor(String osName, String versionOutput) {
+        String os = osName.toLowerCase(Locale.ROOT);
+        if (os.contains("win") || os.contains("mac")) {
+            return TracerouteFlavor.BSD;
+        }
+        if (versionOutput != null && versionOutput.contains("GNU inetutils")) {
+            return TracerouteFlavor.GNU_INETUTILS;
+        }
+        return TracerouteFlavor.BSD;
+    }
+
+    private static String readTracerouteVersion() {
+        ProcessBuilder builder = new ProcessBuilder("traceroute", "--version");
+        builder.redirectErrorStream(true);
+        try {
+            Process process = builder.start();
+            if (!process.waitFor(3, TimeUnit.SECONDS)) {
+                process.destroyForcibly();
+                return "";
+            }
+            try (BufferedReader reader =
+                    new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                StringBuilder output = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append('\n');
+                }
+                return output.toString();
+            }
+        } catch (IOException | InterruptedException ex) {
+            if (ex instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            return "";
+        }
+    }
 
     @Override
     public RouteSnapshot trace(String targetHost, int maxHops, double timeoutSeconds) throws IOException {
@@ -72,7 +139,28 @@ public final class ProcessRouteProbe implements RouteProbe {
             return List.of("tracert", "-h", String.valueOf(maxHops), "-w", String.valueOf(waitMs), targetHost);
         }
         int waitSec = Math.max(1, (int) Math.ceil(timeoutSeconds));
-        return List.of("traceroute", "-n", "-w", String.valueOf(waitSec), "-m", String.valueOf(maxHops), "-q", "1", targetHost);
+        if (flavor == TracerouteFlavor.GNU_INETUTILS) {
+            // GNU inetutils: no -n (DNS off by default); -n triggers exit 64 (EX_USAGE).
+            return List.of(
+                    "traceroute",
+                    "-m",
+                    String.valueOf(maxHops),
+                    "-w",
+                    String.valueOf(waitSec),
+                    "-q",
+                    "1",
+                    targetHost);
+        }
+        return List.of(
+                "traceroute",
+                "-n",
+                "-w",
+                String.valueOf(waitSec),
+                "-m",
+                String.valueOf(maxHops),
+                "-q",
+                "1",
+                targetHost);
     }
 
     static List<HopNode> parseUnix(List<String> lines) {

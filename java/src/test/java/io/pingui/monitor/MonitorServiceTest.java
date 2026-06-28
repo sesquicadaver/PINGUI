@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;
+import io.pingui.probe.RouteProbe;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -79,6 +80,35 @@ class MonitorServiceTest {
         assertEquals(List.of("b"), service.hosts());
         service.removeHost("b");
         assertEquals(List.of(), service.hosts());
+        service.close();
+    }
+
+    @Test
+    void emitsSnapshotsForMultipleEnabledHosts() throws Exception {
+        RouteSnapshot snapA =
+                new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
+        RouteSnapshot snapB =
+                new RouteSnapshot("1.1.1.1", "1.1.1.1", List.of(new HopNode(1, "10.0.0.2", 6.0, false)));
+        CountDownLatch latch = new CountDownLatch(2);
+        RouteProbe probe =
+                (targetHost, maxHops, timeoutSeconds) ->
+                        targetHost.equals("8.8.8.8") ? snapA : snapB;
+        MonitorService service = new MonitorService(0.05, 20, 0.5, probe);
+        service.setListener(new MonitorService.Listener() {
+            @Override
+            public void onDataReceived(String host, RouteSnapshot snap) {
+                latch.countDown();
+            }
+
+            @Override
+            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
+
+            @Override
+            public void onProbeError(String host, String message) {}
+        });
+        service.addHost("8.8.8.8", true);
+        service.addHost("1.1.1.1", true);
+        assertTrue(latch.await(3, TimeUnit.SECONDS));
         service.close();
     }
 }

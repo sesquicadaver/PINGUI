@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.Region;
@@ -16,8 +17,8 @@ import javafx.scene.text.Font;
 
 /** JavaFX route graph: vertical layout, inactive column left, active right. */
 public final class GraphCanvas extends Region {
-    private static final double TEXT_PAD = 8.0;
-    private static final Font LABEL_FONT = Font.font("Monospace", 11);
+    private static final double TEXT_PAD = 6.0;
+    private static final Font LABEL_FONT = Font.font("Monospace", 10);
 
     private final Canvas canvas = new Canvas();
     private List<HopNode> currentRoute = List.of();
@@ -27,8 +28,11 @@ public final class GraphCanvas extends Region {
 
     public GraphCanvas() {
         getChildren().add(canvas);
-        widthProperty().addListener((obs, oldVal, newVal) -> redraw());
-        heightProperty().addListener((obs, oldVal, newVal) -> redraw());
+        sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                Platform.runLater(this::redraw);
+            }
+        });
     }
 
     public void renderRoute(
@@ -48,6 +52,18 @@ public final class GraphCanvas extends Region {
             Function<String, Double> avgPingFn,
             List<HopNode> previousRoute) {
         renderRoute(route, avgPingFn, previousRoute, hop -> null);
+    }
+
+    @Override
+    protected void layoutChildren() {
+        super.layoutChildren();
+        double width = getWidth();
+        double height = getHeight();
+        canvas.setWidth(width);
+        canvas.setHeight(height);
+        if (width > 0 && height > 0) {
+            redraw();
+        }
     }
 
     private void redraw() {
@@ -110,9 +126,9 @@ public final class GraphCanvas extends Region {
             double width,
             double height) {
         double x1 = src.x() * width;
-        double y1 = (src.y() + src.height() / 2) * height;
+        double y1 = (src.y() - src.height() / 2) * height;
         double x2 = dst.x() * width;
-        double y2 = (dst.y() - dst.height() / 2) * height;
+        double y2 = (dst.y() + dst.height() / 2) * height;
         gc.setStroke(Color.web(inactive ? "#c8c8c8" : "#666666"));
         gc.setLineWidth(inactive ? 1.0 : 1.2);
         if (inactive) {

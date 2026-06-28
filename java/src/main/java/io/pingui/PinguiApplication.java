@@ -25,6 +25,7 @@ public final class PinguiApplication extends Application {
         stage.setTitle("PINGUI — Сесійний монітор маршрутів (Java)");
         stage.setScene(scene);
         stage.show();
+        controller.onSceneShown();
     }
 
     @Override

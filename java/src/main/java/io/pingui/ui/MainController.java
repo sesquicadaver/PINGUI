@@ -120,6 +120,11 @@ public final class MainController {
         return new Scene(root, 1100, 700);
     }
 
+    /** Call after {@code Stage.show()} so graph canvas has non-zero layout bounds. */
+    public void onSceneShown() {
+        Platform.runLater(this::redrawRoute);
+    }
+
     public void shutdown() {
         monitor.close();
     }

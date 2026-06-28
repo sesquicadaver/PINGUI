@@ -47,4 +47,28 @@ class RouteGraphLayoutTest {
         assertTrue(ys.get(0) > ys.get(1));
         assertTrue(ys.get(1) > ys.get(2));
     }
+
+    @Test
+    void longChainNodesDoNotOverlap() {
+        List<HopNode> route = new java.util.ArrayList<>();
+        for (int hop = 1; hop <= 18; hop++) {
+            route.add(new HopNode(hop, "10.0.0." + hop, 12.0, false));
+        }
+        GraphScene scene = RouteGraphLayout.buildScene(route, List.of(), ip -> 12.0, h -> null);
+        List<GraphNode> active =
+                scene.nodes().stream().filter(n -> n.id().startsWith("act_")).toList();
+        assertTrue(active.size() > 10);
+        assertTrue(RouteGraphLayout.chainNodesDoNotOverlap(active));
+    }
+
+    @Test
+    void hopBoxesUseUniformColumnWidth() {
+        List<HopNode> route =
+                List.of(new HopNode(1, "8.8.8.8", 5.0, false), new HopNode(2, "1.1.1.1", 5.0, false));
+        GraphScene scene = RouteGraphLayout.buildScene(route, List.of(), ip -> 5.0);
+        List<GraphNode> active =
+                scene.nodes().stream().filter(n -> n.id().startsWith("act_")).toList();
+        double expected = RouteGraphLayout.columnLayouts(false).active().width();
+        assertTrue(RouteGraphLayout.chainUsesUniformWidth(active, expected));
+    }
 }

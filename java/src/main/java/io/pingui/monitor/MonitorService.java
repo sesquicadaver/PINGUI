@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -15,6 +17,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Background polling of enabled hosts (cross-platform, no Qt). */
 public final class MonitorService implements AutoCloseable {
+    private static final int MAX_PARALLEL_PROBES = 4;
+
     public interface Listener {
         void onDataReceived(String host, RouteSnapshot snapshot);
 
@@ -24,7 +28,8 @@ public final class MonitorService implements AutoCloseable {
     }
 
     private final RoutePoller poller;
-    private final ScheduledExecutorService executor;
+    private final ScheduledExecutorService scheduler;
+    private final ExecutorService probePool;
     private final AtomicBoolean running = new AtomicBoolean(true);
     private final Object lock = new Object();
     private final List<String> hosts = new ArrayList<>();
@@ -48,12 +53,19 @@ public final class MonitorService implements AutoCloseable {
         this.maxHops = maxHops;
         this.timeoutSeconds = timeoutSeconds;
         this.poller = new RoutePoller(probe);
-        this.executor = Executors.newSingleThreadScheduledExecutor(r -> {
+        this.probePool = Executors.newFixedThreadPool(
+                MAX_PARALLEL_PROBES,
+                r -> {
+                    Thread thread = new Thread(r, "pingui-probe");
+                    thread.setDaemon(true);
+                    return thread;
+                });
+        this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "pingui-monitor");
             thread.setDaemon(true);
             return thread;
         });
-        executor.scheduleWithFixedDelay(this::cycle, 0, (long) (intervalSeconds * 1000), TimeUnit.MILLISECONDS);
+        scheduler.scheduleWithFixedDelay(this::cycle, 0, (long) (intervalSeconds * 1000), TimeUnit.MILLISECONDS);
     }
 
     public void setListener(Listener listener) {
@@ -131,41 +143,59 @@ public final class MonitorService implements AutoCloseable {
         synchronized (lock) {
             active = hosts.stream().filter(h -> Boolean.TRUE.equals(enabled.get(h))).toList();
         }
-        for (String host : active) {
-            if (!running.get()) {
-                break;
+        if (active.isEmpty()) {
+            return;
+        }
+        try {
+            List<CompletableFuture<Void>> probes = new ArrayList<>();
+            for (String host : active) {
+                if (!running.get()) {
+                    break;
+                }
+                probes.add(CompletableFuture.runAsync(() -> pollHost(host), probePool));
             }
-            List<String> previousIps;
-            synchronized (lock) {
-                previousIps = List.copyOf(lastRoutes.getOrDefault(host, List.of()));
-            }
-            HostPollOutcome outcome = poller.pollHostRoute(host, previousIps, maxHops, timeoutSeconds);
-            Listener current = listener;
-            if (current == null) {
-                continue;
-            }
-            if (outcome.error() != null) {
-                current.onProbeError(host, outcome.error());
-                continue;
-            }
-            if (outcome.routeChanged()) {
-                current.onRouteChanged(host, outcome.oldIps(), outcome.newIps());
-            }
-            synchronized (lock) {
-                lastRoutes.put(host, outcome.currentIps());
-            }
-            if (outcome.snapshot() != null) {
-                current.onDataReceived(host, outcome.snapshot());
-            }
+            CompletableFuture.allOf(probes.toArray(CompletableFuture[]::new)).join();
+        } catch (RuntimeException ex) {
+            // Keep scheduler alive if a probe task fails unexpectedly.
+        }
+    }
+
+    private void pollHost(String host) {
+        if (!running.get()) {
+            return;
+        }
+        List<String> previousIps;
+        synchronized (lock) {
+            previousIps = List.copyOf(lastRoutes.getOrDefault(host, List.of()));
+        }
+        HostPollOutcome outcome = poller.pollHostRoute(host, previousIps, maxHops, timeoutSeconds);
+        Listener current = listener;
+        if (current == null) {
+            return;
+        }
+        if (outcome.error() != null) {
+            current.onProbeError(host, outcome.error());
+            return;
+        }
+        if (outcome.routeChanged()) {
+            current.onRouteChanged(host, outcome.oldIps(), outcome.newIps());
+        }
+        synchronized (lock) {
+            lastRoutes.put(host, outcome.currentIps());
+        }
+        if (outcome.snapshot() != null) {
+            current.onDataReceived(host, outcome.snapshot());
         }
     }
 
     @Override
     public void close() {
         running.set(false);
-        executor.shutdownNow();
+        scheduler.shutdownNow();
+        probePool.shutdownNow();
         try {
-            executor.awaitTermination(5, TimeUnit.SECONDS);
+            scheduler.awaitTermination(5, TimeUnit.SECONDS);
+            probePool.awaitTermination(5, TimeUnit.SECONDS);
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
         }

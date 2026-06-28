@@ -34,6 +34,17 @@ class ProcessRouteProbeParserTest {
     }
 
     @Test
+    void parseGnuInetutilsLines() {
+        List<String> lines =
+                List.of("traceroute to 8.8.8.8 (8.8.8.8), 5 hops max", "  1   10.6.0.1  31.477ms ", "  2   *");
+        List<HopNode> nodes = ProcessRouteProbe.parseUnix(lines);
+        assertEquals(2, nodes.size());
+        assertEquals("10.6.0.1", nodes.get(0).ip());
+        assertEquals(31.477, nodes.get(0).pingMs());
+        assertEquals(Models.TIMEOUT_IP, nodes.get(1).ip());
+    }
+
+    @Test
     void parseWindowsLines() {
         List<String> lines =
                 List.of(
