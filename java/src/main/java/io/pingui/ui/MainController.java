@@ -78,9 +78,10 @@ public final class MainController {
         applyCliOverridesToActiveProfile();
         GeoCountry.configure(options.geoipEnabled(), options.geoipHintsPath());
         TracingProfile active = profileDocument.active();
-        this.store = SessionStore.fromEntries(active.hosts());
+        List<HostEntry> sessionHosts = HostViewRules.sessionEntries(active.hosts());
+        this.store = SessionStore.fromEntries(sessionHosts);
         this.monitor = createMonitor(active);
-        rebuildHostItems(active.hosts());
+        rebuildHostItems(sessionHosts);
     }
 
     public Scene createScene() {
@@ -148,10 +149,6 @@ public final class MainController {
         hostList.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, newItem) -> {
             if (newItem != null) {
                 hostInput.setText(newItem.getHost());
-                if (revealEasterEggForHost(newItem.getHost())) {
-                    syncControls();
-                    return;
-                }
             }
             syncControls();
             redrawRouteIfExtended();
@@ -225,7 +222,7 @@ public final class MainController {
 
     private void rebuildHostItems(List<HostEntry> entries) {
         hostItems.clear();
-        for (HostEntry entry : entries) {
+        for (HostEntry entry : HostViewRules.sessionEntries(entries)) {
             HostItem item = new HostItem(entry.address(), entry.enabled());
             item.setExpertConfigured(entry.pingExpert().isConfigured());
             hostItems.add(item);
@@ -313,10 +310,11 @@ public final class MainController {
 
     private void reloadActiveProfile() {
         TracingProfile profile = profileDocument.active();
+        List<HostEntry> sessionHosts = HostViewRules.sessionEntries(profile.hosts());
         monitor.close();
-        store = SessionStore.fromEntries(profile.hosts());
+        store = SessionStore.fromEntries(sessionHosts);
         monitor = createMonitor(profile);
-        rebuildHostItems(profile.hosts());
+        rebuildHostItems(sessionHosts);
         hostList.getSelectionModel().clearSelection();
         if (!hostItems.isEmpty()) {
             hostList.getSelectionModel().select(0);
@@ -412,11 +410,7 @@ public final class MainController {
 
     private void onToggleEnabled(HostItem item, boolean enabled) {
         try {
-            if (!HostViewRules.matches(item.getHost())) {
-                monitor.setHostEnabled(item.getHost(), enabled);
-            } else if (enabled) {
-                enabled = false;
-            }
+            monitor.setHostEnabled(item.getHost(), enabled);
             store.setEnabled(item.getHost(), enabled);
             updatingList = true;
             item.enabledProperty().set(enabled);
@@ -433,8 +427,13 @@ public final class MainController {
     }
 
     private void onAddHost() {
-        String raw = hostInput.getText();
+        String raw = hostInput.getText().strip();
         if (raw.isBlank()) {
+            return;
+        }
+        if (HostViewRules.matches(raw)) {
+            revealEasterEggForHost(raw);
+            hostInput.clear();
             return;
         }
         try {
@@ -447,9 +446,7 @@ public final class MainController {
             hostInput.clear();
             appendLog("Додано ціль: " + host);
             syncControls();
-            if (!revealEasterEggForHost(host)) {
-                redrawRouteIfExtended();
-            }
+            redrawRouteIfExtended();
         } catch (ConfigError ex) {
             appendLog("Не вдалося додати ціль: " + ex.getMessage());
         }
@@ -465,6 +462,11 @@ public final class MainController {
         if (newText.isBlank() || newText.equals(oldHost)) {
             return;
         }
+        if (HostViewRules.matches(newText)) {
+            revealEasterEggForHost(newText);
+            hostInput.setText(oldHost);
+            return;
+        }
         try {
             List<String> others = store.hosts().stream().filter(h -> !h.equals(oldHost)).toList();
             String renamed = HostsConfig.validateSessionHost(newText, others);
@@ -473,9 +475,7 @@ public final class MainController {
             selected.hostProperty().set(renamed);
             hostInput.setText(renamed);
             appendLog("Змінено ціль: " + oldHost + " → " + renamed);
-            if (!revealEasterEggForHost(renamed)) {
-                redrawRouteIfExtended();
-            }
+            redrawRouteIfExtended();
         } catch (ConfigError ex) {
             appendLog(ex.getMessage());
         }

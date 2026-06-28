@@ -11,10 +11,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
-import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -26,6 +27,9 @@ import javafx.scene.layout.VBox;
 
 /** Dialog for per-host expert ping flags (iputils ping). */
 public final class PingExpertDialog {
+    private static final String BOOL_FALSE = "false";
+    private static final String BOOL_TRUE = "true";
+
     private PingExpertDialog() {}
 
     public static Optional<PingExpertEntry> show(String host, PingExpertEntry current) {
@@ -46,9 +50,9 @@ public final class PingExpertDialog {
         flagCol.setMinWidth(48);
         ColumnConstraints descCol = new ColumnConstraints();
         descCol.setHgrow(Priority.ALWAYS);
-        grid.getColumnConstraints().addAll(flagCol, descCol, new ColumnConstraints(120));
+        grid.getColumnConstraints().addAll(flagCol, descCol, new ColumnConstraints(140));
 
-        Map<String, CheckBox> flagBoxes = new HashMap<>();
+        Map<String, ComboBox<String>> flagChoices = new HashMap<>();
         Map<String, TextField> valueFields = new HashMap<>();
         List<String> currentArgs = current != null ? current.args() : List.of();
         int row = 0;
@@ -57,16 +61,22 @@ public final class PingExpertDialog {
         grid.add(new Label("Значення"), 2, row);
         row++;
         for (PingOption option : PingOptionCatalog.options()) {
-            CheckBox box = new CheckBox(option.flag());
-            TextField valueField = new TextField();
-            valueField.setPromptText(option.valueHint());
-            valueField.setDisable(option.kind() == Kind.FLAG);
-            applyCurrentSelection(option, currentArgs, box, valueField);
-            flagBoxes.put(option.flag(), box);
-            valueFields.put(option.flag(), valueField);
-            grid.add(box, 0, row);
+            grid.add(new Label(option.flag()), 0, row);
             grid.add(wrapDescription(option.description()), 1, row);
-            grid.add(valueField, 2, row);
+            if (option.kind() == Kind.FLAG) {
+                ComboBox<String> choice =
+                        new ComboBox<>(FXCollections.observableArrayList(BOOL_FALSE, BOOL_TRUE));
+                choice.setMaxWidth(Double.MAX_VALUE);
+                applyFlagSelection(option, currentArgs, choice);
+                flagChoices.put(option.flag(), choice);
+                grid.add(choice, 2, row);
+            } else {
+                TextField valueField = new TextField();
+                valueField.setPromptText(option.valueHint());
+                applyValueSelection(option, currentArgs, valueField);
+                valueFields.put(option.flag(), valueField);
+                grid.add(valueField, 2, row);
+            }
             row++;
         }
 
@@ -83,7 +93,7 @@ public final class PingExpertDialog {
                 return Optional.empty();
             }
             try {
-                List<String> args = collectArgs(flagBoxes, valueFields);
+                List<String> args = collectArgs(flagChoices, valueFields);
                 List<String> validated = PingExpertValidator.validateAndNormalize(args);
                 return Optional.of(new PingExpertEntry(chainCheck.isSelected(), validated));
             } catch (ConfigError ex) {
@@ -102,32 +112,49 @@ public final class PingExpertDialog {
         return label;
     }
 
-    private static void applyCurrentSelection(
-            PingOption option, List<String> args, CheckBox box, TextField valueField) {
+    private static void applyFlagSelection(PingOption option, List<String> args, ComboBox<String> choice) {
+        for (String arg : args) {
+            if (option.flag().equals(arg)) {
+                choice.getSelectionModel().select(BOOL_TRUE);
+                return;
+            }
+        }
+        choice.getSelectionModel().select(BOOL_FALSE);
+    }
+
+    private static void applyValueSelection(PingOption option, List<String> args, TextField valueField) {
         for (int i = 0; i < args.size(); i++) {
             if (!args.get(i).equals(option.flag())) {
                 continue;
             }
-            box.setSelected(true);
-            if (option.kind() == Kind.VALUE && i + 1 < args.size()) {
+            if (i + 1 < args.size()) {
                 valueField.setText(args.get(i + 1));
             }
             return;
         }
     }
 
-    private static List<String> collectArgs(Map<String, CheckBox> flagBoxes, Map<String, TextField> valueFields) {
+    private static List<String> collectArgs(
+            Map<String, ComboBox<String>> flagChoices, Map<String, TextField> valueFields) {
         List<String> args = new ArrayList<>();
         for (PingOption option : PingOptionCatalog.options()) {
-            CheckBox box = flagBoxes.get(option.flag());
-            if (box == null || !box.isSelected()) {
+            if (option.kind() == Kind.FLAG) {
+                ComboBox<String> choice = flagChoices.get(option.flag());
+                if (choice != null && BOOL_TRUE.equals(choice.getValue())) {
+                    args.add(option.flag());
+                }
+                continue;
+            }
+            TextField field = valueFields.get(option.flag());
+            if (field == null) {
+                continue;
+            }
+            String value = field.getText().strip();
+            if (value.isEmpty()) {
                 continue;
             }
             args.add(option.flag());
-            if (option.kind() == Kind.VALUE) {
-                TextField field = valueFields.get(option.flag());
-                args.add(field != null ? field.getText().strip() : "");
-            }
+            args.add(value);
         }
         return args;
     }

@@ -1,5 +1,6 @@
 package io.pingui.ui;
 
+import io.pingui.config.HostEntry;
 import java.util.List;
 
 /** Canvas display rules for specific host entries. */
@@ -22,7 +23,12 @@ public final class HostViewRules {
         return hosts.stream().filter(h -> !matches(h)).toList();
     }
 
-    public static List<io.pingui.config.HostEntry> entriesForConfig(List<io.pingui.config.HostEntry> entries) {
+    public static List<HostEntry> entriesForConfig(List<HostEntry> entries) {
         return entries.stream().filter(e -> !matches(e.address())).toList();
+    }
+
+    /** Host entries shown in UI and session; easter-egg trigger is excluded. */
+    public static List<HostEntry> sessionEntries(List<HostEntry> entries) {
+        return entriesForConfig(entries);
     }
 }
