@@ -11,11 +11,19 @@ C:\...\PINGUI\java> pingui-java.bat --build
 
 **Причина:** пробіли в `C:\Program Files\Eclipse Adoptium\...` всередині `( )` блоків `.bat` — `Files\Eclipse was unexpected at this time`.
 
-**Рішення:** `git pull` — `pingui-java.bat` лише викликає `gradlew.bat`. Або напряму: `gradlew.bat build` / `gradlew.bat run`.
+**Рішення:** `git pull` — v5 зберігає аргументи до `goto` (`PINGUI_EXTRA`). Або `gradlew.bat build` / `gradlew.bat run`.
 
 ---
 
-## [ВИРІШЕНО] Gradle: «What went wrong: 25.0.3»
+## [ВИРІШЕНО] Windows: pingui-java.bat --build → Unknown command-line option '--build'
+
+**Симптом:** `gradlew.bat build --build` / `Unknown command-line option '--build'`.
+
+**Причина:** у cmd `shift` не зберігається після `goto`; `%*` на мітці `:do_build` містить усі оригінальні аргументи.
+
+**Рішення:** `git pull` (launcher v5); або `gradlew.bat build` напряму.
+
+---
 
 Gradle 8.10 не запускається під Java 25. Потрібен JDK 21 (`PINGUI_JAVA_HOME` / `JAVA_HOME`).
 
