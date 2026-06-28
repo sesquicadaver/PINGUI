@@ -7,20 +7,17 @@
 
 ### Changed
 
-- **Гілки:** `main` slim — лише Java + docs; `beta` — повний репозиторій (Python, тести, CI).
-
-### Fixed
-
-- **Java (macOS):** `ProcessRouteProbe` — `/usr/sbin/traceroute` поза PATH GUI.
-- **Java (Windows):** `pingui-java.bat` — перевірка JDK 21.
-- **Java UI:** Expert ping disabled на Windows/macOS.
+- **Гілки:** `main` — лише Java-редакція та документація для запуску; `beta` — Python, тести, CI, специфікації.
 
 ### Added
 
-- **Docs:** [docs/CHECKLIST.md](docs/CHECKLIST.md) — checklist розгортання.
+- **Docs:** [docs/CHECKLIST.md](docs/CHECKLIST.md) — checklist розгортання Linux / Windows / macOS.
 
 ### Fixed
 
+- **Java (Windows):** виправлено timeout/deadlock `tracert` (drain stdout, `-w` ≥4000 ms, довший process wait).
+- **Java (Windows):** `pingui-java.bat` відмовляє без JDK 21 (parity з `pingui-java.sh`).
+- **Java UI:** режим «Експерт» disabled на Windows/macOS (Expert ping — лише Linux iputils).
 - **CLI (Python):** некоректний `--geoip-hints` і недоступний Timescale DSN → `Config error` замість traceback.
 - **CLI (Java):** некоректні числові опції, config і GeoIP hints → `Config error` на stderr.
 
@@ -31,6 +28,7 @@
 
 ### Changed
 
+- **Гілки:** `main` — робочий код і документація; `beta` — повний репозиторій розробки (тести, CI, specs).
 - **Розділення launcherів:** `pingui.sh` — лише Python; Java — `java/pingui-java.sh` (Unix) / `java/pingui-java.bat` (Windows).
 
 ### Added

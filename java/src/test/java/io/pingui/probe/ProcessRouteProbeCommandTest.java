@@ -31,4 +31,15 @@ class ProcessRouteProbeCommandTest {
         ProcessRouteProbe probe = new ProcessRouteProbe(ProcessRouteProbe.TracerouteFlavor.BSD);
         assertEquals("traceroute", probe.buildCommand("8.8.8.8", 20, 0.5).get(0));
     }
+
+    @Test
+    void windowsTracertWaitMsUsesAtLeast4000() {
+        assertEquals(4000, ProcessRouteProbe.windowsTracertWaitMs(0.5));
+        assertEquals(5000, ProcessRouteProbe.windowsTracertWaitMs(5.0));
+    }
+
+    @Test
+    void computeProcessWaitMsWindowsAllowsThreeProbesPerHop() {
+        assertEquals(255_000L, ProcessRouteProbe.computeProcessWaitMs(true, 20, 0.5));
+    }
 }

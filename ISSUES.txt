@@ -21,6 +21,16 @@ Gradle 8.10 не запускається під Java 25. Потрібен JDK 2
 
 ---
 
+## [ВИРІШЕНО] Windows: traceroute timed out for 8.8.8.8
+
+**Симптом:** `[Помилка [8.8.8.8]: traceroute timed out for 8.8.8.8]` одразу після старту.
+
+**Причина:** (1) stdout `tracert` не читався до `waitFor` — deadlock на pipe; (2) ліміт очікування ~16 с при `timeout: 0.5` і 20 hop (tracert потребує хвилини); (3) `tracert -w 500` замість типових 4000 ms.
+
+**Рішення:** `git pull`, перезбірка. Або `gradlew.bat build` && `gradlew.bat run`.
+
+---
+
 ## [ВИРІШЕНО] Windows: FINDSTR Cannot open ^>nul — хибна відмова JDK 21
 
 **Симптом:** Temurin 21.0.x встановлено, але `[pingui-java] ERROR: JDK 21 required` і `JAVA_HOME=` порожній.

@@ -120,7 +120,10 @@ public final class ProcessRouteProbe implements RouteProbe {
         ProcessBuilder builder = new ProcessBuilder(command);
         builder.redirectErrorStream(true);
         Process process = builder.start();
-        long waitMs = (long) (timeoutSeconds * 1000 * (maxHops + 2) + 5000);
+        List<String> lines = new ArrayList<>();
+        Thread drainer =
+                Thread.ofVirtual().name("trace-output-" + targetHost).start(() -> drainLines(process, lines));
+        long waitMs = computeProcessWaitMs(windows, maxHops, timeoutSeconds);
         try {
             if (!process.waitFor(waitMs, TimeUnit.MILLISECONDS)) {
                 process.destroyForcibly();
@@ -130,17 +133,11 @@ public final class ProcessRouteProbe implements RouteProbe {
             Thread.currentThread().interrupt();
             process.destroyForcibly();
             throw new IOException("traceroute interrupted for " + targetHost, ex);
+        } finally {
+            joinDrainer(drainer);
         }
         if (process.exitValue() != 0 && process.exitValue() != 1) {
             throw new IOException("traceroute exited with code " + process.exitValue() + " for " + targetHost);
-        }
-        List<String> lines = new ArrayList<>();
-        try (BufferedReader reader =
-                new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                lines.add(line);
-            }
         }
         List<HopNode> nodes = windows ? parseWindows(lines) : parseUnix(lines);
         if (nodes.isEmpty()) {
@@ -154,9 +151,45 @@ public final class ProcessRouteProbe implements RouteProbe {
         return new RouteSnapshot(targetHost, targetIp, nodes);
     }
 
+    /** Read subprocess stdout so tracert/traceroute cannot block on a full pipe buffer. */
+    private static void drainLines(Process process, List<String> lines) {
+        try (BufferedReader reader =
+                new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+            }
+        } catch (IOException ignored) {
+            // process may be destroyed on timeout
+        }
+    }
+
+    private static void joinDrainer(Thread drainer) {
+        try {
+            drainer.join(5000);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    /** Max wait for the trace subprocess (tracert on Windows needs much longer than 0.5s * hops). */
+    static long computeProcessWaitMs(boolean windows, int maxHops, double timeoutSeconds) {
+        if (windows) {
+            int perReplyMs = windowsTracertWaitMs(timeoutSeconds);
+            // tracert sends 3 probes per hop by default
+            return (long) maxHops * 3L * perReplyMs + 15_000L;
+        }
+        return (long) (timeoutSeconds * 1000 * (maxHops + 2) + 5000);
+    }
+
+    /** Per-reply timeout for {@code tracert -w} (Windows default is 4000 ms). */
+    static int windowsTracertWaitMs(double timeoutSeconds) {
+        return Math.max(4000, (int) Math.ceil(timeoutSeconds * 1000));
+    }
+
     List<String> buildCommand(String targetHost, int maxHops, double timeoutSeconds) {
         if (windows) {
-            int waitMs = Math.max(500, (int) (timeoutSeconds * 1000));
+            int waitMs = windowsTracertWaitMs(timeoutSeconds);
             return List.of("tracert", "-h", String.valueOf(maxHops), "-w", String.valueOf(waitMs), targetHost);
         }
         String traceroute = resolveTracerouteExecutable();
