@@ -45,7 +45,8 @@ CLI: `--probe auto|process|raw` (default: `auto`).
 
 1. Збирає enabled хости.
 2. `RoutePoller.pollHostRoute()` → `RouteProbe.trace()`.
-3. Callbacks: `onDataReceived`, `onRouteChanged`, `onProbeError`.
+3. Якщо для хоста налаштовано expert ping — `ExpertPingEnricher` виконує `ping -c 1` з додатковими flags.
+4. Callbacks: `onDataReceived`, `onRouteChanged`, `onProbeError`.
 
 Логіка store/history/change detection — порт з Python (`SessionStore`, `RouteHistory`, `RouteChangeDetector`).
 
@@ -53,6 +54,8 @@ CLI: `--probe auto|process|raw` (default: `auto`).
 
 `MainController` (JavaFX):
 
+- Вибір **профілю трасування** (ComboBox + новий/видалити); усі профілі в одному YAML
+- Чекбокс **«Експерт»** → кнопка **Exten.** на рядку хоста → `PingExpertDialog` (каталог з `pingMan.txt`, без `-c/-w/-W/-i` тощо)
 - `ListView<HostItem>` + CheckBox у комірці
 - **GraphCanvas** — вертикальний граф, inactive/active колонки
 - Log `TextArea`
@@ -61,13 +64,33 @@ CLI: `--probe auto|process|raw` (default: `auto`).
 
 ## Конфігурація
 
-Той самий YAML, що й Python:
+**v2 (Java, рекомендовано)** — кілька профілів + expert ping:
+
+```yaml
+active_profile: default
+profiles:
+  default:
+    interval: 1.0
+    max_hops: 20
+    timeout: 0.5
+    probe: auto
+    hosts:
+      - address: "8.8.8.8"
+        enabled: true
+        ping_expert:
+          chain: false
+          args: ["-4", "-s", "128"]
+```
+
+**Legacy** (Python + Java load):
 
 ```yaml
 hosts:
   - "8.8.8.8"
   - "google.com"
 ```
+
+Legacy автоматично мігрується в профіль `default`. Збереження з Java UI пише v2.
 
 Файл за замовч.: `java/config/hosts.example.yaml` (робоча директорія — `java/`).
 

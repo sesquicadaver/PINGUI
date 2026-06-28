@@ -1,5 +1,6 @@
 package io.pingui.model;
 
+import io.pingui.config.PingExpertEntry;
 import java.time.Instant;
 import java.util.List;
 
@@ -79,6 +80,7 @@ public final class Models {
         private final java.util.Map<String, java.util.List<Double>> pingHistory = new java.util.HashMap<>();
         private final java.util.Map<Integer, HopProbeStats> hopStats = new java.util.HashMap<>();
         private boolean enabled;
+        private PingExpertEntry pingExpert = PingExpertEntry.empty();
 
         public List<HopNode> getCurrentRoute() {
             return currentRoute;
@@ -114,6 +116,14 @@ public final class Models {
 
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+
+        public PingExpertEntry getPingExpert() {
+            return pingExpert;
+        }
+
+        public void setPingExpert(PingExpertEntry pingExpert) {
+            this.pingExpert = pingExpert != null ? pingExpert.normalized() : PingExpertEntry.empty();
         }
     }
 }

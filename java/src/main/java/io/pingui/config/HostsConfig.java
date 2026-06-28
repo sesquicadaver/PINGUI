@@ -49,15 +49,12 @@ public final class HostsConfig {
     }
 
     public static List<String> load(Path path) throws IOException {
-        if (!Files.isRegularFile(path)) {
-            throw new ConfigError("Config file not found: " + path);
-        }
-        Yaml yaml = new Yaml();
-        Object raw = yaml.load(Files.readString(path, StandardCharsets.UTF_8));
-        if (!(raw instanceof Map<?, ?> root)) {
-            throw new ConfigError("Config root must be a mapping");
-        }
-        Object hostsObj = root.get("hosts");
+        TracingProfile profile = ProfilesConfig.load(path).active();
+        return profile.hostAddresses();
+    }
+
+    /** Parse legacy {@code hosts} list from an already-loaded YAML root map. */
+    static List<String> loadHostsList(Object hostsObj) {
         if (!(hostsObj instanceof List<?> hosts)) {
             throw new ConfigError("Config must contain 'hosts' as a list");
         }

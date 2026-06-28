@@ -1,10 +1,10 @@
 package io.pingui;
 
 import io.pingui.config.ConfigError;
-import io.pingui.config.HostsConfig;
+import io.pingui.config.ProfileDocument;
+import io.pingui.config.ProfilesConfig;
 import io.pingui.probe.ProbeMode;
 import io.pingui.ui.MainController;
-import io.pingui.ui.HostViewRules;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -23,8 +23,8 @@ public final class PinguiApplication extends Application {
         try {
             AppOptions options = parseOptions(getParameters().getNamed());
             LoggingSetup.configure(options.verbose());
-            List<String> hosts = HostViewRules.hostsForConfig(HostsConfig.load(options.configPath()));
-            controller = new MainController(options, hosts);
+            ProfileDocument document = ProfilesConfig.load(options.configPath());
+            controller = new MainController(options, document);
             Scene scene = controller.createScene();
             stage.setTitle("PINGUI — Сесійний монітор маршрутів (Java)");
             stage.setScene(scene);
@@ -141,7 +141,7 @@ public final class PinguiApplication extends Application {
                   ./pingui-java.sh --config config/hosts.example.yaml --interval 2
 
                 Options:
-                  --config PATH     YAML host list (default: config/hosts.example.yaml)
+                  --config PATH     YAML profiles (default: config/hosts.example.yaml)
                   --interval SEC    Poll interval (default: 1.0)
                   --max-hops N      Max TTL hops (default: 20)
                   --timeout SEC     Probe timeout (default: 0.5)

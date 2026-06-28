@@ -21,4 +21,8 @@ public final class HostViewRules {
     public static List<String> hostsForConfig(List<String> hosts) {
         return hosts.stream().filter(h -> !matches(h)).toList();
     }
+
+    public static List<io.pingui.config.HostEntry> entriesForConfig(List<io.pingui.config.HostEntry> entries) {
+        return entries.stream().filter(e -> !matches(e.address())).toList();
+    }
 }

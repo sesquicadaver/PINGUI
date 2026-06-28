@@ -20,4 +20,13 @@ public enum ProbeMode {
             default -> throw new IllegalArgumentException("Unknown probe mode: " + value);
         };
     }
+
+    /** YAML / CLI serialization value. */
+    public String cliValue() {
+        return switch (this) {
+            case AUTO -> "auto";
+            case PROCESS -> "process";
+            case RAW -> "raw";
+        };
+    }
 }

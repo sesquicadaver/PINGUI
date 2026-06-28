@@ -14,6 +14,7 @@ public final class HostItem {
     private final StringProperty host = new SimpleStringProperty();
     private final BooleanProperty enabled = new SimpleBooleanProperty(false);
     private final BooleanProperty showMetrics = new SimpleBooleanProperty(false);
+    private final BooleanProperty expertConfigured = new SimpleBooleanProperty(false);
     private final StringProperty metricsText = new SimpleStringProperty("");
     private final StringProperty rowColor = new SimpleStringProperty(DISABLED_ROW);
 
@@ -39,6 +40,10 @@ public final class HostItem {
         return showMetrics;
     }
 
+    public BooleanProperty expertConfiguredProperty() {
+        return expertConfigured;
+    }
+
     public StringProperty metricsTextProperty() {
         return metricsText;
     }
@@ -53,6 +58,14 @@ public final class HostItem {
 
     public boolean isEnabled() {
         return enabled.get();
+    }
+
+    public boolean isExpertConfigured() {
+        return expertConfigured.get();
+    }
+
+    public void setExpertConfigured(boolean configured) {
+        expertConfigured.set(configured);
     }
 
     public void clearMetrics() {
