@@ -46,4 +46,38 @@ public final class HopStats {
         }
         return new HopStatsSummary(jitterMs(stats.getRttSamples()), lossPct(stats));
     }
+
+    public static Double minRtt(java.util.List<Double> samples) {
+        if (samples.isEmpty()) {
+            return null;
+        }
+        return samples.stream().mapToDouble(Double::doubleValue).min().orElse(Double.NaN);
+    }
+
+    public static Double maxRtt(java.util.List<Double> samples) {
+        if (samples.isEmpty()) {
+            return null;
+        }
+        return samples.stream().mapToDouble(Double::doubleValue).max().orElse(Double.NaN);
+    }
+
+    public static Double avgRtt(java.util.List<Double> samples) {
+        if (samples.isEmpty()) {
+            return null;
+        }
+        return samples.stream().mapToDouble(Double::doubleValue).average().orElse(Double.NaN);
+    }
+
+    public static HostTargetStats targetStats(HopNode terminal, HopProbeStats stats) {
+        if (stats == null || stats.getProbes() == 0) {
+            return null;
+        }
+        java.util.List<Double> samples = stats.getRttSamples();
+        return new HostTargetStats(
+                lossPct(stats),
+                minRtt(samples),
+                avgRtt(samples),
+                maxRtt(samples),
+                terminal.timeout() || !terminal.isReachable());
+    }
 }
