@@ -9,7 +9,7 @@
 
 | Компонент | Версія |
 |-----------|--------|
-| JDK | 21+ |
+| JDK | **21** (Gradle/JavaFX; Java 25 як launcher не підтримується) |
 | traceroute | Linux/macOS (`traceroute` у PATH) |
 | tracert | Windows (вбудований) |
 
