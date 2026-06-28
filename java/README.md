@@ -28,16 +28,24 @@ chmod +x pingui-java.sh gradlew
 
 **Windows**
 
-Потрібен **JDK 21** ([Eclipse Temurin](https://adoptium.net/temurin/releases/?version=21); під час інсталяції — Add to PATH + JAVA_HOME).
+Потрібен **JDK 21** ([Eclipse Temurin](https://adoptium.net/temurin/releases/?version=21); Add to PATH + JAVA_HOME).
+
+`pingui-java.bat` — обгортка над `gradlew.bat`. Якщо `gradlew.bat build` успішний — launcher працює так само.
 
 ```bat
 cd java
-rem Якщо java не в PATH:
-rem set "PINGUI_JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.x-hotspot"
-pingui-java.bat              REM GUI
-pingui-java.bat --build      REM збірка
-pingui-java.bat --package    REM jpackage (.msi)
-pingui-java.bat --help
+gradlew.bat build
+gradlew.bat run
+rem або
+pingui-java.bat --build
+pingui-java.bat
+```
+
+Якщо `java` не в PATH:
+
+```bat
+set "PINGUI_JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.x-hotspot"
+pingui-java.bat --build
 ```
 
 Gradle напряму:
