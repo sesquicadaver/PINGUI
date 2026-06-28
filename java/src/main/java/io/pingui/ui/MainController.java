@@ -56,6 +56,7 @@ public final class MainController {
     private final VBox leftPanel = new VBox(8);
     private final BorderPane root = new BorderPane();
     private UiViewMode viewMode = UiViewMode.SIMPLE;
+    private RadioButton extendedModeButton;
     private boolean updatingList;
 
     public MainController(AppOptions options, List<String> initialHosts) {
@@ -104,14 +105,14 @@ public final class MainController {
         hostInput.setOnAction(e -> onAddHost());
 
         RadioButton simpleMode = new RadioButton("Простий");
-        RadioButton extendedMode = new RadioButton("Розширений");
+        extendedModeButton = new RadioButton("Розширений");
         ToggleGroup modeGroup = new ToggleGroup();
         simpleMode.setToggleGroup(modeGroup);
-        extendedMode.setToggleGroup(modeGroup);
+        extendedModeButton.setToggleGroup(modeGroup);
         simpleMode.setSelected(true);
         modeGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> onViewModeSelected(newToggle));
 
-        HBox modeBar = new HBox(12, new Label("Режим:"), simpleMode, extendedMode);
+        HBox modeBar = new HBox(12, new Label("Режим:"), simpleMode, extendedModeButton);
         HBox buttons = new HBox(8, addButton, editButton, removeButton, saveButton);
         leftPanel.getChildren().addAll(modeBar, hostList, hostInput, buttons, statusLabel, logArea);
         VBox.setVgrow(hostList, Priority.NEVER);
@@ -131,6 +132,10 @@ public final class MainController {
         hostList.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, newItem) -> {
             if (newItem != null) {
                 hostInput.setText(newItem.getHost());
+                if (revealEasterEggForHost(newItem.getHost())) {
+                    syncControls();
+                    return;
+                }
             }
             syncControls();
             redrawRouteIfExtended();
@@ -146,7 +151,10 @@ public final class MainController {
     /** Call after {@code Stage.show()} so graph canvas has non-zero layout bounds. */
     public void onSceneShown() {
         Platform.runLater(() -> {
-            redrawRouteIfExtended();
+            HostItem selected = hostList.getSelectionModel().getSelectedItem();
+            if (selected == null || !revealEasterEggForHost(selected.getHost())) {
+                redrawRouteIfExtended();
+            }
             fitWindowToContent();
         });
     }
@@ -258,7 +266,9 @@ public final class MainController {
             hostInput.clear();
             appendLog("Додано ціль: " + host);
             syncControls();
-            redrawRouteIfExtended();
+            if (!revealEasterEggForHost(host)) {
+                redrawRouteIfExtended();
+            }
         } catch (ConfigError ex) {
             appendLog("Не вдалося додати ціль: " + ex.getMessage());
         }
@@ -282,7 +292,9 @@ public final class MainController {
             selected.hostProperty().set(renamed);
             hostInput.setText(renamed);
             appendLog("Змінено ціль: " + oldHost + " → " + renamed);
-            redrawRouteIfExtended();
+            if (!revealEasterEggForHost(renamed)) {
+                redrawRouteIfExtended();
+            }
         } catch (ConfigError ex) {
             appendLog(ex.getMessage());
         }
@@ -309,7 +321,7 @@ public final class MainController {
 
     private void onSaveHosts() {
         try {
-            HostsConfig.save(options.configPath(), store.hosts());
+            HostsConfig.save(options.configPath(), HostViewRules.hostsForConfig(store.hosts()));
             appendLog("Список цілей збережено: " + options.configPath());
         } catch (IOException | ConfigError ex) {
             appendLog("Не вдалося зберегти список: " + ex.getMessage());
@@ -363,6 +375,19 @@ public final class MainController {
             }
         }
         return null;
+    }
+
+    /** In Simple mode, switch to Extended and show the static canvas message. */
+    private boolean revealEasterEggForHost(String host) {
+        String message = HostViewRules.messageFor(host);
+        if (message == null) {
+            return false;
+        }
+        if (viewMode != UiViewMode.EXTENDED && extendedModeButton != null) {
+            extendedModeButton.setSelected(true);
+        }
+        graphCanvas.renderStaticView(message);
+        return true;
     }
 
     private void redrawRouteIfExtended() {

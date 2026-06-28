@@ -4,6 +4,7 @@ import io.pingui.config.ConfigError;
 import io.pingui.config.HostsConfig;
 import io.pingui.probe.ProbeMode;
 import io.pingui.ui.MainController;
+import io.pingui.ui.HostViewRules;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ public final class PinguiApplication extends Application {
         try {
             AppOptions options = parseOptions(getParameters().getNamed());
             LoggingSetup.configure(options.verbose());
-            List<String> hosts = HostsConfig.load(options.configPath());
+            List<String> hosts = HostViewRules.hostsForConfig(HostsConfig.load(options.configPath()));
             controller = new MainController(options, hosts);
             Scene scene = controller.createScene();
             stage.setTitle("PINGUI — Сесійний монітор маршрутів (Java)");
