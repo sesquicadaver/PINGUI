@@ -9,9 +9,9 @@ C:\...\PINGUI\java> pingui-java.bat --build
 [pingui-java] ПОМИЛКА: Java не знайдено. Потрібен JDK 21.
 ```
 
-**Причина:** (1) JDK 21 не в PATH; (2) баг у `pingui-java.bat`: `goto` з підпрограми завершував скрипт до Gradle (тиша в cmd).
+**Причина:** пробіли в `C:\Program Files\Eclipse Adoptium\...` всередині `( )` блоків `.bat` — `Files\Eclipse was unexpected at this time`.
 
-**Рішення:** оновити репозиторій (`git pull`); встановити JDK 21 або `PINGUI_JAVA_HOME`.
+**Рішення:** `git pull`; у launcher — `!delayed expansion!`, без прикладів шляхів у `if ( )`.
 
 ---
 
