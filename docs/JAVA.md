@@ -12,7 +12,7 @@
 - JavaFX 21 (GUI)
 - Gradle 8.10 (Kotlin DSL)
 - SnakeYAML (конфіг)
-- JUnit 5 (тести)
+- JUnit 5 (тести на гілці **`beta`**)
 
 ## Probe-шар
 
@@ -37,7 +37,7 @@ CLI: `--probe auto|process|raw` (default: `auto`).
 
 Інкрементальний TTL 1..N через raw ICMP socket (parity з Python `trace_route`).
 
-Потрібно: `sudo setcap cap_net_raw+ep` на JDK binary або запуск від root (аналог `./pingui.sh --deploy` для Python).
+Потрібно: `sudo setcap cap_net_raw+ep` на JDK binary або запуск від root.
 
 ## Monitor-шар
 

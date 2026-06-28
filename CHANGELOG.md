@@ -5,6 +5,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **Гілки:** `main` — лише Java-редакція та документація для запуску; `beta` — Python, тести, CI, специфікації.
+
 ### Added
 
 - **Docs:** [docs/CHECKLIST.md](docs/CHECKLIST.md) — checklist розгортання Linux / Windows / macOS.

@@ -1,38 +1,25 @@
-# Документація PINGUI
+# Документація PINGUI (Java)
 
-Документація для запуску та експлуатації (гілка **main**).
+Документація для запуску Java-редакції на гілці **`main`**.
 
-Повний цикл розробки, тести, CI та специфікації — гілка **`beta`** (див. [README](../README.md)).
+Python-редакція, тести, CI та специфікації — гілка **`beta`**.
 
-## Швидка навігація
+## Навігація
 
 | Документ | Для кого | Зміст |
 |----------|----------|-------|
-| [USER_GUIDE.md](USER_GUIDE.md) | Користувач | GUI, чекбокси, збереження списку, граф |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Адмін / DevOps | `pingui.sh`, venv, cap_net_raw, systemd |
 | [CHECKLIST.md](CHECKLIST.md) | Адмін / DevOps | Checklist Linux / Windows / macOS |
-| [CONFIGURATION.md](CONFIGURATION.md) | Адмін / розробник | YAML, CLI, змінні середовища |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Розробник | Шари, потоки даних, Qt-сигнали |
-| [MODULES.md](MODULES.md) | Розробник | Довідник модулів і публічних API |
-| [JAVA.md](JAVA.md) | Усі | Java cross-platform edition |
-| [../java/README.md](../java/README.md) | Усі | Запуск Java, Gradle, CLI |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Адмін / DevOps | JDK 21, launcher, jpackage |
+| [JAVA.md](JAVA.md) | Розробник | Probe, monitor, UI, YAML |
+| [../java/README.md](../java/README.md) | Усі | Запуск, CLI, GUI |
 
-## Документи в корені репозиторію
+## Рекомендований порядок
 
-| Файл | Призначення |
-|------|-------------|
-| [../README.md](../README.md) | Швидкий старт і огляд |
-| [../CHANGELOG.md](../CHANGELOG.md) | Історія змін |
+**Новий користувач:** [../README.md](../README.md) → CHECKLIST → [../java/README.md](../java/README.md)
 
-## Рекомендований порядок читання
+**Розробник (beta):** перейти на гілку `beta` → `docs/DEVELOPMENT.md`, `docs/TESTING.md`
 
-**Новий користувач:** README → USER_GUIDE → DEPLOYMENT → CHECKLIST
+## Версія
 
-**Архітектура:** README → ARCHITECTURE → MODULES
-
-**Cross-platform (Java):** README → [CHECKLIST.md](CHECKLIST.md) → [JAVA.md](JAVA.md) → [../java/README.md](../java/README.md)
-
-## Версія та стан
-
-- **Python:** PyQt6, Linux, до 10 цілей
-- **Java edition:** Java 21 + JavaFX, traceroute/tracert
+- **Java 21 + JavaFX**, Linux / Windows / macOS
+- До 10 цілей, in-memory session
