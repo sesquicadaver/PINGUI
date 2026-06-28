@@ -1,5 +1,5 @@
 @echo off
-rem PINGUI Java — Windows launcher (Linux/macOS: pingui-java.sh).
+rem PINGUI Java — Windows launcher v3 (paths with spaces safe).
 setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
 
@@ -32,8 +32,8 @@ goto do_run_cli
 echo.
 echo [pingui-java] ERROR: JDK 21 not found.
 echo [pingui-java] Install: https://adoptium.net/temurin/releases/?version=21
-echo [pingui-java] Enable Add to PATH and Set JAVA_HOME in the installer.
-echo [pingui-java] Or set PINGUI_JAVA_HOME to your JDK 21 folder.
+echo [pingui-java] Then set PINGUI_JAVA_HOME to the JDK folder, for example:
+echo [pingui-java]   set PINGUI_JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot
 exit /b 1
 
 :do_help
@@ -54,11 +54,12 @@ exit /b !ERRORLEVEL!
 
 :do_run
 echo [pingui-java] Starting GUI...
-if "%~1"=="" (
-  call gradlew.bat run
-) else (
-  call gradlew.bat run --args="%*"
-)
+if "%~1"=="" goto do_run_plain
+call gradlew.bat run --args="%*"
+goto do_run_done
+:do_run_plain
+call gradlew.bat run
+:do_run_done
 if errorlevel 1 echo [pingui-java] RUN FAILED
 exit /b !ERRORLEVEL!
 
@@ -66,87 +67,81 @@ exit /b !ERRORLEVEL!
 call gradlew.bat run --args="%CMD% %*"
 exit /b !ERRORLEVEL!
 
-rem --- JDK 21 discovery ---
+rem --- JDK 21 discovery (no IF/FOR blocks with expanded paths) ---
 
 :find_jdk21
-if defined PINGUI_JAVA_HOME call :probe_home "!PINGUI_JAVA_HOME!"
-if defined JAVA_EXE goto :jdk_found
+if not defined PINGUI_JAVA_HOME goto :find_env_java_home
+if not exist "!PINGUI_JAVA_HOME!\bin\java.exe" goto :find_env_java_home
+set "JAVA_HOME_RESOLVED=!PINGUI_JAVA_HOME!"
+set "JAVA_EXE=!JAVA_HOME_RESOLVED!\bin\java.exe"
+goto :verify_jdk21
 
-if defined JAVA_HOME call :probe_home "!JAVA_HOME!"
-if defined JAVA_EXE goto :jdk_found
+:find_env_java_home
+if not defined JAVA_HOME goto :find_where_java
+if not exist "!JAVA_HOME!\bin\java.exe" goto :find_where_java
+set "JAVA_HOME_RESOLVED=!JAVA_HOME!"
+set "JAVA_EXE=!JAVA_HOME_RESOLVED!\bin\java.exe"
+goto :verify_jdk21
 
+:find_where_java
+set "JAVA_EXE="
 for /f "delims=" %%J in ('where java 2^>nul') do (
-  call :probe_exe "%%J"
-  if defined JAVA_EXE goto :jdk_found
+  set "JAVA_EXE=%%J"
+  goto :find_where_java_done
 )
+goto :find_adoptium
+:find_where_java_done
+if not exist "!JAVA_EXE!" goto :find_adoptium
+for %%I in ("!JAVA_EXE!") do set "JAVA_HOME_RESOLVED=%%~dpI"
+set "JAVA_HOME_RESOLVED=!JAVA_HOME_RESOLVED:~0,-5!"
+goto :verify_jdk21
 
-call :scan_dir "%ProgramFiles%\Eclipse Adoptium" "jdk-21*"
-if defined JAVA_EXE goto :jdk_found
+:find_adoptium
+call :pick_jdk_from_dir "%ProgramFiles%\Eclipse Adoptium" "jdk-21"
+if defined JAVA_EXE goto :verify_jdk21
 
-call :scan_dir "%ProgramFiles%\Java" "jdk-21*"
-if defined JAVA_EXE goto :jdk_found
+call :pick_jdk_from_dir "%LocalAppData%\Programs\Eclipse Adoptium" "jdk-21"
+if defined JAVA_EXE goto :verify_jdk21
 
-call :scan_dir "%ProgramFiles%\Microsoft" "jdk-21*"
-if defined JAVA_EXE goto :jdk_found
+call :pick_jdk_from_dir "%ProgramFiles%\Java" "jdk-21"
+if defined JAVA_EXE goto :verify_jdk21
 
-call :scan_dir "%ProgramFiles%\Amazon Corretto" "jdk21*"
-if defined JAVA_EXE goto :jdk_found
+call :pick_jdk_from_dir "%ProgramFiles%\Microsoft" "jdk-21"
+if defined JAVA_EXE goto :verify_jdk21
 
-call :scan_dir "%LocalAppData%\Programs\Eclipse Adoptium" "jdk-21*"
-if defined JAVA_EXE goto :jdk_found
+call :pick_jdk_from_dir "%ProgramFiles%\Amazon Corretto" "jdk21"
+if defined JAVA_EXE goto :verify_jdk21
 
 exit /b 1
 
-:jdk_found
-call :check_jdk21_major
-exit /b !ERRORLEVEL!
-
-:check_jdk21_major
-set "VER="
-for /f "tokens=3 delims=^"" %%V in ('""!JAVA_EXE!" -version 2^>^&1 ^| findstr /i version') do set "VER=%%V"
-if not defined VER exit /b 1
-
-echo !VER!| findstr /B /R "21\." >nul 2>&1
-if not errorlevel 1 exit /b 0
-
-echo !VER!| findstr /B "21" >nul 2>&1
-if not errorlevel 1 exit /b 0
-
-echo [pingui-java] ERROR: JDK 21 required, found version !VER!
-"!JAVA_EXE!" -version 2>&1
-echo [pingui-java] Path: "!JAVA_HOME_RESOLVED!"
+:pick_jdk_from_dir
 set "JAVA_EXE="
 set "JAVA_HOME_RESOLVED="
-exit /b 1
-
-:probe_home
-set "CAND=%~1"
-if exist "!CAND!\bin\java.exe" call :set_java_home "!CAND!"
-exit /b 0
-
-:probe_exe
-set "CAND=%~1"
-if not exist "!CAND!" exit /b 0
-"!CAND!" -version >nul 2>&1
-if errorlevel 1 exit /b 0
-for %%H in ("!CAND!") do set "CAND=%%~dpH"
-if /I "!CAND:~-4!"=="\bin\" set "CAND=!CAND:~0,-4!"
-call :set_java_home "!CAND!"
-exit /b 0
-
-:set_java_home
-set "JAVA_HOME_RESOLVED=%~1"
-set "JAVA_EXE=%~1\bin\java.exe"
-exit /b 0
-
-:scan_dir
-set "BASE=%~1"
-set "PATTERN=%~2"
-if not exist "!BASE!\" exit /b 0
-for /d %%D in ("!BASE!\!PATTERN!") do (
-  if exist "%%D\bin\java.exe" (
-    call :set_java_home "%%D"
-    exit /b 0
-  )
+set "_DIR=%~1"
+set "_PFX=%~2"
+for /f "delims=" %%D in ('dir /b /ad "!_DIR!\!_PFX!*" 2^>nul') do (
+  set "JAVA_HOME_RESOLVED=!_DIR!\%%D"
+  set "JAVA_EXE=!JAVA_HOME_RESOLVED!\bin\java.exe"
+  goto :pick_jdk_done
 )
+:pick_jdk_done
+set "_DIR="
+set "_PFX="
 exit /b 0
+
+:verify_jdk21
+set "_VERFILE=%TEMP%\pingui-java-version.txt"
+del "!_VERFILE!" 2>nul
+"!JAVA_EXE!" -version 2>"!_VERFILE!"
+if not exist "!_VERFILE!" exit /b 1
+findstr /C:"21.0" "!_VERFILE!" >nul 2>&1
+if not errorlevel 1 exit /b 0
+findstr /C:"version \"21" "!_VERFILE!" >nul 2>&1
+if not errorlevel 1 exit /b 0
+echo [pingui-java] ERROR: JDK 21 required. Version output:
+type "!_VERFILE!"
+echo [pingui-java] JAVA_HOME was: "!JAVA_HOME_RESOLVED!"
+set "JAVA_EXE="
+set "JAVA_HOME_RESOLVED="
+del "!_VERFILE!" 2>nul
+exit /b 1
