@@ -71,6 +71,8 @@ cd java && ./pingui-java.sh
 | `--max-hops` | Максимум TTL |
 | `--timeout` | Таймаут probe (с) |
 | `--session-db` | SQLite для збереження маршрутів/ping між сесіями (опційно) |
+| `--export-csv` | Експорт звіту CSV і вихід (без GUI) |
+| `--export-html` | Експорт звіту HTML і вихід (без GUI) |
 | `--verbose` | Debug-лог |
 
 ## CI (локально)

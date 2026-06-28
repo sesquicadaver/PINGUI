@@ -9,6 +9,7 @@ from pathlib import Path
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCloseEvent, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
+    QFileDialog,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -22,6 +23,7 @@ from PyQt6.QtWidgets import (
 )
 
 from pingui.config import ConfigError, save_hosts_config
+from pingui.export.session_report import export_session_csv, export_session_html
 from pingui.models import RouteSnapshot
 from pingui.monitor.session_store import SessionStore
 from pingui.monitor.worker import LightweightMonitorWorker
@@ -75,14 +77,20 @@ class MainWindow(QMainWindow):
         self._edit_button = QPushButton("Змінити")
         self._remove_button = QPushButton("Видалити")
         self._save_button = QPushButton("Зберегти")
+        self._export_csv_button = QPushButton("Експорт CSV")
+        self._export_html_button = QPushButton("Експорт HTML")
         self._add_button.clicked.connect(self._on_add_host)
         self._edit_button.clicked.connect(self._on_edit_host)
         self._remove_button.clicked.connect(self._on_remove_host)
         self._save_button.clicked.connect(self._on_save_hosts)
+        self._export_csv_button.clicked.connect(self._on_export_csv)
+        self._export_html_button.clicked.connect(self._on_export_html)
         host_btn_row.addWidget(self._add_button)
         host_btn_row.addWidget(self._edit_button)
         host_btn_row.addWidget(self._remove_button)
         host_btn_row.addWidget(self._save_button)
+        host_btn_row.addWidget(self._export_csv_button)
+        host_btn_row.addWidget(self._export_html_button)
         QShortcut(QKeySequence(Qt.Key.Key_Return), self._host_input, self._on_add_host)
         QShortcut(QKeySequence(Qt.Key.Key_Enter), self._host_input, self._on_add_host)
 
@@ -287,6 +295,42 @@ class MainWindow(QMainWindow):
             return
         ts = time.strftime("%H:%M:%S")
         self._log.append(f"[{ts}] Список цілей збережено: {self._config_path}\n")
+
+    def _on_export_csv(self) -> None:
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Експорт CSV",
+            str(self._config_path.with_suffix(".csv")),
+            "CSV (*.csv)",
+        )
+        if not path:
+            return
+        try:
+            export_session_csv(self._store, path)
+        except OSError as exc:
+            ts = time.strftime("%H:%M:%S")
+            self._log.append(f"[{ts}] Не вдалося експортувати CSV: {exc}\n")
+            return
+        ts = time.strftime("%H:%M:%S")
+        self._log.append(f"[{ts}] Звіт CSV збережено: {path}\n")
+
+    def _on_export_html(self) -> None:
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Експорт HTML",
+            str(self._config_path.with_suffix(".html")),
+            "HTML (*.html)",
+        )
+        if not path:
+            return
+        try:
+            export_session_html(self._store, path)
+        except OSError as exc:
+            ts = time.strftime("%H:%M:%S")
+            self._log.append(f"[{ts}] Не вдалося експортувати HTML: {exc}\n")
+            return
+        ts = time.strftime("%H:%M:%S")
+        self._log.append(f"[{ts}] Звіт HTML збережено: {path}\n")
 
     def _on_data_received(self, host: str, snapshot_obj: object) -> None:
         if not isinstance(snapshot_obj, RouteSnapshot):

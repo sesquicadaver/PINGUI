@@ -108,7 +108,7 @@ PINGUI/
 | ID | Задача |
 |----|--------|
 | B-01 | SQLite persistence між сесіями | ✅ Python `--session-db` |
-| B-02 | Експорт звітів CSV/HTML |
+| B-02 | Експорт звітів CSV/HTML | ✅ |
 | B-03 | GeoIP (груба країна) в підписах нод |
 | B-04 | Folium geo-map у окремому view |
 | B-05 | TimescaleDB/InfluxDB backend |

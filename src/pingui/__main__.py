@@ -7,8 +7,11 @@ import sys
 from pathlib import Path
 
 from pingui.config import load_hosts_config
+from pingui.export.session_report import export_session_csv, export_session_html
 from pingui.icmp.raw_socket import RawIcmpPermissionError, check_raw_icmp_permission
 from pingui.logging_setup import setup_logging
+from pingui.monitor.session_store import SessionStore
+from pingui.persistence.session_db import SessionDatabase
 
 DEFAULT_CONFIG = Path("config/hosts.example.yaml")
 
@@ -52,7 +55,38 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional SQLite path to persist routes/ping between sessions",
     )
+    parser.add_argument(
+        "--export-csv",
+        type=Path,
+        default=None,
+        help="Export session report to CSV and exit (optional with --session-db)",
+    )
+    parser.add_argument(
+        "--export-html",
+        type=Path,
+        default=None,
+        help="Export session report to HTML and exit (optional with --session-db)",
+    )
     return parser
+
+
+def _export_reports(
+    hosts: list[str],
+    *,
+    session_db_path: Path | None,
+    csv_path: Path | None,
+    html_path: Path | None,
+) -> int:
+    session_db = SessionDatabase(session_db_path) if session_db_path is not None else None
+    store = SessionStore(hosts, session_db=session_db)
+    try:
+        if csv_path is not None:
+            export_session_csv(store, csv_path)
+        if html_path is not None:
+            export_session_html(store, html_path)
+    finally:
+        store.close()
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -74,6 +108,14 @@ def main(argv: list[str] | None = None) -> int:
     except (OSError, ValueError) as exc:
         print(f"Config error: {exc}", file=sys.stderr)
         return 1
+
+    if args.export_csv is not None or args.export_html is not None:
+        return _export_reports(
+            hosts,
+            session_db_path=args.session_db,
+            csv_path=args.export_csv,
+            html_path=args.export_html,
+        )
 
     try:
         check_raw_icmp_permission()
