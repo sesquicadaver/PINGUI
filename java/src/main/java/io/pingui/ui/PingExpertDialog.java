@@ -6,6 +6,8 @@ import io.pingui.probe.PingExpertValidator;
 import io.pingui.probe.PingOptionCatalog;
 import io.pingui.probe.PingOptionCatalog.Kind;
 import io.pingui.probe.PingOptionCatalog.PingOption;
+import io.pingui.probe.PingOptionCatalog.ValueKind;
+import io.pingui.probe.PingOptionCatalog.ValueSpec;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +22,7 @@ import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
@@ -29,6 +32,9 @@ import javafx.scene.layout.VBox;
 public final class PingExpertDialog {
     private static final String BOOL_FALSE = "false";
     private static final String BOOL_TRUE = "true";
+    private static final String UNSET = "—";
+    private static final String FIELD_OK = "";
+    private static final String FIELD_ERROR = "-fx-border-color: #c0392b; -fx-border-width: 1.5px;";
 
     private PingExpertDialog() {}
 
@@ -37,7 +43,7 @@ public final class PingExpertDialog {
         dialog.setTitle("Expert ping — " + host);
         dialog.setHeaderText("Параметри ping(8) для цілі (без -c/-w/-W/-i та інших лімітів часу/кількості)");
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-        dialog.getDialogPane().setPrefWidth(560);
+        dialog.getDialogPane().setPrefWidth(580);
 
         CheckBox chainCheck = new CheckBox("Застосувати до всього ланцюжка");
         chainCheck.setSelected(current != null && current.applyToChain());
@@ -50,10 +56,11 @@ public final class PingExpertDialog {
         flagCol.setMinWidth(48);
         ColumnConstraints descCol = new ColumnConstraints();
         descCol.setHgrow(Priority.ALWAYS);
-        grid.getColumnConstraints().addAll(flagCol, descCol, new ColumnConstraints(140));
+        grid.getColumnConstraints().addAll(flagCol, descCol, new ColumnConstraints(160));
 
         Map<String, ComboBox<String>> flagChoices = new HashMap<>();
-        Map<String, TextField> valueFields = new HashMap<>();
+        Map<String, ComboBox<String>> choiceValues = new HashMap<>();
+        Map<String, TextField> textValues = new HashMap<>();
         List<String> currentArgs = current != null ? current.args() : List.of();
         int row = 0;
         grid.add(new Label("Опція"), 0, row);
@@ -71,11 +78,26 @@ public final class PingExpertDialog {
                 flagChoices.put(option.flag(), choice);
                 grid.add(choice, 2, row);
             } else {
-                TextField valueField = new TextField();
-                valueField.setPromptText(option.valueHint());
-                applyValueSelection(option, currentArgs, valueField);
-                valueFields.put(option.flag(), valueField);
-                grid.add(valueField, 2, row);
+                ValueSpec spec = option.valueSpec();
+                if (spec.kind() == ValueKind.CHOICES) {
+                    List<String> items = new ArrayList<>();
+                    items.add(UNSET);
+                    items.addAll(spec.choices());
+                    ComboBox<String> choice = new ComboBox<>(FXCollections.observableArrayList(items));
+                    choice.setMaxWidth(Double.MAX_VALUE);
+                    choice.setTooltip(new Tooltip("Допустимо: " + String.join(", ", spec.choices())));
+                    applyChoiceSelection(option, currentArgs, choice, spec.choices());
+                    choiceValues.put(option.flag(), choice);
+                    grid.add(choice, 2, row);
+                } else {
+                    TextField field = new TextField();
+                    field.setPromptText(promptFor(option));
+                    field.setTooltip(new Tooltip(PingExpertValidator.describeValueSpec(option)));
+                    applyTextSelection(option, currentArgs, field);
+                    bindTextValidation(option, field);
+                    textValues.put(option.flag(), field);
+                    grid.add(field, 2, row);
+                }
             }
             row++;
         }
@@ -93,7 +115,8 @@ public final class PingExpertDialog {
                 return Optional.empty();
             }
             try {
-                List<String> args = collectArgs(flagChoices, valueFields);
+                List<String> args = collectArgs(flagChoices, choiceValues, textValues);
+                validateTextFields(textValues);
                 List<String> validated = PingExpertValidator.validateAndNormalize(args);
                 return Optional.of(new PingExpertEntry(chainCheck.isSelected(), validated));
             } catch (ConfigError ex) {
@@ -104,6 +127,73 @@ public final class PingExpertDialog {
                 error.showAndWait();
             }
         }
+    }
+
+    private static String promptFor(PingOption option) {
+        String described = PingExpertValidator.describeValueSpec(option);
+        if (!described.isBlank()) {
+            return described;
+        }
+        ValueSpec spec = option.valueSpec();
+        if (spec != null && spec.hint() != null && !spec.hint().isBlank()) {
+            return spec.hint();
+        }
+        return "";
+    }
+
+    private static void bindTextValidation(PingOption option, TextField field) {
+        Runnable validate = () -> {
+            String text = field.getText().strip();
+            if (text.isEmpty()) {
+                clearFieldError(field);
+                return;
+            }
+            try {
+                PingExpertValidator.validateAndNormalizeValue(option, text);
+                clearFieldError(field);
+            } catch (ConfigError ex) {
+                setFieldError(field, ex.getMessage());
+            }
+        };
+        field.focusedProperty().addListener((obs, wasFocused, focused) -> {
+            if (!focused) {
+                validate.run();
+            }
+        });
+        field.textProperty().addListener((obs, oldText, newText) -> {
+            if (field.isFocused()) {
+                validate.run();
+            }
+        });
+    }
+
+    private static void validateTextFields(Map<String, TextField> textValues) {
+        for (Map.Entry<String, TextField> entry : textValues.entrySet()) {
+            TextField field = entry.getValue();
+            String text = field.getText().strip();
+            if (text.isEmpty()) {
+                continue;
+            }
+            PingOption option = PingOptionCatalog.find(entry.getKey());
+            if (option == null) {
+                continue;
+            }
+            try {
+                PingExpertValidator.validateAndNormalizeValue(option, text);
+            } catch (ConfigError ex) {
+                setFieldError(field, ex.getMessage());
+                throw new ConfigError(option.flag() + ": " + ex.getMessage());
+            }
+        }
+    }
+
+    private static void setFieldError(TextField field, String message) {
+        field.setStyle(FIELD_ERROR);
+        field.setTooltip(new Tooltip(message));
+    }
+
+    private static void clearFieldError(TextField field) {
+        field.setStyle(FIELD_OK);
     }
 
     private static Label wrapDescription(String text) {
@@ -122,20 +212,41 @@ public final class PingExpertDialog {
         choice.getSelectionModel().select(BOOL_FALSE);
     }
 
-    private static void applyValueSelection(PingOption option, List<String> args, TextField valueField) {
+    private static void applyChoiceSelection(
+            PingOption option, List<String> args, ComboBox<String> choice, List<String> allowed) {
+        for (int i = 0; i < args.size(); i++) {
+            if (!args.get(i).equals(option.flag()) || i + 1 >= args.size()) {
+                continue;
+            }
+            String value = args.get(i + 1);
+            for (String item : allowed) {
+                if (item.equalsIgnoreCase(value)) {
+                    choice.getSelectionModel().select(item);
+                    return;
+                }
+            }
+            choice.getSelectionModel().select(UNSET);
+            return;
+        }
+        choice.getSelectionModel().select(UNSET);
+    }
+
+    private static void applyTextSelection(PingOption option, List<String> args, TextField field) {
         for (int i = 0; i < args.size(); i++) {
             if (!args.get(i).equals(option.flag())) {
                 continue;
             }
             if (i + 1 < args.size()) {
-                valueField.setText(args.get(i + 1));
+                field.setText(args.get(i + 1));
             }
             return;
         }
     }
 
     private static List<String> collectArgs(
-            Map<String, ComboBox<String>> flagChoices, Map<String, TextField> valueFields) {
+            Map<String, ComboBox<String>> flagChoices,
+            Map<String, ComboBox<String>> choiceValues,
+            Map<String, TextField> textValues) {
         List<String> args = new ArrayList<>();
         for (PingOption option : PingOptionCatalog.options()) {
             if (option.kind() == Kind.FLAG) {
@@ -145,7 +256,16 @@ public final class PingExpertDialog {
                 }
                 continue;
             }
-            TextField field = valueFields.get(option.flag());
+            ComboBox<String> choice = choiceValues.get(option.flag());
+            if (choice != null) {
+                String value = choice.getValue();
+                if (value != null && !value.isBlank() && !UNSET.equals(value)) {
+                    args.add(option.flag());
+                    args.add(value);
+                }
+                continue;
+            }
+            TextField field = textValues.get(option.flag());
             if (field == null) {
                 continue;
             }
