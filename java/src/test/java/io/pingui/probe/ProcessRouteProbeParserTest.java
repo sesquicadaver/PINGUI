@@ -65,4 +65,23 @@ class ProcessRouteProbeParserTest {
         assertEquals("192.168.1.1", nodes.get(0).ip());
         assertEquals(2.0, nodes.get(0).pingMs());
     }
+
+    @Test
+    void parseWindowsLinesWithSubMillisecondRtt() {
+        List<String> lines = List.of("  1    <1 ms    <1 ms    <1 ms  192.168.0.1");
+        List<HopNode> nodes = ProcessRouteProbe.parseWindows(lines);
+        assertEquals(1, nodes.size());
+        assertEquals("192.168.0.1", nodes.get(0).ip());
+        assertEquals(0.5, nodes.get(0).pingMs());
+    }
+
+    @Test
+    void parseWindowsLinesWithHostnameAndBracketIp() {
+        List<String> lines =
+                List.of("  9    50 ms    52 ms    47 ms  ae-39.example.net [128.241.219.117]");
+        List<HopNode> nodes = ProcessRouteProbe.parseWindows(lines);
+        assertEquals(1, nodes.size());
+        assertEquals("128.241.219.117", nodes.get(0).ip());
+        assertEquals(50.0, nodes.get(0).pingMs());
+    }
 }

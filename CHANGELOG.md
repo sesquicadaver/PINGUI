@@ -15,6 +15,7 @@
 
 ### Fixed
 
+- **Java (Windows):** парсер `tracert` — `<1 ms`, `hostname [IP]`, System32 fallback, `-d`, charset ОС.
 - **Java (Windows):** виправлено timeout/deadlock `tracert` (drain stdout, `-w` ≥4000 ms, довший process wait).
 - **Java (Windows):** `pingui-java.bat` відмовляє без JDK 21 (parity з `pingui-java.sh`).
 - **Java UI:** режим «Експерт» disabled на Windows/macOS (Expert ping — лише Linux iputils).

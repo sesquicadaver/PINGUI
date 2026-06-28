@@ -2,6 +2,7 @@ package io.pingui.probe;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 
 class ProcessRouteProbeCommandTest {
@@ -41,5 +42,19 @@ class ProcessRouteProbeCommandTest {
     @Test
     void computeProcessWaitMsWindowsAllowsThreeProbesPerHop() {
         assertEquals(255_000L, ProcessRouteProbe.computeProcessWaitMs(true, 20, 0.5));
+    }
+
+    @Test
+    void resolveTracertUsesSystem32WhenPresent() {
+        String resolved =
+                ProcessRouteProbe.resolveTracertExecutable(
+                        "C:\\Windows",
+                        path -> path.endsWith(Path.of("System32", "tracert.exe")));
+        assertEquals(Path.of("C:\\Windows", "System32", "tracert.exe").toString(), resolved);
+    }
+
+    @Test
+    void resolveTracertFallsBackToPathName() {
+        assertEquals("tracert", ProcessRouteProbe.resolveTracertExecutable(path -> false));
     }
 }

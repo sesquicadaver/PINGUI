@@ -31,6 +31,16 @@ Gradle 8.10 не запускається під Java 25. Потрібен JDK 2
 
 ---
 
+## [ВИРІШЕНО] Windows: No hops parsed / tracert не розбирається
+
+**Симптом:** `No hops parsed for 8.8.8.8` або граф порожній, хоча `tracert 8.8.8.8` у cmd працює.
+
+**Причина:** парсер не розпізнавав типовий вивід Windows: `<1 ms`, рядки `hostname [IP]`, локалізовані timeout; `tracert` не знаходився без System32 у PATH GUI-процесу.
+
+**Рішення:** `git pull`, `gradlew.bat build`, `gradlew.bat run`. Launcher v4: `pingui-java.bat` (без `:find_jdk21`).
+
+---
+
 ## [ВИРІШЕНО] Windows: FINDSTR Cannot open ^>nul — хибна відмова JDK 21
 
 **Симптом:** Temurin 21.0.x встановлено, але `[pingui-java] ERROR: JDK 21 required` і `JAVA_HOME=` порожній.

@@ -1,5 +1,5 @@
 @echo off
-rem PINGUI Java — Windows launcher (thin wrapper over gradlew.bat).
+rem PINGUI Java — Windows launcher v4 (thin wrapper over gradlew.bat).
 rem JDK 21: set JAVA_HOME or PINGUI_JAVA_HOME before run (Gradle toolchain).
 setlocal EnableExtensions
 cd /d "%~dp0"
