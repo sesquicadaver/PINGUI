@@ -75,12 +75,17 @@ tasks.jacocoTestCoverageVerification {
                     exclude(
                         "io/pingui/PinguiApplication.class",
                         "io/pingui/probe/ProcessRouteProbe.class",
+                        "io/pingui/probe/ProcessExpertPing.class",
+                        "io/pingui/probe/PingOptionCatalog.class",
                         "io/pingui/probe/icmp/LinuxJnaIcmpTransport*.class",
                         "io/pingui/probe/icmp/LinuxCLibrary*.class",
                         "io/pingui/probe/icmp/RawIcmpPermission.class",
                         "io/pingui/ui/MainController*.class",
+                        "io/pingui/ui/PingExpertDialog*.class",
                         "io/pingui/ui/GraphCanvas*.class",
                         "io/pingui/ui/HostItem*.class",
+                        "io/pingui/ui/HostListCell*.class",
+                        "io/pingui/monitor/ExpertPingEnricher.class",
                     )
                 }
             },

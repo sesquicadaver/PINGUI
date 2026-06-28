@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.pingui.config.HostEntry;
 import org.junit.jupiter.api.Test;
 
 class HostViewRulesTest {
@@ -20,5 +21,15 @@ class HostViewRulesTest {
     void messageOnlyForConfiguredHost() {
         assertEquals("fuck yourself, mazafaka", HostViewRules.messageFor("fuck.you"));
         assertNull(HostViewRules.messageFor("1.1.1.1"));
+    }
+
+    @Test
+    void entriesForConfigOmitsEasterEggHost() {
+        var entries =
+                HostViewRules.entriesForConfig(
+                        java.util.List.of(
+                                HostEntry.basic("8.8.8.8", true), HostEntry.basic("fuck.you", false)));
+        assertEquals(1, entries.size());
+        assertEquals("8.8.8.8", entries.get(0).address());
     }
 }

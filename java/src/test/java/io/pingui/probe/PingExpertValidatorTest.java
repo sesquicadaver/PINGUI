@@ -33,4 +33,22 @@ class PingExpertValidatorTest {
         List<String> args = PingExpertValidator.validateAndNormalize(List.of("-4", "-s", "64"));
         assertEquals(List.of("-4", "-s", "64"), args);
     }
+
+    @Test
+    void rejectsFlowLabelWithoutIpv6() {
+        ConfigError error =
+                assertThrows(
+                        ConfigError.class,
+                        () -> PingExpertValidator.validateAndNormalize(List.of("-F", "abc")));
+        assertTrue(error.getMessage().contains("-6"));
+    }
+
+    @Test
+    void rejectsRecordRouteWithoutInterface() {
+        ConfigError error =
+                assertThrows(
+                        ConfigError.class,
+                        () -> PingExpertValidator.validateAndNormalize(List.of("-r")));
+        assertTrue(error.getMessage().contains("-I"));
+    }
 }

@@ -18,4 +18,11 @@ class ProbeModeTest {
     void parseRejectsUnknown() {
         assertThrows(IllegalArgumentException.class, () -> ProbeMode.parse("udp"));
     }
+
+    @Test
+    void cliValueRoundTrip() {
+        assertEquals("auto", ProbeMode.AUTO.cliValue());
+        assertEquals("process", ProbeMode.PROCESS.cliValue());
+        assertEquals("raw", ProbeMode.RAW.cliValue());
+    }
 }

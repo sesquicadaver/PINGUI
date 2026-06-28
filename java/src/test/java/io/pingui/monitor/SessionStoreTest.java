@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.config.ConfigError;
+import io.pingui.config.HostEntry;
+import io.pingui.config.PingExpertEntry;
 import io.pingui.model.Models;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;
@@ -103,5 +105,15 @@ class SessionStoreTest {
                 java.util.stream.IntStream.range(0, 10).mapToObj(i -> "10.0.0." + i).toList();
         SessionStore store = new SessionStore(hosts);
         assertFalse(store.canAddHost());
+    }
+
+    @Test
+    void fromEntriesPreservesPingExpert() {
+        HostEntry entry =
+                new HostEntry("8.8.8.8", true, new PingExpertEntry(true, List.of("-4", "-s", "64")));
+        SessionStore store = SessionStore.fromEntries(List.of(entry));
+        assertTrue(store.getPingExpert("8.8.8.8").applyToChain());
+        assertEquals(List.of("-4", "-s", "64"), store.getPingExpert("8.8.8.8").args());
+        assertEquals(entry, store.toHostEntries().get(0));
     }
 }
