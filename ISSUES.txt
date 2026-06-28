@@ -1,25 +1,27 @@
 # ISSUES — PINGUI
 
-## [ВИРІШЕНО] Gradle build fails: «What went wrong: 25.0.3»
+## [ВИРІШЕНО] Windows: «Java не знайдено» / mojibake in pingui-java.bat
 
-**Симптом** (java/pingui-java.sh --build):
+**Симптом**
+
+```bat
+C:\...\PINGUI\java> pingui-java.bat --build
+[pingui-java] ПОМИЛКА: Java не знайдено. Потрібен JDK 21.
 ```
-FAILURE: Build failed with an exception.
-* What went wrong:
-25.0.3
-```
 
-**Причина:** Gradle 8.10 запускається під **Java 25** (часто JBR від Android Studio). Ця версія Gradle не підтримує Java 25 як launcher JVM. Проєкт цілиться на **JDK 21** (JavaFX + toolchain у build.gradle.kts).
+**Причина:** JDK 21 не в PATH і `JAVA_HOME` не задано.
 
-**Рішення:**
-1. Встановити OpenJDK 21: `sudo apt install openjdk-21-jdk`
-2. Або явно: `export PINGUI_JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64`
-3. Запускати: `cd java && ./pingui-java.sh --build`
+**Рішення**
 
-`pingui-java.sh` тепер автоматично шукає JDK 21 і відмовляє з зрозумілим повідомленням, якщо активна лише Java 25.
+1. Встановити [Eclipse Temurin 21](https://adoptium.net/temurin/releases/?version=21) (Windows x64).
+2. У інсталяторі: **Add to PATH**, **Set JAVA_HOME**.
+3. Нове вікно cmd: `java -version` → 21.x.
+4. Або: `set PINGUI_JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.x-hotspot`
 
-**Перевірка:**
-```bash
-cd java && ./pingui-java.sh --build
-./gradlew test
-```
+**Перевірка:** `pingui-java.bat --build` → BUILD SUCCESSFUL.
+
+---
+
+## [ВИРІШЕНО] Gradle: «What went wrong: 25.0.3»
+
+Gradle 8.10 не запускається під Java 25. Потрібен JDK 21 (`PINGUI_JAVA_HOME` / `JAVA_HOME`).

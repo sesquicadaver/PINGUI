@@ -2,15 +2,15 @@
 
 Крос-платформова версія PINGUI на **Java 21 + JavaFX**.
 
-Працює на **Linux, macOS та Windows** без `CAP_NET_RAW`: трасування через системні
-`traceroute` / `tracert`. Дані сесії — лише в RAM, як у Python-редакції.
+Працює на **Linux, macOS та Windows**: трасування через системні
+`traceroute` / `tracert`. Дані сесії — лише в RAM.
 
 ## Вимоги
 
 | Компонент | Версія |
 |-----------|--------|
-| JDK | 21+ |
-| traceroute | Linux/macOS (`traceroute` у PATH) |
+| JDK | **21** (Java 25 як launcher Gradle не підтримується) |
+| traceroute | Linux/macOS |
 | tracert | Windows (вбудований) |
 
 ## Швидкий старт
@@ -19,32 +19,33 @@
 
 ```bash
 cd java
-chmod +x pingui-java.sh
+chmod +x pingui-java.sh gradlew
 ./pingui-java.sh              # GUI
-./pingui-java.sh --test       # unit-тести
-./pingui-java.sh --build      # збірка + тести + JaCoCo gate
+./pingui-java.sh --build      # збірка
 ./pingui-java.sh --package    # jpackage (.deb / .dmg / .msi)
 ./pingui-java.sh --help
 ```
 
-**Windows (cmd / PowerShell)**
+**Windows**
+
+Потрібен **JDK 21** ([Eclipse Temurin](https://adoptium.net/temurin/releases/?version=21); під час інсталяції — Add to PATH + JAVA_HOME).
 
 ```bat
 cd java
+rem Якщо java не в PATH:
+rem set "PINGUI_JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.x-hotspot"
 pingui-java.bat              REM GUI
-pingui-java.bat --test       REM unit-тести
-pingui-java.bat --build      REM збірка + тести + JaCoCo gate
+pingui-java.bat --build      REM збірка
 pingui-java.bat --package    REM jpackage (.msi)
 pingui-java.bat --help
 ```
 
-Або напряму Gradle (`gradlew` / `gradlew.bat`):
+Gradle напряму:
 
 ```bash
 cd java
 ./gradlew run          # Linux / macOS
 gradlew.bat run        # Windows
-./gradlew test
 ```
 
 ## CLI
@@ -60,48 +61,30 @@ gradlew.bat run        # Windows
 | `--max-hops` | `20` | Максимум hop |
 | `--timeout` | `0.5` | Таймаут probe (с) |
 | `--probe` | `auto` | `auto`, `process`, `raw` (Linux cap) |
-| `--geoip-hints` | `config/geoip_hints.yaml` | Offline CIDR→країна для підписів hop |
+| `--geoip-hints` | `config/geoip_hints.yaml` | Offline CIDR→країна |
 | `--no-geoip` | off | Вимкнути країну в підписах |
 | `--verbose` | off | Debug-лог |
 
 ## GUI
 
-Функціональність вирівняна з Python MVP:
-
-- **Профілі трасування**: кілька named-профілів у одному YAML (`active_profile` + `profiles`), перемикання в UI, «Новий / Видалити / Зберегти»
+- **Профілі трасування**: кілька named-профілів у YAML, перемикання в UI
 - Список до **10 цілей**, чекбокс = активне трасування
-- **Додати / Змінити / Видалити / Зберегти** → YAML (усі профілі + expert ping)
-- **Режим «Експерт»**: кнопка **Exten.** біля кожного хоста → діалог параметрів `ping(8)` (iputils, див. `pingMan.txt`); опції `-c/-w/-W/-i` та інші ліміти часу/кількості виключені; «Застосувати до всього ланцюжка»
-- **Режим «Простий»** (за замовчуванням): компактне вікно під список цілей; **loss %**, **min/avg/max RTT**; кольоровий фон рядка
-- **Режим «Розширений»**: + граф маршруту + лог змін маршруту
-- Неактивні (без чекбокса) цілі — лише ім’я, без метрик
-
-> Топологічний граф вирівняний з Python `GraphCanvas` (Canvas замість Matplotlib).
+- **Додати / Змінити / Видалити / Зберегти** → YAML
+- **Експерт** (Linux): **Exten.** → параметри `ping(8)` iputils; на Win/mac disabled
+- **Простий** / **Розширений**: метрики RTT, loss %, граф маршруту, лог змін
 
 ## Архітектура
 
 ```
 io.pingui
-├── config/          ProfilesConfig, HostsConfig (legacy), PingExpertEntry
-├── model/           HopNode, RouteSnapshot, HostSessionData
-├── probe/           RouteProbeFactory, PingOptionCatalog, ProcessExpertPing
-├── monitor/         SessionStore, RoutePoller, ExpertPingEnricher, MonitorService
-└── ui/              MainController, PingExpertDialog (JavaFX)
+├── config/          ProfilesConfig, PingExpertEntry
+├── model/           HopNode, RouteSnapshot
+├── probe/           RouteProbeFactory, ProcessRouteProbe, ProcessExpertPing
+├── monitor/         SessionStore, MonitorService, ExpertPingEnricher
+└── ui/              MainController, GraphCanvas (JavaFX)
 ```
 
 Деталі: [docs/JAVA.md](../docs/JAVA.md).
-
-## Відмінності від Python-версії
-
-| Аспект | Python | Java |
-|--------|--------|------|
-| Платформа | Linux | Linux, macOS, Windows |
-| ICMP | scapy raw socket + cap_net_raw | traceroute/tracert subprocess |
-| GUI | PyQt6 + Matplotlib graph | JavaFX + GraphCanvas |
-| Worker | QThread | ScheduledExecutorService |
-| Запуск | `./pingui.sh` (Linux) | `java/pingui-java.sh` або `java/pingui-java.bat` (Windows) |
-
-Спільний формат конфігу YAML: legacy `hosts:` або v2 `profiles:` (Java зберігає v2). Expert ping — лише Java UI.
 
 ### Формат профілів (v2)
 
@@ -119,40 +102,23 @@ profiles:
         ping_expert:
           chain: false
           args: ["-4", "-s", "128"]
-  datacenter:
-    hosts:
-      - "10.0.0.1"
 ```
 
-## Розробка
+## Збірка
 
 ```bash
 cd java
-./gradlew test
+./gradlew build
 ./gradlew run
 ./gradlew jpackageDeb   # Linux .deb → build/dist/
 ```
 
-JUnit 5 (30+ тестів: config, probe, monitor, ui layout, CLI options, ProfilesConfig, PingExpertValidator, ProcessExpertPing). JaCoCo gate ≥80% instruction coverage.
-
-```bash
-cd java && ./gradlew test
-```
+Unit-тести та CI — гілка **`beta`**.
 
 ## Пакування (jpackage)
-
-На Linux / Windows / macOS з JDK 21+ (містить `jpackage`):
 
 ```bash
 ./pingui-java.sh --package    # Linux / macOS
 pingui-java.bat --package     # Windows
-# або
-./gradlew installDist jpackage
-ls build/dist/    # pingui_0.1.0_amd64.deb | .msi | .dmg залежно від ОС
+ls build/dist/
 ```
-
-Інсталятор включає JavaFX та залежності з `installDist`.
-
-## Backlog (Java)
-
-- Спільний CI matrix з Python
