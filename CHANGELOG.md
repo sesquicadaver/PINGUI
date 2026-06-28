@@ -10,6 +10,10 @@
 - **CLI (Python):** некоректний `--geoip-hints` і недоступний Timescale DSN → `Config error` замість traceback.
 - **CLI (Java):** некоректні числові опції, config і GeoIP hints → `Config error` на stderr.
 
+### Added
+
+- **Java UI:** режими «Простий» / «Розширений»; у простому — метрики кінцевого hop (loss, min/avg/max ms) і постійна кольорова індикація рядка.
+
 ### Changed
 
 - **Гілки:** `main` — робочий код і документація; `beta` — повний репозиторій розробки (тести, CI, specs).

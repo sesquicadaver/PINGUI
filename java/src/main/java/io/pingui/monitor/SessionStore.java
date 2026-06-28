@@ -124,6 +124,21 @@ public final class SessionStore {
         return stats != null ? HopStats.summarize(stats) : null;
     }
 
+    /** Metrics for the last hop in the current route; {@code null} when route or probes are missing. */
+    public HostTargetStats targetStats(String host) {
+        HostSessionData session = get(host);
+        if (!session.isEnabled()) {
+            return null;
+        }
+        List<HopNode> route = session.getCurrentRoute();
+        if (route.isEmpty()) {
+            return null;
+        }
+        HopNode terminal = route.get(route.size() - 1);
+        HopProbeStats stats = session.getHopStats().get(terminal.hop());
+        return HopStats.targetStats(terminal, stats);
+    }
+
     private void recordHopProbes(String host, RouteSnapshot snapshot) {
         HostSessionData session = get(host);
         for (HopNode node : snapshot.nodes()) {
