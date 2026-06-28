@@ -179,7 +179,7 @@ public final class MainController {
 
     private void onToggleEnabled(HostItem item, boolean enabled) {
         try {
-            if (!HostEasterEgg.matches(item.getHost())) {
+            if (!HostViewRules.matches(item.getHost())) {
                 monitor.setHostEnabled(item.getHost(), enabled);
             } else if (enabled) {
                 enabled = false;
@@ -298,9 +298,9 @@ public final class MainController {
             return;
         }
         String host = selected.getHost();
-        String egg = HostEasterEgg.messageFor(host);
-        if (egg != null) {
-            graphCanvas.renderEasterEgg(egg);
+        String staticView = HostViewRules.messageFor(host);
+        if (staticView != null) {
+            graphCanvas.renderStaticView(staticView);
             return;
         }
         graphCanvas.renderRoute(

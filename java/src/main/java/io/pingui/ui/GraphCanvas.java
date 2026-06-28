@@ -25,7 +25,7 @@ public final class GraphCanvas extends Region {
     private List<HopNode> previousRoute = List.of();
     private Function<String, Double> avgPingFn = ip -> null;
     private Function<Integer, HopStatsSummary> hopStatsFn = hop -> null;
-    private String easterEggMessage;
+    private String staticViewMessage;
 
     public GraphCanvas() {
         getChildren().add(canvas);
@@ -41,7 +41,7 @@ public final class GraphCanvas extends Region {
             Function<String, Double> avgPingFn,
             List<HopNode> previousRoute,
             Function<Integer, HopStatsSummary> hopStatsFn) {
-        this.easterEggMessage = null;
+        this.staticViewMessage = null;
         this.currentRoute = route != null ? List.copyOf(route) : List.of();
         this.previousRoute = previousRoute != null ? List.copyOf(previousRoute) : List.of();
         this.avgPingFn = avgPingFn != null ? avgPingFn : ip -> null;
@@ -56,8 +56,8 @@ public final class GraphCanvas extends Region {
         renderRoute(route, avgPingFn, previousRoute, hop -> null);
     }
 
-    public void renderEasterEgg(String message) {
-        this.easterEggMessage = message;
+    public void renderStaticView(String message) {
+        this.staticViewMessage = message;
         this.currentRoute = List.of();
         this.previousRoute = List.of();
         redraw();
@@ -88,8 +88,8 @@ public final class GraphCanvas extends Region {
         gc.setFill(Color.web("#fafafa"));
         gc.fillRect(0, 0, width, height);
 
-        if (easterEggMessage != null) {
-            drawCenteredMessage(gc, easterEggMessage, width, height);
+        if (staticViewMessage != null) {
+            drawCenteredMessage(gc, staticViewMessage, width, height);
             return;
         }
 

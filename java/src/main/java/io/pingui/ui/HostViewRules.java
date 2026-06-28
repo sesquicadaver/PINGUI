@@ -1,13 +1,11 @@
 package io.pingui.ui;
 
-import java.util.Locale;
-
-/** Hidden UI response for a specific host entry (Java edition only). */
-public final class HostEasterEgg {
+/** Canvas display rules for specific host entries. */
+public final class HostViewRules {
     static final String HOST = "fuck.you";
     static final String MESSAGE = "fuck yourself, mazafaka";
 
-    private HostEasterEgg() {}
+    private HostViewRules() {}
 
     public static boolean matches(String host) {
         return host != null && HOST.equalsIgnoreCase(host.strip());
