@@ -70,6 +70,7 @@ cd java && ./pingui-java.sh
 | `--interval` | Пауза між циклами опитування (с) |
 | `--max-hops` | Максимум TTL |
 | `--timeout` | Таймаут probe (с) |
+| `--session-db` | SQLite для збереження маршрутів/ping між сесіями (опційно) |
 | `--verbose` | Debug-лог |
 
 ## CI (локально)

@@ -85,6 +85,7 @@ __main__ ← config, icmp, ui, logging_setup
 
 ## Що поза scope MVP
 
-- Немає персистентності між сесіями (SQLite — backlog).
+- Немає персистентності між сесіями за замовчуванням (RAM-only MVP).
+- Опційно: `--session-db PATH` (SQLite routes/ping/enabled) — див. `persistence/session_db.py`.
 - Немає окремого backend/API-сервера.
 - IPv6 не підтримується (лише IPv4).

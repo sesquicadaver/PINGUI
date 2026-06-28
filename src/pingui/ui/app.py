@@ -35,6 +35,7 @@ def run_app(
     timeout: float = 0.5,
     *,
     quiet: bool = True,
+    session_db_path: Path | None = None,
 ) -> int:
     """Create QApplication and run main window event loop."""
     if quiet:
@@ -46,6 +47,7 @@ def run_app(
         interval_seconds=interval_seconds,
         max_hops=max_hops,
         timeout=timeout,
+        session_db_path=session_db_path,
     )
     window.show()
     return app.exec()

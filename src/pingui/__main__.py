@@ -46,6 +46,12 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Enable debug logging",
     )
+    parser.add_argument(
+        "--session-db",
+        type=Path,
+        default=None,
+        help="Optional SQLite path to persist routes/ping between sessions",
+    )
     return parser
 
 
@@ -84,6 +90,7 @@ def main(argv: list[str] | None = None) -> int:
         max_hops=args.max_hops,
         timeout=args.timeout,
         quiet=not args.verbose,
+        session_db_path=args.session_db,
     )
 
 

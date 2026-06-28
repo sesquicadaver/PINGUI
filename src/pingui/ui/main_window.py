@@ -25,6 +25,7 @@ from pingui.config import ConfigError, save_hosts_config
 from pingui.models import RouteSnapshot
 from pingui.monitor.session_store import SessionStore
 from pingui.monitor.worker import LightweightMonitorWorker
+from pingui.persistence.session_db import SessionDatabase
 from pingui.ui.graph_canvas import GraphCanvas
 
 HOST_KEY_ROLE = Qt.ItemDataRole.UserRole
@@ -40,13 +41,17 @@ class MainWindow(QMainWindow):
         interval_seconds: float = 1.0,
         max_hops: int = 20,
         timeout: float = 0.5,
+        session_db_path: Path | None = None,
     ) -> None:
         super().__init__()
         self.setWindowTitle("PINGUI — Сесійний монітор маршрутів Linux")
         self.resize(1100, 700)
         self._config_path = Path(config_path)
+        self._session_db = (
+            SessionDatabase(session_db_path) if session_db_path is not None else None
+        )
 
-        self._store = SessionStore(hosts)
+        self._store = SessionStore(hosts, session_db=self._session_db)
         self._last_update: datetime | None = None
         self._updating_list = False
 
@@ -59,7 +64,8 @@ class MainWindow(QMainWindow):
         self._host_list.itemChanged.connect(self._on_host_item_changed)
         self._host_list.currentItemChanged.connect(self._on_host_selected)
         for host in hosts:
-            self._append_host_item(host, enabled=False)
+            enabled = self._store.get(host).enabled
+            self._append_host_item(host, enabled=enabled)
 
         self._host_input = QLineEdit()
         self._host_input.setPlaceholderText("IP або hostname…")
@@ -107,6 +113,9 @@ class MainWindow(QMainWindow):
         self._worker.route_changed.connect(self._on_route_changed)
         self._worker.probe_error.connect(self._on_probe_error)
         self._worker.start()
+        for host in hosts:
+            if self._store.get(host).enabled:
+                self._worker.set_host_enabled(host, True)
 
         if self._host_list.count() > 0:
             self._host_list.setCurrentRow(0)
@@ -323,5 +332,6 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event: QCloseEvent | None) -> None:
         self._worker.stop()
         self._worker.wait(5000)
+        self._store.close()
         if event is not None:
             event.accept()
