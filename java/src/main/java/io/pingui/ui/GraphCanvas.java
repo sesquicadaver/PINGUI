@@ -25,6 +25,7 @@ public final class GraphCanvas extends Region {
     private List<HopNode> previousRoute = List.of();
     private Function<String, Double> avgPingFn = ip -> null;
     private Function<Integer, HopStatsSummary> hopStatsFn = hop -> null;
+    private String easterEggMessage;
 
     public GraphCanvas() {
         getChildren().add(canvas);
@@ -40,6 +41,7 @@ public final class GraphCanvas extends Region {
             Function<String, Double> avgPingFn,
             List<HopNode> previousRoute,
             Function<Integer, HopStatsSummary> hopStatsFn) {
+        this.easterEggMessage = null;
         this.currentRoute = route != null ? List.copyOf(route) : List.of();
         this.previousRoute = previousRoute != null ? List.copyOf(previousRoute) : List.of();
         this.avgPingFn = avgPingFn != null ? avgPingFn : ip -> null;
@@ -52,6 +54,13 @@ public final class GraphCanvas extends Region {
             Function<String, Double> avgPingFn,
             List<HopNode> previousRoute) {
         renderRoute(route, avgPingFn, previousRoute, hop -> null);
+    }
+
+    public void renderEasterEgg(String message) {
+        this.easterEggMessage = message;
+        this.currentRoute = List.of();
+        this.previousRoute = List.of();
+        redraw();
     }
 
     @Override
@@ -78,6 +87,11 @@ public final class GraphCanvas extends Region {
         gc.clearRect(0, 0, width, height);
         gc.setFill(Color.web("#fafafa"));
         gc.fillRect(0, 0, width, height);
+
+        if (easterEggMessage != null) {
+            drawCenteredMessage(gc, easterEggMessage, width, height);
+            return;
+        }
 
         GraphScene scene = RouteGraphLayout.buildScene(currentRoute, previousRoute, avgPingFn, hopStatsFn);
         Map<String, GraphNode> byId = new HashMap<>();
@@ -138,5 +152,13 @@ public final class GraphCanvas extends Region {
         }
         gc.strokeLine(x1, y1, x2, y2);
         gc.setLineDashes(null);
+    }
+
+    private static void drawCenteredMessage(GraphicsContext gc, String message, double width, double height) {
+        Font font = Font.font("Monospace", 18);
+        gc.setFill(Color.web("#333333"));
+        gc.setFont(font);
+        double textWidth = gc.getFont().getSize() * message.length() * 0.55;
+        gc.fillText(message, Math.max(TEXT_PAD, (width - textWidth) / 2), height / 2);
     }
 }

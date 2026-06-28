@@ -179,11 +179,16 @@ public final class MainController {
 
     private void onToggleEnabled(HostItem item, boolean enabled) {
         try {
-            monitor.setHostEnabled(item.getHost(), enabled);
+            if (!HostEasterEgg.matches(item.getHost())) {
+                monitor.setHostEnabled(item.getHost(), enabled);
+            } else if (enabled) {
+                enabled = false;
+            }
             store.setEnabled(item.getHost(), enabled);
             updatingList = true;
             item.enabledProperty().set(enabled);
             updatingList = false;
+            redrawRoute();
         } catch (ConfigError ex) {
             appendLog(ex.getMessage());
             updatingList = true;
@@ -293,6 +298,11 @@ public final class MainController {
             return;
         }
         String host = selected.getHost();
+        String egg = HostEasterEgg.messageFor(host);
+        if (egg != null) {
+            graphCanvas.renderEasterEgg(egg);
+            return;
+        }
         graphCanvas.renderRoute(
                 store.get(host).getCurrentRoute(),
                 ip -> store.avgPing(host, ip),
