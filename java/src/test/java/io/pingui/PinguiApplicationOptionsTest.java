@@ -20,6 +20,16 @@ class PinguiApplicationOptionsTest {
         assertEquals(0.5, options.timeoutSeconds());
         assertFalse(options.verbose());
         assertEquals(ProbeMode.AUTO, options.probeMode());
+        assertTrue(options.geoipEnabled());
+    }
+
+    @Test
+    void parseOptionsGeoipFlags() {
+        AppOptions disabled = PinguiApplication.parseOptions(Map.of("no-geoip", "true"));
+        assertFalse(disabled.geoipEnabled());
+        AppOptions custom =
+                PinguiApplication.parseOptions(Map.of("geoip-hints", "custom/geoip.yaml"));
+        assertEquals(Path.of("custom/geoip.yaml"), custom.geoipHintsPath());
     }
 
     @Test

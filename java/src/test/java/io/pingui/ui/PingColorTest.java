@@ -19,7 +19,8 @@ class PingColorTest {
     @Test
     void nodeLabelUsesAvgPing() {
         HopNode node = new HopNode(3, "192.168.0.1", 12.0, false);
-        assertEquals("Hop 3\n192.168.0.1\n12 ms", PingColor.nodeLabel(node, ip -> 12.0));
+        assertEquals("Hop 3\n192.168.0.1\nLAN\n12 ms", PingColor.nodeLabel(node, ip -> 12.0));
+        assertEquals("Hop 4\n8.8.8.8\nUS\n5 ms", PingColor.nodeLabel(new HopNode(4, "8.8.8.8", 5.0, false), ip -> 5.0));
         assertEquals("Hop 2\n*", PingColor.nodeLabel(new HopNode(2, "*", null, true), ip -> null));
     }
 }

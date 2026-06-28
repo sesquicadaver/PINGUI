@@ -2,6 +2,7 @@ package io.pingui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.probe.ProbeMode;
 import java.nio.file.Path;
@@ -17,5 +18,7 @@ class AppOptionsTest {
         assertEquals(0.5, options.timeoutSeconds());
         assertFalse(options.verbose());
         assertEquals(ProbeMode.AUTO, options.probeMode());
+        assertTrue(options.geoipEnabled());
+        assertEquals(Path.of("config/geoip_hints.yaml"), options.geoipHintsPath());
     }
 }

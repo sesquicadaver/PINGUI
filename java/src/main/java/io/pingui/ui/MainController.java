@@ -3,6 +3,7 @@ package io.pingui.ui;
 import io.pingui.AppOptions;
 import io.pingui.config.ConfigError;
 import io.pingui.config.HostsConfig;
+import io.pingui.geoip.GeoCountry;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
@@ -46,6 +47,7 @@ public final class MainController {
 
     public MainController(AppOptions options, List<String> initialHosts) {
         this.options = options;
+        GeoCountry.configure(options.geoipEnabled(), options.geoipHintsPath());
         this.store = new SessionStore(initialHosts);
         this.monitor =
                 new MonitorService(

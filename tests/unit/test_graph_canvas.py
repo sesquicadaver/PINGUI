@@ -6,6 +6,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 
+from pingui.geoip import configure as configure_geoip
 from pingui.models import HopNode
 from pingui.ui.graph_canvas import (
     GraphCanvas,
@@ -27,9 +28,14 @@ def test_ping_color_thresholds() -> None:
 
 
 def test_node_label_compact() -> None:
+    configure_geoip(enabled=True)
     node = HopNode(3, "192.168.0.1", 12.0)
-    assert _node_label(node, lambda _ip: 12.0) == "Hop 3\n192.168.0.1\n12 ms"
+    assert _node_label(node, lambda _ip: 12.0) == "Hop 3\n192.168.0.1\nLAN\n12 ms"
     assert _node_label(HopNode.timeout(2), lambda _ip: None) == "Hop 2\n*"
+    assert _node_label(HopNode(4, "8.8.8.8", 5.0), lambda _ip: 5.0) == "Hop 4\n8.8.8.8\nUS\n5 ms"
+    configure_geoip(enabled=False)
+    assert _node_label(HopNode(4, "8.8.8.8", 5.0), lambda _ip: 5.0) == "Hop 4\n8.8.8.8\n5 ms"
+    configure_geoip(enabled=True)
 
 
 def test_dual_columns_do_not_overlap() -> None:

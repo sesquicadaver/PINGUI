@@ -2,7 +2,7 @@
 
 Матриця відповідності «вимога → модуль → тести». Оновлюється при кожній фічі.
 
-**Останнє оновлення:** 2026-06-26 · **Coverage:** ≥ 80% · **Тестів:** 72+ · **Документація:** [README.md](README.md)
+**Останнє оновлення:** 2026-06-26 · **Coverage:** ≥ 80% · **Тестів:** 79+ · **Документація:** [README.md](README.md)
 
 Джерело вимог MVP: [MVP_SPEC.md](MVP_SPEC.md).
 
@@ -53,6 +53,7 @@
 | Вимога | Модуль | Тести | Статус |
 |--------|--------|-------|--------|
 | GraphCanvas: layout, кольори ping | `ui/graph_canvas.py` | `tests/unit/test_graph_canvas.py` | done |
+| GeoIP country hints in node labels | `geoip/country.py` | `tests/unit/test_geoip_country.py` | done |
 | MainWindow: список, CRUD, збереження | `ui/main_window.py` | `tests/integration/test_ui_smoke.py` | done |
 | Чекбокси enabled, лог, status | `ui/main_window.py` | `tests/integration/test_ui_smoke.py` | done |
 | App bootstrap + quiet logging | `ui/app.py`, `logging_setup.py` | omit coverage (entry) | done |
@@ -87,6 +88,7 @@
 | jpackage Linux .deb | `build.gradle.kts` `jpackageDeb`, `pingui-java.sh --package` | manual / local | done |
 | jpackage Windows/macOS | `jpackageMsi`, `jpackageDmg` | manual on target OS | done |
 | Topological graph | `ui.GraphCanvas`, `RouteGraphLayout` | `PingColorTest`, `RouteGraphLayoutTest` | done |
+| GeoIP country hints | `geoip.GeoCountry` | `GeoCountryTest` | done |
 | SessionStore parity | `monitor.SessionStore` | `SessionStoreTest` | done |
 | Route history | `monitor.RouteHistory` | `RouteHistoryTest` | done |
 | Monitor cycle callbacks | `monitor.MonitorService` | `MonitorServiceTest` | done |

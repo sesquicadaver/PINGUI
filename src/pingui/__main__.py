@@ -8,6 +8,7 @@ from pathlib import Path
 
 from pingui.config import load_hosts_config
 from pingui.export.session_report import export_session_csv, export_session_html
+from pingui.geoip import configure as configure_geoip
 from pingui.icmp.raw_socket import RawIcmpPermissionError, check_raw_icmp_permission
 from pingui.logging_setup import setup_logging
 from pingui.monitor.session_store import SessionStore
@@ -67,6 +68,17 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Export session report to HTML and exit (optional with --session-db)",
     )
+    parser.add_argument(
+        "--geoip-hints",
+        type=Path,
+        default=None,
+        help="YAML with CIDR→country hints for graph labels (default: config/geoip_hints.yaml)",
+    )
+    parser.add_argument(
+        "--no-geoip",
+        action="store_true",
+        help="Disable country hints in hop node labels",
+    )
     return parser
 
 
@@ -122,6 +134,8 @@ def main(argv: list[str] | None = None) -> int:
     except RawIcmpPermissionError as exc:
         print(str(exc), file=sys.stderr)
         return 1
+
+    configure_geoip(enabled=not args.no_geoip, hints_path=args.geoip_hints)
 
     from pingui.ui.app import run_app
 

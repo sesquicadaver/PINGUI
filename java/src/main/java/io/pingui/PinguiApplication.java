@@ -43,10 +43,15 @@ public final class PinguiApplication extends Application {
         boolean verbose = params.containsKey("verbose");
         ProbeMode probeMode =
                 params.containsKey("probe") ? ProbeMode.parse(params.get("probe")) : defaults.probeMode();
+        boolean geoipEnabled = !params.containsKey("no-geoip");
+        Path geoipHints =
+                params.containsKey("geoip-hints")
+                        ? Path.of(params.get("geoip-hints"))
+                        : defaults.geoipHintsPath();
         if (interval <= 0 || timeout <= 0 || maxHops < 1) {
             throw new IllegalArgumentException("Invalid CLI numeric options");
         }
-        return new AppOptions(config, interval, maxHops, timeout, verbose, probeMode);
+        return new AppOptions(config, interval, maxHops, timeout, verbose, probeMode, geoipEnabled, geoipHints);
     }
 
     private static double parseDouble(String value, double fallback) {
@@ -112,6 +117,8 @@ public final class PinguiApplication extends Application {
                   --max-hops N      Max TTL hops (default: 20)
                   --timeout SEC     Probe timeout (default: 0.5)
                   --probe MODE      auto | process | raw (default: auto)
+                  --geoip-hints PATH  CIDR→country YAML (default: config/geoip_hints.yaml)
+                  --no-geoip        Disable country hints in hop labels
                   --verbose         Debug logging
                 """);
     }

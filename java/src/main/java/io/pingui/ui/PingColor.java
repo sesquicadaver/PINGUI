@@ -1,5 +1,6 @@
 package io.pingui.ui;
 
+import io.pingui.geoip.GeoCountry;
 import io.pingui.model.Models;
 import io.pingui.model.Models.HopNode;
 import java.util.function.Function;
@@ -37,13 +38,22 @@ public final class PingColor {
         if (node.timeout() || Models.TIMEOUT_IP.equals(node.ip())) {
             return "Hop " + node.hop() + "\n*";
         }
+        String countryLine = countryLine(node.ip());
         Double avg = avgPingFn.apply(node.ip());
         if (avg != null) {
-            return "Hop " + node.hop() + "\n" + node.ip() + "\n" + avg.intValue() + " ms";
+            return "Hop " + node.hop() + "\n" + node.ip() + countryLine + "\n" + avg.intValue() + " ms";
         }
         if (node.pingMs() != null) {
-            return "Hop " + node.hop() + "\n" + node.ip() + "\n" + node.pingMs().intValue() + " ms";
+            return "Hop " + node.hop() + "\n" + node.ip() + countryLine + "\n" + node.pingMs().intValue() + " ms";
+        }
+        if (!countryLine.isEmpty()) {
+            return "Hop " + node.hop() + "\n" + node.ip() + countryLine;
         }
         return "Hop " + node.hop() + "\n" + node.ip();
+    }
+
+    private static String countryLine(String ip) {
+        String code = GeoCountry.lookup(ip);
+        return code != null ? "\n" + code : "";
     }
 }

@@ -10,6 +10,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 
+from pingui.geoip import country_code_for_ip
 from pingui.models import TIMEOUT_IP, HopNode
 
 LOCALHOST_ID = "localhost"
@@ -74,17 +75,25 @@ def _node_color(
     return ping_color(avg if avg is not None else node.ping_ms, False)
 
 
+def _country_line(ip: str) -> str:
+    code = country_code_for_ip(ip)
+    return f"\n{code}" if code else ""
+
+
 def _node_label(
     node: HopNode,
     avg_ping_fn: Callable[[str], float | None],
 ) -> str:
     if node.is_timeout or node.ip == TIMEOUT_IP:
         return f"Hop {node.hop}\n*"
+    country = _country_line(node.ip)
     avg = avg_ping_fn(node.ip)
     if avg is not None:
-        return f"Hop {node.hop}\n{node.ip}\n{int(avg)} ms"
+        return f"Hop {node.hop}\n{node.ip}{country}\n{int(avg)} ms"
     if node.ping_ms is not None:
-        return f"Hop {node.hop}\n{node.ip}\n{int(node.ping_ms)} ms"
+        return f"Hop {node.hop}\n{node.ip}{country}\n{int(node.ping_ms)} ms"
+    if country:
+        return f"Hop {node.hop}\n{node.ip}{country}"
     return f"Hop {node.hop}\n{node.ip}"
 
 

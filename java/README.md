@@ -56,6 +56,8 @@ cd java
 | `--max-hops` | `20` | Максимум hop |
 | `--timeout` | `0.5` | Таймаут probe (с) |
 | `--probe` | `auto` | `auto`, `process`, `raw` (Linux cap) |
+| `--geoip-hints` | `config/geoip_hints.yaml` | Offline CIDR→країна для підписів hop |
+| `--no-geoip` | off | Вимкнути країну в підписах |
 | `--verbose` | off | Debug-лог |
 
 ## GUI
@@ -65,7 +67,7 @@ cd java
 - Список до **10 цілей**, чекбокс = активне трасування
 - **Додати / Змінити / Видалити / Зберегти** → YAML
 - Лог змін маршруту та помилок
-- **Граф маршруту (JavaFX)**: згори вниз, дві колонки (inactive / active), кольори RTT, avg ping у підписах
+- **Граф маршруту (JavaFX)**: згори вниз, дві колонки (inactive / active), кольори RTT, avg ping і **країна (GeoIP hints)** у підписах
 
 > Топологічний граф вирівняний з Python `GraphCanvas` (Canvas замість Matplotlib).
 

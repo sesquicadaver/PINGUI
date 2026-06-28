@@ -10,8 +10,18 @@ public record AppOptions(
         int maxHops,
         double timeoutSeconds,
         boolean verbose,
-        ProbeMode probeMode) {
+        ProbeMode probeMode,
+        boolean geoipEnabled,
+        Path geoipHintsPath) {
     public static AppOptions defaults() {
-        return new AppOptions(Path.of("config/hosts.example.yaml"), 1.0, 20, 0.5, false, ProbeMode.AUTO);
+        return new AppOptions(
+                Path.of("config/hosts.example.yaml"),
+                1.0,
+                20,
+                0.5,
+                false,
+                ProbeMode.AUTO,
+                true,
+                Path.of("config/geoip_hints.yaml"));
     }
 }
