@@ -15,7 +15,7 @@
 
 ### Fixed
 
-- **Java (Windows):** `pingui-java.bat` шукає JDK 21 у `JAVA_HOME`, `PINGUI_JAVA_HOME` і типових каталогах Program Files; повідомлення про помилки англійською (cmd encoding).
+- **Java (Windows):** виправлено тихий вихід `pingui-java.bat` (GOTO з CALL ламав запуск Gradle); видимий лог збірки/GUI.
 - **Java (Windows):** `pingui-java.bat` відмовляє без JDK 21 (parity з `pingui-java.sh`).
 - **Java UI:** режим «Експерт» disabled на Windows/macOS (Expert ping — лише Linux iputils).
 - **CLI (Python):** некоректний `--geoip-hints` і недоступний Timescale DSN → `Config error` замість traceback.
