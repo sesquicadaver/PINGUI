@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -43,6 +44,7 @@ public final class MonitorService implements AutoCloseable {
     private final List<String> hosts = new ArrayList<>();
     private final Map<String, Boolean> enabled = new HashMap<>();
     private final Map<String, List<String>> lastRoutes = new HashMap<>();
+    private final Map<String, AtomicBoolean> pollsInFlight = new ConcurrentHashMap<>();
     private final double intervalSeconds;
     private final int maxHops;
     private final double timeoutSeconds;
@@ -122,6 +124,7 @@ public final class MonitorService implements AutoCloseable {
             enabled.remove(host);
             lastRoutes.remove(host);
         }
+        pollsInFlight.remove(host);
     }
 
     public void renameHost(String oldHost, String newHost) {
@@ -136,6 +139,10 @@ public final class MonitorService implements AutoCloseable {
                 enabled.put(newHost, wasEnabled);
             }
             lastRoutes.put(newHost, lastRoutes.remove(oldHost));
+            AtomicBoolean inFlight = pollsInFlight.remove(oldHost);
+            if (inFlight != null) {
+                pollsInFlight.put(newHost, inFlight);
+            }
         }
     }
 
@@ -177,6 +184,21 @@ public final class MonitorService implements AutoCloseable {
         if (!running.get()) {
             return;
         }
+        AtomicBoolean inFlight = pollsInFlight.computeIfAbsent(host, ignored -> new AtomicBoolean(false));
+        if (!inFlight.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            pollHostOnce(host);
+        } finally {
+            inFlight.set(false);
+        }
+    }
+
+    private void pollHostOnce(String host) {
+        if (!running.get()) {
+            return;
+        }
         List<String> previousIps;
         synchronized (lock) {
             if (!hosts.contains(host)) {
@@ -193,9 +215,6 @@ public final class MonitorService implements AutoCloseable {
             current.onProbeError(host, outcome.error());
             return;
         }
-        if (outcome.routeChanged()) {
-            current.onRouteChanged(host, outcome.oldIps(), outcome.newIps());
-        }
         synchronized (lock) {
             if (hosts.contains(host)) {
                 lastRoutes.put(host, outcome.currentIps());
@@ -211,6 +230,9 @@ public final class MonitorService implements AutoCloseable {
                 }
             }
             current.onDataReceived(host, snapshot);
+        }
+        if (outcome.routeChanged()) {
+            current.onRouteChanged(host, outcome.oldIps(), outcome.newIps());
         }
     }
 

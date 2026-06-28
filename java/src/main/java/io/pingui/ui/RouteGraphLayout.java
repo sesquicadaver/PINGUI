@@ -225,6 +225,6 @@ public final class RouteGraphLayout {
     }
 
     private static List<String> ips(List<HopNode> route) {
-        return route.stream().map(HopNode::ip).toList();
+        return route.stream().filter(HopNode::isReachable).map(HopNode::ip).toList();
     }
 }
