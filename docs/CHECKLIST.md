@@ -99,7 +99,7 @@ cd C:\path\to\PINGUI\java
 pingui-java.bat --build
 ```
 
-`pingui-java.bat` також шукає JDK у `Program Files\Eclipse Adoptium`, `Program Files\Java`, `Program Files\Microsoft`.
+`pingui-java.bat` лише передає `JAVA_HOME`/`PINGUI_JAVA_HOME` у `gradlew.bat` (без пошуку JDK у cmd — старий пошук ламався на шляхах з пробілами).
 
 ### Збірка PINGUI
 
