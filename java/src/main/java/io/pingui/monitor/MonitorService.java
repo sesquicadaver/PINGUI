@@ -166,11 +166,14 @@ public final class MonitorService implements AutoCloseable {
         }
         List<String> previousIps;
         synchronized (lock) {
+            if (!hosts.contains(host)) {
+                return;
+            }
             previousIps = List.copyOf(lastRoutes.getOrDefault(host, List.of()));
         }
         HostPollOutcome outcome = poller.pollHostRoute(host, previousIps, maxHops, timeoutSeconds);
         Listener current = listener;
-        if (current == null) {
+        if (current == null || !isKnownHost(host)) {
             return;
         }
         if (outcome.error() != null) {
@@ -181,10 +184,18 @@ public final class MonitorService implements AutoCloseable {
             current.onRouteChanged(host, outcome.oldIps(), outcome.newIps());
         }
         synchronized (lock) {
-            lastRoutes.put(host, outcome.currentIps());
+            if (hosts.contains(host)) {
+                lastRoutes.put(host, outcome.currentIps());
+            }
         }
-        if (outcome.snapshot() != null) {
+        if (outcome.snapshot() != null && isKnownHost(host)) {
             current.onDataReceived(host, outcome.snapshot());
+        }
+    }
+
+    private boolean isKnownHost(String host) {
+        synchronized (lock) {
+            return hosts.contains(host);
         }
     }
 

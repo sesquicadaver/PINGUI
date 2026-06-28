@@ -9,6 +9,7 @@ import io.pingui.probe.RouteProbe;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 
@@ -109,6 +110,51 @@ class MonitorServiceTest {
         service.addHost("8.8.8.8", true);
         service.addHost("1.1.1.1", true);
         assertTrue(latch.await(3, TimeUnit.SECONDS));
+        service.close();
+    }
+
+    @Test
+    void dropsStaleCallbackAfterHostRemoved() throws Exception {
+        RouteSnapshot snapshot =
+                new RouteSnapshot(
+                        "rezka.ag",
+                        "1.1.1.1",
+                        List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
+        CountDownLatch probeStarted = new CountDownLatch(1);
+        CountDownLatch releaseProbe = new CountDownLatch(1);
+        RouteProbe slowProbe =
+                (targetHost, maxHops, timeoutSeconds) -> {
+                    probeStarted.countDown();
+                    try {
+                        if (!releaseProbe.await(3, TimeUnit.SECONDS)) {
+                            throw new java.io.IOException("probe wait timed out");
+                        }
+                    } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                        throw new java.io.IOException("probe interrupted", ex);
+                    }
+                    return snapshot;
+                };
+        AtomicInteger received = new AtomicInteger();
+        MonitorService service = new MonitorService(0.05, 20, 0.5, slowProbe);
+        service.setListener(new MonitorService.Listener() {
+            @Override
+            public void onDataReceived(String host, RouteSnapshot snap) {
+                received.incrementAndGet();
+            }
+
+            @Override
+            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
+
+            @Override
+            public void onProbeError(String host, String message) {}
+        });
+        service.addHost("rezka.ag", true);
+        assertTrue(probeStarted.await(3, TimeUnit.SECONDS));
+        service.removeHost("rezka.ag");
+        releaseProbe.countDown();
+        Thread.sleep(300);
+        assertEquals(0, received.get());
         service.close();
     }
 }

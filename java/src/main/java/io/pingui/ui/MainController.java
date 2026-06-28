@@ -266,6 +266,9 @@ public final class MainController {
     }
 
     private void handleData(String host, RouteSnapshot snapshot) {
+        if (!store.containsHost(host)) {
+            return;
+        }
         store.updateRoute(host, snapshot);
         store.appendPingSamples(host, snapshot);
         HostItem selected = hostList.getSelectionModel().getSelectedItem();
@@ -276,6 +279,9 @@ public final class MainController {
     }
 
     private void handleRouteChanged(String host, List<String> oldIps, List<String> newIps) {
+        if (!store.containsHost(host)) {
+            return;
+        }
         String oldStr = oldIps.isEmpty() ? "Початок моніторингу" : String.join(" -> ", oldIps);
         appendLog("⚠ ЗМІНА МАРШРУТУ до " + host + "\nБуло: " + oldStr + "\nСтало: " + String.join(" -> ", newIps));
     }

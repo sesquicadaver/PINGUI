@@ -29,6 +29,10 @@ public final class SessionStore {
         return List.copyOf(data.keySet());
     }
 
+    public boolean containsHost(String host) {
+        return data.containsKey(host);
+    }
+
     public boolean canAddHost() {
         return data.size() < HostsConfig.MAX_HOSTS;
     }
