@@ -5,6 +5,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **CLI (Python):** некоректний `--geoip-hints` і недоступний Timescale DSN → `Config error` замість traceback.
+- **CLI (Java):** некоректні числові опції, config і GeoIP hints → `Config error` на stderr.
+
 ### Changed
 
 - **Гілки:** `main` — робочий код і документація; `beta` — повний репозиторій розробки (тести, CI, specs).
