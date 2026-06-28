@@ -22,13 +22,15 @@ chmod +x pingui-java.sh gradlew
 
 **Windows**
 
+Потрібен **JDK 21**: [Eclipse Temurin 21 (Windows x64)](https://adoptium.net/temurin/releases/?version=21) — під час інсталяції увімкніть **Add to PATH** та **Set JAVA_HOME**.
+
 ```bat
 cd PINGUI\java
 pingui-java.bat --build
 pingui-java.bat
 ```
 
-Потрібні: **JDK 21**, `traceroute` (Linux/macOS) або `tracert` (Windows).
+Потрібні: **JDK 21** ([Eclipse Temurin](https://adoptium.net/temurin/releases/?version=21)), `traceroute` (Linux/macOS) або `tracert` (Windows).
 
 ## Можливості
 

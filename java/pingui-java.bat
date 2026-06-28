@@ -68,41 +68,55 @@ exit /b %RC%
 call gradlew.bat run --args="%CMD% %*"
 exit /b %ERRORLEVEL%
 
-rem --- JDK 21 discovery (use CALL only, never GOTO out of a subroutine) ---
+rem --- JDK 21 discovery ---
 
 :find_jdk21
 if defined PINGUI_JAVA_HOME call :probe_home "%PINGUI_JAVA_HOME%"
-if defined JAVA_EXE call :check_jdk21_major & exit /b %ERRORLEVEL%
+if defined JAVA_EXE goto :jdk_found
 
 if defined JAVA_HOME call :probe_home "%JAVA_HOME%"
-if defined JAVA_EXE call :check_jdk21_major & exit /b %ERRORLEVEL%
+if defined JAVA_EXE goto :jdk_found
 
 for /f "delims=" %%J in ('where java 2^>nul') do (
   call :probe_exe "%%J"
-  if defined JAVA_EXE call :check_jdk21_major & exit /b !ERRORLEVEL!
+  if defined JAVA_EXE goto :jdk_found
 )
 
 call :scan_dir "%ProgramFiles%\Eclipse Adoptium" "jdk-21*"
-if defined JAVA_EXE call :check_jdk21_major & exit /b %ERRORLEVEL%
+if defined JAVA_EXE goto :jdk_found
 
 call :scan_dir "%ProgramFiles%\Java" "jdk-21*"
-if defined JAVA_EXE call :check_jdk21_major & exit /b %ERRORLEVEL%
+if defined JAVA_EXE goto :jdk_found
 
 call :scan_dir "%ProgramFiles%\Microsoft" "jdk-21*"
-if defined JAVA_EXE call :check_jdk21_major & exit /b %ERRORLEVEL%
+if defined JAVA_EXE goto :jdk_found
 
 call :scan_dir "%ProgramFiles%\Amazon Corretto" "jdk21*"
-if defined JAVA_EXE call :check_jdk21_major & exit /b %ERRORLEVEL%
+if defined JAVA_EXE goto :jdk_found
 
 call :scan_dir "%LocalAppData%\Programs\Eclipse Adoptium" "jdk-21*"
-if defined JAVA_EXE call :check_jdk21_major & exit /b %ERRORLEVEL%
+if defined JAVA_EXE goto :jdk_found
 
 exit /b 1
 
+:jdk_found
+call :check_jdk21_major
+exit /b %ERRORLEVEL%
+
 :check_jdk21_major
-"%JAVA_EXE%" -version 2>&1 | findstr /R /C:"version \"21\." /C:"version \"21\"" >nul
-if errorlevel 1 (
-  echo [pingui-java] ERROR: JDK 21 required, found:
+set "JDK_OK=0"
+for /f "tokens=3 delims= \"" %%V in ('"%JAVA_EXE%" -version 2^>^&1 ^| findstr /i version') do (
+  set "VER=%%V"
+)
+if not defined VER exit /b 1
+echo !VER! | findstr /B /R "21\." >nul 2>&1
+if not errorlevel 1 set "JDK_OK=1"
+if "!JDK_OK!"=="0" (
+  echo !VER! | findstr /B "21" >nul 2>&1
+  if not errorlevel 1 set "JDK_OK=1"
+)
+if "!JDK_OK!"=="0" (
+  echo [pingui-java] ERROR: JDK 21 required, found version !VER!
   "%JAVA_EXE%" -version 2>&1
   echo [pingui-java] Path: %JAVA_HOME_RESOLVED%
   set "JAVA_EXE="

@@ -15,7 +15,7 @@
 
 ### Fixed
 
-- **Java (Windows):** виправлено тихий вихід `pingui-java.bat` (GOTO з CALL ламав запуск Gradle); видимий лог збірки/GUI.
+- **Java (Windows):** виправлено перевірку JDK 21 у `.bat` (FINDSTR/`>nul`); `pluginManagement` для JavaFX Gradle plugin.
 - **Java (Windows):** `pingui-java.bat` відмовляє без JDK 21 (parity з `pingui-java.sh`).
 - **Java UI:** режим «Експерт» disabled на Windows/macOS (Expert ping — лише Linux iputils).
 - **CLI (Python):** некоректний `--geoip-hints` і недоступний Timescale DSN → `Config error` замість traceback.

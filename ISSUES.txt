@@ -18,3 +18,23 @@ C:\...\PINGUI\java> pingui-java.bat --build
 ## [ВИРІШЕНО] Gradle: «What went wrong: 25.0.3»
 
 Gradle 8.10 не запускається під Java 25. Потрібен JDK 21 (`PINGUI_JAVA_HOME` / `JAVA_HOME`).
+
+---
+
+## [ВИРІШЕНО] Windows: FINDSTR Cannot open ^>nul — хибна відмова JDK 21
+
+**Симптом:** Temurin 21.0.x встановлено, але `[pingui-java] ERROR: JDK 21 required` і `JAVA_HOME=` порожній.
+
+**Причина:** `findstr ... >nul` у pipe у `.bat` — FINDSTR сприймає `>nul` як ім’я файлу.
+
+**Рішення:** оновити `pingui-java.bat` (`git pull`); перевірка версії через `for /f` + `findstr /B 21.`
+
+---
+
+## [ВИРІШЕНО] Windows: JavaFX plugin not found (Gradle)
+
+**Симптом:** `Plugin org.openjfx.javafxplugin version 0.1.0 was not found`.
+
+**Причина:** у `settings.gradle.kts` не було `pluginManagement { gradlePluginPortal() }`.
+
+**Рішення:** `git pull`; потрібен доступ до https://plugins.gradle.org (проксі/firewall).
