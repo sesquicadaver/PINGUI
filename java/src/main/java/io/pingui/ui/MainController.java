@@ -15,6 +15,7 @@ import java.util.List;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -33,6 +34,9 @@ import javafx.scene.layout.VBox;
 public final class MainController {
     private static final DateTimeFormatter TIME_FMT =
             DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
+    /** Row height for checkbox + hostname cell (matches {@link HostsConfig#MAX_HOSTS}). */
+    private static final double HOST_ROW_HEIGHT = 28.0;
+    private static final double HOST_LIST_INSET = 4.0;
 
     private final AppOptions options;
     private final SessionStore store;
@@ -92,7 +96,7 @@ public final class MainController {
 
         HBox buttons = new HBox(8, addButton, editButton, removeButton, saveButton);
         VBox left = new VBox(8, hostList, hostInput, buttons, statusLabel, logArea);
-        VBox.setVgrow(hostList, Priority.ALWAYS);
+        VBox.setVgrow(hostList, Priority.NEVER);
         VBox.setVgrow(logArea, Priority.ALWAYS);
         left.setPadding(new Insets(8));
 
@@ -130,6 +134,10 @@ public final class MainController {
     }
 
     private void configureHostList() {
+        hostList.setFixedCellSize(HOST_ROW_HEIGHT);
+        hostList.setMaxHeight(listHeightForRows(HostsConfig.MAX_HOSTS));
+        hostItems.addListener((ListChangeListener.Change<? extends HostItem> change) -> syncHostListHeight());
+        syncHostListHeight();
         hostList.setCellFactory(list -> new ListCell<>() {
             private final CheckBox checkBox = new CheckBox();
             private final Label label = new Label();
@@ -158,6 +166,15 @@ public final class MainController {
                 setGraphic(box);
             }
         });
+    }
+
+    private void syncHostListHeight() {
+        int rows = Math.max(1, hostItems.size());
+        hostList.setPrefHeight(listHeightForRows(Math.min(rows, HostsConfig.MAX_HOSTS)));
+    }
+
+    private static double listHeightForRows(int rows) {
+        return rows * HOST_ROW_HEIGHT + HOST_LIST_INSET;
     }
 
     private void onToggleEnabled(HostItem item, boolean enabled) {
