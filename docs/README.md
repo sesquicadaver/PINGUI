@@ -1,12 +1,12 @@
 # Документація PINGUI
 
-Повний пакет документації для Linux desktop-монітора маршрутів і RTT.
+Повний пакет документації (гілка **`beta`**). На **`main`** — лише Java docs: [CHECKLIST](CHECKLIST.md), [DEPLOYMENT](DEPLOYMENT.md), [JAVA](JAVA.md).
 
 ## Швидка навігація
 
 | Документ | Для кого | Зміст |
 |----------|----------|-------|
-| [USER_GUIDE.md](USER_GUIDE.md) | Користувач | GUI, чекбокси, збереження списку, граф |
+| [CHECKLIST.md](CHECKLIST.md) | Адмін / DevOps | Checklist Linux / Windows / macOS (Java + Python) |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Адмін / DevOps | `pingui.sh`, venv, cap_net_raw, systemd |
 | [CONFIGURATION.md](CONFIGURATION.md) | Адмін / розробник | YAML, CLI, змінні середовища |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Розробник | Шари, потоки даних, Qt-сигнали |

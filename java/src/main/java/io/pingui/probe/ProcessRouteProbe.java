@@ -7,10 +7,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -67,8 +70,26 @@ public final class ProcessRouteProbe implements RouteProbe {
         return TracerouteFlavor.BSD;
     }
 
+    /** Resolves traceroute binary; macOS GUI apps often lack {@code /usr/sbin} in PATH. */
+    static String resolveTracerouteExecutable() {
+        return resolveTracerouteExecutable(
+                System.getProperty("os.name", ""), path -> Files.isExecutable(Path.of(path)));
+    }
+
+    static String resolveTracerouteExecutable(String osName, Predicate<String> absolutePathExists) {
+        String os = osName.toLowerCase(Locale.ROOT);
+        if (os.contains("mac")) {
+            String macPath = "/usr/sbin/traceroute";
+            if (absolutePathExists.test(macPath)) {
+                return macPath;
+            }
+        }
+        return "traceroute";
+    }
+
     private static String readTracerouteVersion() {
-        ProcessBuilder builder = new ProcessBuilder("traceroute", "--version");
+        String traceroute = resolveTracerouteExecutable();
+        ProcessBuilder builder = new ProcessBuilder(traceroute, "--version");
         builder.redirectErrorStream(true);
         try {
             Process process = builder.start();
@@ -138,11 +159,12 @@ public final class ProcessRouteProbe implements RouteProbe {
             int waitMs = Math.max(500, (int) (timeoutSeconds * 1000));
             return List.of("tracert", "-h", String.valueOf(maxHops), "-w", String.valueOf(waitMs), targetHost);
         }
+        String traceroute = resolveTracerouteExecutable();
         int waitSec = Math.max(1, (int) Math.ceil(timeoutSeconds));
         if (flavor == TracerouteFlavor.GNU_INETUTILS) {
             // GNU inetutils: no -n (DNS off by default); -n triggers exit 64 (EX_USAGE).
             return List.of(
-                    "traceroute",
+                    traceroute,
                     "-m",
                     String.valueOf(maxHops),
                     "-w",
@@ -152,7 +174,7 @@ public final class ProcessRouteProbe implements RouteProbe {
                     targetHost);
         }
         return List.of(
-                "traceroute",
+                traceroute,
                 "-n",
                 "-w",
                 String.valueOf(waitSec),

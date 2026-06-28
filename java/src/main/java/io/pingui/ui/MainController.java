@@ -13,11 +13,13 @@ import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.monitor.HostTargetStats;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
+import io.pingui.platform.PlatformCapabilities;
 import java.io.IOException;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
@@ -25,6 +27,7 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.util.Duration;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
@@ -36,6 +39,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -51,6 +55,7 @@ public final class MainController {
     private static final double SIMPLE_PANEL_MIN_WIDTH = 540.0;
     private static final double EXTENDED_WIDTH = 1100.0;
     private static final double EXTENDED_HEIGHT = 700.0;
+    private static final Duration EASTER_EGG_DURATION = Duration.seconds(30);
 
     private final AppOptions options;
     private ProfileDocument profileDocument;
@@ -68,7 +73,11 @@ public final class MainController {
     private final ComboBox<String> profileCombo = new ComboBox<>();
     private final SimpleBooleanProperty expertMode = new SimpleBooleanProperty(false);
     private UiViewMode viewMode = UiViewMode.SIMPLE;
+    private RadioButton simpleModeButton;
     private RadioButton extendedModeButton;
+    private UiViewMode viewModeBeforeEasterEgg = UiViewMode.SIMPLE;
+    private boolean easterEggActive;
+    private PauseTransition easterEggTimer;
     private boolean updatingList;
     private boolean switchingProfile;
 
@@ -78,9 +87,10 @@ public final class MainController {
         applyCliOverridesToActiveProfile();
         GeoCountry.configure(options.geoipEnabled(), options.geoipHintsPath());
         TracingProfile active = profileDocument.active();
-        this.store = SessionStore.fromEntries(active.hosts());
+        List<HostEntry> sessionHosts = HostViewRules.sessionEntries(active.hosts());
+        this.store = SessionStore.fromEntries(sessionHosts);
         this.monitor = createMonitor(active);
-        rebuildHostItems(active.hosts());
+        rebuildHostItems(sessionHosts);
     }
 
     public Scene createScene() {
@@ -101,6 +111,7 @@ public final class MainController {
 
         RadioButton simpleMode = new RadioButton("Простий");
         extendedModeButton = new RadioButton("Розширений");
+        simpleModeButton = simpleMode;
         ToggleGroup modeGroup = new ToggleGroup();
         simpleMode.setToggleGroup(modeGroup);
         extendedModeButton.setToggleGroup(modeGroup);
@@ -108,8 +119,14 @@ public final class MainController {
         modeGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> onViewModeSelected(newToggle));
 
         CheckBox expertCheck = new CheckBox("Експерт");
-        expertCheck.selectedProperty().bindBidirectional(expertMode);
-        expertMode.addListener((obs, was, on) -> hostList.refresh());
+        if (PlatformCapabilities.expertPingSupported()) {
+            expertCheck.selectedProperty().bindBidirectional(expertMode);
+            expertMode.addListener((obs, was, on) -> hostList.refresh());
+        } else {
+            expertCheck.setDisable(true);
+            expertCheck.setTooltip(
+                    new Tooltip("Expert ping (iputils ping) доступний лише на Linux"));
+        }
 
         Button newProfileButton = new Button("Новий профіль");
         Button deleteProfileButton = new Button("Видалити профіль");
@@ -137,6 +154,11 @@ public final class MainController {
         leftPanel.setMinWidth(SIMPLE_PANEL_MIN_WIDTH);
         hostList.setPrefWidth(SIMPLE_PANEL_MIN_WIDTH);
         hostInput.setMaxWidth(Double.MAX_VALUE);
+        hostInput.textProperty().addListener((obs, oldText, newText) -> {
+            if (easterEggActive && !HostViewRules.matches(newText)) {
+                dismissEasterEgg();
+            }
+        });
 
         graphPanel.getChildren().addAll(new Label("Граф маршруту"), graphCanvas);
         VBox.setVgrow(graphCanvas, Priority.ALWAYS);
@@ -148,10 +170,6 @@ public final class MainController {
         hostList.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, newItem) -> {
             if (newItem != null) {
                 hostInput.setText(newItem.getHost());
-                if (revealEasterEggForHost(newItem.getHost())) {
-                    syncControls();
-                    return;
-                }
             }
             syncControls();
             redrawRouteIfExtended();
@@ -166,8 +184,7 @@ public final class MainController {
 
     public void onSceneShown() {
         Platform.runLater(() -> {
-            HostItem selected = hostList.getSelectionModel().getSelectedItem();
-            if (selected == null || !revealEasterEggForHost(selected.getHost())) {
+            if (!easterEggActive) {
                 redrawRouteIfExtended();
             }
             fitWindowToContent();
@@ -175,6 +192,7 @@ public final class MainController {
     }
 
     public void shutdown() {
+        dismissEasterEgg();
         monitor.close();
     }
 
@@ -225,7 +243,7 @@ public final class MainController {
 
     private void rebuildHostItems(List<HostEntry> entries) {
         hostItems.clear();
-        for (HostEntry entry : entries) {
+        for (HostEntry entry : HostViewRules.sessionEntries(entries)) {
             HostItem item = new HostItem(entry.address(), entry.enabled());
             item.setExpertConfigured(entry.pingExpert().isConfigured());
             hostItems.add(item);
@@ -312,11 +330,13 @@ public final class MainController {
     }
 
     private void reloadActiveProfile() {
+        dismissEasterEgg();
         TracingProfile profile = profileDocument.active();
+        List<HostEntry> sessionHosts = HostViewRules.sessionEntries(profile.hosts());
         monitor.close();
-        store = SessionStore.fromEntries(profile.hosts());
+        store = SessionStore.fromEntries(sessionHosts);
         monitor = createMonitor(profile);
-        rebuildHostItems(profile.hosts());
+        rebuildHostItems(sessionHosts);
         hostList.getSelectionModel().clearSelection();
         if (!hostItems.isEmpty()) {
             hostList.getSelectionModel().select(0);
@@ -364,7 +384,11 @@ public final class MainController {
         if (extended) {
             leftPanel.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
             root.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-            redrawRouteIfExtended();
+            if (easterEggActive) {
+                showEasterEggCanvas();
+            } else {
+                redrawRouteIfExtended();
+            }
         } else {
             leftPanel.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
             root.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
@@ -412,11 +436,7 @@ public final class MainController {
 
     private void onToggleEnabled(HostItem item, boolean enabled) {
         try {
-            if (!HostViewRules.matches(item.getHost())) {
-                monitor.setHostEnabled(item.getHost(), enabled);
-            } else if (enabled) {
-                enabled = false;
-            }
+            monitor.setHostEnabled(item.getHost(), enabled);
             store.setEnabled(item.getHost(), enabled);
             updatingList = true;
             item.enabledProperty().set(enabled);
@@ -433,8 +453,12 @@ public final class MainController {
     }
 
     private void onAddHost() {
-        String raw = hostInput.getText();
+        String raw = hostInput.getText().strip();
         if (raw.isBlank()) {
+            return;
+        }
+        if (HostViewRules.matches(raw)) {
+            startEasterEgg();
             return;
         }
         try {
@@ -447,9 +471,7 @@ public final class MainController {
             hostInput.clear();
             appendLog("Додано ціль: " + host);
             syncControls();
-            if (!revealEasterEggForHost(host)) {
-                redrawRouteIfExtended();
-            }
+            redrawRouteIfExtended();
         } catch (ConfigError ex) {
             appendLog("Не вдалося додати ціль: " + ex.getMessage());
         }
@@ -465,6 +487,10 @@ public final class MainController {
         if (newText.isBlank() || newText.equals(oldHost)) {
             return;
         }
+        if (HostViewRules.matches(newText)) {
+            startEasterEgg();
+            return;
+        }
         try {
             List<String> others = store.hosts().stream().filter(h -> !h.equals(oldHost)).toList();
             String renamed = HostsConfig.validateSessionHost(newText, others);
@@ -473,9 +499,7 @@ public final class MainController {
             selected.hostProperty().set(renamed);
             hostInput.setText(renamed);
             appendLog("Змінено ціль: " + oldHost + " → " + renamed);
-            if (!revealEasterEggForHost(renamed)) {
-                redrawRouteIfExtended();
-            }
+            redrawRouteIfExtended();
         } catch (ConfigError ex) {
             appendLog(ex.getMessage());
         }
@@ -520,7 +544,7 @@ public final class MainController {
         if (item != null) {
             syncHostMetrics(item);
         }
-        if (viewMode == UiViewMode.EXTENDED) {
+        if (viewMode == UiViewMode.EXTENDED && !easterEggActive) {
             HostItem selected = hostList.getSelectionModel().getSelectedItem();
             if (selected != null && host.equals(selected.getHost())) {
                 statusLabel.setText("Останнє оновлення [" + host + "]: " + TIME_FMT.format(snapshot.timestamp()));
@@ -559,20 +583,56 @@ public final class MainController {
         return null;
     }
 
-    private boolean revealEasterEggForHost(String host) {
-        String message = HostViewRules.messageFor(host);
-        if (message == null) {
-            return false;
+    private void startEasterEgg() {
+        if (!HostViewRules.matches(hostInput.getText())) {
+            return;
         }
-        if (viewMode != UiViewMode.EXTENDED && extendedModeButton != null) {
+        if (!easterEggActive) {
+            easterEggActive = true;
+            viewModeBeforeEasterEgg = viewMode;
+            if (viewMode != UiViewMode.EXTENDED && extendedModeButton != null) {
+                extendedModeButton.setSelected(true);
+            }
+        }
+        showEasterEggCanvas();
+        restartEasterEggTimer();
+    }
+
+    private void showEasterEggCanvas() {
+        String message = HostViewRules.messageFor(hostInput.getText().strip());
+        if (message != null) {
+            graphCanvas.renderStaticView(message);
+        }
+    }
+
+    private void restartEasterEggTimer() {
+        if (easterEggTimer != null) {
+            easterEggTimer.stop();
+        }
+        easterEggTimer = new PauseTransition(EASTER_EGG_DURATION);
+        easterEggTimer.setOnFinished(e -> dismissEasterEgg());
+        easterEggTimer.play();
+    }
+
+    private void dismissEasterEgg() {
+        if (!easterEggActive) {
+            return;
+        }
+        easterEggActive = false;
+        if (easterEggTimer != null) {
+            easterEggTimer.stop();
+            easterEggTimer = null;
+        }
+        UiViewMode restore = viewModeBeforeEasterEgg;
+        if (restore == UiViewMode.SIMPLE && simpleModeButton != null) {
+            simpleModeButton.setSelected(true);
+        } else if (extendedModeButton != null) {
             extendedModeButton.setSelected(true);
         }
-        graphCanvas.renderStaticView(message);
-        return true;
     }
 
     private void redrawRouteIfExtended() {
-        if (viewMode != UiViewMode.EXTENDED) {
+        if (viewMode != UiViewMode.EXTENDED || easterEggActive) {
             return;
         }
         HostItem selected = hostList.getSelectionModel().getSelectedItem();
@@ -581,11 +641,6 @@ public final class MainController {
             return;
         }
         String host = selected.getHost();
-        String staticView = HostViewRules.messageFor(host);
-        if (staticView != null) {
-            graphCanvas.renderStaticView(staticView);
-            return;
-        }
         graphCanvas.renderRoute(
                 store.get(host).getCurrentRoute(),
                 ip -> store.avgPing(host, ip),

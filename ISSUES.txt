@@ -1,0 +1,25 @@
+# ISSUES — PINGUI
+
+## [ВИРІШЕНО] Gradle build fails: «What went wrong: 25.0.3»
+
+**Симптом** (java/pingui-java.sh --build):
+```
+FAILURE: Build failed with an exception.
+* What went wrong:
+25.0.3
+```
+
+**Причина:** Gradle 8.10 запускається під **Java 25** (часто JBR від Android Studio). Ця версія Gradle не підтримує Java 25 як launcher JVM. Проєкт цілиться на **JDK 21** (JavaFX + toolchain у build.gradle.kts).
+
+**Рішення:**
+1. Встановити OpenJDK 21: `sudo apt install openjdk-21-jdk`
+2. Або явно: `export PINGUI_JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64`
+3. Запускати: `cd java && ./pingui-java.sh --build`
+
+`pingui-java.sh` тепер автоматично шукає JDK 21 і відмовляє з зрозумілим повідомленням, якщо активна лише Java 25.
+
+**Перевірка:**
+```bash
+cd java && ./pingui-java.sh --build
+./gradlew test
+```

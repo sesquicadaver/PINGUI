@@ -5,6 +5,20 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **Гілки:** `main` slim — лише Java + docs; `beta` — повний репозиторій (Python, тести, CI).
+
+### Fixed
+
+- **Java (macOS):** `ProcessRouteProbe` — `/usr/sbin/traceroute` поза PATH GUI.
+- **Java (Windows):** `pingui-java.bat` — перевірка JDK 21.
+- **Java UI:** Expert ping disabled на Windows/macOS.
+
+### Added
+
+- **Docs:** [docs/CHECKLIST.md](docs/CHECKLIST.md) — checklist розгортання.
+
 ### Fixed
 
 - **CLI (Python):** некоректний `--geoip-hints` і недоступний Timescale DSN → `Config error` замість traceback.
