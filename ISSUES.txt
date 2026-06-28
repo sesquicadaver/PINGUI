@@ -11,7 +11,7 @@ C:\...\PINGUI\java> pingui-java.bat --build
 
 **Причина:** пробіли в `C:\Program Files\Eclipse Adoptium\...` всередині `( )` блоків `.bat` — `Files\Eclipse was unexpected at this time`.
 
-**Рішення:** `git pull`; у launcher — `!delayed expansion!`, без прикладів шляхів у `if ( )`.
+**Рішення:** `git pull` — `pingui-java.bat` лише викликає `gradlew.bat`. Або напряму: `gradlew.bat build` / `gradlew.bat run`.
 
 ---
 
