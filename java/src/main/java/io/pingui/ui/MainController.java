@@ -13,6 +13,7 @@ import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.monitor.HostTargetStats;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
+import io.pingui.platform.PlatformCapabilities;
 import java.io.IOException;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -38,6 +39,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -117,8 +119,14 @@ public final class MainController {
         modeGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> onViewModeSelected(newToggle));
 
         CheckBox expertCheck = new CheckBox("Експерт");
-        expertCheck.selectedProperty().bindBidirectional(expertMode);
-        expertMode.addListener((obs, was, on) -> hostList.refresh());
+        if (PlatformCapabilities.expertPingSupported()) {
+            expertCheck.selectedProperty().bindBidirectional(expertMode);
+            expertMode.addListener((obs, was, on) -> hostList.refresh());
+        } else {
+            expertCheck.setDisable(true);
+            expertCheck.setTooltip(
+                    new Tooltip("Expert ping (iputils ping) доступний лише на Linux"));
+        }
 
         Button newProfileButton = new Button("Новий профіль");
         Button deleteProfileButton = new Button("Видалити профіль");

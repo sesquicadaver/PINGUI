@@ -1,6 +1,17 @@
 # Розгортання PINGUI
 
-## Системні вимоги
+## Платформи
+
+| Редакція | Linux | Windows | macOS |
+|----------|-------|---------|-------|
+| **Python** (`pingui.sh`) | ✅ | ❌ | ❌ |
+| **Java** (`java/pingui-java.*`) | ✅ | ✅ | ✅ |
+
+Покрокові checklist: **[CHECKLIST.md](CHECKLIST.md)**.
+
+Expert ping (режим «Експерт») — **лише Linux** (iputils `ping`).
+
+## Системні вимоги (Python)
 
 - **ОС:** Linux (x86_64 або arm64)
 - **Python:** ≥ 3.11

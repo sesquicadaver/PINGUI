@@ -10,6 +10,7 @@
 |----------|----------|-------|
 | [USER_GUIDE.md](USER_GUIDE.md) | Користувач | GUI, чекбокси, збереження списку, граф |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Адмін / DevOps | `pingui.sh`, venv, cap_net_raw, systemd |
+| [CHECKLIST.md](CHECKLIST.md) | Адмін / DevOps | Checklist Linux / Windows / macOS |
 | [CONFIGURATION.md](CONFIGURATION.md) | Адмін / розробник | YAML, CLI, змінні середовища |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Розробник | Шари, потоки даних, Qt-сигнали |
 | [MODULES.md](MODULES.md) | Розробник | Довідник модулів і публічних API |
@@ -25,11 +26,11 @@
 
 ## Рекомендований порядок читання
 
-**Новий користувач:** README → USER_GUIDE → DEPLOYMENT
+**Новий користувач:** README → USER_GUIDE → DEPLOYMENT → CHECKLIST
 
 **Архітектура:** README → ARCHITECTURE → MODULES
 
-**Cross-platform (Java):** README → [JAVA.md](JAVA.md) → [../java/README.md](../java/README.md)
+**Cross-platform (Java):** README → [CHECKLIST.md](CHECKLIST.md) → [JAVA.md](JAVA.md) → [../java/README.md](../java/README.md)
 
 ## Версія та стан
 

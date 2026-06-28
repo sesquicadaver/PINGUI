@@ -5,7 +5,17 @@ cd /d "%~dp0"
 
 where java >nul 2>&1
 if errorlevel 1 (
-  echo [pingui-java] ПОМИЛКА: Java 21+ не знайдено. Встановіть JDK 21.
+  echo [pingui-java] ПОМИЛКА: Java не знайдено. Потрібен JDK 21.
+  exit /b 1
+)
+
+rem Require JDK 21 (Gradle 8.10 fails under Java 25 launcher).
+java -version 2>&1 | findstr /R /C:"version \"21\." /C:"version \"21\"" >nul
+if errorlevel 1 (
+  echo [pingui-java] ПОМИЛКА: для збірки потрібен JDK 21.
+  echo [pingui-java] Gradle 8.10 не запускається під Java 25 ^(типова помилка: «What went wrong: 25.0.3»^).
+  java -version 2>&1
+  echo [pingui-java] Встановіть Eclipse Temurin 21 і встановіть JAVA_HOME.
   exit /b 1
 )
 
