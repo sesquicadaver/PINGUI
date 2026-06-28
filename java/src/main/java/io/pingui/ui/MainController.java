@@ -268,7 +268,8 @@ public final class MainController {
         graphCanvas.renderRoute(
                 store.get(host).getCurrentRoute(),
                 ip -> store.avgPing(host, ip),
-                store.inactiveRoute(host));
+                store.inactiveRoute(host),
+                hop -> store.hopStatsSummary(host, hop));
     }
 
     private void appendLog(String message) {

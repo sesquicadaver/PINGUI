@@ -5,6 +5,8 @@ import io.pingui.config.HostsConfig;
 import io.pingui.model.Models;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.HostSessionData;
+import io.pingui.model.Models.HopProbeStats;
+import io.pingui.model.Models.HopStatsSummary;
 import io.pingui.model.Models.RouteSnapshot;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -91,6 +93,7 @@ public final class SessionStore {
     }
 
     public void appendPingSamples(String host, RouteSnapshot snapshot) {
+        recordHopProbes(host, snapshot);
         Map<String, List<Double>> history = get(host).getPingHistory();
         for (HopNode node : snapshot.nodes()) {
             if (!node.isReachable() || node.pingMs() == null) {
@@ -110,6 +113,19 @@ public final class SessionStore {
             return null;
         }
         return samples.stream().mapToDouble(Double::doubleValue).average().orElse(Double.NaN);
+    }
+
+    public HopStatsSummary hopStatsSummary(String host, int hop) {
+        HopProbeStats stats = get(host).getHopStats().get(hop);
+        return stats != null ? HopStats.summarize(stats) : null;
+    }
+
+    private void recordHopProbes(String host, RouteSnapshot snapshot) {
+        HostSessionData session = get(host);
+        for (HopNode node : snapshot.nodes()) {
+            HopProbeStats stats = session.getHopStats().computeIfAbsent(node.hop(), ignored -> new HopProbeStats());
+            HopStats.recordProbe(stats, node);
+        }
     }
 
     private static List<String> routeIps(List<HopNode> route) {

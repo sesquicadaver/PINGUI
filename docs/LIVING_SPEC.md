@@ -92,6 +92,7 @@
 | jpackage Windows/macOS | `jpackageMsi`, `jpackageDmg` | manual on target OS | done |
 | Topological graph | `ui.GraphCanvas`, `RouteGraphLayout` | `PingColorTest`, `RouteGraphLayoutTest` | done |
 | GeoIP country hints | `geoip.GeoCountry` | `GeoCountryTest` | done |
+| Hop jitter/loss labels | `monitor.HopStats`, `PingColor` | `HopStatsTest`, `PingColorTest` | done |
 | SessionStore parity | `monitor.SessionStore` | `SessionStoreTest` | done |
 | Route history | `monitor.RouteHistory` | `RouteHistoryTest` | done |
 | Monitor cycle callbacks | `monitor.MonitorService` | `MonitorServiceTest` | done |

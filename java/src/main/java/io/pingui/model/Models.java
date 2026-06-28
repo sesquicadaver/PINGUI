@@ -6,6 +6,7 @@ import java.util.List;
 /** Domain constants and factory helpers. */
 public final class Models {
     public static final String TIMEOUT_IP = "*";
+    public static final int MAX_HOP_RTT_SAMPLES = 50;
 
     private Models() {}
 
@@ -42,11 +43,41 @@ public final class Models {
         }
     }
 
+    public static final class HopProbeStats {
+        private int probes;
+        private int successes;
+        private final java.util.List<Double> rttSamples = new java.util.ArrayList<>();
+
+        public int getProbes() {
+            return probes;
+        }
+
+        public int getSuccesses() {
+            return successes;
+        }
+
+        public java.util.List<Double> getRttSamples() {
+            return rttSamples;
+        }
+
+        public void recordProbeAttempt() {
+            probes++;
+        }
+
+        public void recordProbeSuccess(double rttMs) {
+            successes++;
+            rttSamples.add(rttMs);
+        }
+    }
+
+    public record HopStatsSummary(Double jitterMs, double lossPct) {}
+
     public static final class HostSessionData {
         private List<HopNode> currentRoute = List.of();
         private List<HopNode> previousRoute = List.of();
         private final java.util.Map<Integer, HopNode> lastKnownByHop = new java.util.HashMap<>();
         private final java.util.Map<String, java.util.List<Double>> pingHistory = new java.util.HashMap<>();
+        private final java.util.Map<Integer, HopProbeStats> hopStats = new java.util.HashMap<>();
         private boolean enabled;
 
         public List<HopNode> getCurrentRoute() {
@@ -71,6 +102,10 @@ public final class Models {
 
         public java.util.Map<String, java.util.List<Double>> getPingHistory() {
             return pingHistory;
+        }
+
+        public java.util.Map<Integer, HopProbeStats> getHopStats() {
+            return hopStats;
         }
 
         public boolean isEnabled() {

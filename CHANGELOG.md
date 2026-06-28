@@ -7,6 +7,7 @@
 
 ### Added
 
+- **J-06 Java hop stats:** jitter/loss у graph labels (parity з B-06).
 - **B-06 Hop stats:** jitter (RTT stdev) і loss % по hop у graph labels, SQLite persistence, CSV/HTML export.
 - **B-05 Time-series:** optional InfluxDB/Timescale backends for RTT samples and route events (`--ts-backend`, `persistence/timeseries/`).
 - **B-04 Folium geo-map:** вкладка «Карта» з folium-маркерами hop-ів (country centroids), CLI `--no-geo-map`.

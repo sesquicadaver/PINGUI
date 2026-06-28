@@ -1,6 +1,7 @@
 package io.pingui.ui;
 
 import io.pingui.model.Models.HopNode;
+import io.pingui.model.Models.HopStatsSummary;
 import io.pingui.ui.RouteGraphLayout.GraphNode;
 import io.pingui.ui.RouteGraphLayout.GraphScene;
 import java.util.HashMap;
@@ -22,6 +23,7 @@ public final class GraphCanvas extends Region {
     private List<HopNode> currentRoute = List.of();
     private List<HopNode> previousRoute = List.of();
     private Function<String, Double> avgPingFn = ip -> null;
+    private Function<Integer, HopStatsSummary> hopStatsFn = hop -> null;
 
     public GraphCanvas() {
         getChildren().add(canvas);
@@ -32,11 +34,20 @@ public final class GraphCanvas extends Region {
     public void renderRoute(
             List<HopNode> route,
             Function<String, Double> avgPingFn,
-            List<HopNode> previousRoute) {
+            List<HopNode> previousRoute,
+            Function<Integer, HopStatsSummary> hopStatsFn) {
         this.currentRoute = route != null ? List.copyOf(route) : List.of();
         this.previousRoute = previousRoute != null ? List.copyOf(previousRoute) : List.of();
         this.avgPingFn = avgPingFn != null ? avgPingFn : ip -> null;
+        this.hopStatsFn = hopStatsFn != null ? hopStatsFn : hop -> null;
         redraw();
+    }
+
+    public void renderRoute(
+            List<HopNode> route,
+            Function<String, Double> avgPingFn,
+            List<HopNode> previousRoute) {
+        renderRoute(route, avgPingFn, previousRoute, hop -> null);
     }
 
     private void redraw() {
@@ -52,7 +63,7 @@ public final class GraphCanvas extends Region {
         gc.setFill(Color.web("#fafafa"));
         gc.fillRect(0, 0, width, height);
 
-        GraphScene scene = RouteGraphLayout.buildScene(currentRoute, previousRoute, avgPingFn);
+        GraphScene scene = RouteGraphLayout.buildScene(currentRoute, previousRoute, avgPingFn, hopStatsFn);
         Map<String, GraphNode> byId = new HashMap<>();
         for (GraphNode node : scene.nodes()) {
             byId.put(node.id(), node);

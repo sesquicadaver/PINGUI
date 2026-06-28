@@ -1,6 +1,7 @@
 package io.pingui.ui;
 
 import io.pingui.model.Models.HopNode;
+import io.pingui.model.Models.HopStatsSummary;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -57,6 +58,14 @@ public final class RouteGraphLayout {
             List<HopNode> current,
             List<HopNode> previous,
             Function<String, Double> avgPingFn) {
+        return buildScene(current, previous, avgPingFn, hop -> null);
+    }
+
+    public static GraphScene buildScene(
+            List<HopNode> current,
+            List<HopNode> previous,
+            Function<String, Double> avgPingFn,
+            Function<Integer, HopStatsSummary> hopStatsFn) {
         if (current == null || current.isEmpty()) {
             return new GraphScene(List.of(), List.of());
         }
@@ -69,11 +78,11 @@ public final class RouteGraphLayout {
 
         if (showPrevious && columns.inactive() != null) {
             ChainResult inactiveChain =
-                    chainNodes(prev, avgPingFn, columns.inactive(), true, "prev");
+                    chainNodes(prev, avgPingFn, hopStatsFn, columns.inactive(), true, "prev");
             nodes.addAll(inactiveChain.nodes());
             edges.addAll(inactiveChain.edges());
         }
-        ChainResult activeChain = chainNodes(current, avgPingFn, columns.active(), false, "act");
+        ChainResult activeChain = chainNodes(current, avgPingFn, hopStatsFn, columns.active(), false, "act");
         nodes.addAll(activeChain.nodes());
         edges.addAll(activeChain.edges());
         return new GraphScene(List.copyOf(nodes), List.copyOf(edges));
@@ -82,6 +91,7 @@ public final class RouteGraphLayout {
     private static ChainResult chainNodes(
             List<HopNode> route,
             Function<String, Double> avgPingFn,
+            Function<Integer, HopStatsSummary> hopStatsFn,
             ColumnLayout column,
             boolean inactive,
             String idPrefix) {
@@ -105,7 +115,7 @@ public final class RouteGraphLayout {
         yIndex++;
 
         for (HopNode hop : route) {
-            String label = PingColor.nodeLabel(hop, avgPingFn);
+            String label = PingColor.nodeLabel(hop, avgPingFn, inactive ? ignored -> null : hopStatsFn);
             String nodeId = idPrefix + "_hop_" + hop.hop() + "_" + hop.ip();
             nodes.add(new GraphNode(
                     nodeId,
