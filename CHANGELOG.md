@@ -15,7 +15,7 @@
 
 ### Fixed
 
-- **Java (Windows):** `pingui-java.bat` спрощено до обгортки над `gradlew.bat` (без пошуку JDK у cmd).
+- **Java (Windows):** виправлено timeout/deadlock `tracert` (drain stdout, `-w` ≥4000 ms, довший process wait).
 - **Java (Windows):** `pingui-java.bat` відмовляє без JDK 21 (parity з `pingui-java.sh`).
 - **Java UI:** режим «Експерт» disabled на Windows/macOS (Expert ping — лише Linux iputils).
 - **CLI (Python):** некоректний `--geoip-hints` і недоступний Timescale DSN → `Config error` замість traceback.
