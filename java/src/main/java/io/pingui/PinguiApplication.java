@@ -1,8 +1,10 @@
 package io.pingui;
 
+import io.pingui.config.ConfigError;
 import io.pingui.config.HostsConfig;
 import io.pingui.probe.ProbeMode;
 import io.pingui.ui.MainController;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,16 +18,22 @@ public final class PinguiApplication extends Application {
     private MainController controller;
 
     @Override
-    public void start(Stage stage) throws Exception {
-        AppOptions options = parseOptions(getParameters().getNamed());
-        LoggingSetup.configure(options.verbose());
-        List<String> hosts = HostsConfig.load(options.configPath());
-        controller = new MainController(options, hosts);
-        Scene scene = controller.createScene();
-        stage.setTitle("PINGUI — Сесійний монітор маршрутів (Java)");
-        stage.setScene(scene);
-        stage.show();
-        controller.onSceneShown();
+    public void start(Stage stage) {
+        try {
+            AppOptions options = parseOptions(getParameters().getNamed());
+            LoggingSetup.configure(options.verbose());
+            List<String> hosts = HostsConfig.load(options.configPath());
+            controller = new MainController(options, hosts);
+            Scene scene = controller.createScene();
+            stage.setTitle("PINGUI — Сесійний монітор маршрутів (Java)");
+            stage.setScene(scene);
+            stage.show();
+            controller.onSceneShown();
+        } catch (ConfigError | IllegalArgumentException ex) {
+            failCli(ex.getMessage());
+        } catch (IOException ex) {
+            failCli(ex.getMessage());
+        }
     }
 
     @Override
@@ -38,9 +46,9 @@ public final class PinguiApplication extends Application {
     static AppOptions parseOptions(Map<String, String> params) {
         AppOptions defaults = AppOptions.defaults();
         Path config = params.containsKey("config") ? Path.of(params.get("config")) : defaults.configPath();
-        double interval = parseDouble(params.get("interval"), defaults.intervalSeconds());
-        int maxHops = parseInt(params.get("max-hops"), defaults.maxHops());
-        double timeout = parseDouble(params.get("timeout"), defaults.timeoutSeconds());
+        double interval = parseDouble(params.get("interval"), defaults.intervalSeconds(), "--interval");
+        int maxHops = parseInt(params.get("max-hops"), defaults.maxHops(), "--max-hops");
+        double timeout = parseDouble(params.get("timeout"), defaults.timeoutSeconds(), "--timeout");
         boolean verbose = params.containsKey("verbose");
         ProbeMode probeMode =
                 params.containsKey("probe") ? ProbeMode.parse(params.get("probe")) : defaults.probeMode();
@@ -49,24 +57,38 @@ public final class PinguiApplication extends Application {
                 params.containsKey("geoip-hints")
                         ? Path.of(params.get("geoip-hints"))
                         : defaults.geoipHintsPath();
-        if (interval <= 0 || timeout <= 0 || maxHops < 1) {
-            throw new IllegalArgumentException("Invalid CLI numeric options");
+        if (interval <= 0) {
+            throw new IllegalArgumentException("--interval must be positive");
+        }
+        if (timeout <= 0) {
+            throw new IllegalArgumentException("--timeout must be positive");
+        }
+        if (maxHops < 1) {
+            throw new IllegalArgumentException("--max-hops must be >= 1");
         }
         return new AppOptions(config, interval, maxHops, timeout, verbose, probeMode, geoipEnabled, geoipHints);
     }
 
-    private static double parseDouble(String value, double fallback) {
+    private static double parseDouble(String value, double fallback, String flag) {
         if (value == null || value.isBlank()) {
             return fallback;
         }
-        return Double.parseDouble(value);
+        try {
+            return Double.parseDouble(value);
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Invalid value for " + flag + ": " + value);
+        }
     }
 
-    private static int parseInt(String value, int fallback) {
+    private static int parseInt(String value, int fallback, String flag) {
         if (value == null || value.isBlank()) {
             return fallback;
         }
-        return Integer.parseInt(value);
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Invalid value for " + flag + ": " + value);
+        }
     }
 
     public static void main(String[] args) {
@@ -102,6 +124,11 @@ public final class PinguiApplication extends Application {
             }
         }
         launch(fxArgs.toArray(String[]::new));
+    }
+
+    private static void failCli(String message) {
+        System.err.println("Config error: " + message);
+        System.exit(1);
     }
 
     private static void printHelp() {

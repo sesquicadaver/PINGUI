@@ -78,4 +78,12 @@ def _create_timescale(*, dsn: str | None) -> TimescaleTimeSeriesBackend:
     if not dsn:
         msg = "Timescale backend requires --timescale-dsn or PINGUI_TIMESCALE_DSN"
         raise TimeSeriesConfigError(msg)
-    return TimescaleTimeSeriesBackend(dsn)
+    try:
+        return TimescaleTimeSeriesBackend(dsn)
+    except TimeSeriesConfigError:
+        raise
+    except Exception as exc:
+        if "psycopg" in exc.__class__.__module__:
+            msg = f"Timescale/PostgreSQL connection failed: {exc}"
+            raise TimeSeriesConfigError(msg) from exc
+        raise

@@ -10,6 +10,7 @@ from pathlib import Path
 from pingui.config import load_hosts_config
 from pingui.export.session_report import export_session_csv, export_session_html
 from pingui.geoip import configure as configure_geoip
+from pingui.geoip.country import GeoIpHintsError
 from pingui.icmp.raw_socket import RawIcmpPermissionError, check_raw_icmp_permission
 from pingui.logging_setup import setup_logging
 from pingui.monitor.session_store import SessionStore
@@ -189,7 +190,12 @@ def main(argv: list[str] | None = None) -> int:
         print(str(exc), file=sys.stderr)
         return 1
 
-    configure_geoip(enabled=not args.no_geoip, hints_path=args.geoip_hints)
+    try:
+        configure_geoip(enabled=not args.no_geoip, hints_path=args.geoip_hints)
+    except GeoIpHintsError as exc:
+        print(f"Config error: {exc}", file=sys.stderr)
+        return 1
+
     timeseries_backend = _build_timeseries_backend(args)
 
     from pingui.ui.app import run_app

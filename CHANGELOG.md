@@ -5,6 +5,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **CLI (Python):** некоректний `--geoip-hints` і недоступний Timescale DSN → `Config error` замість traceback.
+- **CLI (Java):** некоректні числові опції, config і GeoIP hints → `Config error` на stderr.
+
 ### Changed
 
 - **Розділення launcherів:** `pingui.sh` — лише Python; Java — `java/pingui-java.sh` (Unix) / `java/pingui-java.bat` (Windows).
