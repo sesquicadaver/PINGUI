@@ -79,7 +79,7 @@ cd java && ./gradlew jpackageDeb         # Linux .deb
 cd java && ./pingui-java.sh --package    # те саме через launcher
 ```
 
-GitHub Actions: `.github/workflows/java-ci.yml` (JDK 21, `./gradlew test jacocoTestReport jacocoTestCoverageVerification`).
+GitHub Actions: `.github/workflows/java-ci.yml` — matrix **ubuntu / windows / macos**, `./gradlew test jacocoTestCoverageVerification`.
 
 ## Матриця parity з MVP
 
@@ -98,5 +98,4 @@ GitHub Actions: `.github/workflows/java-ci.yml` (JDK 21, `./gradlew test jacocoT
 
 ## Майбутнє
 
-- jpackage .msi / .dmg у CI matrix (Linux .deb — ✅)
-- CI matrix Windows/macOS
+- Спільний CI matrix з Python edition

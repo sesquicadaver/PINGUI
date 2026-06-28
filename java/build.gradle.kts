@@ -125,8 +125,62 @@ tasks.register<Exec>("jpackageDeb") {
     }
 }
 
+tasks.register<Exec>("jpackageMsi") {
+    group = "distribution"
+    description = "Build Windows .msi installer via jpackage (requires installDist)"
+    dependsOn("installDist")
+    val libDir = layout.buildDirectory.dir("install/pingui-java/lib")
+    val distDir = layout.buildDirectory.dir("dist")
+    val mainJar = "pingui-java-${version}.jar"
+    doFirst {
+        distDir.get().asFile.mkdirs()
+    }
+    commandLine(
+        "jpackage",
+        "--input", libDir.get().asFile.absolutePath,
+        "--name", "pingui",
+        "--main-class", "io.pingui.PinguiApplication",
+        "--main-jar", mainJar,
+        "--type", "msi",
+        "--java-options", "-Dprism.order=sw",
+        "--vendor", "PINGUI",
+        "--app-version", appVersion,
+        "--dest", distDir.get().asFile.absolutePath,
+    )
+    onlyIf {
+        System.getProperty("os.name", "").lowercase().contains("win")
+    }
+}
+
+tasks.register<Exec>("jpackageDmg") {
+    group = "distribution"
+    description = "Build macOS .dmg installer via jpackage (requires installDist)"
+    dependsOn("installDist")
+    val libDir = layout.buildDirectory.dir("install/pingui-java/lib")
+    val distDir = layout.buildDirectory.dir("dist")
+    val mainJar = "pingui-java-${version}.jar"
+    doFirst {
+        distDir.get().asFile.mkdirs()
+    }
+    commandLine(
+        "jpackage",
+        "--input", libDir.get().asFile.absolutePath,
+        "--name", "pingui",
+        "--main-class", "io.pingui.PinguiApplication",
+        "--main-jar", mainJar,
+        "--type", "dmg",
+        "--java-options", "-Dprism.order=sw",
+        "--vendor", "PINGUI",
+        "--app-version", appVersion,
+        "--dest", distDir.get().asFile.absolutePath,
+    )
+    onlyIf {
+        System.getProperty("os.name", "").lowercase().contains("mac")
+    }
+}
+
 tasks.register("jpackage") {
     group = "distribution"
-    description = "Build platform-native installer (Linux .deb when available)"
-    dependsOn("jpackageDeb")
+    description = "Build platform-native installer (.deb / .msi / .dmg when available)"
+    dependsOn("jpackageDeb", "jpackageMsi", "jpackageDmg")
 }

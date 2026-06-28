@@ -107,18 +107,17 @@ JUnit 5 (27+ тестів: config, probe, monitor, ui layout, CLI options).
 
 ## Пакування (jpackage)
 
-На Linux з JDK 21+ (містить `jpackage`):
+На Linux / Windows / macOS з JDK 21+ (містить `jpackage`):
 
 ```bash
 ./pingui-java.sh --package
 # або
-./gradlew installDist jpackageDeb
-ls build/dist/pingui_0.1.0_amd64.deb
+./gradlew installDist jpackage
+ls build/dist/    # pingui_0.1.0_amd64.deb | .msi | .dmg залежно від ОС
 ```
 
 Інсталятор включає JavaFX та залежності з `installDist`.
 
 ## Backlog (Java)
 
-- jpackage для Windows (.msi) / macOS (.dmg) у CI matrix
 - Спільний CI matrix з Python

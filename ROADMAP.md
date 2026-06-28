@@ -117,6 +117,7 @@ PINGUI/
 | **J-02** | **Java: jpackage installers** | ✅ Linux .deb |
 | **J-04** | **Root launcher `./pingui.sh --java`** | ✅ |
 | **J-03** | **Java: optional raw ICMP (JNA)** | ✅ Linux |
+| **J-05** | **Java: CI matrix + jpackage msi/dmg** | ✅ |
 
 ---
 

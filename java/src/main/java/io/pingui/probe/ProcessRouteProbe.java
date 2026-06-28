@@ -22,6 +22,7 @@ public final class ProcessRouteProbe implements RouteProbe {
             Pattern.compile("^\\s*(\\d+)\\s+([^\\s]+)(?:\\s+([0-9.]+)\\s*ms)?.*");
     private static final Pattern WINDOWS_LINE =
             Pattern.compile("^\\s*(\\d+)\\s+(?:\\d+\\s*ms\\s+)*([*]|\\d+\\.\\d+\\.\\d+\\.\\d+)\\s*.*");
+    private static final Pattern WINDOWS_RTT_MS = Pattern.compile("(\\d+(?:\\.\\d+)?)\\s*ms");
 
     private final boolean windows = System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win");
 
@@ -109,8 +110,17 @@ public final class ProcessRouteProbe implements RouteProbe {
                 nodes.add(Models.timeout(hop));
                 continue;
             }
-            nodes.add(new HopNode(hop, token, null, false));
+            Double pingMs = parseWindowsRtt(line);
+            nodes.add(new HopNode(hop, token, pingMs, false));
         }
         return nodes;
+    }
+
+    static Double parseWindowsRtt(String line) {
+        Matcher matcher = WINDOWS_RTT_MS.matcher(line);
+        if (matcher.find()) {
+            return Double.parseDouble(matcher.group(1));
+        }
+        return null;
     }
 }

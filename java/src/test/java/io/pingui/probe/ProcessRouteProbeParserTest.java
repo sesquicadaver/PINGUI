@@ -45,4 +45,13 @@ class ProcessRouteProbeParserTest {
         assertEquals("192.168.1.1", nodes.get(0).ip());
         assertEquals(Models.TIMEOUT_IP, nodes.get(1).ip());
     }
+
+    @Test
+    void parseWindowsLinesWithRtt() {
+        List<String> lines = List.of("  1     2 ms     3 ms     4 ms  192.168.1.1");
+        List<HopNode> nodes = ProcessRouteProbe.parseWindows(lines);
+        assertEquals(1, nodes.size());
+        assertEquals("192.168.1.1", nodes.get(0).ip());
+        assertEquals(2.0, nodes.get(0).pingMs());
+    }
 }

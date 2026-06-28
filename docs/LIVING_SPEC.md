@@ -81,8 +81,9 @@
 | Monitor cycle | `monitor.MonitorService` | `RoutePollerTest` | done |
 | Session store parity | `monitor.SessionStore` | via poller tests | done |
 | JavaFX GUI CRUD | `ui.MainController` | manual | done |
-| Gradle CI + JaCoCo | `.github/workflows/java-ci.yml`, `build.gradle.kts` | CI + `jacocoTestCoverageVerification` | done |
+| Gradle CI + JaCoCo | `.github/workflows/java-ci.yml`, `build.gradle.kts` | CI matrix ubuntu/windows/macos | done |
 | jpackage Linux .deb | `build.gradle.kts` `jpackageDeb`, `pingui-java.sh --package` | manual / local | done |
+| jpackage Windows/macOS | `jpackageMsi`, `jpackageDmg` | manual on target OS | done |
 | Topological graph | `ui.GraphCanvas`, `RouteGraphLayout` | `PingColorTest`, `RouteGraphLayoutTest` | done |
 | SessionStore parity | `monitor.SessionStore` | `SessionStoreTest` | done |
 | Route history | `monitor.RouteHistory` | `RouteHistoryTest` | done |
