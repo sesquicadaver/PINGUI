@@ -17,6 +17,7 @@ from PyQt6.QtWidgets import (
     QListWidgetItem,
     QMainWindow,
     QPushButton,
+    QTabWidget,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -29,6 +30,7 @@ from pingui.monitor.session_store import SessionStore
 from pingui.monitor.worker import LightweightMonitorWorker
 from pingui.persistence.session_db import SessionDatabase
 from pingui.ui.graph_canvas import GraphCanvas
+from pingui.ui.map_view import RouteMapView
 
 HOST_KEY_ROLE = Qt.ItemDataRole.UserRole
 
@@ -44,6 +46,7 @@ class MainWindow(QMainWindow):
         max_hops: int = 20,
         timeout: float = 0.5,
         session_db_path: Path | None = None,
+        geo_map_enabled: bool = True,
     ) -> None:
         super().__init__()
         self.setWindowTitle("PINGUI — Сесійний монітор маршрутів Linux")
@@ -108,8 +111,13 @@ class MainWindow(QMainWindow):
         left.addWidget(self._log, stretch=2)
 
         self._canvas = GraphCanvas()
+        self._map_view = RouteMapView(enabled=geo_map_enabled)
+        self._route_tabs = QTabWidget()
+        self._route_tabs.addTab(self._canvas, "Граф")
+        if geo_map_enabled:
+            self._route_tabs.addTab(self._map_view, "Карта")
         root.addLayout(left, stretch=1)
-        root.addWidget(self._canvas, stretch=2)
+        root.addWidget(self._route_tabs, stretch=2)
 
         self._worker = LightweightMonitorWorker(
             hosts,
@@ -372,6 +380,7 @@ class MainWindow(QMainWindow):
             avg_ping_fn=lambda ip: self._store.avg_ping(host, ip),
             previous_route=self._store.inactive_route(host),
         )
+        self._map_view.render_route(data.current_route, target=host)
 
     def closeEvent(self, event: QCloseEvent | None) -> None:
         self._worker.stop()

@@ -79,6 +79,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Disable country hints in hop node labels",
     )
+    parser.add_argument(
+        "--no-geo-map",
+        action="store_true",
+        help="Disable folium geo-map tab in GUI",
+    )
     return parser
 
 
@@ -147,6 +152,7 @@ def main(argv: list[str] | None = None) -> int:
         timeout=args.timeout,
         quiet=not args.verbose,
         session_db_path=args.session_db,
+        geo_map_enabled=not args.no_geo_map,
     )
 
 

@@ -2,7 +2,7 @@
 
 Матриця відповідності «вимога → модуль → тести». Оновлюється при кожній фічі.
 
-**Останнє оновлення:** 2026-06-26 · **Coverage:** ≥ 80% · **Тестів:** 79+ · **Документація:** [README.md](README.md)
+**Останнє оновлення:** 2026-06-26 · **Coverage:** ≥ 80% · **Тестів:** 89+ · **Документація:** [README.md](README.md)
 
 Джерело вимог MVP: [MVP_SPEC.md](MVP_SPEC.md).
 
@@ -54,6 +54,7 @@
 |--------|--------|-------|--------|
 | GraphCanvas: layout, кольори ping | `ui/graph_canvas.py` | `tests/unit/test_graph_canvas.py` | done |
 | GeoIP country hints in node labels | `geoip/country.py` | `tests/unit/test_geoip_country.py` | done |
+| Folium geo-map tab | `geoip/map_builder.py`, `ui/map_view.py` | `tests/unit/test_geo_map.py` | done |
 | MainWindow: список, CRUD, збереження | `ui/main_window.py` | `tests/integration/test_ui_smoke.py` | done |
 | Чекбокси enabled, лог, status | `ui/main_window.py` | `tests/integration/test_ui_smoke.py` | done |
 | App bootstrap + quiet logging | `ui/app.py`, `logging_setup.py` | omit coverage (entry) | done |

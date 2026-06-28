@@ -7,6 +7,7 @@
 
 ### Added
 
+- **B-04 Folium geo-map:** вкладка «Карта» з folium-маркерами hop-ів (country centroids), CLI `--no-geo-map`.
 - **B-03 GeoIP:** offline CIDR→country hints у підписах hop-нод (Python `geoip/country`, Java `GeoCountry`), CLI `--geoip-hints` / `--no-geoip`, `config/geoip_hints.yaml`.
 - **Java parity sprint:** JavaFX `GraphCanvas` (vertical route graph, dual columns, ping colors).
 - Unit tests: `SessionStore`, `RouteHistory`, `MonitorService`, `PingColor`, `RouteGraphLayout`.

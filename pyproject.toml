@@ -12,6 +12,8 @@ license = { text = "MIT" }
 authors = [{ name = "PINGUI Team" }]
 dependencies = [
     "PyQt6>=6.6",
+    "PyQt6-WebEngine>=6.6",
+    "folium>=0.15",
     "matplotlib>=3.8",
     "networkx>=3.2",
     "scapy>=2.5",
@@ -39,6 +41,7 @@ concurrency = ["thread"]
 omit = [
     "*/pingui/__main__.py",
     "*/pingui/ui/app.py",
+    "*/pingui/ui/map_view.py",
     "*/pingui/logging_setup.py",
 ]
 
@@ -66,6 +69,16 @@ packages = ["pingui"]
 mypy_path = "src"
 
 [[tool.mypy.overrides]]
-module = ["scapy.*", "matplotlib.*", "matplotlib", "networkx.*", "numpy.*", "numpy"]
+module = [
+    "scapy.*",
+    "matplotlib.*",
+    "matplotlib",
+    "networkx.*",
+    "numpy.*",
+    "numpy",
+    "folium.*",
+    "folium",
+    "PyQt6.QtWebEngineWidgets",
+]
 ignore_missing_imports = true
 follow_imports = "skip"
