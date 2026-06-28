@@ -6,6 +6,7 @@ import io.pingui.model.Models.RouteSnapshot;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,9 +30,14 @@ public final class ProcessRouteProbe implements RouteProbe {
 
     private static final Pattern UNIX_LINE =
             Pattern.compile("^\\s*(\\d+)\\s+([^\\s]+)(?:\\s+([0-9.]+)\\s*ms)?.*");
-    private static final Pattern WINDOWS_LINE =
-            Pattern.compile("^\\s*(\\d+)\\s+(?:\\d+\\s*ms\\s+)*([*]|\\d+\\.\\d+\\.\\d+\\.\\d+)\\s*.*");
-    private static final Pattern WINDOWS_RTT_MS = Pattern.compile("(\\d+(?:\\.\\d+)?)\\s*ms");
+    private static final Pattern WINDOWS_HOP =
+            Pattern.compile("^\\s*(\\d+)\\s+(.+)$");
+    private static final Pattern WINDOWS_IP_IN_BRACKETS =
+            Pattern.compile("\\[(\\d{1,3}(?:\\.\\d{1,3}){3})\\]");
+    private static final Pattern WINDOWS_BARE_IP =
+            Pattern.compile("(?<!\\d)(\\d{1,3}(?:\\.\\d{1,3}){3})(?!\\.\\d)");
+    private static final Pattern WINDOWS_RTT_MS =
+            Pattern.compile("(?:<\\s*1|(\\d+(?:\\.\\d+)?))\\s*(?:ms|мс)", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 
     private static volatile TracerouteFlavor cachedFlavor;
 
@@ -87,6 +93,21 @@ public final class ProcessRouteProbe implements RouteProbe {
         return "traceroute";
     }
 
+    /** Resolves tracert; JavaFX/GUI apps on Windows often have a minimal PATH without System32. */
+    static String resolveTracertExecutable(Predicate<Path> executable) {
+        return resolveTracertExecutable(System.getenv("SystemRoot"), executable);
+    }
+
+    static String resolveTracertExecutable(String systemRoot, Predicate<Path> executable) {
+        if (systemRoot != null && !systemRoot.isBlank()) {
+            Path tracert = Path.of(systemRoot, "System32", "tracert.exe");
+            if (executable.test(tracert)) {
+                return tracert.toString();
+            }
+        }
+        return "tracert";
+    }
+
     private static String readTracerouteVersion() {
         String traceroute = resolveTracerouteExecutable();
         ProcessBuilder builder = new ProcessBuilder(traceroute, "--version");
@@ -121,8 +142,10 @@ public final class ProcessRouteProbe implements RouteProbe {
         builder.redirectErrorStream(true);
         Process process = builder.start();
         List<String> lines = new ArrayList<>();
-        Thread drainer =
-                Thread.ofVirtual().name("trace-output-" + targetHost).start(() -> drainLines(process, lines));
+        Charset outputCharset = windows ? Charset.defaultCharset() : StandardCharsets.UTF_8;
+        Thread drainer = Thread.ofVirtual()
+                .name("trace-output-" + targetHost)
+                .start(() -> drainLines(process, lines, outputCharset));
         long waitMs = computeProcessWaitMs(windows, maxHops, timeoutSeconds);
         try {
             if (!process.waitFor(waitMs, TimeUnit.MILLISECONDS)) {
@@ -141,7 +164,8 @@ public final class ProcessRouteProbe implements RouteProbe {
         }
         List<HopNode> nodes = windows ? parseWindows(lines) : parseUnix(lines);
         if (nodes.isEmpty()) {
-            throw new IOException("No hops parsed for " + targetHost + "; is traceroute installed?");
+            throw new IOException(
+                    "No hops parsed for " + targetHost + " (" + lines.size() + " tracert lines); check tracert output");
         }
         String targetIp = nodes.stream()
                 .filter(HopNode::isReachable)
@@ -152,9 +176,8 @@ public final class ProcessRouteProbe implements RouteProbe {
     }
 
     /** Read subprocess stdout so tracert/traceroute cannot block on a full pipe buffer. */
-    private static void drainLines(Process process, List<String> lines) {
-        try (BufferedReader reader =
-                new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+    private static void drainLines(Process process, List<String> lines, Charset charset) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), charset))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 lines.add(line);
@@ -190,7 +213,9 @@ public final class ProcessRouteProbe implements RouteProbe {
     List<String> buildCommand(String targetHost, int maxHops, double timeoutSeconds) {
         if (windows) {
             int waitMs = windowsTracertWaitMs(timeoutSeconds);
-            return List.of("tracert", "-h", String.valueOf(maxHops), "-w", String.valueOf(waitMs), targetHost);
+            String tracert = resolveTracertExecutable(Files::isExecutable);
+            return List.of(
+                    tracert, "-d", "-h", String.valueOf(maxHops), "-w", String.valueOf(waitMs), targetHost);
         }
         String traceroute = resolveTracerouteExecutable();
         int waitSec = Math.max(1, (int) Math.ceil(timeoutSeconds));
@@ -240,30 +265,60 @@ public final class ProcessRouteProbe implements RouteProbe {
     static List<HopNode> parseWindows(List<String> lines) {
         List<HopNode> nodes = new ArrayList<>();
         for (String line : lines) {
-            if (line.contains("Tracing") || line.contains("over a maximum")) {
+            Matcher hopMatcher = WINDOWS_HOP.matcher(line);
+            if (!hopMatcher.matches()) {
                 continue;
             }
-            Matcher matcher = WINDOWS_LINE.matcher(line);
-            if (!matcher.matches()) {
-                continue;
-            }
-            int hop = Integer.parseInt(matcher.group(1));
-            String token = matcher.group(2);
-            if ("*".equals(token)) {
+            int hop = Integer.parseInt(hopMatcher.group(1));
+            String rest = hopMatcher.group(2).trim();
+            if (isWindowsTimeoutLine(rest)) {
                 nodes.add(Models.timeout(hop));
                 continue;
             }
+            String ip = extractWindowsIp(rest);
+            if (ip == null) {
+                continue;
+            }
             Double pingMs = parseWindowsRtt(line);
-            nodes.add(new HopNode(hop, token, pingMs, false));
+            nodes.add(new HopNode(hop, ip, pingMs, false));
         }
         return nodes;
     }
 
+    static boolean isWindowsTimeoutLine(String rest) {
+        String lower = rest.toLowerCase(Locale.ROOT);
+        if (lower.contains("timed out") || lower.contains("timeout") || lower.contains("перевищ")) {
+            return true;
+        }
+        String compact = rest.replaceAll("\\s+", "");
+        return compact.startsWith("*") && !compact.contains(".");
+    }
+
+    static String extractWindowsIp(String rest) {
+        Matcher bracket = WINDOWS_IP_IN_BRACKETS.matcher(rest);
+        String ip = null;
+        while (bracket.find()) {
+            ip = bracket.group(1);
+        }
+        if (ip != null) {
+            return ip;
+        }
+        Matcher bare = WINDOWS_BARE_IP.matcher(rest);
+        while (bare.find()) {
+            ip = bare.group(1);
+        }
+        return ip;
+    }
+
     static Double parseWindowsRtt(String line) {
         Matcher matcher = WINDOWS_RTT_MS.matcher(line);
-        if (matcher.find()) {
-            return Double.parseDouble(matcher.group(1));
+        if (!matcher.find()) {
+            return null;
         }
-        return null;
+        String numeric = matcher.group(1);
+        if (numeric != null) {
+            return Double.parseDouble(numeric);
+        }
+        return 0.5;
     }
 }
