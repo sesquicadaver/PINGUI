@@ -75,11 +75,33 @@ ls build/dist/*.deb
 ### Preflight
 
 - [ ] Windows 11 x64
-- [ ] JDK **21** у PATH / `JAVA_HOME`
+- [ ] **JDK 21 встановлено** (Eclipse Temurin / Microsoft Build of OpenJDK)
+- [ ] Під час інсталяції: **Add to PATH** + **Set JAVA_HOME**
 - [ ] `tracert` і `ping` — вбудовані
-- [ ] Firewall не блокує ICMP для `tracert`
 
-### Встановлення
+### Встановлення JDK 21 (якщо `java` не знайдено)
+
+1. Завантажити [Eclipse Temurin 21 (Windows x64)](https://adoptium.net/temurin/releases/?version=21)
+2. Інсталятор → увімкнути **Add to PATH**, **Set JAVA_HOME**
+3. Нове вікно cmd:
+
+```bat
+java -version
+```
+
+Має бути `openjdk version "21.x.x"`.
+
+Якщо PATH не оновився:
+
+```bat
+set "PINGUI_JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.9.10-hotspot"
+cd C:\path\to\PINGUI\java
+pingui-java.bat --build
+```
+
+`pingui-java.bat` також шукає JDK у `Program Files\Eclipse Adoptium`, `Program Files\Java`, `Program Files\Microsoft`.
+
+### Збірка PINGUI
 
 ```bat
 cd C:\path\to\PINGUI\java

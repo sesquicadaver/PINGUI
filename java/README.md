@@ -28,8 +28,12 @@ chmod +x pingui-java.sh gradlew
 
 **Windows**
 
+Потрібен **JDK 21** ([Eclipse Temurin](https://adoptium.net/temurin/releases/?version=21); під час інсталяції — Add to PATH + JAVA_HOME).
+
 ```bat
 cd java
+rem Якщо java не в PATH:
+rem set "PINGUI_JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.x-hotspot"
 pingui-java.bat              REM GUI
 pingui-java.bat --build      REM збірка
 pingui-java.bat --package    REM jpackage (.msi)
