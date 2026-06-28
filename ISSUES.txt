@@ -9,16 +9,9 @@ C:\...\PINGUI\java> pingui-java.bat --build
 [pingui-java] ПОМИЛКА: Java не знайдено. Потрібен JDK 21.
 ```
 
-**Причина:** JDK 21 не в PATH і `JAVA_HOME` не задано.
+**Причина:** (1) JDK 21 не в PATH; (2) баг у `pingui-java.bat`: `goto` з підпрограми завершував скрипт до Gradle (тиша в cmd).
 
-**Рішення**
-
-1. Встановити [Eclipse Temurin 21](https://adoptium.net/temurin/releases/?version=21) (Windows x64).
-2. У інсталяторі: **Add to PATH**, **Set JAVA_HOME**.
-3. Нове вікно cmd: `java -version` → 21.x.
-4. Або: `set PINGUI_JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.x-hotspot`
-
-**Перевірка:** `pingui-java.bat --build` → BUILD SUCCESSFUL.
+**Рішення:** оновити репозиторій (`git pull`); встановити JDK 21 або `PINGUI_JAVA_HOME`.
 
 ---
 
