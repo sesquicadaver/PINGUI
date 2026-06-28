@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PINGUI Java — cross-platform launcher (Linux, macOS, Windows/WSL).
+# PINGUI Java — launcher (Linux, macOS). Windows: pingui-java.bat
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

@@ -73,10 +73,19 @@ hosts:
 
 ## Збірка та CI
 
+**Linux / macOS**
+
 ```bash
-cd java && ./gradlew test build          # тести + JaCoCo gate (≥80%)
-cd java && ./gradlew jpackageDeb         # Linux .deb
-cd java && ./pingui-java.sh --package    # те саме через launcher
+cd java && ./gradlew test build
+cd java && ./pingui-java.sh --package    # jpackage (.deb / .dmg)
+```
+
+**Windows**
+
+```bat
+cd java
+gradlew.bat test build
+pingui-java.bat --package    REM .msi
 ```
 
 GitHub Actions: `.github/workflows/java-ci.yml` — matrix **ubuntu / windows / macos**, `./gradlew test jacocoTestCoverageVerification`.

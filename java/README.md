@@ -15,15 +15,7 @@
 
 ## Швидкий старт
 
-З кореня репозиторію:
-
-```bash
-./pingui.sh --java              # GUI
-./pingui.sh --java --deploy     # build + тести + JaCoCo
-./pingui.sh --java --test       # лише unit-тести
-```
-
-Або з каталогу `java/`:
+**Linux / macOS**
 
 ```bash
 cd java
@@ -31,15 +23,27 @@ chmod +x pingui-java.sh
 ./pingui-java.sh              # GUI
 ./pingui-java.sh --test       # unit-тести
 ./pingui-java.sh --build      # збірка + тести + JaCoCo gate
-./pingui-java.sh --package    # Linux .deb через jpackage
+./pingui-java.sh --package    # jpackage (.deb / .dmg / .msi)
 ./pingui-java.sh --help
 ```
 
-Або напряму Gradle:
+**Windows (cmd / PowerShell)**
+
+```bat
+cd java
+pingui-java.bat              REM GUI
+pingui-java.bat --test       REM unit-тести
+pingui-java.bat --build      REM збірка + тести + JaCoCo gate
+pingui-java.bat --package    REM jpackage (.msi)
+pingui-java.bat --help
+```
+
+Або напряму Gradle (`gradlew` / `gradlew.bat`):
 
 ```bash
 cd java
-./gradlew run
+./gradlew run          # Linux / macOS
+gradlew.bat run        # Windows
 ./gradlew test
 ```
 
@@ -92,7 +96,7 @@ io.pingui
 | ICMP | scapy raw socket + cap_net_raw | traceroute/tracert subprocess |
 | GUI | PyQt6 + Matplotlib graph | JavaFX + GraphCanvas |
 | Worker | QThread | ScheduledExecutorService |
-| Запуск | `./pingui.sh` | `./java/pingui-java.sh` |
+| Запуск | `./pingui.sh` (Linux) | `java/pingui-java.sh` або `java/pingui-java.bat` (Windows) |
 
 Спільний формат конфігу YAML (`hosts:`) сумісний між редакціями.
 
@@ -112,7 +116,8 @@ JUnit 5 (27+ тестів: config, probe, monitor, ui layout, CLI options).
 На Linux / Windows / macOS з JDK 21+ (містить `jpackage`):
 
 ```bash
-./pingui-java.sh --package
+./pingui-java.sh --package    # Linux / macOS
+pingui-java.bat --package     # Windows
 # або
 ./gradlew installDist jpackage
 ls build/dist/    # pingui_0.1.0_amd64.deb | .msi | .dmg залежно від ОС

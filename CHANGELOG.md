@@ -5,6 +5,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **Розділення launcherів:** `pingui.sh` — лише Python; Java — `java/pingui-java.sh` (Unix) / `java/pingui-java.bat` (Windows).
+
 ### Added
 
 - **J-06 Java hop stats:** jitter/loss у graph labels (parity з B-06).

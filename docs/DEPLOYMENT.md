@@ -11,19 +11,36 @@
 
 `python3-venv`, `libcap2-bin`, `libegl1`, `libgl1`, `libxkbcommon0`, `libxcb-cursor0`
 
-## Єдина точка входу: pingui.sh
+## Python: pingui.sh
 
 ```bash
 chmod +x pingui.sh
 ./pingui.sh --deploy    # перше розгортання (Python)
 ./pingui.sh             # Python GUI
-./pingui.sh --java      # Java GUI (cross-platform, без venv)
-./pingui.sh --java --deploy   # Java: build + тести + JaCoCo
 ./pingui.sh --destroy   # очистити venv і кеші Python
 ./pingui.sh --help
 ```
 
-Java-редакція делегує до `java/pingui-java.sh`; Python `--destroy` не стосується Gradle-артефактів у `java/build/`.
+## Java: java/pingui-java.sh (Linux/macOS) або pingui-java.bat (Windows)
+
+**Linux / macOS**
+
+```bash
+cd java
+chmod +x pingui-java.sh
+./pingui-java.sh --build
+./pingui-java.sh
+```
+
+**Windows**
+
+```bat
+cd java
+pingui-java.bat --build
+pingui-java.bat
+```
+
+Python `--destroy` не стосується Gradle-артефактів у `java/build/`.
 
 ### Режим `--deploy`
 

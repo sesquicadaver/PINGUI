@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# PINGUI — єдина точка входу з кореня репозиторію.
+# PINGUI — Python edition (Linux): venv, cap_net_raw, PyQt6 GUI.
 #
-#   ./pingui.sh              Python GUI (Linux, venv + cap_net_raw)
-#   ./pingui.sh --java       Java GUI (cross-platform, делегує java/pingui-java.sh)
-#   ./pingui.sh --deploy     Python: повне розгортання + CI
-#   ./pingui.sh --java --deploy   Java: gradle build + тести + JaCoCo
-#   ./pingui.sh --destroy    видалити .venv та локальні артефакти Python
+#   ./pingui.sh              GUI
+#   ./pingui.sh --deploy     повне розгортання + CI
+#   ./pingui.sh --destroy    видалити .venv та локальні артефакти
 #   ./pingui.sh --help       довідка
+#
+# Java edition: java/pingui-java.sh (окремий launcher, без цього скрипта).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -16,11 +16,8 @@ VENV="${ROOT}/.venv"
 PYTHON=""
 PIP="${VENV}/bin/pip"
 CONFIG="${ROOT}/config/hosts.example.yaml"
-JAVA_LAUNCHER="${ROOT}/java/pingui-java.sh"
 
 MODE="run"
-JAVA_MODE=0
-JAVA_EXTRA=()
 SKIP_TESTS=0
 FORCE_VENV=0
 QUIET=0
@@ -36,9 +33,7 @@ die() {
 
 usage() {
   cat <<'EOF'
-PINGUI — монітор маршрутів
-
-Запуск Python (Linux, з кореня репозиторію):
+PINGUI — монітор маршрутів (Python edition, Linux)
 
   ./pingui.sh
       Запуск GUI. Мінімальна перевірка venv і cap_net_raw, без зайвого виводу.
@@ -54,19 +49,10 @@ PINGUI — монітор маршрутів
       .coverage, build/dist, *.egg-info.
       Системні пакети apt і стан ОС до розгортання не змінюються.
 
-Java edition (Linux, macOS, Windows):
-
-  ./pingui.sh --java
-      Запуск JavaFX GUI (JDK 21+, traceroute/tracert). Без venv і cap_net_raw.
-
-  ./pingui.sh --java --deploy
-      Gradle build + unit-тести + JaCoCo gate (аналог CI для java/).
-
-  ./pingui.sh --java --test|--build|--package
-      Делегує до java/pingui-java.sh (див. java/README.md).
-
   ./pingui.sh --help
       Ця довідка.
+
+Java edition (cross-platform): java/pingui-java.sh (Unix) або java/pingui-java.bat (Windows).
 
 Після розгортання список цілей редагується в GUI (Зберегти → config/hosts.example.yaml).
 EOF
@@ -74,45 +60,26 @@ EOF
 
 for arg in "$@"; do
   case "$arg" in
-    --java) JAVA_MODE=1 ;;
-  esac
-done
-
-for arg in "$@"; do
-  case "$arg" in
-    --java) continue ;;
-    --deploy)
-      if [[ "$JAVA_MODE" -eq 1 ]]; then
-        MODE="java-deploy"
-      else
-        MODE="deploy"
-      fi
-      ;;
-    --destroy)
-      if [[ "$JAVA_MODE" -eq 1 ]]; then
-        die "--destroy лише для Python-редакції (без --java)."
-      fi
-      MODE="destroy"
-      ;;
+    --deploy) MODE="deploy" ;;
+    --destroy) MODE="destroy" ;;
     --help|-h) MODE="help" ;;
     --skip-tests)
-      [[ "$MODE" == deploy ]] || die "Опція --skip-tests лише з --deploy (Python)."
+      [[ "$MODE" == deploy ]] || die "Опція --skip-tests лише з --deploy."
       SKIP_TESTS=1
       ;;
     --force-venv)
-      [[ "$MODE" == deploy ]] || die "Опція --force-venv лише з --deploy (Python)."
+      [[ "$MODE" == deploy ]] || die "Опція --force-venv лише з --deploy."
       FORCE_VENV=1
       ;;
     --run)
       echo "Застаріло: ./pingui.sh --run → просто ./pingui.sh" >&2
       MODE="run"
       ;;
+    --java|--java=*)
+      die "Java edition: використовуйте java/pingui-java.sh (не pingui.sh --java)."
+      ;;
     *)
-      if [[ "$JAVA_MODE" -eq 1 ]]; then
-        JAVA_EXTRA+=("$arg")
-      else
-        die "Невідомий аргумент: $arg (див. ./pingui.sh --help)"
-      fi
+      die "Невідомий аргумент: $arg (див. ./pingui.sh --help)"
       ;;
   esac
 done
@@ -121,43 +88,8 @@ if [[ "$MODE" == run ]]; then
   QUIET=1
 fi
 
-ensure_java_launcher() {
-  [[ -f "$JAVA_LAUNCHER" ]] || die "Java edition не знайдено: ${JAVA_LAUNCHER}"
-  chmod +x "$JAVA_LAUNCHER" 2>/dev/null || true
-}
-
-run_java_mode() {
-  ensure_java_launcher
-  case "$MODE" in
-    help)
-      if ((${#JAVA_EXTRA[@]})); then
-        exec "$JAVA_LAUNCHER" --help "${JAVA_EXTRA[@]}"
-      else
-        usage
-      fi
-      ;;
-    java-deploy)
-      exec "$JAVA_LAUNCHER" --build "${JAVA_EXTRA[@]}"
-      ;;
-    run)
-      if ((${#JAVA_EXTRA[@]})); then
-        exec "$JAVA_LAUNCHER" "${JAVA_EXTRA[@]}"
-      else
-        exec "$JAVA_LAUNCHER"
-      fi
-      ;;
-    *)
-      die "Невідомий Java-режим: $MODE"
-      ;;
-  esac
-}
-
-if [[ "$JAVA_MODE" -eq 1 ]]; then
-  run_java_mode
-fi
-
 require_linux() {
-  [[ "$(uname -s)" == Linux ]] || die "PINGUI працює лише на Linux."
+  [[ "$(uname -s)" == Linux ]] || die "Python PINGUI працює лише на Linux."
 }
 
 require_python() {
