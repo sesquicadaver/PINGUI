@@ -1,6 +1,7 @@
 package io.pingui.ui;
 
 import io.pingui.AppOptions;
+import io.pingui.CliProfileOverrides;
 import io.pingui.config.ConfigError;
 import io.pingui.config.HostEntry;
 import io.pingui.config.HostsConfig;
@@ -259,15 +260,12 @@ public final class MainController {
     }
 
     private void applyCliOverridesToActiveProfile() {
+        CliProfileOverrides overrides = options.profileOverrides();
+        if (overrides.isEmpty()) {
+            return;
+        }
         TracingProfile active = profileDocument.active();
-        profileDocument.putProfile(
-                profileDocument.activeProfile(),
-                new TracingProfile(
-                        options.intervalSeconds(),
-                        options.maxHops(),
-                        options.timeoutSeconds(),
-                        options.probeMode(),
-                        active.hosts()));
+        profileDocument.putProfile(profileDocument.activeProfile(), overrides.applyTo(active));
     }
 
     private void rebuildHostItems(List<HostEntry> entries) {

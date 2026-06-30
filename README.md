@@ -44,6 +44,7 @@ pingui-java.bat
 - **Expert ping** (Linux, iputils) — діалог **Exten.** на хост
 - Трасування через `traceroute` / `tracert` (без `CAP_NET_RAW` за замовч.)
 - Опційно на Linux: raw ICMP (`probe: auto|raw` + `cap_net_raw`)
+- **IPv4-only:** IPv6-літерали та IPv6 trace не підтримуються (див. [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md))
 
 ## CLI
 
@@ -55,13 +56,15 @@ cd java
 | Параметр | Опис |
 |----------|------|
 | `--config` | YAML з 0–10 цілями (v2 `profiles:` або legacy `hosts:`) |
-| `--interval` | Інтервал опитування (с) |
-| `--max-hops` | Максимум hop |
-| `--timeout` | Таймаут probe (с) |
-| `--probe` | `auto`, `process`, `raw` (Linux) |
+| `--interval` | Перезаписати `interval` активного профілю **лише якщо передано** |
+| `--max-hops` | Перезаписати `max_hops` активного профілю **лише якщо передано** |
+| `--timeout` | Перезаписати `timeout` активного профілю **лише якщо передано** |
+| `--probe` | Перезаписати `probe` активного профілю **лише якщо передано** |
 | `--geoip-hints` | Offline CIDR→країна |
 | `--no-geoip` | Вимкнути країну в підписах |
 | `--verbose` | Debug-лог |
+
+Без `--interval` / `--max-hops` / `--timeout` / `--probe` значення беруться з YAML профілю.
 
 ## Структура репозиторію (`main`)
 
@@ -86,6 +89,7 @@ PINGUI/
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Розгортання |
 | [docs/JAVA.md](docs/JAVA.md) | Архітектура Java-редакції |
 | [docs/README.md](docs/README.md) | Індекс документації |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | План виправлень |
 | [CHANGELOG.md](CHANGELOG.md) | Історія змін |
 
 Розробка, тести та Python-редакція — гілка **`beta`**.

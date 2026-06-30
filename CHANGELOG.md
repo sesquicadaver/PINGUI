@@ -7,6 +7,9 @@
 
 ### Changed
 
+- **Java CLI:** `--interval` / `--max-hops` / `--timeout` / `--probe` перезаписують активний YAML-профіль **лише якщо передані** (`CliProfileOverrides`).
+- **Docs:** IPv4-only — README, DEPLOYMENT, JAVA, Help dialog.
+- **Docs:** [docs/ROADMAP.md](docs/ROADMAP.md) — атомарний план виправлень після аудиту `main`.
 - **Docs:** попередження про повільність Windows (`tracert`) та рекомендація Linux для щоденної роботи — README, DEPLOYMENT, CHECKLIST, JAVA.
 - **Гілки:** `main` — лише Java-редакція та документація для запуску; `beta` — Python, тести, CI, специфікації.
 
@@ -19,6 +22,8 @@
 
 ### Fixed
 
+- **Java:** прибрано дубльований import у `RawIcmpRouteProbe`.
+- **Java CLI:** старт без прапорів більше не затирає `interval`/`max_hops`/`timeout`/`probe` у YAML defaults.
 - **Java UI:** після створення/видалення профілю — чорний фрейм (sizeToScene не зменшує вікно на Linux; reload без applyViewMode).
 - **Java (Windows):** парсер `tracert` — `<1 ms`, `hostname [IP]`, System32 fallback, `-d`, charset ОС.
 - **Java (Windows):** виправлено timeout/deadlock `tracert` (drain stdout, `-w` ≥4000 ms, довший process wait).

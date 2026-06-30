@@ -14,6 +14,22 @@
 - SnakeYAML (конфіг)
 - JUnit 5 (тести на гілці **`beta`**)
 
+## Обмеження
+
+- **IPv4-only** для цілей і raw ICMP (`HostsConfig` validator, `RawIcmpRouteProbe` / `AF_INET`).
+- IPv6 — поза scope `main`; див. [ROADMAP.md](ROADMAP.md) фаза 7.
+
+## CLI vs YAML профіль
+
+| Поле профілю | Джерело за замовч. | CLI override |
+|--------------|-------------------|--------------|
+| `interval` | YAML активного профілю | `--interval SEC` (лише якщо передано) |
+| `max_hops` | YAML | `--max-hops N` |
+| `timeout` | YAML | `--timeout SEC` |
+| `probe` | YAML | `--probe MODE` |
+
+Реалізація: `CliProfileOverrides` + `PinguiApplication.parseOptions()`; merge у `MainController.applyCliOverridesToActiveProfile()`.
+
 ## Probe-шар
 
 Python використовує scapy + raw ICMP. Java підтримує два backend:

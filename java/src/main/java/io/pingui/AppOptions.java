@@ -1,26 +1,19 @@
 package io.pingui;
 
-import io.pingui.probe.ProbeMode;
 import java.nio.file.Path;
 
 /** Runtime CLI options for the Java edition. */
 public record AppOptions(
         Path configPath,
-        double intervalSeconds,
-        int maxHops,
-        double timeoutSeconds,
+        CliProfileOverrides profileOverrides,
         boolean verbose,
-        ProbeMode probeMode,
         boolean geoipEnabled,
         Path geoipHintsPath) {
     public static AppOptions defaults() {
         return new AppOptions(
                 Path.of("config/hosts.example.yaml"),
-                1.0,
-                20,
-                0.5,
+                CliProfileOverrides.none(),
                 false,
-                ProbeMode.AUTO,
                 true,
                 Path.of("config/geoip_hints.yaml"));
     }

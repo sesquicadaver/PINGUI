@@ -12,6 +12,8 @@
 
 Expert ping (режим «Експерт») — **лише Linux** (iputils `ping`).
 
+**IPv4-only:** цілі — IPv4 або hostname (ASCII); IPv6-літерали (`2001:db8::1`) не приймаються. Raw ICMP probe — `AF_INET` / IPv4.
+
 ## Рекомендація щодо ОС
 
 | Платформа | Для щоденної роботи | Коментар |

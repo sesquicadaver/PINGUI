@@ -1,0 +1,168 @@
+# ROADMAP — PINGUI Java (`main` / `beta`)
+
+План виправлень після аудиту `main` (MVP desktop utility, production readiness: низька–середня).
+
+**Легенда**
+
+| Поле | Значення |
+|------|----------|
+| **Гілка** | `main` — Java + docs; `beta` — + Python, тести, CI |
+| **Пріоритет** | P0 критично · P1 важливо · P2 бажано |
+| **DoD** | Definition of Done — умова закриття задачі |
+
+Задачі **атомарні**: одна задача ≈ один MR/коміт, ≤ 1 день роботи.
+
+---
+
+## Фаза 0 — Швидкі виправлення (`main`, P0)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **M-001** | [x] Видалити дубльований `import java.io.IOException` | `probe/RawIcmpRouteProbe.java` | `./gradlew compileJava` OK; один import |
+| **M-002** | [x] Задокументувати **IPv4-only** (validator + raw ICMP) | `README.md`, `docs/JAVA.md`, `docs/DEPLOYMENT.md`, `AppMenuDialogs` help | Явна примітка «IPv6 не підтримується»; приклади лише IPv4/hostname |
+| **M-003** | [x] CHANGELOG: запис про roadmap і IPv4-only | `CHANGELOG.md` | Секція `[Unreleased]` оновлена |
+
+---
+
+## Фаза 1 — CLI override (`main`, P0)
+
+**Проблема:** `applyCliOverridesToActiveProfile()` завжди підставляє `AppOptions.defaults()`, затираючи YAML при старті без CLI.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **M-010** | [x] Ввести `CliOverrides` (record з `Optional` полями: interval, maxHops, timeout, probe) | `CliProfileOverrides.java`, `AppOptions.java`, `PinguiApplication.java` | Парсер CLI заповнює `Optional.empty()` для непереданих прапорців |
+| **M-011** | [x] `parseOptions`: розрізняти «не передано» vs «default» | `PinguiApplication.java` | `--interval 2` → override; без `--interval` → empty |
+| **M-012** | [x] `applyCliOverridesToActiveProfile`: merge лише present-полів | `MainController.java` | Старт без CLI зберігає YAML `interval`/`max_hops`/`timeout`/`probe` |
+| **M-013** | [x] Документувати поведінку CLI vs YAML | `java/README.md`, `docs/JAVA.md` | Таблиця «CLI перезаписує поле профілю лише якщо передано» |
+| **M-014** | [ ] Ручний smoke: профіль `interval: 30` + `./pingui-java.sh` | — | У GUI/логах interval = 30, не 1.0 |
+
+---
+
+## Фаза 2 — Hygiene / static checks (`main` → `beta`, P1)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **M-020** | Підключити Spotless (Google Java Format або Palantir) | `java/build.gradle.kts`, `settings.gradle.kts` | `./gradlew spotlessCheck` проходить |
+| **M-021** | `./gradlew spotlessApply` + форматування існуючих `.java` | `java/src/main/**` | `spotlessCheck` green; diff лише formatting |
+| **M-022** | Gradle task `check` = `compileJava` + `spotlessCheck` | `java/build.gradle.kts` | `./gradlew check` на `main` |
+| **M-023** | (Опційно) Checkstyle або Error Prone — мінімальний ruleset | `java/build.gradle.kts`, config XML | Дублі import, unused imports — fail |
+
+---
+
+## Фаза 3 — Тестовий шар (`beta`, P0)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **B-001** | JUnit 5 + test deps у `java/build.gradle.kts` | `build.gradle.kts` | `./gradlew test` запускається (навіть 0 tests) |
+| **B-002** | Фікстури: зразки виводу `traceroute` (Linux/macOS) | `src/test/resources/trace/unix_*.txt` | ≥ 3 файли (ok, timeout, hostname) |
+| **B-003** | Фікстури: зразки `tracert` (Windows) | `src/test/resources/trace/win_*.txt` | ≥ 3 файли (`<1 ms`, `host [IP]`, timeout) |
+| **B-004** | Unit: `ProcessRouteProbe.parseUnix` | `ProcessRouteProbeTest.java` | Hop count, IP, RTT для кожної фікстури |
+| **B-005** | Unit: `ProcessRouteProbe.parseWindows` | той самий test class | Парсинг Windows-рядків без `No hops parsed` |
+| **B-006** | Unit: `windowsTracertWaitMs` / `-w` ≥ 4000 | `ProcessRouteProbeTest.java` | Assert на мінімальний wait |
+| **B-007** | Unit: `HostsConfig.validateSessionHost` | `HostsConfigTest.java` | duplicate, max 10, invalid chars, IPv4 ok |
+| **B-008** | Unit: `ProfilesConfig` v2 + legacy migration | `ProfilesConfigTest.java` | load/save round-trip; `active_profile` |
+| **B-009** | Unit: `PingExpertValidator` (якщо є на beta) | test class | invalid flags → `ConfigError` |
+| **B-010** | Unit: CLI override merge (після M-010…M-012) | `PinguiApplicationTest.java` | optional fields не затирають profile |
+
+---
+
+## Фаза 4 — CI (`beta`, P0)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **B-020** | GitHub Actions: JDK 21, venv не потрібен для Java job | `.github/workflows/java.yml` | `compileJava` + `test` + `spotlessCheck` на push/PR |
+| **B-021** | CI matrix: `ubuntu-latest` (обовʼязково); Windows optional | workflow | Linux green; Windows job `continue-on-error` або окремий |
+| **B-022** | Badge / статус у README (`beta`) | `README.md` | Badge CI видимий |
+| **B-023** | Living spec: матриця «ТЗ → модуль → тест» | `docs/LIVING_SPEC.md` | Рядки для probe, config, CLI override |
+
+---
+
+## Фаза 5 — Розділення UI (`beta`, P1)
+
+**Мета:** `MainController` ≤ ~300 рядків; SRP.
+
+| ID | Задача | Виділити з | DoD |
+|----|--------|------------|-----|
+| **B-030** | `ProfileUiActions` — new/delete/select profile, combo sync | `MainController` | Profile CRUD винесено; controller делегує |
+| **B-031** | `HostListPresenter` — add/edit/remove, toggles, list height | `MainController` | Host ops + `HostListCell` callbacks |
+| **B-032** | `MonitorLifecycle` — create/close monitor, reload profile | `MainController` | `reloadActiveProfile` + `createMonitor` |
+| **B-033** | `ViewModeController` — Simple/Extended, `fitWindowToContent` | `MainController` | Easter egg лишається або → `HostViewRules` helper |
+| **B-034** | `RouteGraphPresenter` — `redrawRouteIfExtended`, graph panel | `MainController` | Extended mode graph + status label |
+| **B-035** | Smoke GUI: профіль, host, save, F1/About | manual / optional TestFX later | Нема регресії layout (Linux black frame) |
+
+---
+
+## Фаза 6 — Probe / OS strategy (`beta`, P1)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **B-040** | Інтерфейс `TraceCommandBuilder` (OS → argv[]) | `probe/` | Linux/macOS/Windows реалізації |
+| **B-041** | Перенести команди з `ProcessRouteProbe` | `LinuxTracerouteCommand`, `MacTracerouteCommand`, `WindowsTracertCommand` | Паритет з поточною поведінкою; тести B-004/B-005 green |
+| **B-042** | Парсер Unix: окремий `UnixTraceOutputParser` | `probe/` | Unit-тести на фікстурах |
+| **B-043** | Парсер Windows: `WindowsTraceOutputParser` | `probe/` | Локалізовані timeout-рядки в фікстурах |
+| **B-044** | Документувати обмеження парсера (IPv6 trace output, ASN) | `docs/JAVA.md` | Known limitations |
+
+---
+
+## Фаза 7 — IPv6 (окремий scope, P2)
+
+| ID | Задача | DoD |
+|----|--------|-----|
+| **B-050** | SPIKE: IPv6 trace + ping — обсяг робіт | Документ `docs/SPIKE_IPV6.md` з рішенням: implement vs wontfix |
+| **B-051** | (Якщо implement) `HostsConfig` — IPv6 literal + hostname IDNA | RFC5952 normalize; тести |
+| **B-052** | (Якщо implement) Raw ICMP IPv6 (`AF_INET6`) | Linux only; cap check |
+| **B-053** | (Якщо wontfix) Закрити B-050 статусом «IPv4-only by design» | README + validator error message |
+
+---
+
+## Фаза 8 — Production polish (`beta`, P2)
+
+| ID | Задача | DoD |
+|----|--------|-----|
+| **B-060** | Версія в About з CI build number / git sha | `AppInfo`, Gradle `processResources` |
+| **B-061** | jpackage smoke у CHECKLIST після кожного release | `docs/CHECKLIST.md` |
+| **B-062** | Weekly doc smoke (README ↔ фактичний CLI) | Чекліст у `docs/CHECKLIST.md` § Docs |
+| **B-063** | Import graph / cycle detection (Gradle plugin або script) | CI warning на циклі `config` ↔ `ui` |
+
+---
+
+## Рекомендований порядок виконання
+
+```mermaid
+flowchart LR
+  M001[M-001 hygiene] --> M010[M-010 CLI Optional]
+  M010 --> M012[M-012 merge profile]
+  M002[M-002 IPv4 docs]
+  M020[M-020 Spotless] --> M021[M-021 apply]
+  M021 --> B001[B-001 JUnit]
+  B001 --> B004[B-004 parse tests]
+  B004 --> B020[B-020 CI]
+  B020 --> B030[B-030 split UI]
+  B004 --> B040[B-040 command builders]
+```
+
+**Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
+**Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
+**Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
+**Backlog:** B-040…B-044, B-050…B-053, B-060…B-063  
+
+---
+
+## Anti-stub checklist (кожен MR)
+
+- [ ] Немає `pass` / `return null` / `Mock` без TODO з ticket ID  
+- [ ] Змінений модуль — тест або оновлений рядок у `LIVING_SPEC.md`  
+- [ ] `./gradlew check` (або `compileJava` на `main`) green у venv/CI  
+- [ ] README / `java/README` / CHANGELOG — якщо змінилась поведінка  
+- [ ] Ревʼю: рекурсія, невикористані поля, заглушки  
+
+---
+
+## Звʼязок з гілками
+
+| Після задачі | Дія |
+|--------------|-----|
+| `main` only | cherry-pick або merge `main` → `beta` |
+| `beta` only | періодично merge `beta` Java-шар → `main` (без Python/tests у tree `main`) |
+
+Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.

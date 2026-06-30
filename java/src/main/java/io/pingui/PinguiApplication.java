@@ -11,6 +11,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -49,32 +52,51 @@ public final class PinguiApplication extends Application {
     static AppOptions parseOptions(Map<String, String> params) {
         AppOptions defaults = AppOptions.defaults();
         Path config = params.containsKey("config") ? Path.of(params.get("config")) : defaults.configPath();
-        double interval = parseDouble(params.get("interval"), defaults.intervalSeconds(), "--interval");
-        int maxHops = parseInt(params.get("max-hops"), defaults.maxHops(), "--max-hops");
-        double timeout = parseDouble(params.get("timeout"), defaults.timeoutSeconds(), "--timeout");
+        CliProfileOverrides profileOverrides = parseProfileOverrides(params);
         boolean verbose = params.containsKey("verbose");
-        ProbeMode probeMode =
-                params.containsKey("probe") ? ProbeMode.parse(params.get("probe")) : defaults.probeMode();
         boolean geoipEnabled = !params.containsKey("no-geoip");
         Path geoipHints =
                 params.containsKey("geoip-hints")
                         ? Path.of(params.get("geoip-hints"))
                         : defaults.geoipHintsPath();
-        if (interval <= 0) {
-            throw new IllegalArgumentException("--interval must be positive");
-        }
-        if (timeout <= 0) {
-            throw new IllegalArgumentException("--timeout must be positive");
-        }
-        if (maxHops < 1) {
-            throw new IllegalArgumentException("--max-hops must be >= 1");
-        }
-        return new AppOptions(config, interval, maxHops, timeout, verbose, probeMode, geoipEnabled, geoipHints);
+        return new AppOptions(config, profileOverrides, verbose, geoipEnabled, geoipHints);
     }
 
-    private static double parseDouble(String value, double fallback, String flag) {
+    private static CliProfileOverrides parseProfileOverrides(Map<String, String> params) {
+        OptionalDouble interval = OptionalDouble.empty();
+        if (params.containsKey("interval")) {
+            double value = parseRequiredDouble(params.get("interval"), "--interval");
+            if (value <= 0) {
+                throw new IllegalArgumentException("--interval must be positive");
+            }
+            interval = OptionalDouble.of(value);
+        }
+        OptionalInt maxHops = OptionalInt.empty();
+        if (params.containsKey("max-hops")) {
+            int value = parseRequiredInt(params.get("max-hops"), "--max-hops");
+            if (value < 1) {
+                throw new IllegalArgumentException("--max-hops must be >= 1");
+            }
+            maxHops = OptionalInt.of(value);
+        }
+        OptionalDouble timeout = OptionalDouble.empty();
+        if (params.containsKey("timeout")) {
+            double value = parseRequiredDouble(params.get("timeout"), "--timeout");
+            if (value <= 0) {
+                throw new IllegalArgumentException("--timeout must be positive");
+            }
+            timeout = OptionalDouble.of(value);
+        }
+        Optional<ProbeMode> probeMode = Optional.empty();
+        if (params.containsKey("probe")) {
+            probeMode = Optional.of(ProbeMode.parse(params.get("probe")));
+        }
+        return new CliProfileOverrides(interval, maxHops, timeout, probeMode);
+    }
+
+    private static double parseRequiredDouble(String value, String flag) {
         if (value == null || value.isBlank()) {
-            return fallback;
+            throw new IllegalArgumentException("Missing value for " + flag);
         }
         try {
             return Double.parseDouble(value);
@@ -83,9 +105,9 @@ public final class PinguiApplication extends Application {
         }
     }
 
-    private static int parseInt(String value, int fallback, String flag) {
+    private static int parseRequiredInt(String value, String flag) {
         if (value == null || value.isBlank()) {
-            return fallback;
+            throw new IllegalArgumentException("Missing value for " + flag);
         }
         try {
             return Integer.parseInt(value);
@@ -144,10 +166,10 @@ public final class PinguiApplication extends Application {
 
                 Options:
                   --config PATH     YAML profiles (default: config/hosts.example.yaml)
-                  --interval SEC    Poll interval (default: 1.0)
-                  --max-hops N      Max TTL hops (default: 20)
-                  --timeout SEC     Probe timeout (default: 0.5)
-                  --probe MODE      auto | process | raw (default: auto)
+                  --interval SEC    Override active profile poll interval (if omitted, YAML value kept)
+                  --max-hops N      Override max TTL hops for this session
+                  --timeout SEC     Override probe timeout for this session
+                  --probe MODE      Override probe: auto | process | raw
                   --geoip-hints PATH  CIDR→country YAML (default: config/geoip_hints.yaml)
                   --no-geoip        Disable country hints in hop labels
                   --verbose         Debug logging

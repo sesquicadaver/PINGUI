@@ -8,7 +8,6 @@ import io.pingui.probe.icmp.LinuxJnaIcmpTransport;
 import io.pingui.probe.icmp.ProbeResult;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;

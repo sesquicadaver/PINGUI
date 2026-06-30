@@ -69,13 +69,15 @@ gradlew.bat run        # Windows
 | Опція | За замовч. | Опис |
 |-------|------------|------|
 | `--config` | `config/hosts.example.yaml` | YAML з 0–10 цілями |
-| `--interval` | `1.0` | Інтервал опитування (с) |
-| `--max-hops` | `20` | Максимум hop |
-| `--timeout` | `0.5` | Таймаут probe (с) |
-| `--probe` | `auto` | `auto`, `process`, `raw` (Linux cap) |
+| `--interval` | *(з YAML)* | Перезапис poll interval (с), **лише якщо передано** |
+| `--max-hops` | *(з YAML)* | Перезапис max hop, **лише якщо передано** |
+| `--timeout` | *(з YAML)* | Перезапис probe timeout (с), **лише якщо передано** |
+| `--probe` | *(з YAML)* | Перезапис `auto`/`process`/`raw`, **лише якщо передано** |
 | `--geoip-hints` | `config/geoip_hints.yaml` | Offline CIDR→країна |
 | `--no-geoip` | off | Вимкнути країну в підписах |
 | `--verbose` | off | Debug-лог |
+
+CLI **не затирає** поля профілю defaults (1.0 / 20 / 0.5 / auto), якщо відповідний прапор не передано.
 
 ## GUI
 

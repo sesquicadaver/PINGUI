@@ -109,6 +109,7 @@ public final class AppMenuDialogs {
                 Профілі та цілі
                 • Кілька профілів трасування в одному YAML; перемикання — «Профіль».
                 • До 10 IP або hostname; чекбокс увімкнює моніторинг хоста.
+                • Лише IPv4 / hostname (IPv6 не підтримується).
                 • Ping only — лише RTT до цілі без traceroute (рекомендовано на Windows).
 
                 Режими інтерфейсу
@@ -121,7 +122,8 @@ public final class AppMenuDialogs {
                 • Зберегти — запис усіх профілів у YAML (--config).
 
                 CLI (термінал)
-                • ./pingui-java.sh [--config PATH] [--interval SEC] [--max-hops N] …
+                • ./pingui-java.sh [--config PATH] [--interval SEC] …
+                • --interval / --max-hops / --timeout / --probe перезаписують YAML лише якщо передані.
                 • --help — повний список опцій.
 
                 Платформа
