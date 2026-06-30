@@ -3,10 +3,16 @@ package io.pingui.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class HostsConfigTest {
+
+    @TempDir
+    Path tempDir;
 
     @Test
     void validateSessionHost_acceptsIpv4() {
@@ -33,6 +39,11 @@ class HostsConfigTest {
     }
 
     @Test
+    void validateSessionHost_rejectsCaseInsensitiveDuplicate() {
+        assertThrows(ConfigError.class, () -> HostsConfig.validateSessionHost("Example.COM", List.of("example.com")));
+    }
+
+    @Test
     void validateSessionHost_rejectsEleventhHost() {
         List<String> ten = List.of(
                 "h1.example",
@@ -46,5 +57,60 @@ class HostsConfigTest {
                 "h9.example",
                 "h10.example");
         assertThrows(ConfigError.class, () -> HostsConfig.validateSessionHost("h11.example", ten));
+    }
+
+    @Test
+    void normalizeHostEntry_rejectsInvalidCharacters() {
+        assertThrows(ConfigError.class, () -> HostsConfig.normalizeHostEntry("bad host!"));
+    }
+
+    @Test
+    void loadHostsList_parsesLegacyYamlList() {
+        List<String> hosts = HostsConfig.loadHostsList(List.of("1.1.1.1", "8.8.8.8"));
+        assertEquals(List.of("1.1.1.1", "8.8.8.8"), hosts);
+    }
+
+    @Test
+    void loadHostsList_rejectsNonList() {
+        assertThrows(ConfigError.class, () -> HostsConfig.loadHostsList("not-a-list"));
+    }
+
+    @Test
+    void loadHostsList_rejectsDuplicateHosts() {
+        assertThrows(ConfigError.class, () -> HostsConfig.loadHostsList(List.of("8.8.8.8", "8.8.8.8")));
+    }
+
+    @Test
+    void loadHostsList_rejectsNonStringEntry() {
+        assertThrows(ConfigError.class, () -> HostsConfig.loadHostsList(List.of(42)));
+    }
+
+    @Test
+    void saveAndLoadRoundTrip() throws Exception {
+        Path path = tempDir.resolve("hosts.yaml");
+        HostsConfig.save(path, List.of("8.8.8.8", "1.1.1.1"));
+        List<String> loaded = HostsConfig.load(path);
+        assertEquals(List.of("8.8.8.8", "1.1.1.1"), loaded);
+    }
+
+    @Test
+    void save_rejectsDuplicateHosts() {
+        Path path = tempDir.resolve("dup.yaml");
+        assertThrows(ConfigError.class, () -> HostsConfig.save(path, List.of("8.8.8.8", "8.8.8.8")));
+    }
+
+    @Test
+    void loadFromProfilesYaml() throws Exception {
+        Path path = tempDir.resolve("profiles.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    hosts:
+                      - "9.9.9.9"
+                """);
+        assertEquals(List.of("9.9.9.9"), HostsConfig.load(path));
     }
 }
