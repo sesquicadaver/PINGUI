@@ -35,6 +35,12 @@ public final class MonitorService implements AutoCloseable {
         PingExpertEntry resolve(String host);
     }
 
+    /** Supplies per-host ping-only flag (skip traceroute). */
+    @FunctionalInterface
+    public interface PingOnlyResolver {
+        boolean resolve(String host);
+    }
+
     private final RoutePoller poller;
     private final ExpertPingEnricher expertEnricher = new ExpertPingEnricher();
     private final ScheduledExecutorService scheduler;
@@ -43,6 +49,7 @@ public final class MonitorService implements AutoCloseable {
     private final Object lock = new Object();
     private final List<String> hosts = new ArrayList<>();
     private final Map<String, Boolean> enabled = new HashMap<>();
+    private final Map<String, Boolean> pingOnly = new HashMap<>();
     private final Map<String, List<String>> lastRoutes = new HashMap<>();
     private final Map<String, AtomicBoolean> pollsInFlight = new ConcurrentHashMap<>();
     private final double intervalSeconds;
@@ -50,6 +57,7 @@ public final class MonitorService implements AutoCloseable {
     private final double timeoutSeconds;
     private Listener listener;
     private volatile PingExpertResolver expertResolver;
+    private volatile PingOnlyResolver pingOnlyResolver;
 
     public MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds) {
         this(intervalSeconds, maxHops, timeoutSeconds, ProbeMode.AUTO);
@@ -87,6 +95,10 @@ public final class MonitorService implements AutoCloseable {
         this.expertResolver = expertResolver;
     }
 
+    public void setPingOnlyResolver(PingOnlyResolver pingOnlyResolver) {
+        this.pingOnlyResolver = pingOnlyResolver;
+    }
+
     public List<String> hosts() {
         synchronized (lock) {
             return List.copyOf(hosts);
@@ -106,12 +118,17 @@ public final class MonitorService implements AutoCloseable {
     }
 
     public void addHost(String host, boolean hostEnabled) {
+        addHost(host, hostEnabled, false);
+    }
+
+    public void addHost(String host, boolean hostEnabled, boolean hostPingOnly) {
         synchronized (lock) {
             if (hosts.contains(host)) {
                 throw new io.pingui.config.ConfigError("Host already in list: " + host);
             }
             hosts.add(host);
             enabled.put(host, hostEnabled);
+            pingOnly.put(host, hostPingOnly);
             lastRoutes.put(host, List.of());
         }
     }
@@ -122,6 +139,7 @@ public final class MonitorService implements AutoCloseable {
                 throw new io.pingui.config.ConfigError("Unknown host: " + host);
             }
             enabled.remove(host);
+            pingOnly.remove(host);
             lastRoutes.remove(host);
         }
         pollsInFlight.remove(host);
@@ -138,6 +156,10 @@ public final class MonitorService implements AutoCloseable {
             if (wasEnabled != null) {
                 enabled.put(newHost, wasEnabled);
             }
+            Boolean wasPingOnly = pingOnly.remove(oldHost);
+            if (wasPingOnly != null) {
+                pingOnly.put(newHost, wasPingOnly);
+            }
             lastRoutes.put(newHost, lastRoutes.remove(oldHost));
             AtomicBoolean inFlight = pollsInFlight.remove(oldHost);
             if (inFlight != null) {
@@ -152,6 +174,16 @@ public final class MonitorService implements AutoCloseable {
                 throw new io.pingui.config.ConfigError("Unknown host: " + host);
             }
             enabled.put(host, hostEnabled);
+        }
+    }
+
+    public void setHostPingOnly(String host, boolean hostPingOnly) {
+        synchronized (lock) {
+            if (!hosts.contains(host)) {
+                throw new io.pingui.config.ConfigError("Unknown host: " + host);
+            }
+            pingOnly.put(host, hostPingOnly);
+            lastRoutes.put(host, List.of());
         }
     }
 
@@ -200,13 +232,18 @@ public final class MonitorService implements AutoCloseable {
             return;
         }
         List<String> previousIps;
+        boolean hostPingOnly;
         synchronized (lock) {
             if (!hosts.contains(host)) {
                 return;
             }
             previousIps = List.copyOf(lastRoutes.getOrDefault(host, List.of()));
+            hostPingOnly = Boolean.TRUE.equals(pingOnly.get(host));
         }
-        HostPollOutcome outcome = poller.pollHostRoute(host, previousIps, maxHops, timeoutSeconds);
+        HostPollOutcome outcome =
+                hostPingOnly
+                        ? poller.pollHostPingOnly(host, previousIps, timeoutSeconds)
+                        : poller.pollHostRoute(host, previousIps, maxHops, timeoutSeconds);
         Listener current = listener;
         if (current == null || !isKnownHost(host)) {
             return;
@@ -222,11 +259,13 @@ public final class MonitorService implements AutoCloseable {
         }
         if (outcome.snapshot() != null && isKnownHost(host)) {
             RouteSnapshot snapshot = outcome.snapshot();
-            PingExpertResolver resolver = expertResolver;
-            if (resolver != null) {
-                PingExpertEntry expert = resolver.resolve(host);
-                if (expert != null && expert.isConfigured()) {
-                    snapshot = expertEnricher.enrich(snapshot, expert, timeoutSeconds);
+            if (!hostPingOnly) {
+                PingExpertResolver resolver = expertResolver;
+                if (resolver != null) {
+                    PingExpertEntry expert = resolver.resolve(host);
+                    if (expert != null && expert.isConfigured()) {
+                        snapshot = expertEnricher.enrich(snapshot, expert, timeoutSeconds);
+                    }
                 }
             }
             current.onDataReceived(host, snapshot);

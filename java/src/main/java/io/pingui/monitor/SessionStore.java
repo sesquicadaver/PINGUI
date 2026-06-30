@@ -46,16 +46,21 @@ public final class SessionStore {
     }
 
     public String addHost(String host, boolean enabled) {
-        return addHost(host, enabled, PingExpertEntry.empty());
+        return addHost(host, enabled, false, PingExpertEntry.empty());
     }
 
     public String addHost(String host, boolean enabled, PingExpertEntry pingExpert) {
+        return addHost(host, enabled, false, pingExpert);
+    }
+
+    public String addHost(String host, boolean enabled, boolean pingOnly, PingExpertEntry pingExpert) {
         String normalized = HostsConfig.validateSessionHost(host, hosts());
         if (data.containsKey(normalized)) {
             throw new ConfigError("Host already in list: " + normalized);
         }
         HostSessionData session = new HostSessionData();
         session.setEnabled(enabled);
+        session.setPingOnly(pingOnly);
         session.setPingExpert(pingExpert);
         data.put(normalized, session);
         return normalized;
@@ -80,11 +85,24 @@ public final class SessionStore {
         get(host).setPingExpert(expert);
     }
 
+    public boolean isPingOnly(String host) {
+        return get(host).isPingOnly();
+    }
+
+    public void setPingOnly(String host, boolean pingOnly) {
+        HostSessionData session = get(host);
+        session.setPingOnly(pingOnly);
+        session.setCurrentRoute(List.of());
+        session.setPreviousRoute(List.of());
+        session.getLastKnownByHop().clear();
+    }
+
     public void loadHostEntries(List<HostEntry> entries) {
         data.clear();
         for (HostEntry entry : entries) {
             HostSessionData session = new HostSessionData();
             session.setEnabled(entry.enabled());
+            session.setPingOnly(entry.pingOnly());
             session.setPingExpert(entry.pingExpert());
             data.put(entry.address(), session);
         }
@@ -94,7 +112,7 @@ public final class SessionStore {
         List<HostEntry> out = new ArrayList<>();
         for (Map.Entry<String, HostSessionData> entry : data.entrySet()) {
             HostSessionData session = entry.getValue();
-            out.add(new HostEntry(entry.getKey(), session.isEnabled(), session.getPingExpert()));
+            out.add(new HostEntry(entry.getKey(), session.isEnabled(), session.isPingOnly(), session.getPingExpert()));
         }
         return List.copyOf(out);
     }

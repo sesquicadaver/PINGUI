@@ -53,7 +53,7 @@ public final class MainController {
             DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
     private static final double HOST_ROW_HEIGHT = 56.0;
     private static final double HOST_LIST_INSET = 4.0;
-    private static final double SIMPLE_PANEL_MIN_WIDTH = 540.0;
+    private static final double SIMPLE_PANEL_MIN_WIDTH = 580.0;
     private static final double EXTENDED_WIDTH = 1100.0;
     private static final double EXTENDED_HEIGHT = 700.0;
     private static final Duration EASTER_EGG_DURATION = Duration.seconds(30);
@@ -205,6 +205,7 @@ public final class MainController {
                         profile.timeoutSeconds(),
                         profile.probeMode());
         service.setExpertResolver(store::getPingExpert);
+        service.setPingOnlyResolver(store::isPingOnly);
         service.setListener(
                 new MonitorService.Listener() {
                     @Override
@@ -224,7 +225,7 @@ public final class MainController {
                 });
         for (HostEntry entry : profile.hosts()) {
             if (!HostViewRules.matches(entry.address())) {
-                service.addHost(entry.address(), entry.enabled());
+                service.addHost(entry.address(), entry.enabled(), entry.pingOnly());
             }
         }
         return service;
@@ -245,7 +246,7 @@ public final class MainController {
     private void rebuildHostItems(List<HostEntry> entries) {
         hostItems.clear();
         for (HostEntry entry : HostViewRules.sessionEntries(entries)) {
-            HostItem item = new HostItem(entry.address(), entry.enabled());
+            HostItem item = new HostItem(entry.address(), entry.enabled(), entry.pingOnly());
             item.setExpertConfigured(entry.pingExpert().isConfigured());
             hostItems.add(item);
         }
@@ -425,7 +426,7 @@ public final class MainController {
         hostItems.addListener((ListChangeListener.Change<? extends HostItem> change) -> syncHostListHeight());
         syncHostListHeight();
         hostList.setCellFactory(
-                list -> new HostListCell(this::onToggleEnabled, expertMode, this::onOpenExpertPing));
+                list -> new HostListCell(this::onToggleEnabled, this::onTogglePingOnly, expertMode, this::onOpenExpertPing));
     }
 
     private void syncHostListHeight() {
@@ -456,6 +457,24 @@ public final class MainController {
         }
     }
 
+    private void onTogglePingOnly(HostItem item, boolean pingOnly) {
+        try {
+            monitor.setHostPingOnly(item.getHost(), pingOnly);
+            store.setPingOnly(item.getHost(), pingOnly);
+            updatingList = true;
+            item.pingOnlyProperty().set(pingOnly);
+            updatingList = false;
+            hostList.refresh();
+            redrawRouteIfExtended();
+            appendLog("Ping only [" + item.getHost() + "]: " + (pingOnly ? "увімкнено" : "вимкнено"));
+        } catch (ConfigError ex) {
+            appendLog(ex.getMessage());
+            updatingList = true;
+            item.pingOnlyProperty().set(store.isPingOnly(item.getHost()));
+            updatingList = false;
+        }
+    }
+
     private void onAddHost() {
         String raw = hostInput.getText().strip();
         if (raw.isBlank()) {
@@ -467,8 +486,8 @@ public final class MainController {
         }
         try {
             String host = HostsConfig.validateSessionHost(raw, store.hosts());
-            monitor.addHost(host, false);
-            store.addHost(host, false);
+            monitor.addHost(host, false, false);
+            store.addHost(host, false, false, PingExpertEntry.empty());
             HostItem item = new HostItem(host, false);
             hostItems.add(item);
             hostList.getSelectionModel().select(item);

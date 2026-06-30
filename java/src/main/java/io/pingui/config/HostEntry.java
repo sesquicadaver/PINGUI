@@ -1,7 +1,7 @@
 package io.pingui.config;
 
 /** One monitored target inside a tracing profile. */
-public record HostEntry(String address, boolean enabled, PingExpertEntry pingExpert) {
+public record HostEntry(String address, boolean enabled, boolean pingOnly, PingExpertEntry pingExpert) {
     public HostEntry {
         if (address == null || address.isBlank()) {
             throw new IllegalArgumentException("address required");
@@ -10,10 +10,14 @@ public record HostEntry(String address, boolean enabled, PingExpertEntry pingExp
     }
 
     public static HostEntry basic(String address, boolean enabled) {
-        return new HostEntry(address, enabled, PingExpertEntry.empty());
+        return new HostEntry(address, enabled, false, PingExpertEntry.empty());
     }
 
     public HostEntry withPingExpert(PingExpertEntry expert) {
-        return new HostEntry(address, enabled, expert != null ? expert.normalized() : PingExpertEntry.empty());
+        return new HostEntry(address, enabled, pingOnly, expert != null ? expert.normalized() : PingExpertEntry.empty());
+    }
+
+    public HostEntry withPingOnly(boolean pingOnly) {
+        return new HostEntry(address, enabled, pingOnly, pingExpert);
     }
 }

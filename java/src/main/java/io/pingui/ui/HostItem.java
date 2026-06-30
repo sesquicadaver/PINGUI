@@ -13,14 +13,20 @@ public final class HostItem {
 
     private final StringProperty host = new SimpleStringProperty();
     private final BooleanProperty enabled = new SimpleBooleanProperty(false);
+    private final BooleanProperty pingOnly = new SimpleBooleanProperty(false);
     private final BooleanProperty showMetrics = new SimpleBooleanProperty(false);
     private final BooleanProperty expertConfigured = new SimpleBooleanProperty(false);
     private final StringProperty metricsText = new SimpleStringProperty("");
     private final StringProperty rowColor = new SimpleStringProperty(DISABLED_ROW);
 
     public HostItem(String host, boolean enabled) {
+        this(host, enabled, false);
+    }
+
+    public HostItem(String host, boolean enabled, boolean pingOnly) {
         this.host.set(host);
         this.enabled.set(enabled);
+        this.pingOnly.set(pingOnly);
         if (!enabled) {
             clearMetrics();
         } else {
@@ -34,6 +40,10 @@ public final class HostItem {
 
     public BooleanProperty enabledProperty() {
         return enabled;
+    }
+
+    public BooleanProperty pingOnlyProperty() {
+        return pingOnly;
     }
 
     public BooleanProperty showMetricsProperty() {
@@ -58,6 +68,10 @@ public final class HostItem {
 
     public boolean isEnabled() {
         return enabled.get();
+    }
+
+    public boolean isPingOnly() {
+        return pingOnly.get();
     }
 
     public boolean isExpertConfigured() {
