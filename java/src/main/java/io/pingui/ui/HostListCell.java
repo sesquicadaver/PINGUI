@@ -34,7 +34,6 @@ final class HostListCell extends ListCell<HostItem> {
     private HostItem boundItem;
     private ChangeListener<String> rowColorListener;
     private ChangeListener<Boolean> expertConfiguredListener;
-    private ChangeListener<Boolean> pingOnlyListener;
     private ChangeListener<Boolean> expertModeListener;
     private boolean updating;
 
@@ -98,8 +97,6 @@ final class HostListCell extends ListCell<HostItem> {
         item.rowColorProperty().addListener(rowColorListener);
         expertConfiguredListener = (obs, was, configured) -> styleExtenButton(configured);
         item.expertConfiguredProperty().addListener(expertConfiguredListener);
-        pingOnlyListener = (obs, was, pingOnly) -> refreshExpertControls(item);
-        item.pingOnlyProperty().addListener(pingOnlyListener);
         applyBackground(item.rowColorProperty().get());
         styleExtenButton(item.isExpertConfigured());
         refreshExpertControls(item);
@@ -108,7 +105,7 @@ final class HostListCell extends ListCell<HostItem> {
     }
 
     private void refreshExpertControls(HostItem item) {
-        boolean show = expertMode.get() && item != null && !item.isPingOnly() && !HostViewRules.matches(item.getHost());
+        boolean show = expertMode.get() && item != null && !HostViewRules.matches(item.getHost());
         extenButton.setVisible(show);
         extenButton.setManaged(show);
     }
@@ -136,10 +133,6 @@ final class HostListCell extends ListCell<HostItem> {
         if (expertConfiguredListener != null) {
             boundItem.expertConfiguredProperty().removeListener(expertConfiguredListener);
             expertConfiguredListener = null;
-        }
-        if (pingOnlyListener != null) {
-            boundItem.pingOnlyProperty().removeListener(pingOnlyListener);
-            pingOnlyListener = null;
         }
         boundItem = null;
     }
