@@ -7,6 +7,7 @@
 
 ### Changed
 
+- **Tests:** B-064 — розширено `MonitorService`/`SessionStore`/`IcmpPacket` unit-тести; прибрано JaCoCo exclusion для `IcmpPacket`.
 - **Tests:** B-064 — розширено config/monitor unit-тести; звужено JaCoCo exclusions (RoutePoller, HopStats, HostEntry, ProfileDocument, HostTargetStats, GeoCountry lookup).
 - **Гілки:** sync `beta` → `main` — повний Java test suite + JaCoCo ≥80% (Sprint 11).
 - **Гілки:** sync `main` → `beta` — Java roadmap sprints 1–9 (UI split, probe refactor, Checkstyle, build metadata; Sprint 10).

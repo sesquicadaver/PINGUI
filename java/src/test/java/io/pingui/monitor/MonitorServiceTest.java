@@ -1,8 +1,10 @@
 package io.pingui.monitor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.pingui.config.ConfigError;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.probe.RouteProbe;
@@ -149,6 +151,90 @@ class MonitorServiceTest {
         releaseProbe.countDown();
         Thread.sleep(300);
         assertEquals(0, received.get());
+        service.close();
+    }
+
+    @Test
+    void emitsRouteChangedWhenIpsDiffer() throws Exception {
+        RouteSnapshot first = new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
+        RouteSnapshot second =
+                new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "192.168.1.1", 6.0, false)));
+        java.util.concurrent.atomic.AtomicInteger probeCalls = new java.util.concurrent.atomic.AtomicInteger();
+        RouteProbe probe = (targetHost, maxHops, timeoutSeconds) -> {
+            return probeCalls.getAndIncrement() == 0 ? first : second;
+        };
+        CountDownLatch latch = new CountDownLatch(1);
+        java.util.concurrent.atomic.AtomicReference<List<String>> oldRef =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        MonitorService service = new MonitorService(0.05, 20, 0.5, probe);
+        service.setListener(new MonitorService.Listener() {
+            @Override
+            public void onDataReceived(String host, RouteSnapshot snap) {}
+
+            @Override
+            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {
+                oldRef.set(oldIps);
+                latch.countDown();
+            }
+
+            @Override
+            public void onProbeError(String host, String message) {}
+        });
+        service.addHost("8.8.8.8", true);
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertEquals(List.of("10.0.0.1"), oldRef.get());
+        service.close();
+    }
+
+    @Test
+    void duplicateHostRejected() {
+        MonitorService service = new MonitorService(
+                1.0,
+                20,
+                0.5,
+                new FakeRouteProbe(new RouteSnapshot("a", "1.1.1.1", List.of(new HopNode(1, "1.1.1.1", 1.0, false)))));
+        service.addHost("a", false);
+        assertThrows(ConfigError.class, () -> service.addHost("a", true));
+        service.close();
+    }
+
+    @Test
+    void pingOnlyHostPollsWithoutTraceroute() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        MonitorService service = new MonitorService(
+                0.05,
+                20,
+                0.5,
+                new FakeRouteProbe(new RouteSnapshot("x", "x", List.of(new HopNode(1, "1.1.1.1", 1.0, false)))));
+        service.setListener(new MonitorService.Listener() {
+            @Override
+            public void onDataReceived(String host, RouteSnapshot snap) {
+                latch.countDown();
+            }
+
+            @Override
+            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
+
+            @Override
+            public void onProbeError(String host, String message) {
+                latch.countDown();
+            }
+        });
+        service.addHost("127.0.0.1", true, true);
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        service.close();
+    }
+
+    @Test
+    void setHostPingOnlyGuardsUnknownHost() {
+        MonitorService service = new MonitorService(
+                1.0,
+                20,
+                0.5,
+                new FakeRouteProbe(new RouteSnapshot("a", "1.1.1.1", List.of(new HopNode(1, "1.1.1.1", 1.0, false)))));
+        service.addHost("a", true, false);
+        service.setHostPingOnly("a", true);
+        assertThrows(ConfigError.class, () -> service.setHostPingOnly("missing", true));
         service.close();
     }
 }

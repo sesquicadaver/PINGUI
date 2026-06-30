@@ -107,4 +107,62 @@ class SessionStoreTest {
         assertEquals(List.of("-4", "-s", "64"), store.getPingExpert("8.8.8.8").args());
         assertEquals(entry, store.toHostEntries().get(0));
     }
+
+    @Test
+    void targetStatsWhenEnabledWithProbes() {
+        SessionStore store = new SessionStore(List.of("h"));
+        store.setEnabled("h", true);
+        RouteSnapshot snapshot = new RouteSnapshot(
+                "h",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "8.8.8.8", 10.0, false)));
+        store.updateRoute("h", snapshot);
+        store.appendPingSamples("h", snapshot);
+        var stats = store.targetStats("h");
+        assertEquals(0.0, stats.lossPct());
+        assertEquals(10.0, stats.avgMs());
+    }
+
+    @Test
+    void targetStatsNullWhenDisabledOrEmpty() {
+        SessionStore store = new SessionStore(List.of("h"));
+        store.setEnabled("h", false);
+        assertNull(store.targetStats("h"));
+        store.setEnabled("h", true);
+        assertNull(store.targetStats("h"));
+    }
+
+    @Test
+    void setPingOnlyClearsRoutes() {
+        SessionStore store = new SessionStore(List.of("h"));
+        store.updateRoute("h", new RouteSnapshot("h", "1.1.1.1", List.of(new HopNode(1, "1.1.1.1", 5.0, false))));
+        store.setPingOnly("h", true);
+        assertTrue(store.get("h").isPingOnly());
+        assertTrue(store.get("h").getCurrentRoute().isEmpty());
+    }
+
+    @Test
+    void loadHostEntriesRoundTrip() {
+        List<HostEntry> entries = List.of(
+                new HostEntry("8.8.8.8", true, false, PingExpertEntry.empty()),
+                new HostEntry("1.1.1.1", false, true, PingExpertEntry.empty()));
+        SessionStore store = SessionStore.fromEntries(entries);
+        assertEquals(2, store.hosts().size());
+        assertTrue(store.containsHost("8.8.8.8"));
+        assertTrue(store.isPingOnly("1.1.1.1"));
+        store.loadHostEntries(List.of(new HostEntry("9.9.9.9", true, false, PingExpertEntry.empty())));
+        assertEquals(List.of("9.9.9.9"), store.hosts());
+    }
+
+    @Test
+    void addHostDuplicateThrows() {
+        SessionStore store = new SessionStore(List.of("a"));
+        assertThrows(ConfigError.class, () -> store.addHost("a", true));
+    }
+
+    @Test
+    void getUnknownHostThrows() {
+        SessionStore store = new SessionStore(List.of());
+        assertThrows(ConfigError.class, () -> store.get("missing"));
+    }
 }

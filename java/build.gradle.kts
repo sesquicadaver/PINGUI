@@ -81,7 +81,6 @@ tasks.jacocoTestCoverageVerification {
                         "io/pingui/probe/WindowsTracertCommand.class",
                         "io/pingui/probe/UnixTraceOutputParser.class",
                         "io/pingui/probe/WindowsTraceOutputParser.class",
-                        "io/pingui/probe/icmp/IcmpPacket.class",
                         "io/pingui/probe/icmp/LinuxJnaIcmpTransport*.class",
                         "io/pingui/probe/icmp/LinuxCLibrary*.class",
                         "io/pingui/probe/icmp/RawIcmpPermission.class",
