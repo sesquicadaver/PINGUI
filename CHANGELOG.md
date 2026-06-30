@@ -7,7 +7,7 @@
 
 ### Changed
 
-- **Build:** Spotless (Palantir Java Format) + `./gradlew check` = compile + `spotlessCheck`.
+- **Build:** Spotless (Palantir Java Format) + `./gradlew check` = compile + format + test.
 - **Java CLI:** `--interval` / `--max-hops` / `--timeout` / `--probe` перезаписують активний YAML-профіль **лише якщо передані** (`CliProfileOverrides`).
 - **Docs:** IPv4-only — README, DEPLOYMENT, JAVA, Help dialog.
 - **Docs:** [docs/ROADMAP.md](docs/ROADMAP.md) — атомарний план виправлень після аудиту `main`.
@@ -16,6 +16,8 @@
 
 ### Added
 
+- **Tests:** JUnit 5 на `main` — парсери trace, HostsConfig, ProfilesConfig, CLI overrides, PingExpertValidator (21 tests).
+- **Docs:** [docs/LIVING_SPEC.md](docs/LIVING_SPEC.md) — матриця модуль → тести.
 - **Java UI:** меню **Про** та **Довідка** (F1) з діалогами версії та короткої довідки.
 - **Java UI:** чекбокс «Ping only» на кожному хості — лише ping до цілі без traceroute (`ping_only` у YAML).
 - **Java UI:** кнопка «Exten.» лишається видимою в ping-only при увімкненому «Експерт»; без чекбокса «ланцюжок».

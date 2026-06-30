@@ -13,7 +13,7 @@
 - Gradle 8.10 (Kotlin DSL)
 - Spotless + Palantir Java Format (`./gradlew spotlessCheck`)
 - SnakeYAML (конфіг)
-- JUnit 5 (тести на гілці **`beta`**)
+- JUnit 5 (unit-тести в `src/test/java`, `./gradlew test`)
 
 ## Обмеження
 

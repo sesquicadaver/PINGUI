@@ -12,6 +12,7 @@ Python-редакція, тести, CI та специфікації — гіл
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Адмін / DevOps | JDK 21, launcher, jpackage |
 | [JAVA.md](JAVA.md) | Розробник | Probe, monitor, UI, YAML |
 | [ROADMAP.md](ROADMAP.md) | Розробник | План виправлень, атомарні задачі |
+| [LIVING_SPEC.md](LIVING_SPEC.md) | Розробник | Матриця модуль → тести |
 | [../java/README.md](../java/README.md) | Усі | Запуск, CLI, GUI |
 
 ## Рекомендований порядок

@@ -25,6 +25,11 @@ dependencies {
     implementation("org.slf4j:slf4j-simple:2.0.16")
     implementation("net.java.dev.jna:jna:5.15.0")
     implementation("net.java.dev.jna:jna-platform:5.15.0")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 javafx {
@@ -38,7 +43,7 @@ application {
 
 spotless {
     java {
-        target("src/main/java/**/*.java")
+        target("src/main/java/**/*.java", "src/test/java/**/*.java")
         palantirJavaFormat("2.50.0")
         removeUnusedImports()
         trimTrailingWhitespace()
@@ -149,5 +154,3 @@ tasks.register("jpackage") {
     description = "Build platform-native installer (.deb / .msi / .dmg when available)"
     dependsOn("jpackageDeb", "jpackageMsi", "jpackageDmg")
 }
-
-// Unit/integration tests — гілка beta (java/src/test).

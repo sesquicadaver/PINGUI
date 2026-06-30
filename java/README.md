@@ -124,14 +124,15 @@ profiles:
 
 ```bash
 cd java
-./gradlew check          # compile + Spotless
+./gradlew check          # compile + Spotless + unit tests
+./gradlew test           # JUnit 5 only
 ./gradlew spotlessApply  # автоформат Java / Gradle Kotlin DSL
 ./gradlew build
 ./gradlew run
 ./gradlew jpackageDeb   # Linux .deb → build/dist/
 ```
 
-Unit-тести та CI — гілка **`beta`** (`./gradlew check` на `main` — compile + format).
+Unit-тести (21) — `src/test/java`; матриця покриття: [docs/LIVING_SPEC.md](../docs/LIVING_SPEC.md). CI workflow — backlog **B-020** (`beta`).
 
 ## Пакування (jpackage)
 
