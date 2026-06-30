@@ -39,14 +39,28 @@ public final class PingExpertDialog {
     private PingExpertDialog() {}
 
     public static Optional<PingExpertEntry> show(String host, PingExpertEntry current) {
+        return show(host, current, false);
+    }
+
+    /** @param pingOnly when true, hide chain checkbox (direct ping only, no hop chain). */
+    public static Optional<PingExpertEntry> show(String host, PingExpertEntry current, boolean pingOnly) {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Expert ping — " + host);
-        dialog.setHeaderText("Параметри ping(8) для цілі (без -c/-w/-W/-i та інших лімітів часу/кількості)");
+        dialog.setHeaderText(
+                pingOnly
+                        ? "Параметри ping(8) для прямого ping до цілі (режим Ping only)"
+                        : "Параметри ping(8) для цілі (без -c/-w/-W/-i та інших лімітів часу/кількості)");
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
         dialog.getDialogPane().setPrefWidth(580);
 
         CheckBox chainCheck = new CheckBox("Застосувати до всього ланцюжка");
-        chainCheck.setSelected(current != null && current.applyToChain());
+        if (pingOnly) {
+            chainCheck.setVisible(false);
+            chainCheck.setManaged(false);
+            chainCheck.setSelected(false);
+        } else {
+            chainCheck.setSelected(current != null && current.applyToChain());
+        }
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
@@ -118,7 +132,7 @@ public final class PingExpertDialog {
                 List<String> args = collectArgs(flagChoices, choiceValues, textValues);
                 validateTextFields(textValues);
                 List<String> validated = PingExpertValidator.validateAndNormalize(args);
-                return Optional.of(new PingExpertEntry(chainCheck.isSelected(), validated));
+                return Optional.of(new PingExpertEntry(!pingOnly && chainCheck.isSelected(), validated));
             } catch (ConfigError ex) {
                 Dialog<Void> error = new Dialog<>();
                 error.setTitle("Помилка параметрів");
