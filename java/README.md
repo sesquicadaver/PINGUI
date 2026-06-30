@@ -5,6 +5,8 @@
 Працює на **Linux, macOS та Windows**: трасування через системні
 `traceroute` / `tracert`. Дані сесії — лише в RAM.
 
+> **Рекомендація:** **Linux** — оптимальна платформа (швидкий `traceroute -q 1`, Expert ping, raw ICMP). **Windows** — для періодичних перевірок: повний trace повільний через `tracert`; у GUI використовуйте **Ping only** або збільште `interval` у YAML. [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md#рекомендація-щодо-ос)
+
 ## Вимоги
 
 | Компонент | Версія |
@@ -27,6 +29,8 @@ chmod +x pingui-java.sh gradlew
 ```
 
 **Windows**
+
+> ⚠ Повільне трасування — див. [DEPLOYMENT.md](../docs/DEPLOYMENT.md#рекомендація-щодо-ос). Launcher: `pingui-java.bat` або `gradlew.bat run`.
 
 Потрібен **JDK 21** ([Eclipse Temurin](https://adoptium.net/temurin/releases/?version=21); Add to PATH + JAVA_HOME).
 
@@ -76,7 +80,7 @@ gradlew.bat run        # Windows
 ## GUI
 
 - **Профілі трасування**: кілька named-профілів у YAML, перемикання в UI
-- Список до **10 цілей**, чекбокс = активне трасування
+- Список до **10 цілей**, чекбокс = активне трасування; **Ping only** = лише ping без trace
 - **Додати / Змінити / Видалити / Зберегти** → YAML
 - **Експерт** (Linux): **Exten.** → параметри `ping(8)` iputils; на Win/mac disabled
 - **Простий** / **Розширений**: метрики RTT, loss %, граф маршруту, лог змін
@@ -107,6 +111,7 @@ profiles:
     hosts:
       - address: "8.8.8.8"
         enabled: true
+        ping_only: false   # true — лише ping, без traceroute (рекомендовано на Windows)
         ping_expert:
           chain: false
           args: ["-4", "-s", "128"]

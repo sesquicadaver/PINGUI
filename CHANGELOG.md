@@ -7,6 +7,7 @@
 
 ### Changed
 
+- **Docs:** попередження про повільність Windows (`tracert`) та рекомендація Linux для щоденної роботи — README, DEPLOYMENT, CHECKLIST, JAVA.
 - **Гілки:** `main` — лише Java-редакція та документація для запуску; `beta` — Python, тести, CI, специфікації.
 
 ### Added

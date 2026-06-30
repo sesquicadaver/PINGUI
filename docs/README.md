@@ -23,3 +23,4 @@ Python-редакція, тести, CI та специфікації — гіл
 
 - **Java 21 + JavaFX**, Linux / Windows / macOS
 - До 10 цілей, in-memory session
+- **Linux** — рекомендована ОС; **Windows** — повільний `tracert`, див. [DEPLOYMENT.md#рекомендація-щодо-ос](DEPLOYMENT.md#рекомендація-щодо-ос)

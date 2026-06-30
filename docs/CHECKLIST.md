@@ -72,6 +72,8 @@ ls build/dist/*.deb
 
 ## Windows 11+
 
+> ⚠ **Попередження:** Windows — **не рекомендовано** для інтенсивного моніторингу маршруту. `tracert` виконує 3 probe на кожен hop з тривалими таймаутами; один trace до 20 hop може займати **1–4+ хвилини**. Expert ping недоступний. Для практичної роботи: **Ping only** у GUI або `ping_only: true` / `interval: 30` у YAML. Рекомендована платформа — **Linux**. [DEPLOYMENT.md#рекомендація-щодо-ос](DEPLOYMENT.md#рекомендація-щодо-ос)
+
 ### Preflight
 
 - [ ] Windows 11 x64
@@ -116,6 +118,8 @@ pingui-java.bat
 ### Smoke-test
 
 - [ ] Ціль `8.8.8.8`, чекбокс увімкнено
+- [ ] **Ping only** ON → RTT за кілька секунд (без очікування повного trace)
+- [ ] Або trace OFF + ping only OFF: перший trace — **до 4 хв** (це нормально для `tracert`)
 - [ ] Simple / Extended — метрики та граф
 - [ ] YAML save/load
 - [ ] «Експерт» **disabled**

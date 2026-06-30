@@ -26,12 +26,14 @@ Python використовує scapy + raw ICMP. Java підтримує два
 
 CLI: `--probe auto|process|raw` (default: `auto`).
 
+> **Продуктивність:** на **Windows** subprocess trace через `tracert` на порядки повільніший за Linux `traceroute` (`-q 1`). Для production-моніторингу рекомендується **Linux**; на Windows — **Ping only** або великий `interval`. Див. [DEPLOYMENT.md](DEPLOYMENT.md#рекомендація-щодо-ос).
+
 ### ProcessRouteProbe (subprocess)
 
 | ОС | Команда |
 |----|---------|
-| Linux / macOS | `traceroute -n -w SEC -m N -q 1 HOST` |
-| Windows | `tracert -h N -w MS HOST` |
+| Linux / macOS | `traceroute -n -w SEC -m N -q 1 HOST` (1 probe/hop) |
+| Windows | `tracert -d -h N -w MS HOST` (3 probe/hop, MS ≥ 4000) — **повільно** |
 
 ### RawIcmpRouteProbe (JNA, Linux)
 

@@ -12,6 +12,22 @@
 
 Expert ping (режим «Експерт») — **лише Linux** (iputils `ping`).
 
+## Рекомендація щодо ОС
+
+| Платформа | Для щоденної роботи | Коментар |
+|-----------|---------------------|----------|
+| **Linux** | ✅ **Рекомендовано** | `traceroute -q 1` — швидко; Expert ping; raw ICMP |
+| **macOS** | ✅ Добре | Швидкий trace; Expert ping недоступний |
+| **Windows** | ⚠ Обмежено | **Повільний `tracert`**: 3 probe на hop, ~4 с очікування на probe → повний trace 1–4+ хв на ціль при 20 hop. Expert ping недоступний |
+
+**Windows — не найкращий вибір** для постійного моніторингу маршруту з коротким `interval` (напр. 1 с): наступний цикл часто стартує до завершення попереднього trace.
+
+**Як пом’якшити на Windows:**
+
+- У GUI: чекбокс **Ping only** на хості (лише RTT до цілі, без hop-ів).
+- У YAML: `ping_only: true` або `interval: 30` (і більше) для режиму з trace.
+- Очікуйте затримку 1–4 хвилини на перший повний trace до віддаленої цілі.
+
 ## Вимоги
 
 | Компонент | Версія |
@@ -78,6 +94,7 @@ profiles:
 
 | Симптом | Рішення |
 |---------|---------|
+| Trace на Windows «зависає» / дуже довгий | Нормально для `tracert`; увімкніть **Ping only** або збільште `interval` |
 | Gradle «What went wrong: 25.0.3» | JDK 21: `export PINGUI_JAVA_HOME=.../java-21-openjdk-*` |
 | «No hops parsed» | Встановити `traceroute`; на macOS — `/usr/sbin/traceroute` |
 | JavaFX runtime missing | `./gradlew run` або jpackage installer |

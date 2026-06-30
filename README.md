@@ -3,6 +3,8 @@
 Крос-платформний монітор маршрутів і RTT до 10 цілей одночасно (Java 21 + JavaFX).
 Дані зберігаються **лише в RAM** протягом сесії.
 
+> **Рекомендація щодо ОС:** для щоденної роботи обирайте **Linux** — найшвидше трасування та повний набір функцій (Expert ping, raw ICMP). **Windows** підтримується, але через повільний `tracert` (3 probe на hop, секунди очікування на кожен) один повний trace до 20 hop може тривати **хвилини**; для Windows краще режим **Ping only** або `interval` ≥ 30 с. Деталі: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#рекомендація-щодо-ос).
+
 | Гілка | Зміст |
 |-------|--------|
 | **`main`** | Java-редакція + документація для запуску |
@@ -21,6 +23,8 @@ chmod +x pingui-java.sh gradlew
 ```
 
 **Windows**
+
+> ⚠ **Не найкращий вибір для інтенсивного моніторингу.** `tracert` значно повільніший за Linux `traceroute` (3 probe/hop, довгі таймаути). Перший trace може тривати 1–4 хв на ціль; Expert ping недоступний. Для Windows: **Ping only** на хості або `interval: 30`+ у профілі. Див. [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md#рекомендація-щодо-ос).
 
 Потрібен **JDK 21**: [Eclipse Temurin 21 (Windows x64)](https://adoptium.net/temurin/releases/?version=21) — під час інсталяції увімкніть **Add to PATH** та **Set JAVA_HOME**.
 
