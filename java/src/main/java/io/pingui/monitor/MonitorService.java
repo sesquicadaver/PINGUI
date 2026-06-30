@@ -240,7 +240,7 @@ public final class MonitorService implements AutoCloseable {
                 return;
             }
             previousIps = List.copyOf(lastRoutes.getOrDefault(host, List.of()));
-            hostPingOnly = Boolean.TRUE.equals(pingOnly.get(host));
+            hostPingOnly = resolvePingOnly(host);
         }
         HostPollOutcome outcome = hostPingOnly
                 ? poller.pollHostPingOnly(host, previousIps, timeoutSeconds, resolveExpert(host))
@@ -289,6 +289,15 @@ public final class MonitorService implements AutoCloseable {
         }
         PingExpertEntry expert = resolver.resolve(host);
         return expert != null ? expert : PingExpertEntry.empty();
+    }
+
+    /** Live ping-only flag: resolver (SessionStore) when wired, else per-host map. */
+    private boolean resolvePingOnly(String host) {
+        PingOnlyResolver resolver = pingOnlyResolver;
+        if (resolver != null) {
+            return resolver.resolve(host);
+        }
+        return Boolean.TRUE.equals(pingOnly.get(host));
     }
 
     @Override

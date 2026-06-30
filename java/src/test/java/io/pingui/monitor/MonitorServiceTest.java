@@ -237,4 +237,57 @@ class MonitorServiceTest {
         assertThrows(ConfigError.class, () -> service.setHostPingOnly("missing", true));
         service.close();
     }
+
+    @Test
+    void pingOnlyResolverOverridesMapFlag() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        MonitorService service = new MonitorService(
+                0.05,
+                20,
+                0.5,
+                new FakeRouteProbe(
+                        new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false)))));
+        service.setPingOnlyResolver(host -> true);
+        service.setListener(new MonitorService.Listener() {
+            @Override
+            public void onDataReceived(String host, RouteSnapshot snap) {
+                latch.countDown();
+            }
+
+            @Override
+            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
+
+            @Override
+            public void onProbeError(String host, String message) {
+                latch.countDown();
+            }
+        });
+        service.addHost("127.0.0.1", true, false);
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        service.close();
+    }
+
+    @Test
+    void usesMapFlagWhenResolverUnset() throws Exception {
+        RouteSnapshot snapshot =
+                new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
+        CountDownLatch latch = new CountDownLatch(1);
+        MonitorService service = new MonitorService(0.05, 20, 0.5, new FakeRouteProbe(snapshot));
+        service.setListener(new MonitorService.Listener() {
+            @Override
+            public void onDataReceived(String host, RouteSnapshot snap) {
+                assertEquals("10.0.0.1", snap.nodes().get(0).ip());
+                latch.countDown();
+            }
+
+            @Override
+            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
+
+            @Override
+            public void onProbeError(String host, String message) {}
+        });
+        service.addHost("8.8.8.8", true, false);
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        service.close();
+    }
 }
