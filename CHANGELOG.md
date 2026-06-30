@@ -7,6 +7,7 @@
 
 ### Changed
 
+- **Java UI:** `MainController` розділено на координатори (`ProfileUiCoordinator`, `HostListPresenter`, `MonitorLifecycle`, `ViewModeController`, `RouteGraphPresenter`); ~715 → ~387 рядків.
 - **Build:** Spotless (Palantir Java Format) + `./gradlew check` = compile + format + test.
 - **Java CLI:** `--interval` / `--max-hops` / `--timeout` / `--probe` перезаписують активний YAML-профіль **лише якщо передані** (`CliProfileOverrides`).
 - **Docs:** IPv4-only — README, DEPLOYMENT, JAVA, Help dialog.

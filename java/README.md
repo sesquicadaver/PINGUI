@@ -96,7 +96,8 @@ io.pingui
 ├── model/           HopNode, RouteSnapshot
 ├── probe/           RouteProbeFactory, ProcessRouteProbe, ProcessExpertPing
 ├── monitor/         SessionStore, MonitorService, ExpertPingEnricher
-└── ui/              MainController, GraphCanvas (JavaFX)
+└── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,
+                       MonitorLifecycle, ViewModeController, RouteGraphPresenter, GraphCanvas
 ```
 
 Деталі: [docs/JAVA.md](../docs/JAVA.md).
