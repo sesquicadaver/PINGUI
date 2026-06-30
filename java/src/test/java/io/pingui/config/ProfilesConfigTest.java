@@ -1,6 +1,7 @@
 package io.pingui.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.probe.ProbeMode;
@@ -61,5 +62,103 @@ class ProfilesConfigTest {
         assertEquals(ProfileDocument.DEFAULT_PROFILE, doc.activeProfile());
         assertEquals(2, doc.active().hosts().size());
         assertTrue(doc.active().hostAddresses().contains("1.1.1.1"));
+    }
+
+    @Test
+    void loadFileNotFound() {
+        assertThrows(ConfigError.class, () -> ProfilesConfig.load(tempDir.resolve("missing.yaml")));
+    }
+
+    @Test
+    void loadInvalidRoot() throws Exception {
+        Path path = tempDir.resolve("bad.yaml");
+        Files.writeString(path, "- not-a-map\n");
+        assertThrows(ConfigError.class, () -> ProfilesConfig.load(path));
+    }
+
+    @Test
+    void loadEmptyProfiles() throws Exception {
+        Path path = tempDir.resolve("empty.yaml");
+        Files.writeString(
+                path, """
+                active_profile: default
+                profiles: {}
+                """);
+        assertThrows(ConfigError.class, () -> ProfilesConfig.load(path));
+    }
+
+    @Test
+    void loadDuplicateHostRejected() throws Exception {
+        Path path = tempDir.resolve("dup.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    hosts:
+                      - "8.8.8.8"
+                      - "8.8.8.8"
+                """);
+        ConfigError error = assertThrows(ConfigError.class, () -> ProfilesConfig.load(path));
+        assertTrue(error.getMessage().contains("Duplicate host"));
+    }
+
+    @Test
+    void loadPingExpertWithChainAndArgs() throws Exception {
+        Path path = tempDir.resolve("expert.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    hosts:
+                      - address: "8.8.8.8"
+                        enabled: true
+                        ping_only: true
+                        ping_expert:
+                          chain: true
+                          args: ["-4", "-s", "128"]
+                """);
+        ProfileDocument doc = ProfilesConfig.load(path);
+        HostEntry host = doc.active().hosts().get(0);
+        assertTrue(host.pingOnly());
+        assertTrue(host.pingExpert().applyToChain());
+        assertEquals(3, host.pingExpert().args().size());
+
+        ProfilesConfig.save(path, doc);
+        ProfileDocument reloaded = ProfilesConfig.load(path);
+        assertEquals("-4", reloaded.active().hosts().get(0).pingExpert().args().get(0));
+    }
+
+    @Test
+    void loadNegativeIntervalRejected() throws Exception {
+        Path path = tempDir.resolve("neg.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    interval: -1
+                    hosts:
+                      - "8.8.8.8"
+                """);
+        assertThrows(ConfigError.class, () -> ProfilesConfig.load(path));
+    }
+
+    @Test
+    void loadMissingHostsKey() throws Exception {
+        Path path = tempDir.resolve("nohosts.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    interval: 1.0
+                """);
+        assertThrows(ConfigError.class, () -> ProfilesConfig.load(path));
     }
 }

@@ -171,4 +171,6 @@ flowchart LR
 
 **Sprint 12 (2025-06-26):** `origin/main` злито в `beta` — паритет гілок після Sprint 11.
 
+**Sprint 13 (2025-06-26):** B-064 — розширено `ProfilesConfigTest`/`HopStatsTest`; прибрано 6 JaCoCo exclusions (RoutePoller, HopStats, HostEntry, ProfileDocument, HostTargetStats, GeoCountry lookup).
+
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.

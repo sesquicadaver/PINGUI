@@ -40,4 +40,22 @@ class HopStatsTest {
         assertNotNull(hop2);
         assertEquals(100.0, hop2.lossPct());
     }
+
+    @Test
+    void targetStatsAggregatesTerminalHop() {
+        HopProbeStats stats = new HopProbeStats();
+        HopStats.recordProbe(stats, new HopNode(1, "8.8.8.8", 10.0, false));
+        HopStats.recordProbe(stats, new HopNode(1, "8.8.8.8", 20.0, false));
+        var result = HopStats.targetStats(new HopNode(1, "8.8.8.8", 15.0, false), stats);
+        assertNotNull(result);
+        assertEquals(0.0, result.lossPct());
+        assertEquals(10.0, result.minMs());
+        assertEquals(20.0, result.maxMs());
+        assertEquals(15.0, result.avgMs());
+    }
+
+    @Test
+    void targetStatsNullWhenNoProbes() {
+        assertNull(HopStats.targetStats(new HopNode(1, "8.8.8.8", null, false), new HopProbeStats()));
+    }
 }
