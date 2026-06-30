@@ -21,8 +21,10 @@ class HostsConfigTest {
     }
 
     @Test
-    void validateSessionHost_rejectsIpv6() {
-        assertThrows(ConfigError.class, () -> HostsConfig.validateSessionHost("2001:db8::1", List.of()));
+    void validateSessionHost_rejectsIpv6_withExplicitMessage() {
+        ConfigError error =
+                assertThrows(ConfigError.class, () -> HostsConfig.validateSessionHost("2001:db8::1", List.of()));
+        assertEquals("IPv6 addresses are not supported (IPv4-only): '2001:db8::1'", error.getMessage());
     }
 
     @Test

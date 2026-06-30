@@ -171,6 +171,34 @@ chmod +x pingui-java.sh gradlew
 5. Зберегти конфіг → перезапуск
 6. **Linux only:** Expert → Exten. → `-4 -s 128`
 
+---
+
+## § GUI smoke (B-035, після UI-split)
+
+Виконати на **Linux** (регресія «чорного фрейму» після profile CRUD):
+
+- [ ] **Про** (меню) — діалог версії відкривається без зависання
+- [ ] **F1 / Довідка** — діалог довідки відкривається
+- [ ] **Новий профіль** → ім'я `test` → список хостів порожній, вікно без чорних смуг
+- [ ] **Видалити профіль** (повернення до default) → Simple mode, вікно зменшується коректно (не лишається oversized frame)
+- [ ] **Розширений** → граф + лог; **Простий** → знову compact layout
+- [ ] Додати `8.8.8.8` → **Зберегти** → перезапуск `./pingui-java.sh` → ціль і профіль на місці
+- [ ] Перемикання профілів у ComboBox — хости оновлюються
+
+---
+
+## § CLI interval (M-014)
+
+Перевірка, що YAML `interval` не затирається без CLI:
+
+1. У активному профілі YAML: `interval: 30.0`
+2. Запуск **без** `--interval`: `./pingui-java.sh --config /path/to/hosts.yaml`
+3. Очікування: опитування ~30 с між циклами (не ~1 с)
+
+Автоматичний контракт: `PinguiApplicationTest.m014_yamlInterval30_noCliOverride_preservesInterval`.
+
+---
+
 ## Можливості за платформою
 
 | Функція | Linux | Windows | macOS |
@@ -179,4 +207,4 @@ chmod +x pingui-java.sh gradlew
 | Expert ping | ✅ | ❌ | ❌ |
 | Raw ICMP (`probe: raw`) | ✅ | ❌ | ❌ |
 
-Тести (`./gradlew test`) — лише на гілці **`beta`**.
+Unit-тести: `cd java && ./gradlew check` (JUnit 5 на `main`; Python-тести — гілка **`beta`**).

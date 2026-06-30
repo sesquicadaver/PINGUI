@@ -7,7 +7,9 @@
 | Парсинг Unix trace | `UnixTraceOutputParser`, `ProcessRouteProbe` | `ProcessRouteProbeTest` (unix fixtures) |
 | Парсинг Windows tracert | `WindowsTraceOutputParser`, `ProcessRouteProbe` | `ProcessRouteProbeTest` (win fixtures, `<1 ms`, wait ms) |
 | Trace argv (OS) | `TraceCommandBuilder`, `LinuxTracerouteCommand`, `MacTracerouteCommand`, `WindowsTracertCommand` | `ProcessRouteProbeTest` (timing); parity via `./gradlew check` |
-| Валідація хостів IPv4 | `HostsConfig` | `HostsConfigTest` |
+| Валідація хостів IPv4 | `HostsConfig` | `HostsConfigTest` (IPv6 → explicit IPv4-only error) |
+| CLI interval vs YAML (M-014) | `CliProfileOverrides`, `ProfilesConfig` | `PinguiApplicationTest.m014_*` |
+| IPv6 scope | `docs/SPIKE_IPV6.md` | wontfix decision doc (B-050/B-053) |
 | YAML profiles v2 + legacy | `ProfilesConfig` | `ProfilesConfigTest` |
 | CLI override профілю | `CliProfileOverrides`, `PinguiApplication` | `PinguiApplicationTest` |
 | Expert ping flags | `PingExpertValidator` | `PingExpertValidatorTest` |

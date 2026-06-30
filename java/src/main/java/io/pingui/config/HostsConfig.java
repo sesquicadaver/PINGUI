@@ -25,6 +25,9 @@ public final class HostsConfig {
 
     public static String normalizeHostEntry(String entry) {
         String host = entry.strip();
+        if (host.contains(":")) {
+            throw new ConfigError("IPv6 addresses are not supported (IPv4-only): '" + entry + "'");
+        }
         if (!isValidHost(host)) {
             throw new ConfigError("Invalid host entry: '" + entry + "'");
         }

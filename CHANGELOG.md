@@ -8,6 +8,8 @@
 ### Changed
 
 - **Java probe:** `ProcessRouteProbe` розділено — `TraceCommandBuilder` (Linux/macOS/Windows), `UnixTraceOutputParser`, `WindowsTraceOutputParser`.
+- **IPv6:** SPIKE → wontfix; `HostsConfig` повертає явну помилку для IPv6 literal (B-050/B-053).
+- **CLI:** M-014 unit-тест — YAML `interval: 30` без `--interval`; GUI/CLI smoke — `docs/CHECKLIST.md`.
 - **Java UI:** `MainController` розділено на координатори (`ProfileUiCoordinator`, `HostListPresenter`, `MonitorLifecycle`, `ViewModeController`, `RouteGraphPresenter`); ~715 → ~387 рядків.
 - **Build:** Spotless (Palantir Java Format) + `./gradlew check` = compile + format + test.
 - **Java CLI:** `--interval` / `--max-hops` / `--timeout` / `--probe` перезаписують активний YAML-профіль **лише якщо передані** (`CliProfileOverrides`).

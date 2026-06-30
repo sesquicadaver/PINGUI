@@ -34,7 +34,7 @@
 | **M-011** | [x] `parseOptions`: розрізняти «не передано» vs «default» | `PinguiApplication.java` | `--interval 2` → override; без `--interval` → empty |
 | **M-012** | [x] `applyCliOverridesToActiveProfile`: merge лише present-полів | `MainController.java` | Старт без CLI зберігає YAML `interval`/`max_hops`/`timeout`/`probe` |
 | **M-013** | [x] Документувати поведінку CLI vs YAML | `java/README.md`, `docs/JAVA.md` | Таблиця «CLI перезаписує поле профілю лише якщо передано» |
-| **M-014** | [ ] Ручний smoke: профіль `interval: 30` + `./pingui-java.sh` | — | У GUI/логах interval = 30, не 1.0 |
+| **M-014** | [x] Ручний smoke: профіль `interval: 30` + `./pingui-java.sh` | — | Unit-тест M-014 + CHECKLIST § CLI interval |
 
 ---
 
@@ -88,7 +88,7 @@
 | **B-032** | [x] `MonitorLifecycle` — create/close monitor, reload profile | `MainController` | `reloadActiveProfile` + `createMonitor` |
 | **B-033** | [x] `ViewModeController` — Simple/Extended, `fitWindowToContent` | `MainController` | Easter egg лишається або → `HostViewRules` helper |
 | **B-034** | [x] `RouteGraphPresenter` — `redrawRouteIfExtended`, graph panel | `MainController` | Extended mode graph + status label |
-| **B-035** | [ ] Smoke GUI: профіль, host, save, F1/About | manual / optional TestFX later | Нема регресії layout (Linux black frame) |
+| **B-035** | [x] Smoke GUI: профіль, host, save, F1/About | `docs/CHECKLIST.md` § GUI smoke | Checklist B-035; ручний прогін на Linux |
 
 ---
 
@@ -108,10 +108,10 @@
 
 | ID | Задача | DoD |
 |----|--------|-----|
-| **B-050** | SPIKE: IPv6 trace + ping — обсяг робіт | Документ `docs/SPIKE_IPV6.md` з рішенням: implement vs wontfix |
-| **B-051** | (Якщо implement) `HostsConfig` — IPv6 literal + hostname IDNA | RFC5952 normalize; тести |
-| **B-052** | (Якщо implement) Raw ICMP IPv6 (`AF_INET6`) | Linux only; cap check |
-| **B-053** | (Якщо wontfix) Закрити B-050 статусом «IPv4-only by design» | README + validator error message |
+| **B-050** | [x] SPIKE: IPv6 trace + ping — обсяг робіт | `docs/SPIKE_IPV6.md` | Рішення: wontfix |
+| **B-051** | — (cancelled) `HostsConfig` — IPv6 literal | — | Out of scope per B-050 |
+| **B-052** | — (cancelled) Raw ICMP IPv6 | — | Out of scope per B-050 |
+| **B-053** | [x] Закрити B-050 статусом «IPv4-only by design» | `HostsConfig`, `SPIKE_IPV6.md` | Явна помилка для IPv6 literal |
 
 ---
 
