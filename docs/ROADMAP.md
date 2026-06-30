@@ -181,4 +181,6 @@ flowchart LR
 
 **Sprint 15 (2025-06-30):** B-064b з `beta` → `main` (cherry-pick).
 
+**Sprint 16 (2025-06-30):** `MonitorService` — wire `PingOnlyResolver` у `pollHostOnce` (live ping-only з `SessionStore`).
+
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.
