@@ -97,12 +97,6 @@ tasks.jacocoTestCoverageVerification {
                         "io/pingui/ui/RouteGraphPresenter*.class",
                         "io/pingui/ui/AppMenuDialogs*.class",
                         "io/pingui/monitor/ExpertPingEnricher.class",
-                        "io/pingui/monitor/HostTargetStats.class",
-                        "io/pingui/monitor/HopStats.class",
-                        "io/pingui/monitor/RoutePoller.class",
-                        "io/pingui/config/HostEntry.class",
-                        "io/pingui/config/ProfileDocument.class",
-                        "io/pingui/geoip/GeoCountry\$CountryLookup.class",
                     )
                 }
             },

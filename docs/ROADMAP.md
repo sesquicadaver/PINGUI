@@ -167,4 +167,6 @@ flowchart LR
 
 **Sprint 11 (2025-06-26):** Java test suite + JaCoCo gate з `beta` → `main`; Python-дерево на `main` не додається.
 
+**Sprint 13 (2025-06-26):** B-064 — розширено `ProfilesConfigTest`/`HopStatsTest`; прибрано 6 JaCoCo exclusions.
+
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.
