@@ -165,4 +165,6 @@ flowchart LR
 | `main` only | cherry-pick або merge `main` → `beta` |
 | `beta` only | періодично merge `beta` Java-шар → `main` (без Python/tests у tree `main`) |
 
+**Sprint 11 (2025-06-26):** Java test suite + JaCoCo gate з `beta` → `main`; Python-дерево на `main` не додається.
+
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.

@@ -7,6 +7,7 @@
 
 ### Changed
 
+- **Гілки:** sync `beta` → `main` — повний Java test suite + JaCoCo ≥80% (Sprint 11).
 - **Java probe:** `ProcessRouteProbe` розділено — `TraceCommandBuilder` (Linux/macOS/Windows), `UnixTraceOutputParser`, `WindowsTraceOutputParser`.
 - **Build:** Checkstyle (UnusedImports, RedundantImport) у `./gradlew check` (M-023).
 - **Build:** About показує версію + git sha (+ CI build number); Gradle `generateBuildProperties`; `layerCheck` у `./gradlew check`.
