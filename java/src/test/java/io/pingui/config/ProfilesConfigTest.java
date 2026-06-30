@@ -161,4 +161,39 @@ class ProfilesConfigTest {
                 """);
         assertThrows(ConfigError.class, () -> ProfilesConfig.load(path));
     }
+
+    @Test
+    void loadInvalidProbeMode() throws Exception {
+        Path path = tempDir.resolve("probe.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    probe: not-a-mode
+                    hosts:
+                      - "8.8.8.8"
+                """);
+        assertThrows(Exception.class, () -> ProfilesConfig.load(path));
+    }
+
+    @Test
+    void loadTooManyHostsRejected() throws Exception {
+        Path path = tempDir.resolve("many.yaml");
+        StringBuilder hosts = new StringBuilder();
+        for (int i = 1; i <= 11; i++) {
+            hosts.append("      - \"10.0.0.").append(i).append("\"\n");
+        }
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    hosts:
+                """
+                        + hosts);
+        assertThrows(ConfigError.class, () -> ProfilesConfig.load(path));
+    }
 }

@@ -45,4 +45,21 @@ class GeoCountryTest {
         GeoCountry.configure(true, hints);
         assertEquals("XX", GeoCountry.lookup("41.41.41.5"));
     }
+
+    @Test
+    void lookupReturnsNullForBlankOrInvalid() {
+        assertNull(GeoCountry.lookup(" "));
+        assertNull(GeoCountry.lookup("not-an-ip"));
+    }
+
+    @Test
+    void lookupReturnsNullForMulticast() {
+        assertNull(GeoCountry.lookup("239.255.255.255"));
+    }
+
+    @Test
+    void configureMissingFileUsesBundledHints(@TempDir Path tempDir) {
+        GeoCountry.configure(true, tempDir.resolve("missing.yaml"));
+        assertEquals("US", GeoCountry.lookup("8.8.8.8"));
+    }
 }

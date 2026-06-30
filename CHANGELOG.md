@@ -7,6 +7,7 @@
 
 ### Changed
 
+- **Tests:** B-064c — розширено `HostsConfigTest`/`ProfileDocumentTest`/`GeoCountryTest`; покриття config/geoip ↑.
 - **Java monitor:** `MonitorService` використовує `PingOnlyResolver` (live `SessionStore`) для ping-only режиму.
 - **Tests:** B-064 — розширено `MonitorService`/`SessionStore`/`IcmpPacket` unit-тести; прибрано JaCoCo exclusion для `IcmpPacket`.
 - **Tests:** B-064 — розширено config/monitor unit-тести; звужено JaCoCo exclusions (RoutePoller, HopStats, HostEntry, ProfileDocument, HostTargetStats, GeoCountry lookup).

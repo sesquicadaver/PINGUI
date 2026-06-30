@@ -175,4 +175,6 @@ flowchart LR
 
 **Sprint 16 (2025-06-30):** `MonitorService` — wire `PingOnlyResolver` у `pollHostOnce` (live ping-only з `SessionStore`).
 
+**Sprint 17 (2025-06-30):** B-064c — розширено config/geoip unit-тести (`HostsConfig`, `ProfileDocument`, `GeoCountry`).
+
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.
