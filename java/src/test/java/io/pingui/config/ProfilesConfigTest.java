@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.pingui.probe.ProbeMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -195,5 +196,52 @@ class ProfilesConfigTest {
                 """
                         + hosts);
         assertThrows(ConfigError.class, () -> ProfilesConfig.load(path));
+    }
+
+    @Test
+    void loadStringHostEntryWithFlags() throws Exception {
+        Path path = tempDir.resolve("host-flags.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    hosts:
+                      - "1.1.1.1"
+                      - address: "8.8.8.8"
+                        enabled: true
+                        ping_only: true
+                """);
+        ProfileDocument doc = ProfilesConfig.load(path);
+        assertEquals(2, doc.active().hosts().size());
+        HostEntry mapped = doc.active().hosts().get(1);
+        assertTrue(mapped.enabled());
+        assertTrue(mapped.pingOnly());
+    }
+
+    @Test
+    void loadInvalidBooleanInHostEntry() throws Exception {
+        Path path = tempDir.resolve("bad-bool.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    hosts:
+                      - address: "8.8.8.8"
+                        enabled: "yes"
+                """);
+        assertThrows(ConfigError.class, () -> ProfilesConfig.load(path));
+    }
+
+    @Test
+    void saveAndReloadMinimalProfile() throws Exception {
+        Path path = tempDir.resolve("out.yaml");
+        ProfileDocument doc =
+                new ProfileDocument("default", java.util.Map.of("default", TracingProfile.defaults(List.of())));
+        ProfilesConfig.save(path, doc);
+        assertEquals("default", ProfilesConfig.load(path).activeProfile());
     }
 }

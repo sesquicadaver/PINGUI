@@ -177,4 +177,6 @@ flowchart LR
 
 **Sprint 17 (2025-06-30):** B-064c — розширено config/geoip unit-тести (`HostsConfig`, `ProfileDocument`, `GeoCountry`).
 
+**Sprint 18 (2025-06-26):** B-064d — `GeoCountryTest`/`ProfilesConfigTest` (longest-prefix, LAN edge cases, host entry flags); JaCoCo bundle ≥80%.
+
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.

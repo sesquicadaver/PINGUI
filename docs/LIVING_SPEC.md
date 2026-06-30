@@ -11,8 +11,8 @@
 | CLI interval vs YAML (M-014) | `CliProfileOverrides`, `ProfilesConfig` | `PinguiApplicationTest.m014_*` |
 | Build metadata | `AppInfo`, `generateBuildProperties` | `AppInfoTest` |
 | Layer deps (no ui in config) | `scripts/check-layer-deps.sh` | `./gradlew layerCheck` |
-| YAML profiles v2 + legacy | `ProfilesConfig`, `ProfileDocument` | `ProfilesConfigTest`, `ProfileDocumentTest` |
-| GeoIP hints | `GeoCountry` | `GeoCountryTest` |
+| GeoIP hints | `GeoCountry` | `GeoCountryTest` (longest-prefix, LAN/IPv6, invalid YAML) |
+| YAML profiles v2 + legacy | `ProfilesConfig`, `ProfileDocument` | `ProfilesConfigTest` (host flags, invalid boolean, save round-trip), `ProfileDocumentTest` |
 | CLI override профілю | `CliProfileOverrides`, `PinguiApplication` | `PinguiApplicationTest` |
 | Monitor polling | `MonitorService`, `RoutePoller` | `MonitorServiceTest` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
