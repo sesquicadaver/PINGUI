@@ -13,6 +13,9 @@
 | Layer deps (no ui in config) | `scripts/check-layer-deps.sh` | `./gradlew layerCheck` |
 | YAML profiles v2 + legacy | `ProfilesConfig` | `ProfilesConfigTest` |
 | CLI override профілю | `CliProfileOverrides`, `PinguiApplication` | `PinguiApplicationTest` |
+| Monitor polling | `MonitorService`, `RoutePoller` | `MonitorServiceTest` |
+| Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
+| Raw ICMP packet | `IcmpPacket` | `IcmpPacketTest` |
 | Expert ping flags | `PingExpertValidator` | `PingExpertValidatorTest` |
 | GUI / MonitorService | `MainController`, `MonitorService` | *(manual / TestFX — backlog)* |
 | UI coordinators | `ProfileUiCoordinator`, `HostListPresenter`, `MonitorLifecycle`, `ViewModeController`, `RouteGraphPresenter` | `./gradlew check`; B-035 manual smoke |

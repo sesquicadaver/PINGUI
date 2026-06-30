@@ -3,6 +3,8 @@ package io.pingui.probe.icmp;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -48,5 +50,28 @@ class IcmpPacketTest {
         assertNotNull(result);
         assertEquals("8.8.8.8", result.sourceIp());
         assertTrue(result.target());
+    }
+
+    @Test
+    void parseReplyRejectsShortBuffer() {
+        assertNull(IcmpPacket.parseReply(new byte[8], 8, "8.8.8.8", 1.0));
+    }
+
+    @Test
+    void parseReplyIgnoresUnknownIcmpType() {
+        byte[] buffer = new byte[28];
+        buffer[0] = 0x45;
+        buffer[12] = 10;
+        buffer[13] = 0;
+        buffer[14] = 0;
+        buffer[15] = 1;
+        buffer[20] = 99;
+        assertNull(IcmpPacket.parseReply(buffer, buffer.length, "8.8.8.8", 1.0));
+    }
+
+    @Test
+    void ipv4ToIntRoundTrip() {
+        assertEquals(0x08080808, IcmpPacket.ipv4ToInt("8.8.8.8"));
+        assertThrows(IllegalArgumentException.class, () -> IcmpPacket.ipv4ToInt("not-an-ip"));
     }
 }

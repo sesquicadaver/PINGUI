@@ -169,4 +169,8 @@ flowchart LR
 
 **Sprint 13 (2025-06-26):** B-064 — розширено `ProfilesConfigTest`/`HopStatsTest`; прибрано 6 JaCoCo exclusions.
 
+**Sprint 13b (2025-06-30):** B-064 — `MonitorServiceTest`/`SessionStoreTest`/`IcmpPacketTest`; прибрано exclusion `IcmpPacket`.
+
+**Sprint 15 (2025-06-30):** B-064b з `beta` → `main` (cherry-pick).
+
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.
