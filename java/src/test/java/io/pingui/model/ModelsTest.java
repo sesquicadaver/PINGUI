@@ -24,14 +24,13 @@ class ModelsTest {
 
     @Test
     void routeSnapshotFiltersUnreachableHops() {
-        Models.RouteSnapshot snapshot =
-                new Models.RouteSnapshot(
-                        "8.8.8.8",
-                        "8.8.8.8",
-                        List.of(
-                                new Models.HopNode(1, "10.0.0.1", 5.0, false),
-                                Models.timeout(2),
-                                new Models.HopNode(3, "8.8.8.8", 10.0, false)));
+        Models.RouteSnapshot snapshot = new Models.RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(
+                        new Models.HopNode(1, "10.0.0.1", 5.0, false),
+                        Models.timeout(2),
+                        new Models.HopNode(3, "8.8.8.8", 10.0, false)));
         assertEquals(List.of("10.0.0.1", "8.8.8.8"), snapshot.routeIps());
     }
 }

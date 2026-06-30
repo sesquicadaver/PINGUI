@@ -1,44 +1,30 @@
 # Документація PINGUI
 
-Повний пакет документації (гілка **`beta`**). На **`main`** — лише Java docs: [CHECKLIST](CHECKLIST.md), [DEPLOYMENT](DEPLOYMENT.md), [JAVA](JAVA.md).
+На **`beta`** — повний пакет (Java + Python). На **`main`** — Java docs для запуску.
 
-## Швидка навігація
+## Навігація
 
 | Документ | Для кого | Зміст |
 |----------|----------|-------|
-| [CHECKLIST.md](CHECKLIST.md) | Адмін / DevOps | Checklist Linux / Windows / macOS (Java + Python) |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Адмін / DevOps | `pingui.sh`, venv, cap_net_raw, systemd |
-| [CONFIGURATION.md](CONFIGURATION.md) | Адмін / розробник | YAML, CLI, змінні середовища |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Розробник | Шари, потоки даних, Qt-сигнали |
-| [MODULES.md](MODULES.md) | Розробник | Довідник модулів і публічних API |
-| [DEVELOPMENT.md](DEVELOPMENT.md) | Розробник | venv, стиль коду, локальний цикл |
-| [TESTING.md](TESTING.md) | Розробник / QA | pytest, coverage, маркери, CI |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Контрибутор | PR, anti-stub, Living Spec |
-| [MVP_SPEC.md](MVP_SPEC.md) | Усі | Функціональні вимоги MVP |
-| [LIVING_SPEC.md](LIVING_SPEC.md) | Усі | Матриця вимога → модуль → тести |
-| [JAVA.md](JAVA.md) | Усі | Java cross-platform edition |
-| [../java/README.md](../java/README.md) | Усі | Запуск Java, Gradle, CLI |
+| [CHECKLIST.md](CHECKLIST.md) | Адмін / DevOps | Checklist Linux / Windows / macOS |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Адмін / DevOps | JDK 21, venv, cap_net_raw, systemd |
+| [JAVA.md](JAVA.md) | Розробник | Probe, monitor, UI, YAML |
+| [ROADMAP.md](ROADMAP.md) | Розробник | План виправлень (закрито) |
+| [LIVING_SPEC.md](LIVING_SPEC.md) | Розробник | Матриця модуль → тести |
+| [SPIKE_IPV6.md](SPIKE_IPV6.md) | Розробник | IPv6 scope (wontfix) |
+| [CONFIGURATION.md](CONFIGURATION.md) | Розробник | YAML, CLI (Python) |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Розробник | Шари Python |
+| [MODULES.md](MODULES.md) | Розробник | Довідник модулів |
+| [DEVELOPMENT.md](DEVELOPMENT.md) | Розробник | venv, локальний цикл |
+| [TESTING.md](TESTING.md) | QA | pytest, coverage, CI |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Контрибутор | PR, anti-stub |
+| [MVP_SPEC.md](MVP_SPEC.md) | Усі | MVP вимоги |
+| [../java/README.md](../java/README.md) | Усі | Java launcher, Gradle |
+| [../.github/workflows/java.yml](../.github/workflows/java.yml) | CI | Java `./gradlew check` |
+| [../.github/workflows/ci.yml](../.github/workflows/ci.yml) | CI | Python pytest (beta) |
 
-## Документи в корені репозиторію
+## Рекомендований порядок
 
-| Файл | Призначення |
-|------|-------------|
-| [../README.md](../README.md) | Швидкий старт і огляд |
-| [../ROADMAP.md](../ROADMAP.md) | Фази розробки та backlog |
-| [../CHANGELOG.md](../CHANGELOG.md) | Історія змін |
+**Java:** [../README.md](../README.md) → CHECKLIST → [../java/README.md](../java/README.md)
 
-## Рекомендований порядок читання
-
-**Новий користувач:** README → USER_GUIDE → DEPLOYMENT
-
-**Розробник:** README → ARCHITECTURE → DEVELOPMENT → TESTING → MODULES
-
-**Cross-platform (Java):** README → [JAVA.md](JAVA.md) → [../java/README.md](../java/README.md)
-
-**Рев'ю PR:** CONTRIBUTING → LIVING_SPEC → TESTING
-
-## Версія та стан
-
-- **Python MVP:** завершено (PyQt6, Linux, до 10 цілей)
-- **Java edition:** MVP (`java/`, Java 21 + JavaFX, traceroute/tracert)
-- **Python coverage gate:** ≥ 80%
+**Python (beta):** DEVELOPMENT → TESTING → CONFIGURATION

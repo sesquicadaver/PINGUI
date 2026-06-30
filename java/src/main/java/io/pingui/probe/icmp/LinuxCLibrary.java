@@ -19,21 +19,11 @@ interface LinuxCLibrary extends Library {
 
     int setsockopt(int socket, int level, int option, Pointer optval, int optlen) throws LastErrorException;
 
-    long sendto(
-            int socket,
-            Pointer message,
-            long length,
-            int flags,
-            Pointer destAddr,
-            int destLen) throws LastErrorException;
+    long sendto(int socket, Pointer message, long length, int flags, Pointer destAddr, int destLen)
+            throws LastErrorException;
 
-    long recvfrom(
-            int socket,
-            Pointer buffer,
-            long length,
-            int flags,
-            Pointer srcAddr,
-            Pointer addrlen) throws LastErrorException;
+    long recvfrom(int socket, Pointer buffer, long length, int flags, Pointer srcAddr, Pointer addrlen)
+            throws LastErrorException;
 
     /** sockaddr_in for IPv4 sendto(). */
     final class SockaddrIn extends Structure {

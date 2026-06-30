@@ -31,6 +31,7 @@ src/*.egg-info/
 # App artifacts
 route_map.html
 *.log
+ISSUES.txt
 
 # Agent / local workspace (not part of the product)
 .omx/
@@ -40,4 +41,3 @@ java/.gradle/
 java/build/
 java/bin/
 java/out/
-

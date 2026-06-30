@@ -1,33 +1,52 @@
-# Розгортання PINGUI
+# Розгортання PINGUI (Java)
 
-## Системні вимоги
+## Платформи
 
-- **ОС:** Linux (x86_64 або arm64)
-- **Python:** ≥ 3.11
-- **Дисплей:** X11 або Wayland (для GUI)
-- **Мережа:** доступ до цілей; raw ICMP socket
+| ОС | Підтримка |
+|----|-----------|
+| Linux (Ubuntu 22.04+) | ✅ |
+| Windows 11+ | ✅ |
+| macOS 12+ | ✅ |
 
-### APT-пакети (автоматично з `--deploy`)
+Покроковий checklist: **[CHECKLIST.md](CHECKLIST.md)**.
 
-`python3-venv`, `libcap2-bin`, `libegl1`, `libgl1`, `libxkbcommon0`, `libxcb-cursor0`
+Expert ping (режим «Експерт») — **лише Linux** (iputils `ping`).
 
-## Python: pingui.sh
+**IPv4-only:** цілі — IPv4 або hostname (ASCII); IPv6-літерали (`2001:db8::1`) не приймаються. Raw ICMP probe — `AF_INET` / IPv4.
 
-```bash
-chmod +x pingui.sh
-./pingui.sh --deploy    # перше розгортання (Python)
-./pingui.sh             # Python GUI
-./pingui.sh --destroy   # очистити venv і кеші Python
-./pingui.sh --help
-```
+## Рекомендація щодо ОС
 
-## Java: java/pingui-java.sh (Linux/macOS) або pingui-java.bat (Windows)
+| Платформа | Для щоденної роботи | Коментар |
+|-----------|---------------------|----------|
+| **Linux** | ✅ **Рекомендовано** | `traceroute -q 1` — швидко; Expert ping; raw ICMP |
+| **macOS** | ✅ Добре | Швидкий trace; Expert ping недоступний |
+| **Windows** | ⚠ Обмежено | **Повільний `tracert`**: 3 probe на hop, ~4 с очікування на probe → повний trace 1–4+ хв на ціль при 20 hop. Expert ping недоступний |
+
+**Windows — не найкращий вибір** для постійного моніторингу маршруту з коротким `interval` (напр. 1 с): наступний цикл часто стартує до завершення попереднього trace.
+
+**Як пом’якшити на Windows:**
+
+- У GUI: чекбокс **Ping only** на хості (лише RTT до цілі, без hop-ів).
+- У YAML: `ping_only: true` або `interval: 30` (і більше) для режиму з trace.
+- Очікуйте затримку 1–4 хвилини на перший повний trace до віддаленої цілі.
+
+## Вимоги
+
+| Компонент | Версія |
+|-----------|--------|
+| JDK | **21** (не Java 25 як launcher Gradle) |
+| traceroute | Linux/macOS |
+| tracert | Windows (вбудований) |
+| Дисплей | X11 / Wayland / Windows Desktop |
+
+## Запуск
 
 **Linux / macOS**
 
 ```bash
 cd java
-chmod +x pingui-java.sh
+chmod +x pingui-java.sh gradlew
+export PINGUI_JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64   # за потреби
 ./pingui-java.sh --build
 ./pingui-java.sh
 ```
@@ -40,89 +59,49 @@ pingui-java.bat --build
 pingui-java.bat
 ```
 
-Python `--destroy` не стосується Gradle-артефактів у `java/build/`.
-
-### Режим `--deploy`
-
-1. Перевірка Linux і Python ≥ 3.11
-2. `apt-get install` відсутніх системних пакетів (якщо є `apt-get`)
-3. Створення `.venv` з **`python3 -m venv --copies`** (реальні бінарники для setcap)
-4. `pip install -e ".[dev]"`
-5. `sudo setcap cap_net_raw+ep` на `.venv/bin/python*`
-6. ruff → mypy → pytest (coverage ≥ 80%) → `check_imports.py`
-
-Опції:
-
-- `--skip-tests` — без quality gates
-- `--force-venv` — перестворити venv
-
-### Режим GUI (за замовч.)
-
-Тиха підготовка: якщо немає venv або cap — створює/налаштовує без зайвого виводу.
-Запуск: `python -m pingui --config config/hosts.example.yaml`.
-
-### Режим `--destroy`
-
-Видаляє: `.venv`, `.pytest_cache`, `.mypy_cache`, `.ruff_cache`, `.coverage`, `build/`, `dist/`, `*.egg-info`, `__pycache__`.
-**Не** видаляє системні apt-пакети та `setcap` на системному Python.
-
-## CAP_NET_RAW
-
-ICMP raw socket потребує capability або root.
+## Збірка та пакування
 
 ```bash
-# Автоматично
-./pingui.sh --deploy
-
-# Перевірка
-./scripts/check_caps.sh
-
-# Ручний setcap (якщо deploy не спрацював)
-./scripts/setup_caps.sh
+cd java
+./gradlew build          # compile + jar
+./pingui-java.sh --package   # jpackage: .deb / .dmg / .msi
 ```
 
-**Важливо:** `setcap` не працює на symlink. Venv має бути `--copies`.
-Якщо `.venv/bin/python3` — symlink на `/usr/bin/python3`, `setup_caps.sh` виведе інструкцію.
+## Raw ICMP (Linux, опційно)
 
-Перевірка з Python:
+За замовч. використовується `traceroute`/`tracert`. Raw ICMP (`probe: auto|raw`):
 
-```python
-from pingui.icmp.raw_socket import check_raw_icmp_permission
-check_raw_icmp_permission()
+```bash
+sudo setcap cap_net_raw+ep "$(readlink -f "$(which java)")"
 ```
 
-## systemd (опційно)
+## Конфігурація
 
-Приклад unit: `systemd/pingui-dev.service.example`
+Приклад: `java/config/hosts.example.yaml`. Формат v2:
 
-```ini
-WorkingDirectory=/path/to/PINGUI
-ExecStart=/path/to/PINGUI/pingui.sh
+```yaml
+active_profile: default
+profiles:
+  default:
+    interval: 1.0
+    max_hops: 20
+    timeout: 0.5
+    probe: auto
+    hosts:
+      - address: "8.8.8.8"
+        enabled: true
 ```
-
-Перед першим запуском сервісу: `./pingui.sh --deploy` від імені користувача сервісу.
-
-## GitHub Actions
-
-`.github/workflows/ci.yml`:
-
-- Ubuntu latest, Python 3.11
-- Qt/OpenGL runtime libs
-- `bash scripts/ci_venv.sh` + import graph
-
-CI **не** виконує setcap (мережеві тести виключені маркером `not network`).
-
-## Обмеження середовища
-
-- **Тільки venv:** не встановлюйте пакет глобально для розробки.
-- **Віртуальне середовище для тестів:** `./pingui.sh --deploy` або `./scripts/ci_venv.sh`.
-- Production GUI — на машині користувача з дисплеєм, не в headless CI.
 
 ## Troubleshooting
 
 | Симптом | Рішення |
 |---------|---------|
-| `Raw ICMP requires root or cap_net_raw` | `./pingui.sh --deploy` |
-| Qt platform plugin | `sudo apt install libegl1 libgl1 libxkbcommon0 libxcb-cursor0` |
-| `.venv` symlink | `rm -rf .venv && ./pingui.sh --deploy --force-venv` |
-| Coverage fail | `./pingui.sh --deploy` локально, див. [TESTING.md](TESTING.md) |
+| Trace на Windows «зависає» / дуже довгий | Нормально для `tracert`; увімкніть **Ping only** або збільште `interval` |
+| Gradle «What went wrong: 25.0.3» | JDK 21: `export PINGUI_JAVA_HOME=.../java-21-openjdk-*` |
+| «No hops parsed» | Встановити `traceroute`; на macOS — `/usr/sbin/traceroute` |
+| JavaFX runtime missing | `./gradlew run` або jpackage installer |
+| Expert ping без RTT | Linux + `iputils-ping` |
+
+## Розробка
+
+Тести, CI, Python-редакція — гілка **`beta`**.

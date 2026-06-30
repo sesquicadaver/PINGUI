@@ -85,8 +85,7 @@ public final class PingExpertDialog {
             grid.add(new Label(option.flag()), 0, row);
             grid.add(wrapDescription(option.description()), 1, row);
             if (option.kind() == Kind.FLAG) {
-                ComboBox<String> choice =
-                        new ComboBox<>(FXCollections.observableArrayList(BOOL_FALSE, BOOL_TRUE));
+                ComboBox<String> choice = new ComboBox<>(FXCollections.observableArrayList(BOOL_FALSE, BOOL_TRUE));
                 choice.setMaxWidth(Double.MAX_VALUE);
                 applyFlagSelection(option, currentArgs, choice);
                 flagChoices.put(option.flag(), choice);

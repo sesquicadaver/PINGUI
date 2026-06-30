@@ -32,10 +32,7 @@ class HopStatsTest {
         SessionStore store = new SessionStore(List.of("h"));
         store.appendPingSamples(
                 "h",
-                new RouteSnapshot(
-                        "h",
-                        "8.8.8.8",
-                        List.of(new HopNode(1, "10.0.0.1", 5.0, false), Models.timeout(2))));
+                new RouteSnapshot("h", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false), Models.timeout(2))));
         HopStatsSummary hop1 = store.hopStatsSummary("h", 1);
         HopStatsSummary hop2 = store.hopStatsSummary("h", 2);
         assertNotNull(hop1);

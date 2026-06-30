@@ -3,9 +3,7 @@ package io.pingui.probe;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.probe.icmp.IcmpProbeTransport;
-import io.pingui.probe.icmp.ProbeResult;
 import io.pingui.probe.icmp.ProbeResult;
 import java.util.HashMap;
 import java.util.Map;

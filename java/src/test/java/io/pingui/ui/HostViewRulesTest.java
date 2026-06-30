@@ -25,10 +25,8 @@ class HostViewRulesTest {
 
     @Test
     void entriesForConfigOmitsEasterEggHost() {
-        var entries =
-                HostViewRules.entriesForConfig(
-                        java.util.List.of(
-                                HostEntry.basic("8.8.8.8", true), HostEntry.basic("fuck.you", false)));
+        var entries = HostViewRules.entriesForConfig(
+                java.util.List.of(HostEntry.basic("8.8.8.8", true), HostEntry.basic("fuck.you", false)));
         assertEquals(1, entries.size());
         assertEquals("8.8.8.8", entries.get(0).address());
     }

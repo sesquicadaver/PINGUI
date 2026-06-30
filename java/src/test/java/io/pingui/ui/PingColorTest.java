@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.pingui.geoip.GeoCountry;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.HopStatsSummary;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

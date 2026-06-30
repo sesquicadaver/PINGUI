@@ -1,110 +1,27 @@
-# Living Specification — PINGUI
+# Living Specification — PINGUI Java (`main`)
 
-Матриця відповідності «вимога → модуль → тести». Оновлюється при кожній фічі.
+Матриця «модуль → unit-тести». Оновлюй при додаванні фіч.
 
-**Останнє оновлення:** 2026-06-26 · **Coverage:** ≥ 80% · **Тестів:** 104+ · **Документація:** [README.md](README.md)
+| Модуль / ТЗ | Клас | Тести |
+|-------------|------|-------|
+| Парсинг Unix trace | `UnixTraceOutputParser`, `ProcessRouteProbe` | `ProcessRouteProbeTest` (unix fixtures) |
+| Парсинг Windows tracert | `WindowsTraceOutputParser`, `ProcessRouteProbe` | `ProcessRouteProbeTest` (win fixtures, `<1 ms`, wait ms) |
+| Trace argv (OS) | `TraceCommandBuilder`, `LinuxTracerouteCommand`, `MacTracerouteCommand`, `WindowsTracertCommand` | `ProcessRouteProbeTest` (timing); parity via `./gradlew check` |
+| Валідація хостів IPv4 | `HostsConfig` | `HostsConfigTest` (IPv6 → explicit IPv4-only error) |
+| CLI interval vs YAML (M-014) | `CliProfileOverrides`, `ProfilesConfig` | `PinguiApplicationTest.m014_*` |
+| Build metadata | `AppInfo`, `generateBuildProperties` | `AppInfoTest` |
+| Layer deps (no ui in config) | `scripts/check-layer-deps.sh` | `./gradlew layerCheck` |
+| YAML profiles v2 + legacy | `ProfilesConfig` | `ProfilesConfigTest` |
+| CLI override профілю | `CliProfileOverrides`, `PinguiApplication` | `PinguiApplicationTest` |
+| Expert ping flags | `PingExpertValidator` | `PingExpertValidatorTest` |
+| GUI / MonitorService | `MainController`, `MonitorService` | *(manual / TestFX — backlog)* |
+| UI coordinators | `ProfileUiCoordinator`, `HostListPresenter`, `MonitorLifecycle`, `ViewModeController`, `RouteGraphPresenter` | `./gradlew check`; B-035 manual smoke |
+| CI gate | `.github/workflows/java.yml` | `./gradlew check` (Spotless + Checkstyle + layerCheck + test) |
+| JaCoCo (beta) | `build.gradle.kts` `jacocoTestCoverageVerification` | `./gradlew check` (≥80% після exclusions) |
+| Static imports | `config/checkstyle/checkstyle.xml` | `./gradlew checkstyleMain` / `checkstyleTest` |
 
-Джерело вимог MVP: [MVP_SPEC.md](MVP_SPEC.md).
+**Прогін локально:** `cd java && ./gradlew check`
 
----
+**CI:** push/PR на `main` / `beta` → workflow [Java CI](../.github/workflows/java.yml)
 
-## Конфігурація та моделі
-
-| Вимога | Модуль | Тести | Статус |
-|--------|--------|-------|--------|
-| Завантаження 0–10 хостів з YAML | `config.load_hosts_config` | `tests/unit/test_config.py` | done |
-| Збереження списку хостів у YAML | `config.save_hosts_config` | `tests/unit/test_config.py` | done |
-| Валідація in-session хоста | `config.validate_session_host` | `tests/unit/test_config.py` | done |
-| DNS → IPv4 resolve | `config.resolve_host_ipv4` | `tests/unit/test_config_resolve.py` | done |
-| HopNode, RouteSnapshot, HostSessionData | `models.py` | через unit/contract | done |
-
----
-
-## ICMP і traceroute
-
-| Вимога | Модуль | Тести | Статус |
-|--------|--------|-------|--------|
-| Raw ICMP probe + RTT | `icmp/raw_socket.py` | `tests/unit/test_raw_socket.py`, `tests/contract/test_tracer.py` | done |
-| Перевірка CAP_NET_RAW | `icmp/raw_socket.check_raw_icmp_permission` | manual, `scripts/check_caps.sh` | done |
-| trace_route TTL 1..N, timeout `*` | `icmp/tracer.py` | `tests/contract/test_tracer.py` | done |
-| Мережева інтеграція tracer | `icmp/tracer.py` | `tests/integration/test_tracer_network.py` (network) | done |
-
----
-
-## Моніторинг і сесія
-
-| Вимога | Модуль | Тести | Статус |
-|--------|--------|-------|--------|
-| poll_host_route (pure logic) | `monitor/polling.py` | `tests/unit/test_polling.py` | done |
-| Детекція зміни маршруту | `monitor/route_change.py` | `tests/unit/test_route_change.py` | done |
-| Last known IP по hop | `monitor/route_history.py` | `tests/unit/test_route_history.py` | done |
-| SessionStore: route, ping history, previous | `monitor/session_store.py` | `tests/unit/test_session_store.py` | done |
-| Hop jitter/loss per TTL hop | `monitor/hop_stats.py` | `tests/unit/test_hop_stats.py` | done |
-| inactive_route з last known | `monitor/session_store.py` | `tests/unit/test_session_store.py` | done |
-| Worker: add/rename/remove, enabled only | `monitor/worker.py` | `tests/unit/test_worker.py` | done |
-| Worker: цикл run(), сигнали Qt | `monitor/worker.py` | `tests/integration/test_worker_run.py` | done |
-| Worker → store контракт | `monitor/worker.py`, `session_store.py` | `tests/contract/test_worker_store.py` | done |
-| SQLite session persistence (optional) | `persistence/session_db.py` | `tests/unit/test_session_db.py` | done |
-| Time-series backend Influx/Timescale | `persistence/timeseries/` | `tests/unit/test_timeseries.py` | done |
-| Session export CSV/HTML | `export/session_report.py` | `tests/unit/test_session_export.py` | done |
-
----
-
-## GUI
-
-| Вимога | Модуль | Тести | Статус |
-|--------|--------|-------|--------|
-| GraphCanvas: layout, кольори ping | `ui/graph_canvas.py` | `tests/unit/test_graph_canvas.py` | done |
-| GeoIP country hints in node labels | `geoip/country.py` | `tests/unit/test_geoip_country.py` | done |
-| Folium geo-map tab | `geoip/map_builder.py`, `ui/map_view.py` | `tests/unit/test_geo_map.py` | done |
-| MainWindow: список, CRUD, збереження | `ui/main_window.py` | `tests/integration/test_ui_smoke.py` | done |
-| Чекбокси enabled, лог, status | `ui/main_window.py` | `tests/integration/test_ui_smoke.py` | done |
-| App bootstrap + quiet logging | `ui/app.py`, `logging_setup.py` | omit coverage (entry) | done |
-| Headless Qt fixture | `tests/conftest.py` | autouse для integration | done |
-
----
-
-## CLI та розгортання
-
-| Вимога | Модуль / скрипт | Тести | Статус |
-|--------|-----------------|-------|--------|
-| CLI парсинг і валідація | `__main__.py` | `tests/unit/test_main.py`, `test_main_cli_validation.py` | done |
-| Єдина точка входу (Python) | `pingui.sh` | manual QA | done |
-| Java launcher | `java/pingui-java.sh` (Unix), `java/pingui-java.bat` (Windows) | manual / launcher --test | done |
-| CI pipeline (venv) | `scripts/ci_venv.sh`, `.github/workflows/ci.yml` | CI on push/PR | done |
-| Import graph (no cycles) | `scripts/check_imports.py` | deploy / CI | done |
-| cap_net_raw helper | `scripts/setup_caps.sh`, `scripts/check_caps.sh` | manual | done |
-| systemd приклад | `systemd/pingui-dev.service.example` | — | done |
-
----
-
-## Java edition (`java/`)
-
-| Вимога | Модуль | Тести | Статус |
-|--------|--------|-------|--------|
-| Cross-platform traceroute | `probe.ProcessRouteProbe` | `ProcessRouteProbeParserTest` | done |
-| Linux raw ICMP (JNA) | `probe.RawIcmpRouteProbe`, `RouteProbeFactory` | `IcmpPacketTest`, `RawIcmpRouteProbeTest` | done |
-| Monitor cycle | `monitor.MonitorService` | `RoutePollerTest` | done |
-| Session store parity | `monitor.SessionStore` | via poller tests | done |
-| JavaFX GUI CRUD | `ui.MainController` | manual | done |
-| Gradle CI + JaCoCo | `.github/workflows/java-ci.yml`, `build.gradle.kts` | CI matrix ubuntu/windows/macos | done |
-| jpackage Linux .deb | `build.gradle.kts` `jpackageDeb`, `pingui-java.sh --package` | manual / local | done |
-| jpackage Windows/macOS | `jpackageMsi`, `jpackageDmg` | manual on target OS | done |
-| Topological graph | `ui.GraphCanvas`, `RouteGraphLayout` | `PingColorTest`, `RouteGraphLayoutTest` | done |
-| GeoIP country hints | `geoip.GeoCountry` | `GeoCountryTest` | done |
-| Hop jitter/loss labels | `monitor.HopStats`, `PingColor` | `HopStatsTest`, `PingColorTest` | done |
-| SessionStore parity | `monitor.SessionStore` | `SessionStoreTest` | done |
-| Route history | `monitor.RouteHistory` | `RouteHistoryTest` | done |
-| Monitor cycle callbacks | `monitor.MonitorService` | `MonitorServiceTest` | done |
-| Verbose CLI logging | `LoggingSetup` | `LoggingSetupTest` | done |
-
-Деталі: [JAVA.md](JAVA.md).
-
----
-
-## Anti-stub checklist (PR)
-
-- [ ] Немає необґрунтованих `pass` / `return None` / `Mock` у `src/pingui/`
-- [ ] Нові модулі мають відповідні тести або запис у цій матриці
-- [ ] `docs/LIVING_SPEC.md` оновлено при зміні поведінки
-- [ ] `./pingui.sh --deploy` проходить у venv
+Фікстури trace: `java/src/test/resources/trace/`

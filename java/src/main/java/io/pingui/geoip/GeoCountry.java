@@ -60,10 +60,10 @@ public final class GeoCountry {
         private final List<PrefixEntry> prefixes;
 
         CountryLookup(List<PrefixEntry> prefixes) {
-            this.prefixes =
-                    prefixes.stream()
-                            .sorted(Comparator.comparingInt((PrefixEntry e) -> e.prefixBits).reversed())
-                            .toList();
+            this.prefixes = prefixes.stream()
+                    .sorted(Comparator.comparingInt((PrefixEntry e) -> e.prefixBits)
+                            .reversed())
+                    .toList();
         }
 
         static CountryLookup fromResource(String resourceName) {

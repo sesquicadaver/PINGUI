@@ -11,8 +11,25 @@
 - Java 21 (LTS)
 - JavaFX 21 (GUI)
 - Gradle 8.10 (Kotlin DSL)
+- Spotless + Palantir Java Format (`./gradlew spotlessCheck`)
 - SnakeYAML (конфіг)
-- JUnit 5 (тести)
+- JUnit 5 (unit-тести в `src/test/java`, `./gradlew test`)
+
+## Обмеження
+
+- **IPv4-only** для цілей і raw ICMP (`HostsConfig` validator, `RawIcmpRouteProbe` / `AF_INET`).
+- IPv6 — поза scope `main`; див. [ROADMAP.md](ROADMAP.md) фаза 7.
+
+## CLI vs YAML профіль
+
+| Поле профілю | Джерело за замовч. | CLI override |
+|--------------|-------------------|--------------|
+| `interval` | YAML активного профілю | `--interval SEC` (лише якщо передано) |
+| `max_hops` | YAML | `--max-hops N` |
+| `timeout` | YAML | `--timeout SEC` |
+| `probe` | YAML | `--probe MODE` |
+
+Реалізація: `CliProfileOverrides` + `PinguiApplication.parseOptions()`; merge у `MainController.applyCliOverridesToActiveProfile()`.
 
 ## Probe-шар
 
@@ -26,18 +43,34 @@ Python використовує scapy + raw ICMP. Java підтримує два
 
 CLI: `--probe auto|process|raw` (default: `auto`).
 
+> **Продуктивність:** на **Windows** subprocess trace через `tracert` на порядки повільніший за Linux `traceroute` (`-q 1`). Для production-моніторингу рекомендується **Linux**; на Windows — **Ping only** або великий `interval`. Див. [DEPLOYMENT.md](DEPLOYMENT.md#рекомендація-щодо-ос).
+
 ### ProcessRouteProbe (subprocess)
 
-| ОС | Команда |
-|----|---------|
-| Linux / macOS | `traceroute -n -w SEC -m N -q 1 HOST` |
-| Windows | `tracert -h N -w MS HOST` |
+| ОС | Builder | Команда |
+|----|---------|---------|
+| Linux | `LinuxTracerouteCommand` | `traceroute -n -w SEC -m N -q 1 HOST` (GNU inetutils: без `-n`) |
+| macOS | `MacTracerouteCommand` | те саме; бінарник `/usr/sbin/traceroute` якщо є |
+| Windows | `WindowsTracertCommand` | `tracert -d -h N -w MS HOST` (3 probe/hop, MS ≥ 4000) — **повільно** |
+
+Парсери: `UnixTraceOutputParser`, `WindowsTraceOutputParser`. Фабрика: `TraceCommandFactory`.
+
+#### Обмеження парсера (known limitations)
+
+| Область | Поведінка |
+|---------|-----------|
+| **IPv6 trace output** | Не підтримується; рядки IPv6 ігноруються або не матчаться regex |
+| **ASN / IGP labels** | Не парсяться; hop IP береться з першого IPv4-токена або `[IP]` |
+| **Unix hostname hops** | Token після номера hop зберігається як «IP» (може бути hostname) |
+| **Windows локалізація** | Timeout: `timed out`, `timeout`, `перевищ…`; RTT: `ms` / `мс`, `<1 ms` → 0.5 |
+| **GNU inetutils** | Flavor без `-n`; `-n` дає exit 64 — детекція через `traceroute --version` |
+| **Mixed trace formats** | Лише класичний vertical traceroute/tracert; MTR/JSON — поза scope |
 
 ### RawIcmpRouteProbe (JNA, Linux)
 
 Інкрементальний TTL 1..N через raw ICMP socket (parity з Python `trace_route`).
 
-Потрібно: `sudo setcap cap_net_raw+ep` на JDK binary або запуск від root (аналог `./pingui.sh --deploy` для Python).
+Потрібно: `sudo setcap cap_net_raw+ep` на JDK binary або запуск від root.
 
 ## Monitor-шар
 
@@ -54,6 +87,7 @@ CLI: `--probe auto|process|raw` (default: `auto`).
 
 `MainController` (JavaFX):
 
+- Меню **Про** / **Довідка** (F1) — `AppMenuDialogs`
 - Вибір **профілю трасування** (ComboBox + новий/видалити); усі профілі в одному YAML
 - Чекбокс **«Експерт»** → кнопка **Exten.** на рядку хоста → `PingExpertDialog` (каталог з `pingMan.txt`, без `-c/-w/-W/-i` тощо)
 - `ListView<HostItem>` + CheckBox у комірці
@@ -94,12 +128,12 @@ Legacy автоматично мігрується в профіль `default`. 
 
 Файл за замовч.: `java/config/hosts.example.yaml` (робоча директорія — `java/`).
 
-## Збірка та CI
+## Збірка
 
 **Linux / macOS**
 
 ```bash
-cd java && ./gradlew test build
+cd java && ./gradlew build
 cd java && ./pingui-java.sh --package    # jpackage (.deb / .dmg)
 ```
 
@@ -107,11 +141,11 @@ cd java && ./pingui-java.sh --package    # jpackage (.deb / .dmg)
 
 ```bat
 cd java
-gradlew.bat test build
+gradlew.bat build
 pingui-java.bat --package    REM .msi
 ```
 
-GitHub Actions: `.github/workflows/java-ci.yml` — matrix **ubuntu / windows / macos**, `./gradlew test jacocoTestCoverageVerification`.
+Тести та CI — гілка **`beta`**.
 
 ## Матриця parity з MVP
 
@@ -130,4 +164,4 @@ GitHub Actions: `.github/workflows/java-ci.yml` — matrix **ubuntu / windows / 
 
 ## Майбутнє
 
-- Спільний CI matrix з Python edition
+Див. backlog у гілці **`beta`**.

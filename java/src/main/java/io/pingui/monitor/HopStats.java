@@ -34,7 +34,8 @@ public final class HopStats {
         if (samples.size() < 2) {
             return null;
         }
-        double mean = samples.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+        double mean =
+                samples.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
         double variance =
                 samples.stream().mapToDouble(v -> (v - mean) * (v - mean)).sum() / samples.size();
         return Math.sqrt(variance);

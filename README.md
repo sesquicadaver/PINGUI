@@ -1,12 +1,16 @@
 # PINGUI
 
+![Java CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/java.yml/badge.svg)
+
 Крос-платформний монітор маршрутів і RTT до 10 цілей одночасно (Java 21 + JavaFX).
 Дані зберігаються **лише в RAM** протягом сесії.
 
+> **Рекомендація щодо ОС:** для щоденної роботи обирайте **Linux** — найшвидше трасування та повний набір функцій (Expert ping, raw ICMP). **Windows** підтримується, але через повільний `tracert` (3 probe на hop, секунди очікування на кожен) один повний trace до 20 hop може тривати **хвилини**; для Windows краще режим **Ping only** або `interval` ≥ 30 с. Деталі: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#рекомендація-щодо-ос).
+
 | Гілка | Зміст |
 |-------|--------|
-| **`main`** | Java-редакція + документація для запуску |
-| **`beta`** | Python-редакція, тести, CI, специфікації, roadmap |
+| **`main`** | Java-редакція + документація + unit-тести + CI |
+| **`beta`** | Python + Java, pytest, JaCoCo, повний CI, специфікації |
 
 ## Швидкий старт
 
@@ -21,6 +25,8 @@ chmod +x pingui-java.sh gradlew
 ```
 
 **Windows**
+
+> ⚠ **Не найкращий вибір для інтенсивного моніторингу.** `tracert` значно повільніший за Linux `traceroute` (3 probe/hop, довгі таймаути). Перший trace може тривати 1–4 хв на ціль; Expert ping недоступний. Для Windows: **Ping only** на хості або `interval: 30`+ у профілі. Див. [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#рекомендація-щодо-ос).
 
 Потрібен **JDK 21**: [Eclipse Temurin 21 (Windows x64)](https://adoptium.net/temurin/releases/?version=21) — під час інсталяції увімкніть **Add to PATH** та **Set JAVA_HOME**.
 
@@ -40,6 +46,7 @@ pingui-java.bat
 - **Expert ping** (Linux, iputils) — діалог **Exten.** на хост
 - Трасування через `traceroute` / `tracert` (без `CAP_NET_RAW` за замовч.)
 - Опційно на Linux: raw ICMP (`probe: auto|raw` + `cap_net_raw`)
+- **IPv4-only:** IPv6-літерали та IPv6 trace не підтримуються (див. [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md))
 
 ## CLI
 
@@ -51,26 +58,27 @@ cd java
 | Параметр | Опис |
 |----------|------|
 | `--config` | YAML з 0–10 цілями (v2 `profiles:` або legacy `hosts:`) |
-| `--interval` | Інтервал опитування (с) |
-| `--max-hops` | Максимум hop |
-| `--timeout` | Таймаут probe (с) |
-| `--probe` | `auto`, `process`, `raw` (Linux) |
+| `--interval` | Перезаписати `interval` активного профілю **лише якщо передано** |
+| `--max-hops` | Перезаписати `max_hops` активного профілю **лише якщо передано** |
+| `--timeout` | Перезаписати `timeout` активного профілю **лише якщо передано** |
+| `--probe` | Перезаписати `probe` активного профілю **лише якщо передано** |
 | `--geoip-hints` | Offline CIDR→країна |
 | `--no-geoip` | Вимкнути країну в підписах |
 | `--verbose` | Debug-лог |
 
-## Структура репозиторію (`main`)
+Без `--interval` / `--max-hops` / `--timeout` / `--probe` значення беруться з YAML профілю.
+
+## Структура репозиторію
+
+**`main`:** Java + docs. **`beta`:** + `src/pingui/` (Python), `tests/`, `pyproject.toml`, `pingui.sh`.
 
 ```
 PINGUI/
 ├── java/                 # Java edition (JavaFX)
-│   ├── pingui-java.sh    # Linux / macOS launcher
-│   ├── pingui-java.bat   # Windows launcher
-│   ├── build.gradle.kts
-│   └── src/main/java/io/pingui/
-├── docs/                 # Документація
-├── CHANGELOG.md
-└── ISSUES.txt
+├── src/pingui/           # Python edition (beta)
+├── tests/                # pytest (beta)
+├── docs/
+└── CHANGELOG.md
 ```
 
 ## Документація
@@ -82,6 +90,7 @@ PINGUI/
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Розгортання |
 | [docs/JAVA.md](docs/JAVA.md) | Архітектура Java-редакції |
 | [docs/README.md](docs/README.md) | Індекс документації |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | План виправлень |
 | [CHANGELOG.md](CHANGELOG.md) | Історія змін |
 
-Розробка, тести та Python-редакція — гілка **`beta`**.
+Python: `./pingui.sh` на гілці **`beta`** (venv). Java: `cd java && ./gradlew check`.

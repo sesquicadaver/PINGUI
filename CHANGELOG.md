@@ -7,16 +7,32 @@
 
 ### Changed
 
-- **Гілки:** `main` — лише Java-редакція та документація для запуску; `beta` — Python, тести, CI, специфікації.
+- **Гілки:** sync `main` → `beta` — Java roadmap sprints 1–9 (UI split, probe refactor, Checkstyle, build metadata).
+- **Java probe:** `ProcessRouteProbe` розділено — `TraceCommandBuilder`, `UnixTraceOutputParser`, `WindowsTraceOutputParser`.
+- **Build:** Checkstyle (UnusedImports, RedundantImport) у `./gradlew check` (M-023).
+- **Build:** About показує версію + git sha; `generateBuildProperties`; `layerCheck`.
+- **IPv6:** SPIKE → wontfix; явна помилка для IPv6 literal (B-050/B-053).
+- **CLI:** M-014 unit-тест — YAML `interval: 30` без `--interval`.
+- **Java UI:** `MainController` розділено на координатори (~715 → ~387 рядків).
+- **Build:** Spotless + `./gradlew check`.
+- **Java CLI:** `CliProfileOverrides` — merge лише переданих прапорів.
+- **Docs:** IPv4-only, ROADMAP, Windows warning, CHECKLIST smoke sections.
+- **Гілки:** `main` — Java + docs + CI; `beta` — Python + Java, pytest, JaCoCo.
 
 ### Added
 
+- **CI:** GitHub Actions [Java CI](.github/workflows/java.yml).
+- **Tests:** JUnit 5 contract tests + beta JaCoCo coverage gate.
+- **Docs:** [docs/LIVING_SPEC.md](docs/LIVING_SPEC.md), [docs/SPIKE_IPV6.md](docs/SPIKE_IPV6.md).
+- **Java UI:** меню **Про** та **Довідка** (F1).
 - **Java UI:** чекбокс «Ping only» на кожному хості — лише ping до цілі без traceroute (`ping_only` у YAML).
 - **Java UI:** кнопка «Exten.» лишається видимою в ping-only при увімкненому «Експерт»; без чекбокса «ланцюжок».
 - **Docs:** [docs/CHECKLIST.md](docs/CHECKLIST.md) — checklist розгортання Linux / Windows / macOS.
 
 ### Fixed
 
+- **Java:** прибрано дубльований import у `RawIcmpRouteProbe`.
+- **Java CLI:** старт без прапорів більше не затирає YAML defaults.
 - **Java UI:** після створення/видалення профілю — чорний фрейм (sizeToScene не зменшує вікно на Linux; reload без applyViewMode).
 - **Java (Windows):** парсер `tracert` — `<1 ms`, `hostname [IP]`, System32 fallback, `-d`, charset ОС.
 - **Java (Windows):** виправлено timeout/deadlock `tracert` (drain stdout, `-w` ≥4000 ms, довший process wait).

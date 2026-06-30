@@ -63,8 +63,7 @@ class RouteGraphLayoutTest {
 
     @Test
     void hopBoxesUseUniformColumnWidth() {
-        List<HopNode> route =
-                List.of(new HopNode(1, "8.8.8.8", 5.0, false), new HopNode(2, "1.1.1.1", 5.0, false));
+        List<HopNode> route = List.of(new HopNode(1, "8.8.8.8", 5.0, false), new HopNode(2, "1.1.1.1", 5.0, false));
         GraphScene scene = RouteGraphLayout.buildScene(route, List.of(), ip -> 5.0);
         List<GraphNode> active =
                 scene.nodes().stream().filter(n -> n.id().startsWith("act_")).toList();

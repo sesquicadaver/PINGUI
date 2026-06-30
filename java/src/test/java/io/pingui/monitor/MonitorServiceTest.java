@@ -16,11 +16,10 @@ import org.junit.jupiter.api.Test;
 class MonitorServiceTest {
     @Test
     void emitsSnapshotWhenEnabled() throws Exception {
-        RouteSnapshot snapshot =
-                new RouteSnapshot(
-                        "8.8.8.8",
-                        "8.8.8.8",
-                        List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "8.8.8.8", 10.0, false)));
+        RouteSnapshot snapshot = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "8.8.8.8", 10.0, false)));
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<String> hostRef = new AtomicReference<>();
         MonitorService service = new MonitorService(0.05, 20, 0.5, new FakeRouteProbe(snapshot));
@@ -69,8 +68,11 @@ class MonitorServiceTest {
 
     @Test
     void hostManagementGuards() {
-        MonitorService service = new MonitorService(1.0, 20, 0.5, new FakeRouteProbe(
-                new RouteSnapshot("a", "1.1.1.1", List.of(new HopNode(1, "1.1.1.1", 1.0, false)))));
+        MonitorService service = new MonitorService(
+                1.0,
+                20,
+                0.5,
+                new FakeRouteProbe(new RouteSnapshot("a", "1.1.1.1", List.of(new HopNode(1, "1.1.1.1", 1.0, false)))));
         service.addHost("a", false);
         assertEquals(List.of("a"), service.hosts());
         assertEquals(List.of(), service.enabledHosts());
@@ -86,14 +88,10 @@ class MonitorServiceTest {
 
     @Test
     void emitsSnapshotsForMultipleEnabledHosts() throws Exception {
-        RouteSnapshot snapA =
-                new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
-        RouteSnapshot snapB =
-                new RouteSnapshot("1.1.1.1", "1.1.1.1", List.of(new HopNode(1, "10.0.0.2", 6.0, false)));
+        RouteSnapshot snapA = new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
+        RouteSnapshot snapB = new RouteSnapshot("1.1.1.1", "1.1.1.1", List.of(new HopNode(1, "10.0.0.2", 6.0, false)));
         CountDownLatch latch = new CountDownLatch(2);
-        RouteProbe probe =
-                (targetHost, maxHops, timeoutSeconds) ->
-                        targetHost.equals("8.8.8.8") ? snapA : snapB;
+        RouteProbe probe = (targetHost, maxHops, timeoutSeconds) -> targetHost.equals("8.8.8.8") ? snapA : snapB;
         MonitorService service = new MonitorService(0.05, 20, 0.5, probe);
         service.setListener(new MonitorService.Listener() {
             @Override
@@ -116,25 +114,21 @@ class MonitorServiceTest {
     @Test
     void dropsStaleCallbackAfterHostRemoved() throws Exception {
         RouteSnapshot snapshot =
-                new RouteSnapshot(
-                        "rezka.ag",
-                        "1.1.1.1",
-                        List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
+                new RouteSnapshot("rezka.ag", "1.1.1.1", List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
         CountDownLatch probeStarted = new CountDownLatch(1);
         CountDownLatch releaseProbe = new CountDownLatch(1);
-        RouteProbe slowProbe =
-                (targetHost, maxHops, timeoutSeconds) -> {
-                    probeStarted.countDown();
-                    try {
-                        if (!releaseProbe.await(3, TimeUnit.SECONDS)) {
-                            throw new java.io.IOException("probe wait timed out");
-                        }
-                    } catch (InterruptedException ex) {
-                        Thread.currentThread().interrupt();
-                        throw new java.io.IOException("probe interrupted", ex);
-                    }
-                    return snapshot;
-                };
+        RouteProbe slowProbe = (targetHost, maxHops, timeoutSeconds) -> {
+            probeStarted.countDown();
+            try {
+                if (!releaseProbe.await(3, TimeUnit.SECONDS)) {
+                    throw new java.io.IOException("probe wait timed out");
+                }
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new java.io.IOException("probe interrupted", ex);
+            }
+            return snapshot;
+        };
         AtomicInteger received = new AtomicInteger();
         MonitorService service = new MonitorService(0.05, 20, 0.5, slowProbe);
         service.setListener(new MonitorService.Listener() {

@@ -72,13 +72,11 @@ public final class MonitorService implements AutoCloseable {
         this.maxHops = maxHops;
         this.timeoutSeconds = timeoutSeconds;
         this.poller = new RoutePoller(probe);
-        this.probePool = Executors.newFixedThreadPool(
-                MAX_PARALLEL_PROBES,
-                r -> {
-                    Thread thread = new Thread(r, "pingui-probe");
-                    thread.setDaemon(true);
-                    return thread;
-                });
+        this.probePool = Executors.newFixedThreadPool(MAX_PARALLEL_PROBES, r -> {
+            Thread thread = new Thread(r, "pingui-probe");
+            thread.setDaemon(true);
+            return thread;
+        });
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "pingui-monitor");
             thread.setDaemon(true);
@@ -107,7 +105,9 @@ public final class MonitorService implements AutoCloseable {
 
     public List<String> enabledHosts() {
         synchronized (lock) {
-            return hosts.stream().filter(h -> Boolean.TRUE.equals(enabled.get(h))).toList();
+            return hosts.stream()
+                    .filter(h -> Boolean.TRUE.equals(enabled.get(h)))
+                    .toList();
         }
     }
 
@@ -193,7 +193,9 @@ public final class MonitorService implements AutoCloseable {
         }
         List<String> active;
         synchronized (lock) {
-            active = hosts.stream().filter(h -> Boolean.TRUE.equals(enabled.get(h))).toList();
+            active = hosts.stream()
+                    .filter(h -> Boolean.TRUE.equals(enabled.get(h)))
+                    .toList();
         }
         if (active.isEmpty()) {
             return;
@@ -240,14 +242,9 @@ public final class MonitorService implements AutoCloseable {
             previousIps = List.copyOf(lastRoutes.getOrDefault(host, List.of()));
             hostPingOnly = Boolean.TRUE.equals(pingOnly.get(host));
         }
-        HostPollOutcome outcome =
-                hostPingOnly
-                        ? poller.pollHostPingOnly(
-                                host,
-                                previousIps,
-                                timeoutSeconds,
-                                resolveExpert(host))
-                        : poller.pollHostRoute(host, previousIps, maxHops, timeoutSeconds);
+        HostPollOutcome outcome = hostPingOnly
+                ? poller.pollHostPingOnly(host, previousIps, timeoutSeconds, resolveExpert(host))
+                : poller.pollHostRoute(host, previousIps, maxHops, timeoutSeconds);
         Listener current = listener;
         if (current == null || !isKnownHost(host)) {
             return;

@@ -19,13 +19,15 @@ public final class HostsConfig {
     public static final int MIN_HOSTS = 0;
     public static final int MAX_HOSTS = 10;
 
-    private static final Pattern HOST_PATTERN =
-            Pattern.compile("^[a-zA-Z0-9.-]+$");
+    private static final Pattern HOST_PATTERN = Pattern.compile("^[a-zA-Z0-9.-]+$");
 
     private HostsConfig() {}
 
     public static String normalizeHostEntry(String entry) {
         String host = entry.strip();
+        if (host.contains(":")) {
+            throw new ConfigError("IPv6 addresses are not supported (IPv4-only): '" + entry + "'");
+        }
         if (!isValidHost(host)) {
             throw new ConfigError("Invalid host entry: '" + entry + "'");
         }
@@ -60,15 +62,14 @@ public final class HostsConfig {
         }
         if (hosts.size() < MIN_HOSTS || hosts.size() > MAX_HOSTS) {
             throw new ConfigError(
-                    "hosts count must be between " + MIN_HOSTS + " and " + MAX_HOSTS
-                            + ", got "
-                            + hosts.size());
+                    "hosts count must be between " + MIN_HOSTS + " and " + MAX_HOSTS + ", got " + hosts.size());
         }
         List<String> normalized = new ArrayList<>();
         Set<String> seen = new HashSet<>();
         for (Object entry : hosts) {
             if (!(entry instanceof String hostStr)) {
-                throw new ConfigError("Each host must be a string, got " + entry.getClass().getSimpleName());
+                throw new ConfigError(
+                        "Each host must be a string, got " + entry.getClass().getSimpleName());
             }
             String host = normalizeHostEntry(hostStr);
             String key = host.toLowerCase(Locale.ROOT);
@@ -83,9 +84,7 @@ public final class HostsConfig {
     public static void save(Path path, List<String> hosts) throws IOException {
         if (hosts.size() < MIN_HOSTS || hosts.size() > MAX_HOSTS) {
             throw new ConfigError(
-                    "hosts count must be between " + MIN_HOSTS + " and " + MAX_HOSTS
-                            + ", got "
-                            + hosts.size());
+                    "hosts count must be between " + MIN_HOSTS + " and " + MAX_HOSTS + ", got " + hosts.size());
         }
         List<String> normalized = new ArrayList<>();
         Set<String> seen = new HashSet<>();

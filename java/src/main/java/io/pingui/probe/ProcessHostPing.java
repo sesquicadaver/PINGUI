@@ -19,8 +19,7 @@ import java.util.regex.Pattern;
 public final class ProcessHostPing {
     private static final Pattern RTT_EXACT_MS =
             Pattern.compile("time=(\\d+(?:\\.\\d+)?)\\s*(?:ms|мс)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern RTT_SUB_MS =
-            Pattern.compile("time<\\s*1\\s*(?:ms|мс)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern RTT_SUB_MS = Pattern.compile("time<\\s*1\\s*(?:ms|мс)", Pattern.CASE_INSENSITIVE);
 
     private final boolean windows =
             System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win");

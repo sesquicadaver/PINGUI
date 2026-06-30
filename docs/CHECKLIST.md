@@ -72,6 +72,8 @@ ls build/dist/*.deb
 
 ## Windows 11+
 
+> ⚠ **Попередження:** Windows — **не рекомендовано** для інтенсивного моніторингу маршруту. `tracert` виконує 3 probe на кожен hop з тривалими таймаутами; один trace до 20 hop може займати **1–4+ хвилини**. Expert ping недоступний. Для практичної роботи: **Ping only** у GUI або `ping_only: true` / `interval: 30` у YAML. Рекомендована платформа — **Linux**. [DEPLOYMENT.md#рекомендація-щодо-ос](DEPLOYMENT.md#рекомендація-щодо-ос)
+
 ### Preflight
 
 - [ ] Windows 11 x64
@@ -99,7 +101,7 @@ cd C:\path\to\PINGUI\java
 pingui-java.bat --build
 ```
 
-`pingui-java.bat` також шукає JDK у `Program Files\Eclipse Adoptium`, `Program Files\Java`, `Program Files\Microsoft`.
+`pingui-java.bat` лише передає `JAVA_HOME`/`PINGUI_JAVA_HOME` у `gradlew.bat` (без пошуку JDK у cmd — старий пошук ламався на шляхах з пробілами).
 
 ### Збірка PINGUI
 
@@ -116,6 +118,8 @@ pingui-java.bat
 ### Smoke-test
 
 - [ ] Ціль `8.8.8.8`, чекбокс увімкнено
+- [ ] **Ping only** ON → RTT за кілька секунд (без очікування повного trace)
+- [ ] Або trace OFF + ping only OFF: перший trace — **до 4 хв** (це нормально для `tracert`)
 - [ ] Simple / Extended — метрики та граф
 - [ ] YAML save/load
 - [ ] «Експерт» **disabled**
@@ -167,6 +171,59 @@ chmod +x pingui-java.sh gradlew
 5. Зберегти конфіг → перезапуск
 6. **Linux only:** Expert → Exten. → `-4 -s 128`
 
+---
+
+## § GUI smoke (B-035, після UI-split)
+
+Виконати на **Linux** (регресія «чорного фрейму» після profile CRUD):
+
+- [ ] **Про** (меню) — діалог версії відкривається без зависання
+- [ ] **F1 / Довідка** — діалог довідки відкривається
+- [ ] **Новий профіль** → ім'я `test` → список хостів порожній, вікно без чорних смуг
+- [ ] **Видалити профіль** (повернення до default) → Simple mode, вікно зменшується коректно (не лишається oversized frame)
+- [ ] **Розширений** → граф + лог; **Простий** → знову compact layout
+- [ ] Додати `8.8.8.8` → **Зберегти** → перезапуск `./pingui-java.sh` → ціль і профіль на місці
+- [ ] Перемикання профілів у ComboBox — хости оновлюються
+
+---
+
+## § CLI interval (M-014)
+
+Перевірка, що YAML `interval` не затирається без CLI:
+
+1. У активному профілі YAML: `interval: 30.0`
+2. Запуск **без** `--interval`: `./pingui-java.sh --config /path/to/hosts.yaml`
+3. Очікування: опитування ~30 с між циклами (не ~1 с)
+
+Автоматичний контракт: `PinguiApplicationTest.m014_yamlInterval30_noCliOverride_preservesInterval`.
+
+---
+
+## § Release / jpackage smoke (B-061)
+
+Після bump версії або перед тегом release:
+
+- [ ] `cd java && ./gradlew check` — green (включно з `layerCheck`)
+- [ ] `./pingui-java.sh --build` — SUCCESS
+- [ ] `./pingui-java.sh --package` (Linux: `.deb`) — артефакт у `build/dist/`
+- [ ] Інсталятор запускається; GUI відкривається
+- [ ] **Про** — версія містить git sha (`AppInfo.versionDetail()`)
+- [ ] Smoke з § GUI smoke (B-035) на цільовій ОС
+
+---
+
+## § Docs smoke (B-062, щотижня / перед release)
+
+Перевірка відповідності README ↔ фактичний CLI:
+
+- [ ] `java/README.md` — прапорці `--config`, `--interval`, `--probe`, `--geoip-hints` збігаються з `./pingui-java.sh --help`
+- [ ] `docs/JAVA.md` — таблиця CLI vs YAML актуальна
+- [ ] `docs/DEPLOYMENT.md` — JDK 21, Windows warning, IPv4-only
+- [ ] `docs/ROADMAP.md` — закриті задачі позначені `[x]`
+- [ ] Badge CI у `README.md` — відображає останній push
+
+---
+
 ## Можливості за платформою
 
 | Функція | Linux | Windows | macOS |
@@ -175,4 +232,4 @@ chmod +x pingui-java.sh gradlew
 | Expert ping | ✅ | ❌ | ❌ |
 | Raw ICMP (`probe: raw`) | ✅ | ❌ | ❌ |
 
-Тести (`./gradlew test`) — лише на гілці **`beta`**.
+Unit-тести: `cd java && ./gradlew check` (JUnit 5 на `main`; Python-тести — гілка **`beta`**).

@@ -15,21 +15,17 @@ class ProcessRouteProbeCommandTest {
 
     @Test
     void resolveTracerouteFallsBackToPathNameOnMacWithoutSbin() {
-        assertEquals(
-                "traceroute",
-                ProcessRouteProbe.resolveTracerouteExecutable("Mac OS X", path -> false));
+        assertEquals("traceroute", ProcessRouteProbe.resolveTracerouteExecutable("Mac OS X", path -> false));
     }
 
     @Test
     void resolveTracerouteUsesPathNameOnLinux() {
-        assertEquals(
-                "traceroute",
-                ProcessRouteProbe.resolveTracerouteExecutable("Linux", path -> true));
+        assertEquals("traceroute", ProcessRouteProbe.resolveTracerouteExecutable("Linux", path -> true));
     }
 
     @Test
     void buildCommandUsesResolvedTracerouteOnUnix() {
-        ProcessRouteProbe probe = new ProcessRouteProbe(ProcessRouteProbe.TracerouteFlavor.BSD);
+        ProcessRouteProbe probe = new ProcessRouteProbe(TracerouteFlavor.BSD);
         assertEquals("traceroute", probe.buildCommand("8.8.8.8", 20, 0.5).get(0));
     }
 
@@ -46,15 +42,13 @@ class ProcessRouteProbeCommandTest {
 
     @Test
     void resolveTracertUsesSystem32WhenPresent() {
-        String resolved =
-                ProcessRouteProbe.resolveTracertExecutable(
-                        "C:\\Windows",
-                        path -> path.endsWith(Path.of("System32", "tracert.exe")));
+        String resolved = ProcessRouteProbe.resolveTracertExecutable(
+                "C:\\Windows", path -> path.endsWith(Path.of("System32", "tracert.exe")));
         assertEquals(Path.of("C:\\Windows", "System32", "tracert.exe").toString(), resolved);
     }
 
     @Test
     void resolveTracertFallsBackToPathName() {
-        assertEquals("tracert", ProcessRouteProbe.resolveTracertExecutable(path -> false));
+        assertEquals("tracert", ProcessRouteProbe.resolveTracertExecutable(null, path -> false));
     }
 }

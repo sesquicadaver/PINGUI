@@ -6,45 +6,107 @@ import java.util.Set;
 /** Expert ping options from pingMan.txt; excludes count/time-limit flags. */
 public final class PingOptionCatalog {
     public enum Kind {
+        /** On/off flag (-4, -n, …). */
         FLAG,
+        /** Option with argument (-s, -M, …). */
         VALUE
     }
 
-    public record PingOption(String flag, Kind kind, String description, String valueHint) {}
+    /** How a VALUE option is edited and validated. */
+    public enum ValueKind {
+        INT_RANGE,
+        CHOICES,
+        HEX_PATTERN,
+        HEX_FLOW_LABEL,
+        TIMESTAMP,
+        TEXT
+    }
 
-    private static final Set<String> EXCLUDED =
-            Set.of("-c", "-w", "-W", "-i", "-f", "-l", "-A", "-h", "-V", "-N");
+    public record IntRange(long min, long max) {}
 
-    private static final List<PingOption> OPTIONS =
-            List.of(
-                    new PingOption("-4", Kind.FLAG, "Лише IPv4", null),
-                    new PingOption("-6", Kind.FLAG, "Лише IPv6", null),
-                    new PingOption("-a", Kind.FLAG, "Звуковий ping", null),
-                    new PingOption("-b", Kind.FLAG, "Broadcast ping", null),
-                    new PingOption("-B", Kind.FLAG, "Не змінювати source address", null),
-                    new PingOption("-C", Kind.FLAG, "connect() на сокеті", null),
-                    new PingOption("-d", Kind.FLAG, "SO_DEBUG на сокеті", null),
-                    new PingOption("-D", Kind.FLAG, "Timestamp перед кожним рядком", null),
-                    new PingOption("-e", Kind.VALUE, "ICMP identification field", "0-65535"),
-                    new PingOption("-F", Kind.VALUE, "IPv6 flow label (hex)", "00000-fffff"),
-                    new PingOption("-H", Kind.FLAG, "DNS reverse для виводу", null),
-                    new PingOption("-I", Kind.VALUE, "Інтерфейс / source / VRF", "eth0 або адреса"),
-                    new PingOption("-L", Kind.FLAG, "Приглушити loopback multicast", null),
-                    new PingOption("-m", Kind.VALUE, "SO_MARK для пакетів", "mark"),
-                    new PingOption("-M", Kind.VALUE, "Path MTU Discovery", "do|want|probe|dont"),
-                    new PingOption("-n", Kind.FLAG, "Лише числові адреси", null),
-                    new PingOption("-O", Kind.FLAG, "Звіт про неотримані відповіді", null),
-                    new PingOption("-p", Kind.VALUE, "Pad pattern (hex)", "ff або ff00"),
-                    new PingOption("-q", Kind.FLAG, "Quiet output", null),
-                    new PingOption("-Q", Kind.VALUE, "QoS / TOS bits", "0-255 або hex"),
-                    new PingOption("-r", Kind.FLAG, "Bypass routing table", null),
-                    new PingOption("-R", Kind.FLAG, "Record route (RECORD_ROUTE)", null),
-                    new PingOption("-s", Kind.VALUE, "Розмір data bytes", "56"),
-                    new PingOption("-S", Kind.VALUE, "Socket sndbuf", "bytes"),
-                    new PingOption("-t", Kind.VALUE, "IP TTL", "1-255"),
-                    new PingOption("-T", Kind.VALUE, "IP timestamp option", "tsonly|tsandaddr|tsprespec …"),
-                    new PingOption("-U", Kind.FLAG, "User-to-user latency", null),
-                    new PingOption("-v", Kind.FLAG, "Verbose output", null));
+    public record ValueSpec(ValueKind kind, IntRange intRange, List<String> choices, String hint) {
+        public ValueSpec {
+            choices = choices != null ? List.copyOf(choices) : List.of();
+        }
+
+        public static ValueSpec intRange(long min, long max, String hint) {
+            return new ValueSpec(ValueKind.INT_RANGE, new IntRange(min, max), List.of(), hint);
+        }
+
+        public static ValueSpec choices(List<String> values) {
+            return new ValueSpec(ValueKind.CHOICES, null, values, null);
+        }
+
+        public static ValueSpec hexPattern(String hint) {
+            return new ValueSpec(ValueKind.HEX_PATTERN, null, List.of(), hint);
+        }
+
+        public static ValueSpec hexFlowLabel() {
+            return new ValueSpec(ValueKind.HEX_FLOW_LABEL, null, List.of(), "00000–fffff");
+        }
+
+        public static ValueSpec text(String hint) {
+            return new ValueSpec(ValueKind.TEXT, null, List.of(), hint);
+        }
+
+        public static ValueSpec timestamp() {
+            return new ValueSpec(
+                    ValueKind.TIMESTAMP, null, List.of("tsonly", "tsandaddr"), "tsonly / tsandaddr / tsprespec h1 …");
+        }
+    }
+
+    public record PingOption(String flag, Kind kind, String description, ValueSpec valueSpec) {
+        public PingOption {
+            if (kind == Kind.FLAG && valueSpec != null) {
+                throw new IllegalArgumentException("FLAG option must not have valueSpec: " + flag);
+            }
+            if (kind == Kind.VALUE && valueSpec == null) {
+                throw new IllegalArgumentException("VALUE option requires valueSpec: " + flag);
+            }
+        }
+
+        public static PingOption flag(String flag, String description) {
+            return new PingOption(flag, Kind.FLAG, description, null);
+        }
+
+        public static PingOption value(String flag, String description, ValueSpec spec) {
+            return new PingOption(flag, Kind.VALUE, description, spec);
+        }
+    }
+
+    private static final Set<String> EXCLUDED = Set.of("-c", "-w", "-W", "-i", "-f", "-l", "-A", "-h", "-V", "-N");
+
+    private static final List<String> PMTUDISC = List.of("do", "want", "probe", "dont");
+
+    private static final List<PingOption> OPTIONS = List.of(
+            PingOption.flag("-4", "Лише IPv4"),
+            PingOption.flag("-6", "Лише IPv6"),
+            PingOption.flag("-a", "Звуковий ping"),
+            PingOption.flag("-b", "Broadcast ping"),
+            PingOption.flag("-B", "Не змінювати source address"),
+            PingOption.flag("-C", "connect() на сокеті"),
+            PingOption.flag("-d", "SO_DEBUG на сокеті"),
+            PingOption.flag("-D", "Timestamp перед кожним рядком"),
+            PingOption.value("-e", "ICMP identification field", ValueSpec.intRange(0, 65535, "0–65535")),
+            PingOption.value("-F", "IPv6 flow label (hex)", ValueSpec.hexFlowLabel()),
+            PingOption.flag("-H", "DNS reverse для виводу"),
+            PingOption.value("-I", "Інтерфейс / source / VRF", ValueSpec.text("eth0 або адреса")),
+            PingOption.flag("-L", "Приглушити loopback multicast"),
+            PingOption.value("-m", "SO_MARK для пакетів", ValueSpec.intRange(0, 4294967295L, "0–4294967295")),
+            PingOption.value("-M", "Path MTU Discovery", ValueSpec.choices(PMTUDISC)),
+            PingOption.flag("-n", "Лише числові адреси"),
+            PingOption.flag("-O", "Звіт про неотримані відповіді"),
+            PingOption.value("-p", "Pad pattern (hex)", ValueSpec.hexPattern("до 16 байт (hex)")),
+            PingOption.flag("-q", "Quiet output"),
+            PingOption.value("-Q", "QoS / TOS bits", ValueSpec.intRange(0, 255, "0–255 або 0x..")),
+            PingOption.flag("-r", "Bypass routing table"),
+            PingOption.flag("-R", "Record route (RECORD_ROUTE)"),
+            PingOption.value("-s", "Розмір data bytes", ValueSpec.intRange(0, 65507, "0–65507")),
+            PingOption.value("-S", "Socket sndbuf", ValueSpec.intRange(0, 2147483647L, "≥ 0")),
+            PingOption.value("-t", "IP TTL", ValueSpec.intRange(1, 255, "1–255")),
+            PingOption.value("-T", "IP timestamp option", ValueSpec.timestamp()),
+            PingOption.flag("-U", "User-to-user latency"),
+            PingOption.flag("-v", "Verbose output"));
 
     private PingOptionCatalog() {}
 

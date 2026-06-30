@@ -49,10 +49,7 @@ public final class GraphCanvas extends Region {
         scheduleRedraw();
     }
 
-    public void renderRoute(
-            List<HopNode> route,
-            Function<String, Double> avgPingFn,
-            List<HopNode> previousRoute) {
+    public void renderRoute(List<HopNode> route, Function<String, Double> avgPingFn, List<HopNode> previousRoute) {
         renderRoute(route, avgPingFn, previousRoute, hop -> null);
     }
 
@@ -147,12 +144,7 @@ public final class GraphCanvas extends Region {
     }
 
     private static void drawEdge(
-            GraphicsContext gc,
-            GraphNode src,
-            GraphNode dst,
-            boolean inactive,
-            double width,
-            double height) {
+            GraphicsContext gc, GraphNode src, GraphNode dst, boolean inactive, double width, double height) {
         double x1 = src.x() * width;
         double y1 = (src.y() - src.height() / 2) * height;
         double x2 = dst.x() * width;

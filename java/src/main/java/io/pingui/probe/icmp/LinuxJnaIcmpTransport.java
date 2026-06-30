@@ -25,11 +25,8 @@ public final class LinuxJnaIcmpTransport implements IcmpProbeTransport {
             throw new IOException("Raw ICMP is only supported on Linux");
         }
         try {
-            int fd =
-                    LinuxCLibrary.INSTANCE.socket(
-                            LinuxSocketConstants.AF_INET,
-                            LinuxSocketConstants.SOCK_RAW,
-                            LinuxSocketConstants.IPPROTO_ICMP);
+            int fd = LinuxCLibrary.INSTANCE.socket(
+                    LinuxSocketConstants.AF_INET, LinuxSocketConstants.SOCK_RAW, LinuxSocketConstants.IPPROTO_ICMP);
             return new LinuxJnaIcmpTransport(fd, NEXT_ID.incrementAndGet() & 0xffff);
         } catch (LastErrorException ex) {
             throw new IOException("Cannot open raw ICMP socket (need cap_net_raw?): " + ex.getMessage(), ex);
@@ -58,13 +55,8 @@ public final class LinuxJnaIcmpTransport implements IcmpProbeTransport {
     private void setTtl(int ttl) throws IOException {
         try (Memory ttlMem = new Memory(4)) {
             ttlMem.setInt(0, ttl);
-            int rc =
-                    LinuxCLibrary.INSTANCE.setsockopt(
-                            socketFd,
-                            LinuxSocketConstants.IPPROTO_IP,
-                            LinuxSocketConstants.IP_TTL,
-                            ttlMem,
-                            4);
+            int rc = LinuxCLibrary.INSTANCE.setsockopt(
+                    socketFd, LinuxSocketConstants.IPPROTO_IP, LinuxSocketConstants.IP_TTL, ttlMem, 4);
             if (rc != 0) {
                 throw new IOException("setsockopt IP_TTL failed for ttl=" + ttl);
             }
@@ -81,13 +73,12 @@ public final class LinuxJnaIcmpTransport implements IcmpProbeTransport {
         tv.tvUsec = usec;
         tv.write();
         try {
-            int rc =
-                    LinuxCLibrary.INSTANCE.setsockopt(
-                            socketFd,
-                            LinuxSocketConstants.SOL_SOCKET,
-                            LinuxSocketConstants.SO_RCVTIMEO,
-                            tv.getPointer(),
-                            tv.size());
+            int rc = LinuxCLibrary.INSTANCE.setsockopt(
+                    socketFd,
+                    LinuxSocketConstants.SOL_SOCKET,
+                    LinuxSocketConstants.SO_RCVTIMEO,
+                    tv.getPointer(),
+                    tv.size());
             if (rc != 0) {
                 throw new IOException("setsockopt SO_RCVTIMEO failed");
             }
@@ -103,8 +94,7 @@ public final class LinuxJnaIcmpTransport implements IcmpProbeTransport {
         try (Memory payload = new Memory(request.length)) {
             payload.write(0, request, 0, request.length);
             long sent =
-                    LinuxCLibrary.INSTANCE.sendto(
-                            socketFd, payload, request.length, 0, addr.getPointer(), addr.size());
+                    LinuxCLibrary.INSTANCE.sendto(socketFd, payload, request.length, 0, addr.getPointer(), addr.size());
             if (sent != request.length) {
                 throw new IOException("ICMP sendto incomplete: " + sent + " bytes");
             }
@@ -118,8 +108,7 @@ public final class LinuxJnaIcmpTransport implements IcmpProbeTransport {
         try (Memory buffer = new Memory(bufferSize)) {
             try {
                 long received =
-                        LinuxCLibrary.INSTANCE.recvfrom(
-                                socketFd, buffer, bufferSize, 0, Pointer.NULL, Pointer.NULL);
+                        LinuxCLibrary.INSTANCE.recvfrom(socketFd, buffer, bufferSize, 0, Pointer.NULL, Pointer.NULL);
                 if (received <= 0) {
                     return null;
                 }

@@ -63,10 +63,7 @@ public final class IcmpPacket {
     private static String formatIpv4(byte[] buffer, int offset) {
         return String.format(
                 "%d.%d.%d.%d",
-                buffer[offset] & 0xff,
-                buffer[offset + 1] & 0xff,
-                buffer[offset + 2] & 0xff,
-                buffer[offset + 3] & 0xff);
+                buffer[offset] & 0xff, buffer[offset + 1] & 0xff, buffer[offset + 2] & 0xff, buffer[offset + 3] & 0xff);
     }
 
     static int ipv4ToInt(String ip) {

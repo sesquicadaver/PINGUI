@@ -40,9 +40,7 @@ public final class PingColor {
     }
 
     public static String nodeLabel(
-            HopNode node,
-            Function<String, Double> avgPingFn,
-            Function<Integer, HopStatsSummary> hopStatsFn) {
+            HopNode node, Function<String, Double> avgPingFn, Function<Integer, HopStatsSummary> hopStatsFn) {
         if (node.timeout() || Models.TIMEOUT_IP.equals(node.ip())) {
             String statsLine = statsLine(node.hop(), hopStatsFn);
             if (!statsLine.isEmpty()) {
@@ -57,7 +55,8 @@ public final class PingColor {
             return "Hop " + node.hop() + "\n" + node.ip() + countryLine + "\n" + avg.intValue() + " ms" + statsLine;
         }
         if (node.pingMs() != null) {
-            return "Hop " + node.hop() + "\n" + node.ip() + countryLine + "\n" + node.pingMs().intValue() + " ms" + statsLine;
+            return "Hop " + node.hop() + "\n" + node.ip() + countryLine + "\n"
+                    + node.pingMs().intValue() + " ms" + statsLine;
         }
         if (!countryLine.isEmpty() || !statsLine.isEmpty()) {
             return "Hop " + node.hop() + "\n" + node.ip() + countryLine + statsLine;

@@ -1,6 +1,5 @@
 package io.pingui.monitor;
 
-import io.pingui.model.Models;
 import io.pingui.model.Models.HopNode;
 import java.util.ArrayList;
 import java.util.List;

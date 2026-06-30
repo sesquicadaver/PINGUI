@@ -13,11 +13,10 @@ class ExpertPingEnricherTest {
 
     @Test
     void returnsSnapshotWhenExpertNotConfigured() {
-        RouteSnapshot snapshot =
-                new RouteSnapshot(
-                        "8.8.8.8",
-                        "8.8.8.8",
-                        List.of(new HopNode(1, "192.168.1.1", 1.0, false), new HopNode(2, "8.8.8.8", 2.0, false)));
+        RouteSnapshot snapshot = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "192.168.1.1", 1.0, false), new HopNode(2, "8.8.8.8", 2.0, false)));
         RouteSnapshot result = enricher.enrich(snapshot, PingExpertEntry.empty(), 0.5);
         assertEquals(snapshot.nodes(), result.nodes());
     }

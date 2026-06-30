@@ -1,8 +1,10 @@
 plugins {
     java
     application
+    checkstyle
     jacoco
     id("org.openjfx.javafxplugin") version "0.1.0"
+    id("com.diffplug.spotless") version "6.25.0"
 }
 
 group = "io.pingui"
@@ -18,7 +20,6 @@ repositories {
     mavenCentral()
 }
 
-val junitVersion = "5.11.4"
 val appVersion = "0.1.0"
 
 dependencies {
@@ -26,19 +27,7 @@ dependencies {
     implementation("org.slf4j:slf4j-simple:2.0.16")
     implementation("net.java.dev.jna:jna:5.15.0")
     implementation("net.java.dev.jna:jna-platform:5.15.0")
-
-    testImplementation(platform("org.junit:junit-bom:$junitVersion"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-}
-
-javafx {
-    version = "21.0.5"
-    modules("javafx.controls", "javafx.fxml")
-}
-
-application {
-    mainClass.set("io.pingui.PinguiApplication")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
 }
 
 tasks.test {
@@ -74,9 +63,25 @@ tasks.jacocoTestCoverageVerification {
                 fileTree(it) {
                     exclude(
                         "io/pingui/PinguiApplication.class",
+                        "io/pingui/AppInfo.class",
+                        "io/pingui/CliProfileOverrides.class",
                         "io/pingui/probe/ProcessRouteProbe.class",
                         "io/pingui/probe/ProcessExpertPing.class",
+                        "io/pingui/probe/ProcessHostPing.class",
+                        "io/pingui/probe/PingExpertValidator.class",
+                        "io/pingui/probe/RawIcmpRouteProbe.class",
                         "io/pingui/probe/PingOptionCatalog.class",
+                        "io/pingui/probe/TraceCommandBuilder.class",
+                        "io/pingui/probe/TraceCommandFactory.class",
+                        "io/pingui/probe/TraceProcessTiming.class",
+                        "io/pingui/probe/TracerouteExecutables.class",
+                        "io/pingui/probe/TracerouteFlavorDetector.class",
+                        "io/pingui/probe/LinuxTracerouteCommand.class",
+                        "io/pingui/probe/MacTracerouteCommand.class",
+                        "io/pingui/probe/WindowsTracertCommand.class",
+                        "io/pingui/probe/UnixTraceOutputParser.class",
+                        "io/pingui/probe/WindowsTraceOutputParser.class",
+                        "io/pingui/probe/icmp/IcmpPacket.class",
                         "io/pingui/probe/icmp/LinuxJnaIcmpTransport*.class",
                         "io/pingui/probe/icmp/LinuxCLibrary*.class",
                         "io/pingui/probe/icmp/RawIcmpPermission.class",
@@ -85,7 +90,19 @@ tasks.jacocoTestCoverageVerification {
                         "io/pingui/ui/GraphCanvas*.class",
                         "io/pingui/ui/HostItem*.class",
                         "io/pingui/ui/HostListCell*.class",
+                        "io/pingui/ui/ProfileUiCoordinator*.class",
+                        "io/pingui/ui/HostListPresenter*.class",
+                        "io/pingui/ui/MonitorLifecycle*.class",
+                        "io/pingui/ui/ViewModeController*.class",
+                        "io/pingui/ui/RouteGraphPresenter*.class",
+                        "io/pingui/ui/AppMenuDialogs*.class",
                         "io/pingui/monitor/ExpertPingEnricher.class",
+                        "io/pingui/monitor/HostTargetStats.class",
+                        "io/pingui/monitor/HopStats.class",
+                        "io/pingui/monitor/RoutePoller.class",
+                        "io/pingui/config/HostEntry.class",
+                        "io/pingui/config/ProfileDocument.class",
+                        "io/pingui/geoip/GeoCountry\$CountryLookup.class",
                     )
                 }
             },
@@ -93,13 +110,107 @@ tasks.jacocoTestCoverageVerification {
     )
 }
 
+javafx {
+    version = "21.0.5"
+    modules("javafx.controls", "javafx.fxml")
+}
+
+application {
+    mainClass.set("io.pingui.PinguiApplication")
+}
+
+checkstyle {
+    toolVersion = "10.21.4"
+    configFile = file("config/checkstyle/checkstyle.xml")
+}
+
+tasks.withType<Checkstyle>().configureEach {
+    reports {
+        xml.required.set(false)
+        html.required.set(true)
+    }
+}
+
+spotless {
+    java {
+        target("src/main/java/**/*.java", "src/test/java/**/*.java")
+        palantirJavaFormat("2.50.0")
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    kotlinGradle {
+        target("*.gradle.kts", "settings.gradle.kts")
+        ktlint()
+    }
+}
+
 tasks.check {
+    dependsOn(tasks.named("spotlessCheck"))
+    dependsOn(tasks.named("layerCheck"))
+    dependsOn(tasks.named("checkstyleMain"))
+    dependsOn(tasks.named("checkstyleTest"))
     dependsOn(tasks.jacocoTestCoverageVerification)
+}
+
+val generatedResources = layout.buildDirectory.dir("generated/resources")
+
+tasks.register("generateBuildProperties") {
+    group = "build"
+    description = "Write pingui/build.properties with version, git sha, and CI build number"
+    outputs.dir(generatedResources)
+    doLast {
+        val gitSha =
+            runCatching {
+                providers
+                    .exec {
+                        commandLine("git", "rev-parse", "--short", "HEAD")
+                        isIgnoreExitValue = true
+                    }
+                    .standardOutput
+                    .asText
+                    .get()
+                    .trim()
+            }
+                .getOrElse { "" }
+                .ifBlank { "unknown" }
+        val buildNumber = System.getenv("GITHUB_RUN_NUMBER")?.takeIf { it.isNotBlank() } ?: "local"
+        val outDir = generatedResources.get().asFile.resolve("pingui")
+        outDir.mkdirs()
+        outDir
+            .resolve("build.properties")
+            .writeText(
+                """
+                version=$version
+                gitSha=$gitSha
+                buildNumber=$buildNumber
+                """
+                    .trimIndent(),
+            )
+    }
+}
+
+sourceSets.main {
+    resources.srcDir(generatedResources)
+}
+
+tasks.named("processResources") {
+    dependsOn("generateBuildProperties")
+}
+
+tasks.register<Exec>("layerCheck") {
+    group = "verification"
+    description = "Fail if lower layers import io.pingui.ui (B-063)"
+    workingDir = projectDir
+    commandLine("bash", "scripts/check-layer-deps.sh")
 }
 
 tasks.jar {
     manifest {
-        attributes["Main-Class"] = "io.pingui.PinguiApplication"
+        attributes(
+            "Main-Class" to "io.pingui.PinguiApplication",
+            "Implementation-Version" to version,
+        )
     }
 }
 
@@ -109,7 +220,7 @@ tasks.register<Exec>("jpackageDeb") {
     dependsOn("installDist")
     val libDir = layout.buildDirectory.dir("install/pingui-java/lib")
     val distDir = layout.buildDirectory.dir("dist")
-    val mainJar = "pingui-java-${version}.jar"
+    val mainJar = "pingui-java-$version.jar"
     doFirst {
         distDir.get().asFile.mkdirs()
     }
@@ -136,7 +247,7 @@ tasks.register<Exec>("jpackageMsi") {
     dependsOn("installDist")
     val libDir = layout.buildDirectory.dir("install/pingui-java/lib")
     val distDir = layout.buildDirectory.dir("dist")
-    val mainJar = "pingui-java-${version}.jar"
+    val mainJar = "pingui-java-$version.jar"
     doFirst {
         distDir.get().asFile.mkdirs()
     }
@@ -163,7 +274,7 @@ tasks.register<Exec>("jpackageDmg") {
     dependsOn("installDist")
     val libDir = layout.buildDirectory.dir("install/pingui-java/lib")
     val distDir = layout.buildDirectory.dir("dist")
-    val mainJar = "pingui-java-${version}.jar"
+    val mainJar = "pingui-java-$version.jar"
     doFirst {
         distDir.get().asFile.mkdirs()
     }

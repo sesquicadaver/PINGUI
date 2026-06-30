@@ -16,8 +16,7 @@ public final class RouteProbeFactory {
     }
 
     private static RouteProbe createAuto() {
-        if (LinuxJnaIcmpTransport.isLinux()
-                && RawIcmpPermission.isAvailable()) {
+        if (LinuxJnaIcmpTransport.isLinux() && RawIcmpPermission.isAvailable()) {
             return new RawIcmpRouteProbe();
         }
         return new ProcessRouteProbe();
@@ -28,9 +27,7 @@ public final class RouteProbeFactory {
         if (mode == ProbeMode.RAW) {
             return "raw-icmp";
         }
-        if (mode == ProbeMode.AUTO
-                && LinuxJnaIcmpTransport.isLinux()
-                && RawIcmpPermission.isAvailable()) {
+        if (mode == ProbeMode.AUTO && LinuxJnaIcmpTransport.isLinux() && RawIcmpPermission.isAvailable()) {
             return "raw-icmp";
         }
         return "process";

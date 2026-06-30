@@ -1,0 +1,7 @@
+
+Tracing route to google.com [142.250.185.78] over a maximum of 30 hops
+
+  1     2 ms     1 ms     2 ms  router.local [192.168.1.1] 
+  2    15 ms    14 ms    16 ms  142.250.185.78 
+
+Trace complete.

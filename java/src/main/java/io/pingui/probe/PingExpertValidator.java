@@ -1,6 +1,8 @@
 package io.pingui.probe;
 
 import io.pingui.config.ConfigError;
+import io.pingui.probe.PingOptionCatalog.PingOption;
+import io.pingui.probe.PingOptionCatalog.ValueSpec;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -33,7 +35,7 @@ public final class PingExpertValidator {
             if (PingOptionCatalog.isExcluded(token)) {
                 throw new ConfigError("Ping option not allowed in monitor mode: " + token);
             }
-            PingOptionCatalog.PingOption option = PingOptionCatalog.find(token);
+            PingOption option = PingOptionCatalog.find(token);
             if (option == null) {
                 throw new ConfigError("Unknown ping option: " + token);
             }
@@ -46,8 +48,7 @@ public final class PingExpertValidator {
                     throw new ConfigError("Ping option " + token + " requires a value");
                 }
                 String value = tokens.get(++index);
-                validateValue(token, value);
-                normalized.add(value);
+                normalized.add(validateAndNormalizeValue(option, value));
             }
             index++;
         }
@@ -55,58 +56,40 @@ public final class PingExpertValidator {
         return List.copyOf(normalized);
     }
 
-    private static void validateValue(String flag, String value) {
-        if (value == null || value.isBlank()) {
-            throw new ConfigError("Ping option " + flag + " requires a non-empty value");
+    /** Validates one VALUE argument; returns normalized token for ping CLI. */
+    public static String validateAndNormalizeValue(PingOption option, String rawValue) {
+        if (option.kind() != PingOptionCatalog.Kind.VALUE || option.valueSpec() == null) {
+            throw new ConfigError("Option " + option.flag() + " does not take a value");
         }
-        switch (flag) {
-            case "-s" -> {
-                int size = parseInt(value, flag);
-                if (size < 0 || size > 65507) {
-                    throw new ConfigError("-s must be between 0 and 65507");
-                }
-            }
-            case "-t" -> {
-                int ttl = parseInt(value, flag);
-                if (ttl < 1 || ttl > 255) {
-                    throw new ConfigError("-t must be between 1 and 255");
-                }
-            }
-            case "-e" -> {
-                int id = parseInt(value, flag);
-                if (id < 0 || id > 65535) {
-                    throw new ConfigError("-e must be between 0 and 65535");
-                }
-            }
-            case "-M" -> {
-                String mode = value.toLowerCase(Locale.ROOT);
-                if (!Set.of("do", "want", "probe", "dont").contains(mode)) {
-                    throw new ConfigError("-M must be do, want, probe, or dont");
-                }
-            }
-            case "-p" -> {
-                if (!value.matches("(?i)[0-9a-f]{1,32}")) {
-                    throw new ConfigError("-p must be hex pattern (up to 16 bytes)");
-                }
-            }
-            case "-Q" -> {
-                parseQos(value);
-            }
-            case "-F" -> {
-                if (!value.matches("(?i)[0-9a-f]{1,5}")) {
-                    throw new ConfigError("-F must be hex flow label up to 20 bits");
-                }
-            }
-            case "-S", "-m" -> parseInt(value, flag);
-            case "-T" -> {
-                if (value.isBlank()) {
-                    throw new ConfigError("-T requires timestamp option");
-                }
-            }
-            default -> {
-                // -I and other free-form values
-            }
+        if (rawValue == null || rawValue.isBlank()) {
+            throw new ConfigError("Ping option " + option.flag() + " requires a non-empty value");
         }
+        String value = rawValue.strip();
+        ValueSpec spec = option.valueSpec();
+        return switch (spec.kind()) {
+            case INT_RANGE -> normalizeIntRange(option.flag(), value, spec.intRange());
+            case CHOICES -> normalizeChoice(option.flag(), value, spec.choices());
+            case HEX_PATTERN -> normalizeHexPattern(value);
+            case HEX_FLOW_LABEL -> normalizeHexFlowLabel(value);
+            case TIMESTAMP -> normalizeTimestamp(value);
+            case TEXT -> value;
+        };
+    }
+
+    /** Returns human-readable allowed range/choices for UI hints. */
+    public static String describeValueSpec(PingOption option) {
+        if (option.kind() != PingOptionCatalog.Kind.VALUE || option.valueSpec() == null) {
+            return "";
+        }
+        ValueSpec spec = option.valueSpec();
+        return switch (spec.kind()) {
+            case INT_RANGE -> spec.intRange().min() + "–" + spec.intRange().max();
+            case CHOICES -> String.join(", ", spec.choices());
+            case HEX_PATTERN -> "hex, до 16 байт";
+            case HEX_FLOW_LABEL -> "00000–fffff";
+            case TIMESTAMP -> "tsonly, tsandaddr, tsprespec h1 [h2…]";
+            case TEXT -> spec.hint() != null ? spec.hint() : "";
+        };
     }
 
     private static void validateCompatibility(Set<String> flags) {
@@ -124,32 +107,71 @@ public final class PingExpertValidator {
         }
     }
 
-    private static int parseInt(String value, String flag) {
-        try {
-            if (value.startsWith("0x") || value.startsWith("0X")) {
-                return Integer.parseInt(value.substring(2), 16);
-            }
-            return Integer.parseInt(value);
-        } catch (NumberFormatException ex) {
-            throw new ConfigError("Invalid numeric value for " + flag + ": " + value);
+    private static String normalizeIntRange(String flag, String value, PingOptionCatalog.IntRange range) {
+        long parsed = parseLongValue(flag, value);
+        if (parsed < range.min() || parsed > range.max()) {
+            throw new ConfigError(flag + " must be between " + range.min() + " and " + range.max() + ", got " + parsed);
         }
+        return formatIntValue(value, parsed);
     }
 
-    private static void parseQos(String value) {
+    private static String formatIntValue(String original, long parsed) {
+        if (original.startsWith("0x") || original.startsWith("0X")) {
+            return "0x" + Long.toHexString(parsed);
+        }
+        return Long.toString(parsed);
+    }
+
+    private static String normalizeChoice(String flag, String value, List<String> choices) {
+        for (String choice : choices) {
+            if (choice.equalsIgnoreCase(value)) {
+                return choice;
+            }
+        }
+        throw new ConfigError(flag + " must be one of: " + String.join(", ", choices) + ", got " + value);
+    }
+
+    private static String normalizeTimestamp(String value) {
+        String trimmed = value.strip();
+        if ("tsonly".equalsIgnoreCase(trimmed) || "tsandaddr".equalsIgnoreCase(trimmed)) {
+            return trimmed.toLowerCase(Locale.ROOT);
+        }
+        if (trimmed.toLowerCase(Locale.ROOT).startsWith("tsprespec")) {
+            String[] parts = trimmed.split("\\s+");
+            if (parts.length < 2 || parts.length > 5) {
+                throw new ConfigError("-T tsprespec requires 1 to 4 hop addresses");
+            }
+            return trimmed;
+        }
+        throw new ConfigError("-T must be tsonly, tsandaddr, or tsprespec host1 [host2 … host4]");
+    }
+
+    private static String normalizeHexPattern(String value) {
+        if (!value.matches("(?i)[0-9a-f]{1,32}")) {
+            throw new ConfigError("-p must be hex pattern (up to 16 bytes)");
+        }
+        return value.toLowerCase(Locale.ROOT);
+    }
+
+    private static String normalizeHexFlowLabel(String value) {
+        if (!value.matches("(?i)[0-9a-f]{1,5}")) {
+            throw new ConfigError("-F must be hex flow label up to 20 bits");
+        }
+        long parsed = Long.parseLong(value, 16);
+        if (parsed > 0xFFFFF) {
+            throw new ConfigError("-F must fit in 20 bits (00000–fffff)");
+        }
+        return value.toLowerCase(Locale.ROOT);
+    }
+
+    private static long parseLongValue(String flag, String value) {
         try {
             if (value.startsWith("0x") || value.startsWith("0X")) {
-                int parsed = Integer.parseInt(value.substring(2), 16);
-                if (parsed < 0 || parsed > 255) {
-                    throw new ConfigError("-Q hex value must fit in one byte");
-                }
-                return;
+                return Long.parseLong(value.substring(2), 16);
             }
-            int parsed = Integer.parseInt(value);
-            if (parsed < 0 || parsed > 255) {
-                throw new ConfigError("-Q must be between 0 and 255");
-            }
+            return Long.parseLong(value);
         } catch (NumberFormatException ex) {
-            throw new ConfigError("Invalid -Q value: " + value);
+            throw new ConfigError("Invalid numeric value for " + flag + ": " + value);
         }
     }
 }
