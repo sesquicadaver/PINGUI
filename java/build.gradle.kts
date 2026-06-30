@@ -1,6 +1,7 @@
 plugins {
     java
     application
+    checkstyle
     id("org.openjfx.javafxplugin") version "0.1.0"
     id("com.diffplug.spotless") version "6.25.0"
 }
@@ -41,6 +42,18 @@ application {
     mainClass.set("io.pingui.PinguiApplication")
 }
 
+checkstyle {
+    toolVersion = "10.21.4"
+    configFile = file("config/checkstyle/checkstyle.xml")
+}
+
+tasks.withType<Checkstyle>().configureEach {
+    reports {
+        xml.required.set(false)
+        html.required.set(true)
+    }
+}
+
 spotless {
     java {
         target("src/main/java/**/*.java", "src/test/java/**/*.java")
@@ -58,6 +71,8 @@ spotless {
 tasks.check {
     dependsOn(tasks.named("spotlessCheck"))
     dependsOn(tasks.named("layerCheck"))
+    dependsOn(tasks.named("checkstyleMain"))
+    dependsOn(tasks.named("checkstyleTest"))
 }
 
 val generatedResources = layout.buildDirectory.dir("generated/resources")

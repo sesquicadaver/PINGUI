@@ -45,7 +45,7 @@
 | **M-020** | [x] Підключити Spotless (Google Java Format або Palantir) | `java/build.gradle.kts`, `settings.gradle.kts` | `./gradlew spotlessCheck` проходить |
 | **M-021** | [x] `./gradlew spotlessApply` + форматування існуючих `.java` | `java/src/main/**` | `spotlessCheck` green; diff лише formatting |
 | **M-022** | [x] Gradle task `check` = `compileJava` + `spotlessCheck` | `java/build.gradle.kts` | `./gradlew check` на `main` |
-| **M-023** | (Опційно) Checkstyle або Error Prone — мінімальний ruleset | `java/build.gradle.kts`, config XML | Дублі import, unused imports — fail |
+| **M-023** | [x] Checkstyle — мінімальний ruleset | `java/build.gradle.kts`, `config/checkstyle/checkstyle.xml` | RedundantImport, UnusedImports; `./gradlew check` |
 
 ---
 
@@ -144,7 +144,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog:** B-040…B-044, B-050…B-053, B-060…B-063  
+**Backlog:** усі заплановані M/B задачі закриті; подальші зміни — поза цим ROADMAP (нові ticket / release).
 
 ---
 
