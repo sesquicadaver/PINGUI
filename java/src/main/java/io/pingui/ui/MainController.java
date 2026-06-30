@@ -349,7 +349,7 @@ public final class MainController {
 
     private void onOpenExpertPing(HostItem item, Void ignored) {
         PingExpertEntry current = store.getPingExpert(item.getHost());
-        Optional<PingExpertEntry> updated = PingExpertDialog.show(item.getHost(), current);
+        Optional<PingExpertEntry> updated = PingExpertDialog.show(item.getHost(), current, item.isPingOnly());
         if (updated.isEmpty()) {
             return;
         }
@@ -461,6 +461,12 @@ public final class MainController {
         try {
             monitor.setHostPingOnly(item.getHost(), pingOnly);
             store.setPingOnly(item.getHost(), pingOnly);
+            if (pingOnly) {
+                PingExpertEntry expert = store.getPingExpert(item.getHost());
+                if (expert.applyToChain()) {
+                    store.setPingExpert(item.getHost(), new PingExpertEntry(false, expert.args()));
+                }
+            }
             updatingList = true;
             item.pingOnlyProperty().set(pingOnly);
             updatingList = false;
