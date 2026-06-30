@@ -16,6 +16,7 @@
 
 ### Added
 
+- **CI:** GitHub Actions [Java CI](.github/workflows/java.yml) — `./gradlew check` on Ubuntu; Windows optional.
 - **Tests:** JUnit 5 на `main` — парсери trace, HostsConfig, ProfilesConfig, CLI overrides, PingExpertValidator (21 tests).
 - **Docs:** [docs/LIVING_SPEC.md](docs/LIVING_SPEC.md) — матриця модуль → тести.
 - **Java UI:** меню **Про** та **Довідка** (F1) з діалогами версії та короткої довідки.

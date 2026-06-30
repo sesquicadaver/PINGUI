@@ -13,6 +13,7 @@ Python-редакція, тести, CI та специфікації — гіл
 | [JAVA.md](JAVA.md) | Розробник | Probe, monitor, UI, YAML |
 | [ROADMAP.md](ROADMAP.md) | Розробник | План виправлень, атомарні задачі |
 | [LIVING_SPEC.md](LIVING_SPEC.md) | Розробник | Матриця модуль → тести |
+| [../.github/workflows/java.yml](../.github/workflows/java.yml) | CI | Java check (Ubuntu + optional Windows) |
 | [../java/README.md](../java/README.md) | Усі | Запуск, CLI, GUI |
 
 ## Рекомендований порядок

@@ -132,7 +132,7 @@ cd java
 ./gradlew jpackageDeb   # Linux .deb → build/dist/
 ```
 
-Unit-тести (21) — `src/test/java`; матриця покриття: [docs/LIVING_SPEC.md](../docs/LIVING_SPEC.md). CI workflow — backlog **B-020** (`beta`).
+Unit-тести (21) — `src/test/java`; матриця: [docs/LIVING_SPEC.md](../docs/LIVING_SPEC.md). CI: ![Java CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/java.yml/badge.svg)
 
 ## Пакування (jpackage)
 

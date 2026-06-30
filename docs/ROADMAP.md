@@ -70,10 +70,10 @@
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **B-020** | GitHub Actions: JDK 21, venv не потрібен для Java job | `.github/workflows/java.yml` | `compileJava` + `test` + `spotlessCheck` на push/PR |
-| **B-021** | CI matrix: `ubuntu-latest` (обовʼязково); Windows optional | workflow | Linux green; Windows job `continue-on-error` або окремий |
-| **B-022** | Badge / статус у README (`beta`) | `README.md` | Badge CI видимий |
-| **B-023** | Living spec: матриця «ТЗ → модуль → тест» | `docs/LIVING_SPEC.md` | Рядки для probe, config, CLI override |
+| **B-020** | [x] GitHub Actions: JDK 21, venv не потрібен для Java job | `.github/workflows/java.yml` | `compileJava` + `test` + `spotlessCheck` на push/PR |
+| **B-021** | [x] CI matrix: `ubuntu-latest` (обовʼязково); Windows optional | workflow | Linux green; Windows job `continue-on-error` |
+| **B-022** | [x] Badge / статус у README | `README.md` | Badge CI видимий |
+| **B-023** | [x] Living spec: матриця «ТЗ → модуль → тест» | `docs/LIVING_SPEC.md` | Рядки для probe, config, CLI override, CI |
 
 ---
 

@@ -1,5 +1,7 @@
 # PINGUI
 
+![Java CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/java.yml/badge.svg)
+
 Крос-платформний монітор маршрутів і RTT до 10 цілей одночасно (Java 21 + JavaFX).
 Дані зберігаються **лише в RAM** протягом сесії.
 
@@ -7,7 +9,7 @@
 
 | Гілка | Зміст |
 |-------|--------|
-| **`main`** | Java-редакція + документація для запуску |
+| **`main`** | Java-редакція + документація + unit-тести + CI |
 | **`beta`** | Python-редакція, тести, CI, специфікації, roadmap |
 
 ## Швидкий старт
