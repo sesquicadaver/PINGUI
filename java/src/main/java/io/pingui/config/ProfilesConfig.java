@@ -139,6 +139,7 @@ public final class ProfilesConfig {
             }
             String normalized = HostsConfig.normalizeHostEntry(address);
             boolean enabled = readBoolean(hostMap.get("enabled"), false);
+            boolean pingOnly = readBoolean(hostMap.get("ping_only"), false);
             PingExpertEntry expert = PingExpertEntry.empty();
             Object expertObj = hostMap.get("ping_expert");
             if (expertObj instanceof Map<?, ?> expertMap) {
@@ -146,7 +147,7 @@ public final class ProfilesConfig {
                 List<String> args = readStringList(expertMap.get("args"), "ping_expert.args", profileName);
                 expert = new PingExpertEntry(chain, args);
             }
-            return new HostEntry(normalized, enabled, expert);
+            return new HostEntry(normalized, enabled, pingOnly, expert);
         }
         throw new ConfigError(
                 "Each host in profile '" + profileName + "' must be a string or mapping, got "
@@ -169,13 +170,16 @@ public final class ProfilesConfig {
 
     private static Map<String, Object> hostEntryToMap(HostEntry host) {
         PingExpertEntry expert = host.pingExpert();
-        if (!host.enabled() && !expert.isConfigured()) {
+        if (!host.enabled() && !host.pingOnly() && !expert.isConfigured()) {
             return Map.of("address", host.address());
         }
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("address", host.address());
         if (host.enabled()) {
             map.put("enabled", true);
+        }
+        if (host.pingOnly()) {
+            map.put("ping_only", true);
         }
         if (expert.isConfigured()) {
             Map<String, Object> expertMap = new LinkedHashMap<>();

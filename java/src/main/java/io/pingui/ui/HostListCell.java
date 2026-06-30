@@ -17,32 +17,39 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
-/** Host list row: checkbox, optional Exten., name, metrics, RTT color fill. */
+/** Host list row: enable, Ping only, optional Exten., name, metrics, RTT color fill. */
 final class HostListCell extends ListCell<HostItem> {
     private final CheckBox checkBox = new CheckBox();
+    private final CheckBox pingOnlyCheck = new CheckBox("Ping only");
     private final Button extenButton = new Button("Exten.");
     private final Label hostLabel = new Label();
     private final Label metricsLabel = new Label();
     private final HBox hostRow = new HBox(6, extenButton, hostLabel);
     private final VBox textBox = new VBox(2, hostRow, metricsLabel);
-    private final HBox root = new HBox(8, checkBox, textBox);
+    private final HBox root = new HBox(8, checkBox, textBox, pingOnlyCheck);
     private final BiConsumer<HostItem, Boolean> onEnabledChanged;
+    private final BiConsumer<HostItem, Boolean> onPingOnlyChanged;
     private final BooleanProperty expertMode;
     private final BiConsumer<HostItem, Void> onExpertOpen;
     private HostItem boundItem;
     private ChangeListener<String> rowColorListener;
     private ChangeListener<Boolean> expertConfiguredListener;
+    private ChangeListener<Boolean> pingOnlyListener;
     private ChangeListener<Boolean> expertModeListener;
     private boolean updating;
 
     HostListCell(
             BiConsumer<HostItem, Boolean> onEnabledChanged,
+            BiConsumer<HostItem, Boolean> onPingOnlyChanged,
             BooleanProperty expertMode,
             BiConsumer<HostItem, Void> onExpertOpen) {
         this.onEnabledChanged = onEnabledChanged;
+        this.onPingOnlyChanged = onPingOnlyChanged;
         this.expertMode = expertMode;
         this.onExpertOpen = onExpertOpen;
         extenButton.setMinWidth(56);
+        pingOnlyCheck.setStyle("-fx-font-size: 10px;");
+        pingOnlyCheck.setMinWidth(72);
         extenButton.setOnAction(e -> {
             HostItem item = getItem();
             if (item != null) {
@@ -58,6 +65,12 @@ final class HostListCell extends ListCell<HostItem> {
             HostItem item = getItem();
             if (item != null && !updating && item.isEnabled() != isNow) {
                 onEnabledChanged.accept(item, isNow);
+            }
+        });
+        pingOnlyCheck.selectedProperty().addListener((obs, was, isNow) -> {
+            HostItem item = getItem();
+            if (item != null && !updating && item.isPingOnly() != isNow) {
+                onPingOnlyChanged.accept(item, isNow);
             }
         });
         expertModeListener = (obs, was, on) -> refreshExpertControls(getItem());
@@ -76,6 +89,7 @@ final class HostListCell extends ListCell<HostItem> {
         boundItem = item;
         updating = true;
         checkBox.setSelected(item.isEnabled());
+        pingOnlyCheck.setSelected(item.isPingOnly());
         hostLabel.textProperty().bind(item.hostProperty());
         metricsLabel.textProperty().bind(item.metricsTextProperty());
         metricsLabel.visibleProperty().bind(item.showMetricsProperty());
@@ -84,6 +98,8 @@ final class HostListCell extends ListCell<HostItem> {
         item.rowColorProperty().addListener(rowColorListener);
         expertConfiguredListener = (obs, was, configured) -> styleExtenButton(configured);
         item.expertConfiguredProperty().addListener(expertConfiguredListener);
+        pingOnlyListener = (obs, was, pingOnly) -> refreshExpertControls(item);
+        item.pingOnlyProperty().addListener(pingOnlyListener);
         applyBackground(item.rowColorProperty().get());
         styleExtenButton(item.isExpertConfigured());
         refreshExpertControls(item);
@@ -92,7 +108,7 @@ final class HostListCell extends ListCell<HostItem> {
     }
 
     private void refreshExpertControls(HostItem item) {
-        boolean show = expertMode.get() && item != null && !HostViewRules.matches(item.getHost());
+        boolean show = expertMode.get() && item != null && !item.isPingOnly() && !HostViewRules.matches(item.getHost());
         extenButton.setVisible(show);
         extenButton.setManaged(show);
     }
@@ -120,6 +136,10 @@ final class HostListCell extends ListCell<HostItem> {
         if (expertConfiguredListener != null) {
             boundItem.expertConfiguredProperty().removeListener(expertConfiguredListener);
             expertConfiguredListener = null;
+        }
+        if (pingOnlyListener != null) {
+            boundItem.pingOnlyProperty().removeListener(pingOnlyListener);
+            pingOnlyListener = null;
         }
         boundItem = null;
     }

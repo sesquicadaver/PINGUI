@@ -80,6 +80,7 @@ public final class Models {
         private final java.util.Map<String, java.util.List<Double>> pingHistory = new java.util.HashMap<>();
         private final java.util.Map<Integer, HopProbeStats> hopStats = new java.util.HashMap<>();
         private boolean enabled;
+        private boolean pingOnly;
         private PingExpertEntry pingExpert = PingExpertEntry.empty();
 
         public List<HopNode> getCurrentRoute() {
@@ -116,6 +117,14 @@ public final class Models {
 
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+
+        public boolean isPingOnly() {
+            return pingOnly;
+        }
+
+        public void setPingOnly(boolean pingOnly) {
+            this.pingOnly = pingOnly;
         }
 
         public PingExpertEntry getPingExpert() {

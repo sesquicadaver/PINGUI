@@ -42,6 +42,7 @@ class ProfilesConfigTest {
                 new HostEntry(
                         "8.8.8.8",
                         true,
+                        false,
                         new PingExpertEntry(false, List.of("-4", "-s", "128")));
         ProfileDocument original =
                 ProfileDocument.singleDefault(
@@ -76,5 +77,18 @@ class ProfilesConfigTest {
         assertEquals(2, loaded.profiles().size());
         assertEquals(2.0, loaded.profiles().get("home").intervalSeconds());
         assertTrue(loaded.profiles().get("office").hosts().get(0).enabled());
+    }
+
+    @Test
+    void roundTripsPingOnlyFlag() throws Exception {
+        Path path = tempDir.resolve("ping-only.yaml");
+        HostEntry host = new HostEntry("8.8.8.8", true, true, PingExpertEntry.empty());
+        ProfileDocument original =
+                ProfileDocument.singleDefault(new TracingProfile(1.0, 20, 0.5, ProbeMode.AUTO, List.of(host)));
+
+        ProfilesConfig.save(path, original);
+        ProfileDocument loaded = ProfilesConfig.load(path);
+
+        assertTrue(loaded.active().hosts().get(0).pingOnly());
     }
 }

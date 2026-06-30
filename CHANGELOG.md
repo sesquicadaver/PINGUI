@@ -11,6 +11,7 @@
 
 ### Added
 
+- **Java UI:** чекбокс «Ping only» на кожному хості — лише ping до цілі без traceroute (`ping_only` у YAML).
 - **Docs:** [docs/CHECKLIST.md](docs/CHECKLIST.md) — checklist розгортання Linux / Windows / macOS.
 
 ### Fixed

@@ -110,7 +110,7 @@ class SessionStoreTest {
     @Test
     void fromEntriesPreservesPingExpert() {
         HostEntry entry =
-                new HostEntry("8.8.8.8", true, new PingExpertEntry(true, List.of("-4", "-s", "64")));
+                new HostEntry("8.8.8.8", true, false, new PingExpertEntry(true, List.of("-4", "-s", "64")));
         SessionStore store = SessionStore.fromEntries(List.of(entry));
         assertTrue(store.getPingExpert("8.8.8.8").applyToChain());
         assertEquals(List.of("-4", "-s", "64"), store.getPingExpert("8.8.8.8").args());
