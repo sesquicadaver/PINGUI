@@ -113,7 +113,6 @@ public final class GraphCanvas extends Region {
         for (GraphNode node : scene.nodes()) {
             drawNode(gc, node, width, height);
         }
-        requestLayout();
     }
 
     /** JavaFX Canvas may skip repainting when width/height are unchanged (common on Windows SW pipeline). */

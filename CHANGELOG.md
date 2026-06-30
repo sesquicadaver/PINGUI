@@ -15,7 +15,7 @@
 
 ### Fixed
 
-- **Java (Windows):** граф не оновлювався — паралельні `tracert` (interval 1s) + Canvas без repaint; in-flight guard і redraw fix.
+- **Java UI:** після створення/видалення профілю — чорний фрейм (sizeToScene не зменшує вікно на Linux; reload без applyViewMode).
 - **Java (Windows):** парсер `tracert` — `<1 ms`, `hostname [IP]`, System32 fallback, `-d`, charset ОС.
 - **Java (Windows):** виправлено timeout/deadlock `tracert` (drain stdout, `-w` ≥4000 ms, довший process wait).
 - **Java (Windows):** `pingui-java.bat` відмовляє без JDK 21 (parity з `pingui-java.sh`).
