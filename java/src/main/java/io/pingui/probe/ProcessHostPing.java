@@ -17,8 +17,10 @@ import java.util.regex.Pattern;
 
 /** Cross-platform one-shot ping to a host (ping-only mode, no traceroute). */
 public final class ProcessHostPing {
-    private static final Pattern RTT_MS =
-            Pattern.compile("(?:time[=<]|час[=<])\\s*(\\d+(?:\\.\\d+)?|<\\s*1)\\s*(?:ms|мс)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern RTT_EXACT_MS =
+            Pattern.compile("time=(\\d+(?:\\.\\d+)?)\\s*(?:ms|мс)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern RTT_SUB_MS =
+            Pattern.compile("time<\\s*1\\s*(?:ms|мс)", Pattern.CASE_INSENSITIVE);
 
     private final boolean windows =
             System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win");
@@ -79,15 +81,14 @@ public final class ProcessHostPing {
 
     static OptionalDouble parseRtt(List<String> lines) {
         for (String line : lines) {
-            Matcher matcher = RTT_MS.matcher(line);
-            if (!matcher.find()) {
-                continue;
-            }
-            String token = matcher.group(1).replaceAll("\\s+", "");
-            if (token.startsWith("<")) {
+            Matcher subMs = RTT_SUB_MS.matcher(line);
+            if (subMs.find()) {
                 return OptionalDouble.of(0.5);
             }
-            return OptionalDouble.of(Double.parseDouble(token));
+            Matcher exact = RTT_EXACT_MS.matcher(line);
+            if (exact.find()) {
+                return OptionalDouble.of(Double.parseDouble(exact.group(1)));
+            }
         }
         return OptionalDouble.empty();
     }
