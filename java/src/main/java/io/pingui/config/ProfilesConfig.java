@@ -6,12 +6,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashSet;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -105,15 +105,14 @@ public final class ProfilesConfig {
 
     private static List<HostEntry> parseHostEntries(List<?> hostsList, String profileName) {
         if (hostsList.size() < HostsConfig.MIN_HOSTS || hostsList.size() > HostsConfig.MAX_HOSTS) {
-            throw new ConfigError(
-                    "Profile '"
-                            + profileName
-                            + "' hosts count must be between "
-                            + HostsConfig.MIN_HOSTS
-                            + " and "
-                            + HostsConfig.MAX_HOSTS
-                            + ", got "
-                            + hostsList.size());
+            throw new ConfigError("Profile '"
+                    + profileName
+                    + "' hosts count must be between "
+                    + HostsConfig.MIN_HOSTS
+                    + " and "
+                    + HostsConfig.MAX_HOSTS
+                    + ", got "
+                    + hostsList.size());
         }
         List<HostEntry> out = new ArrayList<>();
         Set<String> seen = new HashSet<>();
@@ -149,9 +148,8 @@ public final class ProfilesConfig {
             }
             return new HostEntry(normalized, enabled, pingOnly, expert);
         }
-        throw new ConfigError(
-                "Each host in profile '" + profileName + "' must be a string or mapping, got "
-                        + (entry == null ? "null" : entry.getClass().getSimpleName()));
+        throw new ConfigError("Each host in profile '" + profileName + "' must be a string or mapping, got "
+                + (entry == null ? "null" : entry.getClass().getSimpleName()));
     }
 
     private static Map<String, Object> profileToMap(TracingProfile profile) {
@@ -199,8 +197,7 @@ public final class ProfilesConfig {
         for (Map.Entry<String, TracingProfile> entry : document.profiles().entrySet()) {
             TracingProfile profile = entry.getValue();
             if (profile.hosts().size() > HostsConfig.MAX_HOSTS) {
-                throw new ConfigError(
-                        "Profile '" + entry.getKey() + "' exceeds " + HostsConfig.MAX_HOSTS + " hosts");
+                throw new ConfigError("Profile '" + entry.getKey() + "' exceeds " + HostsConfig.MAX_HOSTS + " hosts");
             }
         }
     }

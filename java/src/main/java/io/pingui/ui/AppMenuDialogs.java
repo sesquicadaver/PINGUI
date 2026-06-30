@@ -33,18 +33,11 @@ public final class AppMenuDialogs {
         alert.setHeaderText(AppInfo.NAME + " — сесійний монітор маршрутів (" + AppInfo.EDITION + ")");
 
         Label version = new Label("Версія " + AppInfo.version());
-        Label runtime =
-                new Label(
-                        "Java "
-                                + AppInfo.runtimeJavaVersion()
-                                + " · "
-                                + AppInfo.runtimeOsName());
+        Label runtime = new Label("Java " + AppInfo.runtimeJavaVersion() + " · " + AppInfo.runtimeOsName());
         runtime.setStyle("-fx-text-fill: #555;");
 
         Label summary =
-                new Label(
-                        "Монітор RTT і маршрутів до 10 цілей одночасно. "
-                                + "Дані сесії зберігаються лише в RAM.");
+                new Label("Монітор RTT і маршрутів до 10 цілей одночасно. " + "Дані сесії зберігаються лише в RAM.");
         summary.setWrapText(true);
 
         HBox linkRow = new HBox(4, new Label("Репозиторій:"), repositoryLink());
@@ -101,10 +94,9 @@ public final class AppMenuDialogs {
     }
 
     private static String helpText() {
-        String expert =
-                PlatformCapabilities.expertPingSupported()
-                        ? "Експерт (Linux) — кнопка Exten. задає параметри ping(8) iputils."
-                        : "Експерт недоступний на цій ОС (лише Linux, iputils ping).";
+        String expert = PlatformCapabilities.expertPingSupported()
+                ? "Експерт (Linux) — кнопка Exten. задає параметри ping(8) iputils."
+                : "Експерт недоступний на цій ОС (лише Linux, iputils ping).";
         return """
                 Профілі та цілі
                 • Кілька профілів трасування в одному YAML; перемикання — «Профіль».
@@ -153,7 +145,9 @@ public final class AppMenuDialogs {
             } else {
                 launcher = new ProcessBuilder("xdg-open", url);
             }
-            launcher.inheritIO().redirectError(ProcessBuilder.Redirect.DISCARD).redirectOutput(ProcessBuilder.Redirect.DISCARD);
+            launcher.inheritIO()
+                    .redirectError(ProcessBuilder.Redirect.DISCARD)
+                    .redirectOutput(ProcessBuilder.Redirect.DISCARD);
             launcher.start();
         } catch (Exception ignored) {
             // URL remains visible in Hyperlink for manual copy.

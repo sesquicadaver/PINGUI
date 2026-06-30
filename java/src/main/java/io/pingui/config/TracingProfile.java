@@ -6,11 +6,7 @@ import java.util.List;
 
 /** Named tracing session: poll settings and host list. */
 public record TracingProfile(
-        double intervalSeconds,
-        int maxHops,
-        double timeoutSeconds,
-        ProbeMode probeMode,
-        List<HostEntry> hosts) {
+        double intervalSeconds, int maxHops, double timeoutSeconds, ProbeMode probeMode, List<HostEntry> hosts) {
     public TracingProfile {
         if (intervalSeconds <= 0) {
             throw new IllegalArgumentException("intervalSeconds must be positive");

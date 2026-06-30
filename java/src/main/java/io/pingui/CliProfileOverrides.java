@@ -19,10 +19,7 @@ public record CliProfileOverrides(
     }
 
     public boolean isEmpty() {
-        return intervalSeconds.isEmpty()
-                && maxHops.isEmpty()
-                && timeoutSeconds.isEmpty()
-                && probeMode.isEmpty();
+        return intervalSeconds.isEmpty() && maxHops.isEmpty() && timeoutSeconds.isEmpty() && probeMode.isEmpty();
     }
 
     /** Returns profile with only present CLI fields replaced. */

@@ -2,7 +2,6 @@ package io.pingui.probe;
 
 import io.pingui.config.ConfigError;
 import io.pingui.probe.PingOptionCatalog.PingOption;
-import io.pingui.probe.PingOptionCatalog.ValueKind;
 import io.pingui.probe.PingOptionCatalog.ValueSpec;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -111,8 +110,7 @@ public final class PingExpertValidator {
     private static String normalizeIntRange(String flag, String value, PingOptionCatalog.IntRange range) {
         long parsed = parseLongValue(flag, value);
         if (parsed < range.min() || parsed > range.max()) {
-            throw new ConfigError(
-                    flag + " must be between " + range.min() + " and " + range.max() + ", got " + parsed);
+            throw new ConfigError(flag + " must be between " + range.min() + " and " + range.max() + ", got " + parsed);
         }
         return formatIntValue(value, parsed);
     }

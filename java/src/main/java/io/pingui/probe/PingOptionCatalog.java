@@ -50,7 +50,8 @@ public final class PingOptionCatalog {
         }
 
         public static ValueSpec timestamp() {
-            return new ValueSpec(ValueKind.TIMESTAMP, null, List.of("tsonly", "tsandaddr"), "tsonly / tsandaddr / tsprespec h1 …");
+            return new ValueSpec(
+                    ValueKind.TIMESTAMP, null, List.of("tsonly", "tsandaddr"), "tsonly / tsandaddr / tsprespec h1 …");
         }
     }
 
@@ -73,41 +74,39 @@ public final class PingOptionCatalog {
         }
     }
 
-    private static final Set<String> EXCLUDED =
-            Set.of("-c", "-w", "-W", "-i", "-f", "-l", "-A", "-h", "-V", "-N");
+    private static final Set<String> EXCLUDED = Set.of("-c", "-w", "-W", "-i", "-f", "-l", "-A", "-h", "-V", "-N");
 
     private static final List<String> PMTUDISC = List.of("do", "want", "probe", "dont");
 
-    private static final List<PingOption> OPTIONS =
-            List.of(
-                    PingOption.flag("-4", "Лише IPv4"),
-                    PingOption.flag("-6", "Лише IPv6"),
-                    PingOption.flag("-a", "Звуковий ping"),
-                    PingOption.flag("-b", "Broadcast ping"),
-                    PingOption.flag("-B", "Не змінювати source address"),
-                    PingOption.flag("-C", "connect() на сокеті"),
-                    PingOption.flag("-d", "SO_DEBUG на сокеті"),
-                    PingOption.flag("-D", "Timestamp перед кожним рядком"),
-                    PingOption.value("-e", "ICMP identification field", ValueSpec.intRange(0, 65535, "0–65535")),
-                    PingOption.value("-F", "IPv6 flow label (hex)", ValueSpec.hexFlowLabel()),
-                    PingOption.flag("-H", "DNS reverse для виводу"),
-                    PingOption.value("-I", "Інтерфейс / source / VRF", ValueSpec.text("eth0 або адреса")),
-                    PingOption.flag("-L", "Приглушити loopback multicast"),
-                    PingOption.value("-m", "SO_MARK для пакетів", ValueSpec.intRange(0, 4294967295L, "0–4294967295")),
-                    PingOption.value("-M", "Path MTU Discovery", ValueSpec.choices(PMTUDISC)),
-                    PingOption.flag("-n", "Лише числові адреси"),
-                    PingOption.flag("-O", "Звіт про неотримані відповіді"),
-                    PingOption.value("-p", "Pad pattern (hex)", ValueSpec.hexPattern("до 16 байт (hex)")),
-                    PingOption.flag("-q", "Quiet output"),
-                    PingOption.value("-Q", "QoS / TOS bits", ValueSpec.intRange(0, 255, "0–255 або 0x..")),
-                    PingOption.flag("-r", "Bypass routing table"),
-                    PingOption.flag("-R", "Record route (RECORD_ROUTE)"),
-                    PingOption.value("-s", "Розмір data bytes", ValueSpec.intRange(0, 65507, "0–65507")),
-                    PingOption.value("-S", "Socket sndbuf", ValueSpec.intRange(0, 2147483647L, "≥ 0")),
-                    PingOption.value("-t", "IP TTL", ValueSpec.intRange(1, 255, "1–255")),
-                    PingOption.value("-T", "IP timestamp option", ValueSpec.timestamp()),
-                    PingOption.flag("-U", "User-to-user latency"),
-                    PingOption.flag("-v", "Verbose output"));
+    private static final List<PingOption> OPTIONS = List.of(
+            PingOption.flag("-4", "Лише IPv4"),
+            PingOption.flag("-6", "Лише IPv6"),
+            PingOption.flag("-a", "Звуковий ping"),
+            PingOption.flag("-b", "Broadcast ping"),
+            PingOption.flag("-B", "Не змінювати source address"),
+            PingOption.flag("-C", "connect() на сокеті"),
+            PingOption.flag("-d", "SO_DEBUG на сокеті"),
+            PingOption.flag("-D", "Timestamp перед кожним рядком"),
+            PingOption.value("-e", "ICMP identification field", ValueSpec.intRange(0, 65535, "0–65535")),
+            PingOption.value("-F", "IPv6 flow label (hex)", ValueSpec.hexFlowLabel()),
+            PingOption.flag("-H", "DNS reverse для виводу"),
+            PingOption.value("-I", "Інтерфейс / source / VRF", ValueSpec.text("eth0 або адреса")),
+            PingOption.flag("-L", "Приглушити loopback multicast"),
+            PingOption.value("-m", "SO_MARK для пакетів", ValueSpec.intRange(0, 4294967295L, "0–4294967295")),
+            PingOption.value("-M", "Path MTU Discovery", ValueSpec.choices(PMTUDISC)),
+            PingOption.flag("-n", "Лише числові адреси"),
+            PingOption.flag("-O", "Звіт про неотримані відповіді"),
+            PingOption.value("-p", "Pad pattern (hex)", ValueSpec.hexPattern("до 16 байт (hex)")),
+            PingOption.flag("-q", "Quiet output"),
+            PingOption.value("-Q", "QoS / TOS bits", ValueSpec.intRange(0, 255, "0–255 або 0x..")),
+            PingOption.flag("-r", "Bypass routing table"),
+            PingOption.flag("-R", "Record route (RECORD_ROUTE)"),
+            PingOption.value("-s", "Розмір data bytes", ValueSpec.intRange(0, 65507, "0–65507")),
+            PingOption.value("-S", "Socket sndbuf", ValueSpec.intRange(0, 2147483647L, "≥ 0")),
+            PingOption.value("-t", "IP TTL", ValueSpec.intRange(1, 255, "1–255")),
+            PingOption.value("-T", "IP timestamp option", ValueSpec.timestamp()),
+            PingOption.flag("-U", "User-to-user latency"),
+            PingOption.flag("-v", "Verbose output"));
 
     private PingOptionCatalog() {}
 

@@ -28,20 +28,17 @@ public final class ProcessRouteProbe implements RouteProbe {
         BSD
     }
 
-    private static final Pattern UNIX_LINE =
-            Pattern.compile("^\\s*(\\d+)\\s+([^\\s]+)(?:\\s+([0-9.]+)\\s*ms)?.*");
-    private static final Pattern WINDOWS_HOP =
-            Pattern.compile("^\\s*(\\d+)\\s+(.+)$");
-    private static final Pattern WINDOWS_IP_IN_BRACKETS =
-            Pattern.compile("\\[(\\d{1,3}(?:\\.\\d{1,3}){3})\\]");
-    private static final Pattern WINDOWS_BARE_IP =
-            Pattern.compile("(?<!\\d)(\\d{1,3}(?:\\.\\d{1,3}){3})(?!\\.\\d)");
-    private static final Pattern WINDOWS_RTT_MS =
-            Pattern.compile("(?:<\\s*1|(\\d+(?:\\.\\d+)?))\\s*(?:ms|мс)", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+    private static final Pattern UNIX_LINE = Pattern.compile("^\\s*(\\d+)\\s+([^\\s]+)(?:\\s+([0-9.]+)\\s*ms)?.*");
+    private static final Pattern WINDOWS_HOP = Pattern.compile("^\\s*(\\d+)\\s+(.+)$");
+    private static final Pattern WINDOWS_IP_IN_BRACKETS = Pattern.compile("\\[(\\d{1,3}(?:\\.\\d{1,3}){3})\\]");
+    private static final Pattern WINDOWS_BARE_IP = Pattern.compile("(?<!\\d)(\\d{1,3}(?:\\.\\d{1,3}){3})(?!\\.\\d)");
+    private static final Pattern WINDOWS_RTT_MS = Pattern.compile(
+            "(?:<\\s*1|(\\d+(?:\\.\\d+)?))\\s*(?:ms|мс)", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 
     private static volatile TracerouteFlavor cachedFlavor;
 
-    private final boolean windows = System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win");
+    private final boolean windows =
+            System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win");
     private final TracerouteFlavor flavor;
 
     ProcessRouteProbe() {
@@ -214,33 +211,17 @@ public final class ProcessRouteProbe implements RouteProbe {
         if (windows) {
             int waitMs = windowsTracertWaitMs(timeoutSeconds);
             String tracert = resolveTracertExecutable(Files::isExecutable);
-            return List.of(
-                    tracert, "-d", "-h", String.valueOf(maxHops), "-w", String.valueOf(waitMs), targetHost);
+            return List.of(tracert, "-d", "-h", String.valueOf(maxHops), "-w", String.valueOf(waitMs), targetHost);
         }
         String traceroute = resolveTracerouteExecutable();
         int waitSec = Math.max(1, (int) Math.ceil(timeoutSeconds));
         if (flavor == TracerouteFlavor.GNU_INETUTILS) {
             // GNU inetutils: no -n (DNS off by default); -n triggers exit 64 (EX_USAGE).
             return List.of(
-                    traceroute,
-                    "-m",
-                    String.valueOf(maxHops),
-                    "-w",
-                    String.valueOf(waitSec),
-                    "-q",
-                    "1",
-                    targetHost);
+                    traceroute, "-m", String.valueOf(maxHops), "-w", String.valueOf(waitSec), "-q", "1", targetHost);
         }
         return List.of(
-                traceroute,
-                "-n",
-                "-w",
-                String.valueOf(waitSec),
-                "-m",
-                String.valueOf(maxHops),
-                "-q",
-                "1",
-                targetHost);
+                traceroute, "-n", "-w", String.valueOf(waitSec), "-m", String.valueOf(maxHops), "-q", "1", targetHost);
     }
 
     static List<HopNode> parseUnix(List<String> lines) {

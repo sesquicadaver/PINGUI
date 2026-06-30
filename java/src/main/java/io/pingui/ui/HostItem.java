@@ -97,10 +97,7 @@ public final class HostItem {
     static String formatMetrics(HostTargetStats stats) {
         return String.format(
                 "loss %.0f%%  min %s  avg %s  max %s ms",
-                stats.lossPct(),
-                formatMs(stats.minMs()),
-                formatMs(stats.avgMs()),
-                formatMs(stats.maxMs()));
+                stats.lossPct(), formatMs(stats.minMs()), formatMs(stats.avgMs()), formatMs(stats.maxMs()));
     }
 
     private static String formatMs(Double value) {

@@ -124,12 +124,14 @@ profiles:
 
 ```bash
 cd java
+./gradlew check          # compile + Spotless
+./gradlew spotlessApply  # автоформат Java / Gradle Kotlin DSL
 ./gradlew build
 ./gradlew run
 ./gradlew jpackageDeb   # Linux .deb → build/dist/
 ```
 
-Unit-тести та CI — гілка **`beta`**.
+Unit-тести та CI — гілка **`beta`** (`./gradlew check` на `main` — compile + format).
 
 ## Пакування (jpackage)
 

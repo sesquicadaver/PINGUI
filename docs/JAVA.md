@@ -11,6 +11,7 @@
 - Java 21 (LTS)
 - JavaFX 21 (GUI)
 - Gradle 8.10 (Kotlin DSL)
+- Spotless + Palantir Java Format (`./gradlew spotlessCheck`)
 - SnakeYAML (конфіг)
 - JUnit 5 (тести на гілці **`beta`**)
 

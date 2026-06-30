@@ -28,17 +28,14 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.paint.Color;
-import javafx.util.Duration;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.input.KeyCombination;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -46,12 +43,15 @@ import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.stage.Window;
+import javafx.util.Duration;
 
 /** Main JavaFX window: profiles, host list, optional route graph and event log. */
 public final class MainController {
@@ -131,8 +131,7 @@ public final class MainController {
             expertMode.addListener((obs, was, on) -> hostList.refresh());
         } else {
             expertCheck.setDisable(true);
-            expertCheck.setTooltip(
-                    new Tooltip("Expert ping (iputils ping) доступний лише на Linux"));
+            expertCheck.setTooltip(new Tooltip("Expert ping (iputils ping) доступний лише на Linux"));
         }
 
         Button newProfileButton = new Button("Новий профіль");
@@ -142,13 +141,7 @@ public final class MainController {
         refreshProfileCombo();
         profileCombo.setOnAction(e -> onProfileSelected());
 
-        HBox profileBar =
-                new HBox(
-                        8,
-                        new Label("Профіль:"),
-                        profileCombo,
-                        newProfileButton,
-                        deleteProfileButton);
+        HBox profileBar = new HBox(8, new Label("Профіль:"), profileCombo, newProfileButton, deleteProfileButton);
         profileCombo.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(profileCombo, Priority.ALWAYS);
 
@@ -226,31 +219,26 @@ public final class MainController {
     }
 
     private MonitorService createMonitor(TracingProfile profile) {
-        MonitorService service =
-                new MonitorService(
-                        profile.intervalSeconds(),
-                        profile.maxHops(),
-                        profile.timeoutSeconds(),
-                        profile.probeMode());
+        MonitorService service = new MonitorService(
+                profile.intervalSeconds(), profile.maxHops(), profile.timeoutSeconds(), profile.probeMode());
         service.setExpertResolver(store::getPingExpert);
         service.setPingOnlyResolver(store::isPingOnly);
-        service.setListener(
-                new MonitorService.Listener() {
-                    @Override
-                    public void onDataReceived(String host, RouteSnapshot snapshot) {
-                        Platform.runLater(() -> handleData(host, snapshot));
-                    }
+        service.setListener(new MonitorService.Listener() {
+            @Override
+            public void onDataReceived(String host, RouteSnapshot snapshot) {
+                Platform.runLater(() -> handleData(host, snapshot));
+            }
 
-                    @Override
-                    public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {
-                        Platform.runLater(() -> handleRouteChanged(host, oldIps, newIps));
-                    }
+            @Override
+            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {
+                Platform.runLater(() -> handleRouteChanged(host, oldIps, newIps));
+            }
 
-                    @Override
-                    public void onProbeError(String host, String message) {
-                        Platform.runLater(() -> appendLog("Помилка [" + host + "]: " + message));
-                    }
-                });
+            @Override
+            public void onProbeError(String host, String message) {
+                Platform.runLater(() -> appendLog("Помилка [" + host + "]: " + message));
+            }
+        });
         for (HostEntry entry : profile.hosts()) {
             if (!HostViewRules.matches(entry.address())) {
                 service.addHost(entry.address(), entry.enabled(), entry.pingOnly());
@@ -280,7 +268,8 @@ public final class MainController {
     private void refreshProfileCombo() {
         switchingProfile = true;
         String active = profileDocument.activeProfile();
-        profileCombo.setItems(FXCollections.observableArrayList(profileDocument.profiles().keySet()));
+        profileCombo.setItems(
+                FXCollections.observableArrayList(profileDocument.profiles().keySet()));
         profileCombo.getSelectionModel().select(active);
         switchingProfile = false;
     }
@@ -381,9 +370,8 @@ public final class MainController {
         try {
             store.setPingExpert(item.getHost(), updated.get());
             item.setExpertConfigured(updated.get().isConfigured());
-            appendLog(
-                    "Expert ping [" + item.getHost() + "]: "
-                            + (updated.get().isConfigured() ? updated.get().args() : "скинуто"));
+            appendLog("Expert ping [" + item.getHost() + "]: "
+                    + (updated.get().isConfigured() ? updated.get().args() : "скинуто"));
         } catch (ConfigError ex) {
             appendLog(ex.getMessage());
         }
@@ -450,8 +438,8 @@ public final class MainController {
         hostList.setMaxHeight(listHeightForRows(HostsConfig.MAX_HOSTS));
         hostItems.addListener((ListChangeListener.Change<? extends HostItem> change) -> syncHostListHeight());
         syncHostListHeight();
-        hostList.setCellFactory(
-                list -> new HostListCell(this::onToggleEnabled, this::onTogglePingOnly, expertMode, this::onOpenExpertPing));
+        hostList.setCellFactory(list ->
+                new HostListCell(this::onToggleEnabled, this::onTogglePingOnly, expertMode, this::onOpenExpertPing));
     }
 
     private void syncHostListHeight() {
@@ -546,7 +534,8 @@ public final class MainController {
             return;
         }
         try {
-            List<String> others = store.hosts().stream().filter(h -> !h.equals(oldHost)).toList();
+            List<String> others =
+                    store.hosts().stream().filter(h -> !h.equals(oldHost)).toList();
             String renamed = HostsConfig.validateSessionHost(newText, others);
             monitor.renameHost(oldHost, renamed);
             store.renameHost(oldHost, renamed);

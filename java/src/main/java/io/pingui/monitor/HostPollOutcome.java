@@ -1,8 +1,6 @@
 package io.pingui.monitor;
 
 import io.pingui.model.Models.RouteSnapshot;
-import io.pingui.probe.RouteProbe;
-import java.io.IOException;
 import java.util.List;
 
 /** Result of polling one host during a monitoring cycle. */

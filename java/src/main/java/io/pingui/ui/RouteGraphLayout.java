@@ -22,8 +22,7 @@ public final class RouteGraphLayout {
 
     public record ColumnLayout(double centerX, double width) {}
 
-    public record GraphNode(
-            String id, String label, String color, double x, double y, double width, double height) {}
+    public record GraphNode(String id, String label, String color, double x, double y, double width, double height) {}
 
     public record GraphScene(List<GraphNode> nodes, List<Edge> edges) {
         public record Edge(String fromId, String toId, boolean inactive) {}
@@ -53,15 +52,15 @@ public final class RouteGraphLayout {
         if (inactive.isEmpty() || active.isEmpty()) {
             return true;
         }
-        double inactiveRight = inactive.stream().mapToDouble(n -> n.x() + n.width() / 2).max().orElse(0);
-        double activeLeft = active.stream().mapToDouble(n -> n.x() - n.width() / 2).min().orElse(1);
+        double inactiveRight =
+                inactive.stream().mapToDouble(n -> n.x() + n.width() / 2).max().orElse(0);
+        double activeLeft =
+                active.stream().mapToDouble(n -> n.x() - n.width() / 2).min().orElse(1);
         return inactiveRight < activeLeft;
     }
 
     public static GraphScene buildScene(
-            List<HopNode> current,
-            List<HopNode> previous,
-            Function<String, Double> avgPingFn) {
+            List<HopNode> current, List<HopNode> previous, Function<String, Double> avgPingFn) {
         return buildScene(current, previous, avgPingFn, hop -> null);
     }
 
@@ -81,8 +80,7 @@ public final class RouteGraphLayout {
         List<GraphScene.Edge> edges = new ArrayList<>();
 
         if (showPrevious && columns.inactive() != null) {
-            ChainResult inactiveChain =
-                    chainNodes(prev, avgPingFn, hopStatsFn, columns.inactive(), true, "prev");
+            ChainResult inactiveChain = chainNodes(prev, avgPingFn, hopStatsFn, columns.inactive(), true, "prev");
             nodes.addAll(inactiveChain.nodes());
             edges.addAll(inactiveChain.edges());
         }

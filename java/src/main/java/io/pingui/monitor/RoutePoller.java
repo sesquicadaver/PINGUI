@@ -19,20 +19,12 @@ public final class RoutePoller {
         this.probe = probe;
     }
 
-    public HostPollOutcome pollHostRoute(
-            String host, List<String> previousIps, int maxHops, double timeoutSeconds) {
+    public HostPollOutcome pollHostRoute(String host, List<String> previousIps, int maxHops, double timeoutSeconds) {
         try {
             RouteSnapshot snapshot = probe.trace(host, maxHops, timeoutSeconds);
             List<String> currentIps = snapshot.routeIps();
-            RouteChangeDetector.RouteChangeResult change =
-                    RouteChangeDetector.detect(previousIps, currentIps);
-            return new HostPollOutcome(
-                    snapshot,
-                    null,
-                    change.changed(),
-                    change.oldIps(),
-                    change.newIps(),
-                    currentIps);
+            RouteChangeDetector.RouteChangeResult change = RouteChangeDetector.detect(previousIps, currentIps);
+            return new HostPollOutcome(snapshot, null, change.changed(), change.oldIps(), change.newIps(), currentIps);
         } catch (IOException ex) {
             return HostPollOutcome.error(previousIps, ex.getMessage());
         } catch (RuntimeException ex) {
@@ -45,21 +37,13 @@ public final class RoutePoller {
             String host, List<String> previousIps, double timeoutSeconds, PingExpertEntry expert) {
         try {
             OptionalDouble rtt = hostPing.pingOnce(host, expert, timeoutSeconds);
-            List<HopNode> nodes =
-                    rtt.isPresent()
-                            ? List.of(new HopNode(1, host, rtt.getAsDouble(), false))
-                            : List.of(Models.timeout(1));
+            List<HopNode> nodes = rtt.isPresent()
+                    ? List.of(new HopNode(1, host, rtt.getAsDouble(), false))
+                    : List.of(Models.timeout(1));
             RouteSnapshot snapshot = new RouteSnapshot(host, host, nodes);
             List<String> currentIps = snapshot.routeIps();
-            RouteChangeDetector.RouteChangeResult change =
-                    RouteChangeDetector.detect(previousIps, currentIps);
-            return new HostPollOutcome(
-                    snapshot,
-                    null,
-                    change.changed(),
-                    change.oldIps(),
-                    change.newIps(),
-                    currentIps);
+            RouteChangeDetector.RouteChangeResult change = RouteChangeDetector.detect(previousIps, currentIps);
+            return new HostPollOutcome(snapshot, null, change.changed(), change.oldIps(), change.newIps(), currentIps);
         } catch (IOException ex) {
             return HostPollOutcome.error(previousIps, ex.getMessage());
         } catch (RuntimeException ex) {

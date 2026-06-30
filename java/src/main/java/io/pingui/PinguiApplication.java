@@ -56,9 +56,7 @@ public final class PinguiApplication extends Application {
         boolean verbose = params.containsKey("verbose");
         boolean geoipEnabled = !params.containsKey("no-geoip");
         Path geoipHints =
-                params.containsKey("geoip-hints")
-                        ? Path.of(params.get("geoip-hints"))
-                        : defaults.geoipHintsPath();
+                params.containsKey("geoip-hints") ? Path.of(params.get("geoip-hints")) : defaults.geoipHintsPath();
         return new AppOptions(config, profileOverrides, verbose, geoipEnabled, geoipHints);
     }
 

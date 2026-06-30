@@ -2,6 +2,7 @@ plugins {
     java
     application
     id("org.openjfx.javafxplugin") version "0.1.0"
+    id("com.diffplug.spotless") version "6.25.0"
 }
 
 group = "io.pingui"
@@ -35,6 +36,24 @@ application {
     mainClass.set("io.pingui.PinguiApplication")
 }
 
+spotless {
+    java {
+        target("src/main/java/**/*.java")
+        palantirJavaFormat("2.50.0")
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    kotlinGradle {
+        target("*.gradle.kts", "settings.gradle.kts")
+        ktlint()
+    }
+}
+
+tasks.check {
+    dependsOn(tasks.named("spotlessCheck"))
+}
+
 tasks.jar {
     manifest {
         attributes(
@@ -50,7 +69,7 @@ tasks.register<Exec>("jpackageDeb") {
     dependsOn("installDist")
     val libDir = layout.buildDirectory.dir("install/pingui-java/lib")
     val distDir = layout.buildDirectory.dir("dist")
-    val mainJar = "pingui-java-${version}.jar"
+    val mainJar = "pingui-java-$version.jar"
     doFirst {
         distDir.get().asFile.mkdirs()
     }
@@ -77,7 +96,7 @@ tasks.register<Exec>("jpackageMsi") {
     dependsOn("installDist")
     val libDir = layout.buildDirectory.dir("install/pingui-java/lib")
     val distDir = layout.buildDirectory.dir("dist")
-    val mainJar = "pingui-java-${version}.jar"
+    val mainJar = "pingui-java-$version.jar"
     doFirst {
         distDir.get().asFile.mkdirs()
     }
@@ -104,7 +123,7 @@ tasks.register<Exec>("jpackageDmg") {
     dependsOn("installDist")
     val libDir = layout.buildDirectory.dir("install/pingui-java/lib")
     val distDir = layout.buildDirectory.dir("dist")
-    val mainJar = "pingui-java-${version}.jar"
+    val mainJar = "pingui-java-$version.jar"
     doFirst {
         distDir.get().asFile.mkdirs()
     }

@@ -1,14 +1,13 @@
 package io.pingui.monitor;
 
 import io.pingui.config.ConfigError;
-import io.pingui.config.HostsConfig;
 import io.pingui.config.HostEntry;
+import io.pingui.config.HostsConfig;
 import io.pingui.config.PingExpertEntry;
-import io.pingui.model.Models;
 import io.pingui.model.Models.HopNode;
-import io.pingui.model.Models.HostSessionData;
 import io.pingui.model.Models.HopProbeStats;
 import io.pingui.model.Models.HopStatsSummary;
+import io.pingui.model.Models.HostSessionData;
 import io.pingui.model.Models.RouteSnapshot;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

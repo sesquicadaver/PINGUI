@@ -14,7 +14,8 @@ public record HostEntry(String address, boolean enabled, boolean pingOnly, PingE
     }
 
     public HostEntry withPingExpert(PingExpertEntry expert) {
-        return new HostEntry(address, enabled, pingOnly, expert != null ? expert.normalized() : PingExpertEntry.empty());
+        return new HostEntry(
+                address, enabled, pingOnly, expert != null ? expert.normalized() : PingExpertEntry.empty());
     }
 
     public HostEntry withPingOnly(boolean pingOnly) {

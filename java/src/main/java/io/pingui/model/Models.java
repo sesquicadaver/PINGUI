@@ -37,10 +37,7 @@ public final class Models {
         }
 
         public List<String> routeIps() {
-            return nodes.stream()
-                    .filter(HopNode::isReachable)
-                    .map(HopNode::ip)
-                    .toList();
+            return nodes.stream().filter(HopNode::isReachable).map(HopNode::ip).toList();
         }
     }
 

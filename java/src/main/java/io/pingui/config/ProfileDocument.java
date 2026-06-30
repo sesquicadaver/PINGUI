@@ -13,7 +13,8 @@ public final class ProfileDocument {
     private final Map<String, TracingProfile> profiles = new LinkedHashMap<>();
 
     public ProfileDocument(String activeProfile, Map<String, TracingProfile> profiles) {
-        this.activeProfile = activeProfile != null && !activeProfile.isBlank() ? activeProfile.strip() : DEFAULT_PROFILE;
+        this.activeProfile =
+                activeProfile != null && !activeProfile.isBlank() ? activeProfile.strip() : DEFAULT_PROFILE;
         if (profiles != null) {
             this.profiles.putAll(profiles);
         }

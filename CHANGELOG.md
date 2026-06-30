@@ -7,6 +7,7 @@
 
 ### Changed
 
+- **Build:** Spotless (Palantir Java Format) + `./gradlew check` = compile + `spotlessCheck`.
 - **Java CLI:** `--interval` / `--max-hops` / `--timeout` / `--probe` перезаписують активний YAML-профіль **лише якщо передані** (`CliProfileOverrides`).
 - **Docs:** IPv4-only — README, DEPLOYMENT, JAVA, Help dialog.
 - **Docs:** [docs/ROADMAP.md](docs/ROADMAP.md) — атомарний план виправлень після аудиту `main`.
