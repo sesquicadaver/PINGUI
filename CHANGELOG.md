@@ -12,6 +12,7 @@
 
 ### Added
 
+- **Java UI:** меню **Про** та **Довідка** (F1) з діалогами версії та короткої довідки.
 - **Java UI:** чекбокс «Ping only» на кожному хості — лише ping до цілі без traceroute (`ping_only` у YAML).
 - **Java UI:** кнопка «Exten.» лишається видимою в ping-only при увімкненому «Експерт»; без чекбокса «ланцюжок».
 - **Docs:** [docs/CHECKLIST.md](docs/CHECKLIST.md) — checklist розгортання Linux / Windows / macOS.

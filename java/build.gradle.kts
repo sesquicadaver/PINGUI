@@ -37,7 +37,10 @@ application {
 
 tasks.jar {
     manifest {
-        attributes["Main-Class"] = "io.pingui.PinguiApplication"
+        attributes(
+            "Main-Class" to "io.pingui.PinguiApplication",
+            "Implementation-Version" to version,
+        )
     }
 }
 

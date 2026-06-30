@@ -29,6 +29,10 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
@@ -167,6 +171,7 @@ public final class MainController {
         graphCanvas.setMinSize(400, 400);
 
         root.setLeft(leftPanel);
+        root.setTop(createMenuBar());
 
         hostList.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, newItem) -> {
             if (newItem != null) {
@@ -195,6 +200,23 @@ public final class MainController {
     public void shutdown() {
         dismissEasterEgg();
         monitor.close();
+    }
+
+    private MenuBar createMenuBar() {
+        MenuItem aboutItem = new MenuItem("Про PINGUI…");
+        aboutItem.setOnAction(e -> AppMenuDialogs.showAbout());
+        Menu aboutMenu = new Menu("Про");
+        aboutMenu.getItems().add(aboutItem);
+
+        MenuItem helpItem = new MenuItem("Довідка…");
+        helpItem.setAccelerator(KeyCombination.valueOf("F1"));
+        helpItem.setOnAction(e -> AppMenuDialogs.showHelp());
+        Menu helpMenu = new Menu("Довідка");
+        helpMenu.getItems().add(helpItem);
+
+        MenuBar menuBar = new MenuBar(aboutMenu, helpMenu);
+        menuBar.setUseSystemMenuBar(true);
+        return menuBar;
     }
 
     private MonitorService createMonitor(TracingProfile profile) {

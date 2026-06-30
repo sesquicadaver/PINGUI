@@ -56,6 +56,7 @@ CLI: `--probe auto|process|raw` (default: `auto`).
 
 `MainController` (JavaFX):
 
+- Меню **Про** / **Довідка** (F1) — `AppMenuDialogs`
 - Вибір **профілю трасування** (ComboBox + новий/видалити); усі профілі в одному YAML
 - Чекбокс **«Експерт»** → кнопка **Exten.** на рядку хоста → `PingExpertDialog` (каталог з `pingMan.txt`, без `-c/-w/-W/-i` тощо)
 - `ListView<HostItem>` + CheckBox у комірці
