@@ -94,7 +94,8 @@ CLI **не затирає** поля профілю defaults (1.0 / 20 / 0.5 / a
 io.pingui
 ├── config/          ProfilesConfig, PingExpertEntry
 ├── model/           HopNode, RouteSnapshot
-├── probe/           RouteProbeFactory, ProcessRouteProbe, ProcessExpertPing
+├── probe/           RouteProbeFactory, ProcessRouteProbe, TraceCommandBuilder,
+                       UnixTraceOutputParser, WindowsTraceOutputParser, ProcessExpertPing
 ├── monitor/         SessionStore, MonitorService, ExpertPingEnricher
 └── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,
                        MonitorLifecycle, ViewModeController, RouteGraphPresenter, GraphCanvas

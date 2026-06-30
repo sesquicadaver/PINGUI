@@ -4,8 +4,9 @@
 
 | Модуль / ТЗ | Клас | Тести |
 |-------------|------|-------|
-| Парсинг Unix trace | `ProcessRouteProbe` | `ProcessRouteProbeTest` (unix fixtures) |
-| Парсинг Windows tracert | `ProcessRouteProbe` | `ProcessRouteProbeTest` (win fixtures, `<1 ms`, wait ms) |
+| Парсинг Unix trace | `UnixTraceOutputParser`, `ProcessRouteProbe` | `ProcessRouteProbeTest` (unix fixtures) |
+| Парсинг Windows tracert | `WindowsTraceOutputParser`, `ProcessRouteProbe` | `ProcessRouteProbeTest` (win fixtures, `<1 ms`, wait ms) |
+| Trace argv (OS) | `TraceCommandBuilder`, `LinuxTracerouteCommand`, `MacTracerouteCommand`, `WindowsTracertCommand` | `ProcessRouteProbeTest` (timing); parity via `./gradlew check` |
 | Валідація хостів IPv4 | `HostsConfig` | `HostsConfigTest` |
 | YAML profiles v2 + legacy | `ProfilesConfig` | `ProfilesConfigTest` |
 | CLI override профілю | `CliProfileOverrides`, `PinguiApplication` | `PinguiApplicationTest` |

@@ -47,10 +47,24 @@ CLI: `--probe auto|process|raw` (default: `auto`).
 
 ### ProcessRouteProbe (subprocess)
 
-| ОС | Команда |
-|----|---------|
-| Linux / macOS | `traceroute -n -w SEC -m N -q 1 HOST` (1 probe/hop) |
-| Windows | `tracert -d -h N -w MS HOST` (3 probe/hop, MS ≥ 4000) — **повільно** |
+| ОС | Builder | Команда |
+|----|---------|---------|
+| Linux | `LinuxTracerouteCommand` | `traceroute -n -w SEC -m N -q 1 HOST` (GNU inetutils: без `-n`) |
+| macOS | `MacTracerouteCommand` | те саме; бінарник `/usr/sbin/traceroute` якщо є |
+| Windows | `WindowsTracertCommand` | `tracert -d -h N -w MS HOST` (3 probe/hop, MS ≥ 4000) — **повільно** |
+
+Парсери: `UnixTraceOutputParser`, `WindowsTraceOutputParser`. Фабрика: `TraceCommandFactory`.
+
+#### Обмеження парсера (known limitations)
+
+| Область | Поведінка |
+|---------|-----------|
+| **IPv6 trace output** | Не підтримується; рядки IPv6 ігноруються або не матчаться regex |
+| **ASN / IGP labels** | Не парсяться; hop IP береться з першого IPv4-токена або `[IP]` |
+| **Unix hostname hops** | Token після номера hop зберігається як «IP» (може бути hostname) |
+| **Windows локалізація** | Timeout: `timed out`, `timeout`, `перевищ…`; RTT: `ms` / `мс`, `<1 ms` → 0.5 |
+| **GNU inetutils** | Flavor без `-n`; `-n` дає exit 64 — детекція через `traceroute --version` |
+| **Mixed trace formats** | Лише класичний vertical traceroute/tracert; MTR/JSON — поза scope |
 
 ### RawIcmpRouteProbe (JNA, Linux)
 
