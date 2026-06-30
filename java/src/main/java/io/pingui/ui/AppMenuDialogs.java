@@ -32,7 +32,7 @@ public final class AppMenuDialogs {
         Alert alert = baseAlert(owner, "Про PINGUI");
         alert.setHeaderText(AppInfo.NAME + " — сесійний монітор маршрутів (" + AppInfo.EDITION + ")");
 
-        Label version = new Label("Версія " + AppInfo.version());
+        Label version = new Label("Версія " + AppInfo.versionDetail());
         Label runtime = new Label("Java " + AppInfo.runtimeJavaVersion() + " · " + AppInfo.runtimeOsName());
         runtime.setStyle("-fx-text-fill: #555;");
 

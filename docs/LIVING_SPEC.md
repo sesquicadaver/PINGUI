@@ -9,7 +9,8 @@
 | Trace argv (OS) | `TraceCommandBuilder`, `LinuxTracerouteCommand`, `MacTracerouteCommand`, `WindowsTracertCommand` | `ProcessRouteProbeTest` (timing); parity via `./gradlew check` |
 | Валідація хостів IPv4 | `HostsConfig` | `HostsConfigTest` (IPv6 → explicit IPv4-only error) |
 | CLI interval vs YAML (M-014) | `CliProfileOverrides`, `ProfilesConfig` | `PinguiApplicationTest.m014_*` |
-| IPv6 scope | `docs/SPIKE_IPV6.md` | wontfix decision doc (B-050/B-053) |
+| Build metadata | `AppInfo`, `generateBuildProperties` | `AppInfoTest` |
+| Layer deps (no ui in config) | `scripts/check-layer-deps.sh` | `./gradlew layerCheck` |
 | YAML profiles v2 + legacy | `ProfilesConfig` | `ProfilesConfigTest` |
 | CLI override профілю | `CliProfileOverrides`, `PinguiApplication` | `PinguiApplicationTest` |
 | Expert ping flags | `PingExpertValidator` | `PingExpertValidatorTest` |

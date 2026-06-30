@@ -119,10 +119,10 @@
 
 | ID | Задача | DoD |
 |----|--------|-----|
-| **B-060** | Версія в About з CI build number / git sha | `AppInfo`, Gradle `processResources` |
-| **B-061** | jpackage smoke у CHECKLIST після кожного release | `docs/CHECKLIST.md` |
-| **B-062** | Weekly doc smoke (README ↔ фактичний CLI) | Чекліст у `docs/CHECKLIST.md` § Docs |
-| **B-063** | Import graph / cycle detection (Gradle plugin або script) | CI warning на циклі `config` ↔ `ui` |
+| **B-060** | [x] Версія в About з CI build number / git sha | `AppInfo`, Gradle `generateBuildProperties` | About показує `versionDetail()` |
+| **B-061** | [x] jpackage smoke у CHECKLIST після кожного release | `docs/CHECKLIST.md` § Release |
+| **B-062** | [x] Weekly doc smoke (README ↔ фактичний CLI) | `docs/CHECKLIST.md` § Docs smoke |
+| **B-063** | [x] Import graph / cycle detection (Gradle plugin або script) | `java/scripts/check-layer-deps.sh`, `layerCheck` | `./gradlew check` включає layerCheck |
 
 ---
 

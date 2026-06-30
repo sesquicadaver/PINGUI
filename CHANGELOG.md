@@ -8,6 +8,7 @@
 ### Changed
 
 - **Java probe:** `ProcessRouteProbe` розділено — `TraceCommandBuilder` (Linux/macOS/Windows), `UnixTraceOutputParser`, `WindowsTraceOutputParser`.
+- **Build:** About показує версію + git sha (+ CI build number); Gradle `generateBuildProperties`; `layerCheck` у `./gradlew check`.
 - **IPv6:** SPIKE → wontfix; `HostsConfig` повертає явну помилку для IPv6 literal (B-050/B-053).
 - **CLI:** M-014 unit-тест — YAML `interval: 30` без `--interval`; GUI/CLI smoke — `docs/CHECKLIST.md`.
 - **Java UI:** `MainController` розділено на координатори (`ProfileUiCoordinator`, `HostListPresenter`, `MonitorLifecycle`, `ViewModeController`, `RouteGraphPresenter`); ~715 → ~387 рядків.

@@ -199,6 +199,31 @@ chmod +x pingui-java.sh gradlew
 
 ---
 
+## § Release / jpackage smoke (B-061)
+
+Після bump версії або перед тегом release:
+
+- [ ] `cd java && ./gradlew check` — green (включно з `layerCheck`)
+- [ ] `./pingui-java.sh --build` — SUCCESS
+- [ ] `./pingui-java.sh --package` (Linux: `.deb`) — артефакт у `build/dist/`
+- [ ] Інсталятор запускається; GUI відкривається
+- [ ] **Про** — версія містить git sha (`AppInfo.versionDetail()`)
+- [ ] Smoke з § GUI smoke (B-035) на цільовій ОС
+
+---
+
+## § Docs smoke (B-062, щотижня / перед release)
+
+Перевірка відповідності README ↔ фактичний CLI:
+
+- [ ] `java/README.md` — прапорці `--config`, `--interval`, `--probe`, `--geoip-hints` збігаються з `./pingui-java.sh --help`
+- [ ] `docs/JAVA.md` — таблиця CLI vs YAML актуальна
+- [ ] `docs/DEPLOYMENT.md` — JDK 21, Windows warning, IPv4-only
+- [ ] `docs/ROADMAP.md` — закриті задачі позначені `[x]`
+- [ ] Badge CI у `README.md` — відображає останній push
+
+---
+
 ## Можливості за платформою
 
 | Функція | Linux | Windows | macOS |

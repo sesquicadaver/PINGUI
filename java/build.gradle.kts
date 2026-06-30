@@ -57,6 +57,59 @@ spotless {
 
 tasks.check {
     dependsOn(tasks.named("spotlessCheck"))
+    dependsOn(tasks.named("layerCheck"))
+}
+
+val generatedResources = layout.buildDirectory.dir("generated/resources")
+
+tasks.register("generateBuildProperties") {
+    group = "build"
+    description = "Write pingui/build.properties with version, git sha, and CI build number"
+    outputs.dir(generatedResources)
+    doLast {
+        val gitSha =
+            runCatching {
+                providers
+                    .exec {
+                        commandLine("git", "rev-parse", "--short", "HEAD")
+                        isIgnoreExitValue = true
+                    }
+                    .standardOutput
+                    .asText
+                    .get()
+                    .trim()
+            }
+                .getOrElse { "" }
+                .ifBlank { "unknown" }
+        val buildNumber = System.getenv("GITHUB_RUN_NUMBER")?.takeIf { it.isNotBlank() } ?: "local"
+        val outDir = generatedResources.get().asFile.resolve("pingui")
+        outDir.mkdirs()
+        outDir
+            .resolve("build.properties")
+            .writeText(
+                """
+                version=$version
+                gitSha=$gitSha
+                buildNumber=$buildNumber
+                """
+                    .trimIndent(),
+            )
+    }
+}
+
+sourceSets.main {
+    resources.srcDir(generatedResources)
+}
+
+tasks.named("processResources") {
+    dependsOn("generateBuildProperties")
+}
+
+tasks.register<Exec>("layerCheck") {
+    group = "verification"
+    description = "Fail if lower layers import io.pingui.ui (B-063)"
+    workingDir = projectDir
+    commandLine("bash", "scripts/check-layer-deps.sh")
 }
 
 tasks.jar {

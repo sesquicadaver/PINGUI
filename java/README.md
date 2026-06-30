@@ -126,7 +126,7 @@ profiles:
 
 ```bash
 cd java
-./gradlew check          # compile + Spotless + unit tests
+./gradlew check          # compile + Spotless + layerCheck + unit tests
 ./gradlew test           # JUnit 5 only
 ./gradlew spotlessApply  # автоформат Java / Gradle Kotlin DSL
 ./gradlew build
