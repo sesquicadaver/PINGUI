@@ -177,4 +177,8 @@ flowchart LR
 
 **Sprint 14 (2025-06-26):** `origin/main` (B-064 push) злито в `beta`; `origin/beta` синхронізовано.
 
+**Sprint 13b (2025-06-30):** B-064 — `MonitorServiceTest`/`SessionStoreTest`/`IcmpPacketTest`; прибрано exclusion `IcmpPacket`.
+
+**Sprint 15 (2025-06-30):** B-064b з `beta` → `main` (cherry-pick).
+
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.
