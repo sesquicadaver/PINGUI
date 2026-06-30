@@ -62,4 +62,46 @@ class GeoCountryTest {
         GeoCountry.configure(true, tempDir.resolve("missing.yaml"));
         assertEquals("US", GeoCountry.lookup("8.8.8.8"));
     }
+
+    @Test
+    void loopbackAndLinkLocalReturnLan() {
+        assertEquals("LAN", GeoCountry.lookup("127.0.0.1"));
+        assertEquals("LAN", GeoCountry.lookup("169.254.10.1"));
+    }
+
+    @Test
+    void lookupNullWhenDisabledOrNullIp(@TempDir Path tempDir) {
+        GeoCountry.configure(false, tempDir.resolve("unused.yaml"));
+        assertNull(GeoCountry.lookup("8.8.8.8"));
+        assertNull(GeoCountry.lookup(null));
+    }
+
+    @Test
+    void longestPrefixMatchWins(@TempDir Path tempDir) throws Exception {
+        Path hints = tempDir.resolve("hints.yaml");
+        java.nio.file.Files.writeString(
+                hints,
+                """
+                prefixes:
+                  203.0.113.0/24: AA
+                  203.0.113.0/28: BB
+                """,
+                java.nio.charset.StandardCharsets.UTF_8);
+        GeoCountry.configure(true, hints);
+        assertEquals("BB", GeoCountry.lookup("203.0.113.10"));
+        assertEquals("AA", GeoCountry.lookup("203.0.113.200"));
+    }
+
+    @Test
+    void invalidHintsFileRejected(@TempDir Path tempDir) throws Exception {
+        Path hints = tempDir.resolve("bad.yaml");
+        java.nio.file.Files.writeString(hints, "prefixes:\n  not-cidr: US\n", java.nio.charset.StandardCharsets.UTF_8);
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class, () -> GeoCountry.configure(true, hints));
+    }
+
+    @Test
+    void ipv6AddressReturnsNull() {
+        assertNull(GeoCountry.lookup("2001:db8::1"));
+    }
 }

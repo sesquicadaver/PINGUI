@@ -7,6 +7,7 @@
 
 ### Changed
 
+- **Tests:** B-064d — `GeoCountryTest` (longest-prefix, loopback/link-local, invalid hints, IPv6); `ProfilesConfigTest` (string host flags, invalid boolean, save round-trip).
 - **Tests:** B-064c — розширено `HostsConfigTest`/`ProfileDocumentTest`/`GeoCountryTest`; покриття config/geoip ↑.
 - **Java monitor:** `MonitorService` використовує `PingOnlyResolver` (live `SessionStore`) для ping-only режиму.
 - **Tests:** B-064 — розширено `MonitorService`/`SessionStore`/`IcmpPacket` unit-тести; прибрано JaCoCo exclusion для `IcmpPacket`.
