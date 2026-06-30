@@ -4,6 +4,7 @@ import io.pingui.config.ConfigError;
 import io.pingui.config.ProfileDocument;
 import io.pingui.config.ProfilesConfig;
 import io.pingui.probe.ProbeMode;
+import io.pingui.ui.AppMenuDialogs;
 import io.pingui.ui.MainController;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -25,6 +26,7 @@ public final class PinguiApplication extends Application {
             LoggingSetup.configure(options.verbose());
             ProfileDocument document = ProfilesConfig.load(options.configPath());
             controller = new MainController(options, document);
+            AppMenuDialogs.bindHostServices(getHostServices());
             Scene scene = controller.createScene();
             stage.setTitle("PINGUI — Сесійний монітор маршрутів (Java)");
             stage.setScene(scene);

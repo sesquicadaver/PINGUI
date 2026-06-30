@@ -2,26 +2,35 @@ package io.pingui.ui;
 
 import io.pingui.AppInfo;
 import io.pingui.platform.PlatformCapabilities;
+import javafx.application.HostServices;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.Dialog;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextFlow;
+import javafx.stage.Modality;
+import javafx.stage.Window;
 
 /** About and Help dialogs for the main window menu bar. */
 public final class AppMenuDialogs {
+    private static HostServices hostServices;
+
     private AppMenuDialogs() {}
 
-    public static void showAbout() {
-        Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("Про PINGUI");
-        dialog.setHeaderText(AppInfo.NAME + " — сесійний монітор маршрутів (" + AppInfo.EDITION + ")");
-        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
-        dialog.getDialogPane().setPrefWidth(460);
+    /** Called from {@link io.pingui.PinguiApplication#start} — do not use AWT Desktop. */
+    public static void bindHostServices(HostServices services) {
+        hostServices = services;
+    }
+
+    public static void showAbout(Window owner) {
+        Alert alert = baseAlert(owner, "Про PINGUI");
+        alert.setHeaderText(AppInfo.NAME + " — сесійний монітор маршрутів (" + AppInfo.EDITION + ")");
 
         Label version = new Label("Версія " + AppInfo.version());
         Label runtime =
@@ -32,43 +41,63 @@ public final class AppMenuDialogs {
                                 + AppInfo.runtimeOsName());
         runtime.setStyle("-fx-text-fill: #555;");
 
-        TextFlow linkFlow = new TextFlow();
-        Text prefix = new Text("Репозиторій: ");
-        Text link = new Text(AppInfo.REPOSITORY);
-        link.setStyle("-fx-fill: #1565c0; -fx-underline: true;");
-        link.setOnMouseClicked(e -> openRepository());
-        linkFlow.getChildren().addAll(prefix, link);
-
         Label summary =
                 new Label(
                         "Монітор RTT і маршрутів до 10 цілей одночасно. "
                                 + "Дані сесії зберігаються лише в RAM.");
         summary.setWrapText(true);
 
-        VBox content = new VBox(10, version, runtime, summary, linkFlow);
+        HBox linkRow = new HBox(4, new Label("Репозиторій:"), repositoryLink());
+        linkRow.setAlignment(Pos.CENTER_LEFT);
+
+        VBox content = new VBox(10, version, runtime, summary, linkRow);
         content.setPadding(new Insets(8, 0, 0, 0));
-        dialog.getDialogPane().setContent(content);
-        dialog.showAndWait();
+        alert.getDialogPane().setContent(content);
+        alert.showAndWait();
     }
 
-    public static void showHelp() {
-        Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("Довідка PINGUI");
-        dialog.setHeaderText("Коротка довідка");
-        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
-        dialog.getDialogPane().setPrefWidth(560);
+    public static void showHelp(Window owner) {
+        Alert alert = baseAlert(owner, "Довідка PINGUI");
+        alert.setHeaderText("Коротка довідка");
 
         TextArea body = new TextArea(helpText());
         body.setEditable(false);
         body.setWrapText(true);
         body.setPrefRowCount(18);
 
+        HBox docRow = new HBox(4, new Label("Документація:"), repositoryLink());
+        docRow.setAlignment(Pos.CENTER_LEFT);
+        docRow.setPadding(new Insets(8, 0, 0, 0));
+
         ScrollPane scroll = new ScrollPane(body);
         scroll.setFitToWidth(true);
         scroll.setPrefViewportHeight(320);
-        scroll.setPadding(new Insets(8, 0, 0, 0));
-        dialog.getDialogPane().setContent(scroll);
-        dialog.showAndWait();
+
+        VBox content = new VBox(scroll, docRow);
+        content.setPadding(new Insets(8, 0, 0, 0));
+        alert.getDialogPane().setContent(content);
+        alert.showAndWait();
+    }
+
+    private static Alert baseAlert(Window owner, String title) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION, "", ButtonType.OK);
+        alert.setTitle(title);
+        alert.initOwner(owner);
+        alert.initModality(Modality.WINDOW_MODAL);
+        alert.getDialogPane().setPrefWidth(title.startsWith("Довідка") ? 560 : 460);
+        if (alert.getDialogPane().lookupButton(ButtonType.OK) instanceof Button close) {
+            close.setText("Закрити");
+        }
+        return alert;
+    }
+
+    private static Hyperlink repositoryLink() {
+        Hyperlink link = new Hyperlink(AppInfo.REPOSITORY);
+        link.setOnAction(event -> {
+            event.consume();
+            openRepository();
+        });
+        return link;
     }
 
     private static String helpText() {
@@ -98,19 +127,34 @@ public final class AppMenuDialogs {
                 Платформа
                 • Linux — рекомендована ОС (швидкий traceroute, Expert ping).
                 • Windows — повний trace через tracert може тривати хвилини; Ping only або interval ≥ 30 с.
-
-                Документація: %s
                 """
-                .formatted(expert, AppInfo.REPOSITORY);
+                .formatted(expert);
     }
 
     private static void openRepository() {
+        String url = AppInfo.REPOSITORY;
+        if (hostServices != null) {
+            hostServices.showDocument(url);
+            return;
+        }
+        Thread.ofVirtual().name("pingui-open-url").start(() -> launchBrowserProcess(url));
+    }
+
+    private static void launchBrowserProcess(String url) {
         try {
-            if (java.awt.Desktop.isDesktopSupported()) {
-                java.awt.Desktop.getDesktop().browse(java.net.URI.create(AppInfo.REPOSITORY));
+            String os = System.getProperty("os.name", "").toLowerCase();
+            ProcessBuilder launcher;
+            if (os.contains("win")) {
+                launcher = new ProcessBuilder("rundll32", "url.dll,FileProtocolHandler", url);
+            } else if (os.contains("mac")) {
+                launcher = new ProcessBuilder("open", url);
+            } else {
+                launcher = new ProcessBuilder("xdg-open", url);
             }
+            launcher.inheritIO().redirectError(ProcessBuilder.Redirect.DISCARD).redirectOutput(ProcessBuilder.Redirect.DISCARD);
+            launcher.start();
         } catch (Exception ignored) {
-            // No browser handler — link remains visible in the dialog.
+            // URL remains visible in Hyperlink for manual copy.
         }
     }
 }

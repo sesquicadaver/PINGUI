@@ -50,6 +50,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.stage.Window;
 
 /** Main JavaFX window: profiles, host list, optional route graph and event log. */
 public final class MainController {
@@ -204,19 +205,23 @@ public final class MainController {
 
     private MenuBar createMenuBar() {
         MenuItem aboutItem = new MenuItem("Про PINGUI…");
-        aboutItem.setOnAction(e -> AppMenuDialogs.showAbout());
+        aboutItem.setOnAction(e -> AppMenuDialogs.showAbout(dialogOwner()));
         Menu aboutMenu = new Menu("Про");
         aboutMenu.getItems().add(aboutItem);
 
         MenuItem helpItem = new MenuItem("Довідка…");
         helpItem.setAccelerator(KeyCombination.valueOf("F1"));
-        helpItem.setOnAction(e -> AppMenuDialogs.showHelp());
+        helpItem.setOnAction(e -> AppMenuDialogs.showHelp(dialogOwner()));
         Menu helpMenu = new Menu("Довідка");
         helpMenu.getItems().add(helpItem);
 
         MenuBar menuBar = new MenuBar(aboutMenu, helpMenu);
         menuBar.setUseSystemMenuBar(true);
         return menuBar;
+    }
+
+    private Window dialogOwner() {
+        return root.getScene() != null ? root.getScene().getWindow() : null;
     }
 
     private MonitorService createMonitor(TracingProfile profile) {
