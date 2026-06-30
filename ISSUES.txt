@@ -66,3 +66,13 @@ Gradle 8.10 не запускається під Java 25. Потрібен JDK 2
 **Причина:** у `settings.gradle.kts` не було `pluginManagement { gradlePluginPortal() }`.
 
 **Рішення:** `git pull`; потрібен доступ до https://plugins.gradle.org (проксі/firewall).
+
+---
+
+## [ВИРІШЕНО] Linux: чорний фрейм після створення/видалення профілю
+
+**Симптом:** велике чорне вікно, UI — маленька панель у куті.
+
+**Причина:** `sizeToScene()` не зменшує Stage після «Розширений»; `reloadActiveProfile()` без `applyViewMode()`; Scene без fill; цикл layout у `GraphCanvas.requestLayout()`.
+
+**Рішення:** `git pull`, перезапуск.

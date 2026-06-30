@@ -27,6 +27,7 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -179,7 +180,7 @@ public final class MainController {
         }
         syncControls();
         applyViewMode();
-        return new Scene(root);
+        return new Scene(root, Color.web("#fafafa"));
     }
 
     public void onSceneShown() {
@@ -342,8 +343,7 @@ public final class MainController {
             hostList.getSelectionModel().select(0);
         }
         syncControls();
-        redrawRouteIfExtended();
-        fitWindowToContent();
+        applyViewMode();
     }
 
     private void onOpenExpertPing(HostItem item, Void ignored) {
@@ -407,7 +407,11 @@ public final class MainController {
                 leftPanel.layout();
                 root.applyCss();
                 root.layout();
-                scene.getWindow().sizeToScene();
+                // sizeToScene() often fails to shrink on Linux after EXTENDED setWidth/setHeight.
+                double prefW = Math.max(SIMPLE_PANEL_MIN_WIDTH, root.prefWidth(-1));
+                double prefH = Math.max(root.minHeight(-1), root.prefHeight(-1));
+                scene.getWindow().setWidth(prefW);
+                scene.getWindow().setHeight(prefH);
             } else {
                 scene.getWindow().setWidth(EXTENDED_WIDTH);
                 scene.getWindow().setHeight(EXTENDED_HEIGHT);
