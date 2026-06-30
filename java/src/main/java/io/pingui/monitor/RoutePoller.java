@@ -1,5 +1,6 @@
 package io.pingui.monitor;
 
+import io.pingui.config.PingExpertEntry;
 import io.pingui.model.Models;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;
@@ -40,9 +41,10 @@ public final class RoutePoller {
     }
 
     /** Direct ping to target; single-hop snapshot, no traceroute. */
-    public HostPollOutcome pollHostPingOnly(String host, List<String> previousIps, double timeoutSeconds) {
+    public HostPollOutcome pollHostPingOnly(
+            String host, List<String> previousIps, double timeoutSeconds, PingExpertEntry expert) {
         try {
-            OptionalDouble rtt = hostPing.pingOnce(host, timeoutSeconds);
+            OptionalDouble rtt = hostPing.pingOnce(host, expert, timeoutSeconds);
             List<HopNode> nodes =
                     rtt.isPresent()
                             ? List.of(new HopNode(1, host, rtt.getAsDouble(), false))

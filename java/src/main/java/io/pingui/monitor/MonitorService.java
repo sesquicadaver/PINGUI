@@ -242,7 +242,11 @@ public final class MonitorService implements AutoCloseable {
         }
         HostPollOutcome outcome =
                 hostPingOnly
-                        ? poller.pollHostPingOnly(host, previousIps, timeoutSeconds)
+                        ? poller.pollHostPingOnly(
+                                host,
+                                previousIps,
+                                timeoutSeconds,
+                                resolveExpert(host))
                         : poller.pollHostRoute(host, previousIps, maxHops, timeoutSeconds);
         Listener current = listener;
         if (current == null || !isKnownHost(host)) {
@@ -279,6 +283,15 @@ public final class MonitorService implements AutoCloseable {
         synchronized (lock) {
             return hosts.contains(host);
         }
+    }
+
+    private PingExpertEntry resolveExpert(String host) {
+        PingExpertResolver resolver = expertResolver;
+        if (resolver == null) {
+            return PingExpertEntry.empty();
+        }
+        PingExpertEntry expert = resolver.resolve(host);
+        return expert != null ? expert : PingExpertEntry.empty();
     }
 
     @Override
