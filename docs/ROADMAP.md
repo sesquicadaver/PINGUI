@@ -167,4 +167,8 @@ flowchart LR
 
 **Sprint 10 (2025-06-26):** `origin/main` злито в `beta`; Python-дерево збережено; `./gradlew check` + JaCoCo ≥80% + Python pytest green.
 
+**Sprint 11 (2025-06-26):** Java test suite + JaCoCo gate з `beta` → `main`; Python-дерево на `main` не додається.
+
+**Sprint 12 (2025-06-26):** `origin/main` злито в `beta` — паритет гілок після Sprint 11.
+
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.

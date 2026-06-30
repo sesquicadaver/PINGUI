@@ -7,8 +7,9 @@
 
 ### Changed
 
-- **Гілки:** sync `main` → `beta` — Java roadmap sprints 1–9 (UI split, probe refactor, Checkstyle, build metadata).
-- **Java probe:** `ProcessRouteProbe` розділено — `TraceCommandBuilder`, `UnixTraceOutputParser`, `WindowsTraceOutputParser`.
+- **Гілки:** sync `beta` → `main` — повний Java test suite + JaCoCo ≥80% (Sprint 11).
+- **Гілки:** sync `main` → `beta` — Java roadmap sprints 1–9 (UI split, probe refactor, Checkstyle, build metadata; Sprint 10).
+- **Java probe:** `ProcessRouteProbe` розділено — `TraceCommandBuilder` (Linux/macOS/Windows), `UnixTraceOutputParser`, `WindowsTraceOutputParser`.
 - **Build:** Checkstyle (UnusedImports, RedundantImport) у `./gradlew check` (M-023).
 - **Build:** About показує версію + git sha; `generateBuildProperties`; `layerCheck`.
 - **IPv6:** SPIKE → wontfix; явна помилка для IPv6 literal (B-050/B-053).
