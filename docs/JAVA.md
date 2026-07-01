@@ -17,8 +17,9 @@
 
 ## Обмеження
 
-- **IPv4-only** для цілей і raw ICMP (`HostsConfig` validator, `RawIcmpRouteProbe` / `AF_INET`).
-- IPv6 — поза scope `main`; див. [ROADMAP.md](ROADMAP.md) фаза 7.
+- **Raw ICMP** — лише IPv4 (`AF_INET`); IPv6 literal при `probe: auto` на Linux автоматично використовує subprocess trace.
+- **Hostname AAAA** — резолв ОС для trace/ping; явний `-6` у Expert або literal v6 у YAML.
+- Повний ICMPv6 raw trace — див. [ROADMAP.md](ROADMAP.md) V6-040+.
 
 ## CLI vs YAML профіль
 
@@ -39,7 +40,7 @@ Python використовує scapy + raw ICMP. Java підтримує два
 |---------|------|-----|--------|
 | **process** (за замовч.) | `ProcessRouteProbe` | Linux, macOS, Windows | `traceroute` / `tracert` у PATH |
 | **raw-icmp** (Linux) | `RawIcmpRouteProbe` | Linux | JNA + `CAP_NET_RAW` або root |
-| **auto** | `RouteProbeFactory` | Усі | Linux + cap → raw, інакше process |
+| **auto** | `RouteProbeFactory` | Linux + cap → raw для v4/hostname, process для v6 literal |
 
 CLI: `--probe auto|process|raw` (default: `auto`).
 

@@ -23,4 +23,11 @@ class ProcessExpertPingTest {
         assertTrue(cmd.contains("128"));
         assertEquals("8.8.8.8", cmd.get(cmd.size() - 1));
     }
+
+    @Test
+    void buildCommandAutoAddsIpv6ForV6Literal() {
+        List<String> cmd = ProcessExpertPing.buildCommand("2001:db8::1", PingExpertEntry.empty(), 0.5);
+        assertTrue(cmd.contains("-6"));
+        assertEquals("2001:db8::1", cmd.get(cmd.size() - 1));
+    }
 }

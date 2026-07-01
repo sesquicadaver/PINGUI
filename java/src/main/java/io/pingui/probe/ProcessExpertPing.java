@@ -56,9 +56,7 @@ public class ProcessExpertPing {
         command.add("-n");
         command.add("-W");
         command.add(String.valueOf(Math.max(1, (int) Math.ceil(timeoutSeconds))));
-        if (expert != null && expert.args() != null) {
-            command.addAll(expert.args());
-        }
+        command.addAll(ExpertPingArgs.forTarget(target, expert));
         command.add(target);
         return List.copyOf(command);
     }

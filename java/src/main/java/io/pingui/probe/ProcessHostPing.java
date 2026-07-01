@@ -68,13 +68,13 @@ public final class ProcessHostPing {
         if (os.contains("mac")) {
             int waitMs = Math.max(1000, (int) Math.ceil(timeoutSeconds * 1000));
             List<String> command = new ArrayList<>(List.of("ping", "-c", "1", "-W", String.valueOf(waitMs)));
-            appendExpertArgs(command, expert);
+            appendExpertArgs(command, expert, target);
             command.add(target);
             return List.copyOf(command);
         }
         int waitSec = Math.max(1, (int) Math.ceil(timeoutSeconds));
         List<String> command = new ArrayList<>(List.of("ping", "-n", "-c", "1", "-W", String.valueOf(waitSec)));
-        appendExpertArgs(command, expert);
+        appendExpertArgs(command, expert, target);
         command.add(target);
         return List.copyOf(command);
     }
@@ -83,9 +83,10 @@ public final class ProcessHostPing {
         return buildCommand(target, timeoutSeconds, windows, null);
     }
 
-    private static void appendExpertArgs(List<String> command, io.pingui.config.PingExpertEntry expert) {
-        if (expert != null && expert.isConfigured()) {
-            command.addAll(expert.args());
+    private static void appendExpertArgs(List<String> command, io.pingui.config.PingExpertEntry expert, String target) {
+        List<String> args = ExpertPingArgs.forTarget(target, expert);
+        if (!args.isEmpty()) {
+            command.addAll(args);
         }
     }
 

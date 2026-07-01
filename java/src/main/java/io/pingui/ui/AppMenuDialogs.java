@@ -100,8 +100,8 @@ public final class AppMenuDialogs {
         return """
                 Профілі та цілі
                 • Кілька профілів трасування в одному YAML; перемикання — «Профіль».
-                • До 10 IP або hostname; чекбокс увімкнює моніторинг хоста.
-                • Лише IPv4 / hostname (IPv6 не підтримується).
+                • До 10 IP (IPv4/IPv6 literal) або hostname; чекбокс увімкнює моніторинг хоста.
+                • IPv6 literal — trace через traceroute -6; на Linux з raw ICMP — auto fallback на process.
                 • Ping only — лише RTT до цілі без traceroute (рекомендовано на Windows).
 
                 Режими інтерфейсу

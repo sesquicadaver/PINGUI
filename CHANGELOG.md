@@ -7,6 +7,8 @@
 
 ### Fixed
 
+- **IPv6 literal:** `DualStackRouteProbe` — auto probe використовує subprocess trace для v6 (raw ICMP лишається v4-only).
+- **Expert/ping v6:** auto `-6` для IPv6 literal; `-4`/`-6` конфлікт з типом цілі.
 - **Expert ping UI:** `-4`/`-6` — один вибір сімейства адрес; `-n`/`-H`, `-F`/IPv6, `-r`/`-I` — взаємовиключення в діалозі.
 
 ### Added
