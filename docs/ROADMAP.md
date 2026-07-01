@@ -104,14 +104,139 @@
 
 ---
 
-## Фаза 7 — IPv6 (окремий scope, P2)
+## Фаза 7 — IPv6 SPIKE (закрито, P2)
 
 | ID | Задача | DoD |
 |----|--------|-----|
-| **B-050** | [x] SPIKE: IPv6 trace + ping — обсяг робіт | `docs/SPIKE_IPV6.md` | Рішення: wontfix |
-| **B-051** | — (cancelled) `HostsConfig` — IPv6 literal | — | Out of scope per B-050 |
-| **B-052** | — (cancelled) Raw ICMP IPv6 | — | Out of scope per B-050 |
+| **B-050** | [x] SPIKE: IPv6 trace + ping — обсяг робіт | `docs/SPIKE_IPV6.md` | Рішення: wontfix (MVP) |
+| **B-051** | — (cancelled) `HostsConfig` — IPv6 literal | — | Перенесено → **V6-010…V6-019** |
+| **B-052** | — (cancelled) Raw ICMP IPv6 | — | Перенесено → **V6-040…V6-049** |
 | **B-053** | [x] Закрити B-050 статусом «IPv4-only by design» | `HostsConfig`, `SPIKE_IPV6.md` | Явна помилка для IPv6 literal |
+
+> **Перегляд рішення (2026-06):** wontfix знято для product request; реалізація — **Фаза 9 (V6-*)**.
+
+---
+
+## Фаза 9 — IPv6 implementation (`beta` → `main`, P1)
+
+**Мета:** dual-stack моніторинг — IPv6 literal, subprocess trace/ping, GeoIP v6; raw ICMP v6 — Linux-only (P2).
+
+**Передумови:** `./gradlew check` green; B-064 JaCoCo gate ≥80%.
+
+**Поза scope фази 9 (окремі ticket):** Python-шар на `beta`; повний Windows expert-ping parity (див. backlog після V6-059).
+
+### 9.0 — Design gate
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **V6-001** | [ ] Оновити SPIKE: статус **planned**, цілі фази 9, матриця OS | `docs/SPIKE_IPV6.md` | Таблиця «шар → v4 → v6 → OS»; посилання на V6-* |
+| **V6-002** | [ ] ADR: політика dual-stack (literal v6, hostname→AAAA, mixed profile) | `docs/ARCHITECTURE.md` або `docs/ADR_IPV6.md` | Рішення: bracket YAML, canonical RFC 5952, probe fallback |
+| **V6-003** | [ ] `HostAddressKind` + `HostAddressParser` (IPv4 / IPv6 / hostname) | `config/HostAddress*.java` | Unit-тест: parse/normalize без UI |
+
+### 9.1 — Config / validator (P0)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **V6-010** | [ ] RFC 5952 normalize для IPv6 literal | `HostsConfig.java`, `HostAddressParser` | `2001:db8::1` → canonical; `[::1]` strip brackets |
+| **V6-011** | [ ] Приймати IPv6 у `normalizeHostEntry` / `isValidHost` | `HostsConfig.java` | Прибрати blanket `:` → error; зберегти reject invalid |
+| **V6-012** | [ ] Duplicate key: canonical v6 (case-insensitive hex) | `HostsConfig.java`, `ProfilesConfig` | `HostsConfigTest`: dup `2001:DB8::1` vs `2001:db8:0:0:0:0:0:1` |
+| **V6-013** | [ ] Bracket notation у YAML прикладах | `java/README.md`, `docs/DEPLOYMENT.md` | Приклад `address: "2001:db8::1"` |
+| **V6-014** | [ ] Mixed profile: IPv4 + IPv6 hosts в одному профілі | `ProfilesConfigTest` | load/save round-trip 2+2 hosts |
+| **V6-015** | [ ] LIVING_SPEC: рядки HostAddress / v6 validator | `docs/LIVING_SPEC.md` | Матриця оновлена |
+
+### 9.2 — Process trace (subprocess, P0)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **V6-020** | [ ] `TraceTarget` — визначення address family з literal | `probe/TraceTarget.java` | Unit-тест: v4/v6/hostname |
+| **V6-021** | [ ] `LinuxTracerouteCommand`: `-6` для v6 literal | `LinuxTracerouteCommand.java` | Test: argv містить `-6` |
+| **V6-022** | [ ] `MacTracerouteCommand`: `-6` для v6 literal | `MacTracerouteCommand.java` | Test: argv містить `-6` |
+| **V6-023** | [ ] `WindowsTracertCommand`: `-6` для v6 literal | `WindowsTracertCommand.java` | Test: argv містить `-6` |
+| **V6-024** | [ ] `UnixTraceOutputParser`: hop token `[2001:db8::n]` | `UnixTraceOutputParser.java` | Regex + unit-тест |
+| **V6-025** | [ ] `UnixTraceOutputParser`: compressed v6 без дужок (GNU) | `UnixTraceOutputParser.java` | Фікстура + test |
+| **V6-026** | [ ] `WindowsTraceOutputParser`: IPv6 tracert рядки | `WindowsTraceOutputParser.java` | Фікстура + test |
+| **V6-027** | [ ] Фікстури `trace/unix_v6_*.txt` (≥3) | `src/test/resources/trace/` | ok / timeout / multihop |
+| **V6-028** | [ ] Фікстури `trace/win_v6_*.txt` (≥2) | `src/test/resources/trace/` | ok / timeout |
+| **V6-029** | [ ] `ProcessRouteProbeTest` — v6 fixtures green | `ProcessRouteProbeTest.java` | Hop count + IP match |
+| **V6-030** | [ ] Документ: hostname AAAA — резолв ОС, не PINGUI | `docs/JAVA.md` | Known limitations оновлено |
+
+### 9.3 — GeoIP v6 (P1)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **V6-035** | [ ] `GeoCountry`: `Inet6Address` — loopback/link-local/ULA → `LAN` | `GeoCountry.java` | `GeoCountryTest` |
+| **V6-036** | [ ] `GeoCountry`: longest-prefix для IPv6 CIDR | `GeoCountry.java`, `geoip_hints.yaml` | Test: `2001:db8::/32` |
+| **V6-037** | [ ] Схема YAML: optional `prefixes_v6` (або unified map) | `GeoCountry.java`, docs | Backward compat v4 hints |
+
+### 9.4 — Raw ICMP v6 (Linux only, P2)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **V6-040** | [ ] JNA: `AF_INET6`, `sockaddr_in6` | `LinuxSocketConstants`, `LinuxCLibrary` | Compile + struct layout test |
+| **V6-041** | [ ] ICMPv6 echo request/reply parse | `IcmpPacket.java` або `IcmpV6Packet.java` | Unit-тест без cap (build packet) |
+| **V6-042** | [ ] `LinuxJnaIcmpTransport` dual: v4/v6 socket | `LinuxJnaIcmpTransport.java` | Integration test optional; mock-friendly unit |
+| **V6-043** | [ ] `RawIcmpRouteProbe`: hop limit для v6 | `RawIcmpRouteProbe.java` | v6 target → trace hops |
+| **V6-044** | [ ] `RouteProbeFactory`: v6 + non-Linux → process fallback | `RouteProbeFactory.java` | Test: AUTO on macOS → process |
+| **V6-045** | [ ] DEPLOYMENT: cap note для ICMPv6 | `docs/DEPLOYMENT.md` | Linux-only raw v6 documented |
+
+### 9.5 — Expert ping v6 (P1)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **V6-050** | [ ] Auto `-6` у `ProcessExpertPing.buildCommand` для v6 target | `ProcessExpertPing.java` | Test: v6 target → `-6` in argv |
+| **V6-051** | [ ] `ProcessHostPing`: expert args + v6 на Linux/macOS | `ProcessHostPing.java` | Test: args appended |
+| **V6-052** | [ ] Validator: `-4` + v6 target → `ConfigError` (profile save) | `PingExpertValidator` або host-level check | Unit-тест |
+| **V6-053** | [ ] `-F` flow label — лише з v6 target (UI hint) | `PingExpertDialog.java` | Tooltip / disable when target v4 |
+
+### 9.6 — UI / docs (P1)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **V6-060** | [ ] Help/About: dual-stack замість «IPv4-only» | `AppMenuDialogs.java`, `README.md` | Текст оновлено |
+| **V6-061** | [ ] `GraphCanvas` / labels: bracket display для довгих v6 | `GraphCanvas.java`, `RouteGraphLayout` | Manual smoke note in CHECKLIST |
+| **V6-062** | [ ] Input validation у Add Host dialog для v6 | `HostListPresenter` / dialog | Invalid v6 → log error |
+| **V6-063** | [ ] CHANGELOG + ROADMAP `[x]` при закритті підфаз | `CHANGELOG.md` | Per-sprint notes |
+
+### 9.7 — QA / release gate (P0)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **V6-070** | [ ] CHECKLIST § IPv6 smoke (Linux process trace) | `docs/CHECKLIST.md` | literal v6 + ping-only |
+| **V6-071** | [ ] CHECKLIST § IPv6 smoke (Windows tracert -6) | `docs/CHECKLIST.md` | optional OS job |
+| **V6-072** | [ ] Regression: усі v4 fixtures лишаються green | CI | `./gradlew check` |
+| **V6-073** | [ ] JaCoCo: нові модулі в bundle або documented exclusion | `build.gradle.kts` | Gate ≥80% |
+| **V6-074** | [ ] Release note: «IPv6 beta» / feature flag якщо потрібно | `CHANGELOG.md` | Semver minor bump note |
+
+### Рекомендований порядок (фаза 9)
+
+```mermaid
+flowchart TD
+  V6001[V6-001 SPIKE planned] --> V6003[V6-003 HostAddressParser]
+  V6003 --> V6010[V6-010 RFC5952]
+  V6010 --> V6014[V6-014 mixed profile]
+  V6014 --> V6020[V6-020 TraceTarget]
+  V6020 --> V6021[V6-021 Linux -6]
+  V6021 --> V6024[V6-024 Unix v6 parser]
+  V6024 --> V6027[V6-027 v6 fixtures]
+  V6027 --> V6029[V6-029 probe tests]
+  V6029 --> V6035[V6-035 GeoIP v6]
+  V6029 --> V6050[V6-050 expert ping v6]
+  V6029 --> V6040[V6-040 raw ICMP v6]
+  V6035 --> V6070[V6-070 CHECKLIST smoke]
+  V6050 --> V6070
+  V6040 --> V6070
+  V6070 --> V6074[V6-074 release]
+```
+
+**Орієнтовно:** 3–5 sprint × 3–5 задач; raw ICMP (V6-040…) можна відкласти після process+GeoIP MVP.
+
+| Sprint (пропоз.) | Задачі |
+|------------------|--------|
+| IPv6-S1 | V6-001…V6-015 (config) |
+| IPv6-S2 | V6-020…V6-030 (process trace) |
+| IPv6-S3 | V6-035…V6-037, V6-050…V6-053 (GeoIP + expert) |
+| IPv6-S4 | V6-060…V6-063, V6-070…V6-074 (UI + QA) |
+| IPv6-S5 (opt.) | V6-040…V6-045 (raw ICMP v6 Linux) |
 
 ---
 
@@ -144,7 +269,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog:** усі заплановані M/B задачі закриті; подальші зміни — поза цим ROADMAP (нові ticket / release).
+**Backlog:** M/B roadmap закрито; B-064 coverage ongoing; **IPv6 — Фаза 9 (V6-*)**.
 
 ---
 

@@ -11,7 +11,7 @@
 | [JAVA.md](JAVA.md) | Розробник | Probe, monitor, UI, YAML |
 | [ROADMAP.md](ROADMAP.md) | Розробник | План виправлень (закрито) |
 | [LIVING_SPEC.md](LIVING_SPEC.md) | Розробник | Матриця модуль → тести |
-| [SPIKE_IPV6.md](SPIKE_IPV6.md) | Розробник | IPv6 scope (wontfix) |
+| [SPIKE_IPV6.md](SPIKE_IPV6.md) | Розробник | IPv6 scope (**planned**, фаза 9 V6-*) |
 | [CONFIGURATION.md](CONFIGURATION.md) | Розробник | YAML, CLI (Python) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Розробник | Шари Python |
 | [MODULES.md](MODULES.md) | Розробник | Довідник модулів |
