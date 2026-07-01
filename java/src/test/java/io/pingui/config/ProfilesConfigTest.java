@@ -244,4 +244,96 @@ class ProfilesConfigTest {
         ProfilesConfig.save(path, doc);
         assertEquals("default", ProfilesConfig.load(path).activeProfile());
     }
+
+    @Test
+    void loadMissingProfilesAndHosts() throws Exception {
+        Path path = tempDir.resolve("empty-root.yaml");
+        Files.writeString(path, "active_profile: default\n");
+        ConfigError error = assertThrows(ConfigError.class, () -> ProfilesConfig.load(path));
+        assertTrue(error.getMessage().contains("profiles") || error.getMessage().contains("hosts"));
+    }
+
+    @Test
+    void loadProfilesNotMapping() throws Exception {
+        Path path = tempDir.resolve("profiles-list.yaml");
+        Files.writeString(
+                path, """
+                active_profile: default
+                profiles: []
+                """);
+        assertThrows(ConfigError.class, () -> ProfilesConfig.load(path));
+    }
+
+    @Test
+    void loadHostEntryWrongType() throws Exception {
+        Path path = tempDir.resolve("host-int.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    hosts:
+                      - 42
+                """);
+        assertThrows(ConfigError.class, () -> ProfilesConfig.load(path));
+    }
+
+    @Test
+    void loadHostMissingAddress() throws Exception {
+        Path path = tempDir.resolve("no-address.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    hosts:
+                      - enabled: true
+                """);
+        assertThrows(ConfigError.class, () -> ProfilesConfig.load(path));
+    }
+
+    @Test
+    void saveRejectsProfileExceedingMaxHosts() {
+        List<HostEntry> tooMany = new java.util.ArrayList<>();
+        for (int i = 1; i <= HostsConfig.MAX_HOSTS + 1; i++) {
+            tooMany.add(HostEntry.basic("10.0.0." + i, false));
+        }
+        ProfileDocument doc = ProfileDocument.singleDefault(TracingProfile.defaults(tooMany));
+        assertThrows(ConfigError.class, () -> ProfilesConfig.save(tempDir.resolve("many.yaml"), doc));
+    }
+
+    @Test
+    void loadNonNumberTimeout() throws Exception {
+        Path path = tempDir.resolve("maxhops.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    max_hops: fast
+                    hosts:
+                      - "8.8.8.8"
+                """);
+        assertThrows(ConfigError.class, () -> ProfilesConfig.load(path));
+    }
+
+    @Test
+    void loadPingExpertArgsNotList() throws Exception {
+        Path path = tempDir.resolve("args.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    hosts:
+                      - address: "8.8.8.8"
+                        ping_expert:
+                          args: "-4"
+                """);
+        assertThrows(ConfigError.class, () -> ProfilesConfig.load(path));
+    }
 }

@@ -104,4 +104,69 @@ class GeoCountryTest {
     void ipv6AddressReturnsNull() {
         assertNull(GeoCountry.lookup("2001:db8::1"));
     }
+
+    @Test
+    void yamlWithoutPrefixesUsesBundledHints(@TempDir Path tempDir) throws Exception {
+        Path hints = tempDir.resolve("empty.yaml");
+        java.nio.file.Files.writeString(hints, "{}\n", java.nio.charset.StandardCharsets.UTF_8);
+        GeoCountry.configure(true, hints);
+        assertEquals("US", GeoCountry.lookup("8.8.8.8"));
+    }
+
+    @Test
+    void defaultRouteMatchesAnyPublicIp(@TempDir Path tempDir) throws Exception {
+        Path hints = tempDir.resolve("catchall.yaml");
+        java.nio.file.Files.writeString(
+                hints,
+                """
+                prefixes:
+                  0.0.0.0/0: ZZ
+                """,
+                java.nio.charset.StandardCharsets.UTF_8);
+        GeoCountry.configure(true, hints);
+        assertEquals("ZZ", GeoCountry.lookup("41.41.41.41"));
+    }
+
+    @Test
+    void invalidYamlRootRejected(@TempDir Path tempDir) throws Exception {
+        Path hints = tempDir.resolve("scalar.yaml");
+        java.nio.file.Files.writeString(hints, "not-a-map\n", java.nio.charset.StandardCharsets.UTF_8);
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class, () -> GeoCountry.configure(true, hints));
+    }
+
+    @Test
+    void prefixesMustBeMapping(@TempDir Path tempDir) throws Exception {
+        Path hints = tempDir.resolve("list.yaml");
+        java.nio.file.Files.writeString(hints, "prefixes: []\n", java.nio.charset.StandardCharsets.UTF_8);
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class, () -> GeoCountry.configure(true, hints));
+    }
+
+    @Test
+    void invalidCountryCodeRejected(@TempDir Path tempDir) throws Exception {
+        Path hints = tempDir.resolve("code.yaml");
+        java.nio.file.Files.writeString(
+                hints, "prefixes:\n  203.0.113.0/24: USA\n", java.nio.charset.StandardCharsets.UTF_8);
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class, () -> GeoCountry.configure(true, hints));
+    }
+
+    @Test
+    void invalidPrefixLengthRejected(@TempDir Path tempDir) throws Exception {
+        Path hints = tempDir.resolve("bits.yaml");
+        java.nio.file.Files.writeString(
+                hints, "prefixes:\n  203.0.113.0/33: AA\n", java.nio.charset.StandardCharsets.UTF_8);
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class, () -> GeoCountry.configure(true, hints));
+    }
+
+    @Test
+    void cidrWithoutSlashRejected(@TempDir Path tempDir) throws Exception {
+        Path hints = tempDir.resolve("noslash.yaml");
+        java.nio.file.Files.writeString(
+                hints, "prefixes:\n  203.0.113.0: AA\n", java.nio.charset.StandardCharsets.UTF_8);
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class, () -> GeoCountry.configure(true, hints));
+    }
 }

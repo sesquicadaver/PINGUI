@@ -179,4 +179,6 @@ flowchart LR
 
 **Sprint 18 (2025-06-26):** B-064d — `GeoCountryTest`/`ProfilesConfigTest` (longest-prefix, LAN edge cases, host entry flags); JaCoCo bundle ≥80%.
 
+**Sprint 19 (2025-06-26):** B-064e — `HostEntryTest`; GeoIP YAML validation + ProfilesConfig type/save guards.
+
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.
