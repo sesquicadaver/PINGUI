@@ -17,7 +17,7 @@
 | Monitor polling | `MonitorService`, `RoutePoller`, `ExpertPingEnricher` | `MonitorServiceTest`, `ExpertPingEnricherTest` (stub ping) |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
 | Raw ICMP packet | `IcmpPacket` | `IcmpPacketTest` |
-| Expert ping flags | `PingExpertValidator` | `PingExpertValidatorTest` |
+| Expert ping flags | `PingExpertValidator`, `ProcessExpertPing` | `PingExpertValidatorTest` (compatibility, value specs), `ProcessExpertPingTest` |
 | GUI / MonitorService | `MainController`, `MonitorService` | *(manual / TestFX — backlog)* |
 | UI coordinators | `ProfileUiCoordinator`, `HostListPresenter`, `MonitorLifecycle`, `ViewModeController`, `RouteGraphPresenter` | `./gradlew check`; B-035 manual smoke |
 | CI gate | `.github/workflows/java.yml` | `./gradlew check` (Spotless + Checkstyle + layerCheck + test) |
