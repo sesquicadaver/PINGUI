@@ -13,7 +13,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /** Runs one-shot {@code ping -c 1} with validated expert flags. */
-public final class ProcessExpertPing {
+public class ProcessExpertPing {
     private static final Pattern RTT_PATTERN =
             Pattern.compile("time[=<]([0-9]+(?:\\.[0-9]+)?)\\s*ms", Pattern.CASE_INSENSITIVE);
 

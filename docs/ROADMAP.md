@@ -189,4 +189,6 @@ flowchart LR
 
 **Sprint 19 (2025-06-26):** B-064e — `HostEntryTest`; GeoIP YAML validation + ProfilesConfig type/save guards.
 
+**Sprint 20 (2025-06-26):** B-064f — `PingExpertValidator` + `ExpertPingEnricher` stub tests; −exclusion `ExpertPingEnricher`.
+
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.
