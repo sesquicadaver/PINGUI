@@ -93,18 +93,7 @@ public final class PingExpertValidator {
     }
 
     private static void validateCompatibility(Set<String> flags) {
-        if (flags.contains("-4") && flags.contains("-6")) {
-            throw new ConfigError("Options -4 and -6 are mutually exclusive");
-        }
-        if (flags.contains("-F") && !flags.contains("-6")) {
-            throw new ConfigError("Option -F requires IPv6 (-6)");
-        }
-        if (flags.contains("-n") && flags.contains("-H")) {
-            throw new ConfigError("Options -n and -H conflict");
-        }
-        if (flags.contains("-r") && !flags.contains("-I")) {
-            throw new ConfigError("Option -r usually requires -I (interface/source)");
-        }
+        PingExpertCompatibility.validate(flags);
     }
 
     private static String normalizeIntRange(String flag, String value, PingOptionCatalog.IntRange range) {

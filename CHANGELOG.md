@@ -5,6 +5,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **Expert ping UI:** `-4`/`-6` — один вибір сімейства адрес; `-n`/`-H`, `-F`/IPv6, `-r`/`-I` — взаємовиключення в діалозі.
+
 ### Added
 
 - **IPv6 trace (V6-S2):** `TraceTarget`, `-6` у traceroute/tracert, парсери v6 + фікстури `unix_v6_*`/`win_v6_*`.

@@ -2,6 +2,7 @@ package io.pingui.ui;
 
 import io.pingui.config.ConfigError;
 import io.pingui.config.PingExpertEntry;
+import io.pingui.probe.PingExpertCompatibility;
 import io.pingui.probe.PingExpertValidator;
 import io.pingui.probe.PingOptionCatalog;
 import io.pingui.probe.PingOptionCatalog.Kind;
@@ -33,6 +34,8 @@ public final class PingExpertDialog {
     private static final String BOOL_FALSE = "false";
     private static final String BOOL_TRUE = "true";
     private static final String UNSET = "—";
+    private static final String AF_IPV4 = "IPv4 (-4)";
+    private static final String AF_IPV6 = "IPv6 (-6)";
     private static final String FIELD_OK = "";
     private static final String FIELD_ERROR = "-fx-border-color: #c0392b; -fx-border-width: 1.5px;";
 
@@ -81,7 +84,20 @@ public final class PingExpertDialog {
         grid.add(new Label("Опис"), 1, row);
         grid.add(new Label("Значення"), 2, row);
         row++;
+
+        ComboBox<String> addressFamily = new ComboBox<>(FXCollections.observableArrayList(UNSET, AF_IPV4, AF_IPV6));
+        addressFamily.setMaxWidth(Double.MAX_VALUE);
+        addressFamily.setTooltip(new Tooltip("Взаємовиключні -4 та -6; за замовчуванням — вибір ОС"));
+        applyAddressFamilySelection(currentArgs, addressFamily);
+        grid.add(new Label("AF"), 0, row);
+        grid.add(wrapDescription("Сімейство адрес (лише одне)"), 1, row);
+        grid.add(addressFamily, 2, row);
+        row++;
+
         for (PingOption option : PingOptionCatalog.options()) {
+            if ("-4".equals(option.flag()) || "-6".equals(option.flag())) {
+                continue;
+            }
             grid.add(new Label(option.flag()), 0, row);
             grid.add(wrapDescription(option.description()), 1, row);
             if (option.kind() == Kind.FLAG) {
@@ -115,6 +131,8 @@ public final class PingExpertDialog {
             row++;
         }
 
+        wireUiConstraints(addressFamily, flagChoices, textValues);
+
         ScrollPane scroll = new ScrollPane(grid);
         scroll.setFitToWidth(true);
         scroll.setPrefViewportHeight(360);
@@ -128,7 +146,7 @@ public final class PingExpertDialog {
                 return Optional.empty();
             }
             try {
-                List<String> args = collectArgs(flagChoices, choiceValues, textValues);
+                List<String> args = collectArgs(addressFamily, flagChoices, choiceValues, textValues);
                 validateTextFields(textValues);
                 List<String> validated = PingExpertValidator.validateAndNormalize(args);
                 return Optional.of(new PingExpertEntry(!pingOnly && chainCheck.isSelected(), validated));
@@ -215,6 +233,81 @@ public final class PingExpertDialog {
         return label;
     }
 
+    private static void applyAddressFamilySelection(List<String> args, ComboBox<String> choice) {
+        boolean ipv4 = args.contains("-4");
+        boolean ipv6 = args.contains("-6");
+        if (ipv6 && !ipv4) {
+            choice.getSelectionModel().select(AF_IPV6);
+        } else if (ipv4) {
+            choice.getSelectionModel().select(AF_IPV4);
+        } else {
+            choice.getSelectionModel().select(UNSET);
+        }
+    }
+
+    private static void wireUiConstraints(
+            ComboBox<String> addressFamily,
+            Map<String, ComboBox<String>> flagChoices,
+            Map<String, TextField> textValues) {
+        for (List<String> group : PingExpertCompatibility.MUTUALLY_EXCLUSIVE) {
+            if ("-4".equals(group.get(0)) || "-4".equals(group.get(1))) {
+                continue;
+            }
+            wireMutualExclusiveFlags(flagChoices, group.get(0), group.get(1));
+        }
+
+        TextField flowLabel = textValues.get("-F");
+        Runnable updateFlowLabel = () -> {
+            boolean ipv6 = AF_IPV6.equals(addressFamily.getValue());
+            if (flowLabel == null) {
+                return;
+            }
+            flowLabel.setDisable(!ipv6);
+            if (!ipv6) {
+                flowLabel.clear();
+                clearFieldError(flowLabel);
+            }
+        };
+        addressFamily.valueProperty().addListener((obs, oldValue, newValue) -> updateFlowLabel.run());
+        updateFlowLabel.run();
+
+        TextField iface = textValues.get("-I");
+        ComboBox<String> bypassRoute = flagChoices.get("-r");
+        Runnable updateBypassRoute = () -> {
+            if (bypassRoute == null) {
+                return;
+            }
+            boolean hasIface = iface != null && !iface.getText().strip().isEmpty();
+            bypassRoute.setDisable(!hasIface);
+            if (!hasIface && BOOL_TRUE.equals(bypassRoute.getValue())) {
+                bypassRoute.getSelectionModel().select(BOOL_FALSE);
+            }
+        };
+        if (iface != null) {
+            iface.textProperty().addListener((obs, oldText, newText) -> updateBypassRoute.run());
+        }
+        updateBypassRoute.run();
+    }
+
+    private static void wireMutualExclusiveFlags(
+            Map<String, ComboBox<String>> flagChoices, String flagA, String flagB) {
+        ComboBox<String> boxA = flagChoices.get(flagA);
+        ComboBox<String> boxB = flagChoices.get(flagB);
+        if (boxA == null || boxB == null) {
+            return;
+        }
+        boxA.valueProperty().addListener((obs, oldValue, newValue) -> {
+            if (BOOL_TRUE.equals(newValue)) {
+                boxB.getSelectionModel().select(BOOL_FALSE);
+            }
+        });
+        boxB.valueProperty().addListener((obs, oldValue, newValue) -> {
+            if (BOOL_TRUE.equals(newValue)) {
+                boxA.getSelectionModel().select(BOOL_FALSE);
+            }
+        });
+    }
+
     private static void applyFlagSelection(PingOption option, List<String> args, ComboBox<String> choice) {
         for (String arg : args) {
             if (option.flag().equals(arg)) {
@@ -257,11 +350,21 @@ public final class PingExpertDialog {
     }
 
     private static List<String> collectArgs(
+            ComboBox<String> addressFamily,
             Map<String, ComboBox<String>> flagChoices,
             Map<String, ComboBox<String>> choiceValues,
             Map<String, TextField> textValues) {
         List<String> args = new ArrayList<>();
+        String family = addressFamily.getValue();
+        if (AF_IPV4.equals(family)) {
+            args.add("-4");
+        } else if (AF_IPV6.equals(family)) {
+            args.add("-6");
+        }
         for (PingOption option : PingOptionCatalog.options()) {
+            if ("-4".equals(option.flag()) || "-6".equals(option.flag())) {
+                continue;
+            }
             if (option.kind() == Kind.FLAG) {
                 ComboBox<String> choice = flagChoices.get(option.flag());
                 if (choice != null && BOOL_TRUE.equals(choice.getValue())) {
