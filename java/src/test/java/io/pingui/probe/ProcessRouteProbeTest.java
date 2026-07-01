@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.pingui.model.Models;
 import io.pingui.model.Models.HopNode;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -80,6 +81,42 @@ class ProcessRouteProbeTest {
         Double rtt = ProcessRouteProbe.parseWindowsRtt("  1    <1 ms    <1 ms    <1 ms  10.0.0.1 ");
         assertNotNull(rtt);
         assertEquals(0.5, rtt, 0.001);
+    }
+
+    @Test
+    void parseUnixIpv6Fixture() throws IOException {
+        List<HopNode> hops = ProcessRouteProbe.parseUnix(loadLines("unix_v6_ok.txt"));
+        assertEquals(2, hops.size());
+        assertEquals("2001:db8:1::1", hops.get(0).ip());
+        assertEquals("2001:4860:4860::8888", hops.get(1).ip());
+    }
+
+    @Test
+    void parseUnixIpv6BracketFixture() throws IOException {
+        List<HopNode> hops = ProcessRouteProbe.parseUnix(loadLines("unix_v6_bracket.txt"));
+        assertEquals("2001:4860:4860::8888", hops.get(1).ip());
+    }
+
+    @Test
+    void parseUnixIpv6TimeoutFixture() throws IOException {
+        List<HopNode> hops = ProcessRouteProbe.parseUnix(loadLines("unix_v6_timeout.txt"));
+        assertEquals(3, hops.size());
+        assertEquals(Models.TIMEOUT_IP, hops.get(1).ip());
+    }
+
+    @Test
+    void parseWindowsIpv6Fixture() throws IOException {
+        List<HopNode> hops = ProcessRouteProbe.parseWindows(loadLines("win_v6_ok.txt"));
+        assertEquals(3, hops.size());
+        assertEquals("2001:db8:1::1", hops.get(0).ip());
+        assertEquals("2001:4860:4860::8888", hops.get(2).ip());
+    }
+
+    @Test
+    void parseWindowsIpv6TimeoutFixture() throws IOException {
+        List<HopNode> hops = ProcessRouteProbe.parseWindows(loadLines("win_v6_timeout.txt"));
+        assertEquals(3, hops.size());
+        assertEquals(Models.TIMEOUT_IP, hops.get(1).ip());
     }
 
     private static List<String> loadLines(String resource) throws IOException {

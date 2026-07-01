@@ -61,9 +61,9 @@
 ## DoD фази 9 (release)
 
 - [x] Literal IPv6 у YAML (session validator)
-- [ ] Process trace v6 на Linux (macOS best-effort)
-- [ ] Windows `tracert -6` парситься (фікстури)
-- [ ] v4 regression green (`./gradlew check`)
+- [x] Process trace v6 на Linux (macOS best-effort)
+- [x] Windows `tracert -6` парситься (фікстури)
+- [x] v4 regression green (`./gradlew check`)
 - [ ] CHECKLIST IPv6 smoke пройдено
 - [ ] Docs: dual-stack, не «IPv4-only»
 

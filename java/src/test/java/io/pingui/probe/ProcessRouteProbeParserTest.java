@@ -81,4 +81,27 @@ class ProcessRouteProbeParserTest {
         assertEquals("128.241.219.117", nodes.get(0).ip());
         assertEquals(50.0, nodes.get(0).pingMs());
     }
+
+    @Test
+    void parseUnixIpv6CompressedAndBracketTokens() {
+        List<String> lines = List.of(
+                "traceroute to 2001:db8::1 (2001:db8::1), 30 hops max",
+                " 1  2001:db8:1::1  1.2 ms",
+                " 2  [2001:4860:4860::8888]  2.3 ms");
+        List<HopNode> nodes = ProcessRouteProbe.parseUnix(lines);
+        assertEquals(2, nodes.size());
+        assertEquals("2001:db8:1::1", nodes.get(0).ip());
+        assertEquals("2001:4860:4860::8888", nodes.get(1).ip());
+    }
+
+    @Test
+    void parseWindowsIpv6BareAndBracket() {
+        List<String> lines = List.of(
+                "  1    <1 ms    <1 ms    <1 ms  2001:db8:1::1",
+                "  2     5 ms     4 ms     6 ms  dns.example [2001:4860:4860::8888]");
+        List<HopNode> nodes = ProcessRouteProbe.parseWindows(lines);
+        assertEquals(2, nodes.size());
+        assertEquals("2001:db8:1::1", nodes.get(0).ip());
+        assertEquals("2001:4860:4860::8888", nodes.get(1).ip());
+    }
 }

@@ -8,8 +8,10 @@ final class WindowsTracertCommand implements TraceCommandBuilder {
 
     @Override
     public List<String> buildCommand(String targetHost, int maxHops, double timeoutSeconds) {
+        TraceTarget target = TraceTarget.forTrace(targetHost);
         int waitMs = TraceProcessTiming.windowsTracertWaitMs(timeoutSeconds);
         String tracert = TracerouteExecutables.resolveTracertExecutable(Files::isExecutable);
-        return List.of(tracert, "-d", "-h", String.valueOf(maxHops), "-w", String.valueOf(waitMs), targetHost);
+        return TraceCommandSupport.finishCommand(
+                List.of(tracert, "-d", "-h", String.valueOf(maxHops), "-w", String.valueOf(waitMs)), target);
     }
 }

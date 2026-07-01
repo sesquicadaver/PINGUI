@@ -1,6 +1,8 @@
 package io.pingui.probe;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
@@ -27,6 +29,30 @@ class ProcessRouteProbeCommandTest {
     void buildCommandUsesResolvedTracerouteOnUnix() {
         ProcessRouteProbe probe = new ProcessRouteProbe(TracerouteFlavor.BSD);
         assertEquals("traceroute", probe.buildCommand("8.8.8.8", 20, 0.5).get(0));
+    }
+
+    @Test
+    void buildCommandAddsIpv6FlagForLinuxBsd() {
+        ProcessRouteProbe probe = new ProcessRouteProbe(TracerouteFlavor.BSD);
+        assertTrue(probe.buildCommand("2001:db8::1", 20, 0.5).contains("-6"));
+    }
+
+    @Test
+    void buildCommandSkipsIpv6FlagForHostname() {
+        ProcessRouteProbe probe = new ProcessRouteProbe(TracerouteFlavor.BSD);
+        assertFalse(probe.buildCommand("example.com", 20, 0.5).contains("-6"));
+    }
+
+    @Test
+    void buildCommandWindowsAddsIpv6Flag() {
+        ProcessRouteProbe probe = new ProcessRouteProbe(new WindowsTracertCommand());
+        assertTrue(probe.buildCommand("2001:db8::1", 20, 0.5).contains("-6"));
+    }
+
+    @Test
+    void buildCommandMacAddsIpv6Flag() {
+        ProcessRouteProbe probe = new ProcessRouteProbe(new MacTracerouteCommand());
+        assertTrue(probe.buildCommand("2001:db8::1", 20, 0.5).contains("-6"));
     }
 
     @Test
