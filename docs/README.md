@@ -13,6 +13,8 @@ Python-редакція, тести, CI та специфікації — гіл
 | [JAVA.md](JAVA.md) | Розробник | Probe, monitor, UI, YAML |
 | [ROADMAP.md](ROADMAP.md) | Розробник | План виправлень, атомарні задачі |
 | [LIVING_SPEC.md](LIVING_SPEC.md) | Розробник | Матриця модуль → тести |
+| [ADR_IPV6.md](ADR_IPV6.md) | Розробник | Dual-stack config ADR (V6-002) |
+| [SPIKE_IPV6.md](SPIKE_IPV6.md) | Розробник | IPv6 scope (**planned**, фаза 9 V6-*) |
 | [../.github/workflows/java.yml](../.github/workflows/java.yml) | CI | Java check (Ubuntu + optional Windows) |
 | [../java/README.md](../java/README.md) | Усі | Запуск, CLI, GUI |
 

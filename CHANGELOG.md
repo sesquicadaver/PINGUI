@@ -5,6 +5,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- **IPv6 config (V6-S1):** `HostAddressParser` — RFC 5952 normalize, mixed IPv4/IPv6 profiles у YAML.
+
 ### Changed
 
 - **Tests:** B-064f — `PingExpertValidatorTest` (compatibility/value specs); `ExpertPingEnricherTest` з stub ping; прибрано JaCoCo exclusion для `ExpertPingEnricher`.

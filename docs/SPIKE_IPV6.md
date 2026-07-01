@@ -1,8 +1,10 @@
 # SPIKE: IPv6 trace + ping (B-050)
 
 **Дата:** 2025-06-26  
-**Статус:** **wontfix** — IPv4-only by design (B-053)  
-**Гілки:** `main` (Java GUI), `beta` (+ Python)
+**Оновлено:** 2026-06-26  
+**Статус:** **planned** — реалізація у [ROADMAP.md](ROADMAP.md) **Фаза 9 (V6-*)**  
+**Попередній статус:** wontfix (MVP IPv4-only, B-053) — знято за product request  
+**Гілки:** `main` (Java GUI), `beta` (+ Python, тести)
 
 ---
 
@@ -11,58 +13,64 @@
 Чи варто додати підтримку IPv6 для:
 
 1. Цілей моніторингу (literal `2001:db8::1`, hostname AAAA)
-2. Subprocess trace (`traceroute -6`, `tracert` IPv6)
+2. Subprocess trace (`traceroute -6`, `tracert -6`)
 3. Raw ICMP (`AF_INET6`, Linux cap)
+
+**Відповідь (2026-06):** так — поетapно, див. фазу 9.
 
 ---
 
 ## Поточний стан (evidence)
 
-| Шар | IPv6 сьогодні |
-|-----|----------------|
-| `HostsConfig` | Лише IPv4 literal + hostname `[a-zA-Z0-9.-]`; `:` → `ConfigError` (IPv4-only) |
-| `ProcessRouteProbe` / parsers | Regex під IPv4; IPv6 trace output не парситься ([JAVA.md](JAVA.md#обмеження-парсера-known-limitations)) |
-| `RawIcmpRouteProbe` | `AF_INET` only |
-| Документація | M-002: явна примітка IPv4-only у README, DEPLOYMENT, Help |
+| Шар | IPv4 сьогодні | Ціль фази 9 |
+|-----|---------------|-------------|
+| `HostsConfig` | Literal v4 + hostname; v6 literal RFC 5952 (V6-S1) | V6-020+ trace для v6 |
+| `ProcessRouteProbe` / parsers | Regex IPv4 | V6-024…V6-029: v6 tokens + fixtures |
+| Trace commands | без `-6` | V6-021…V6-023 |
+| `GeoCountry` | `Inet4Address` only | V6-035…V6-037 |
+| `RawIcmpRouteProbe` | `AF_INET` | V6-040…V6-045 (Linux P2) |
+| Expert ping | iputils `-4`/`-6` catalog, v4 targets | V6-050…V6-053 |
+| Документація | IPv4-only | V6-060, V6-063, V6-074 |
 
 ---
 
-## Обсяг implement (оцінка)
+## Історичне рішення MVP (B-050 wontfix)
 
-| Компонент | Робота | Ризик |
-|-----------|--------|-------|
-| B-051 Validator | RFC 5952 normalize, IDNA, duplicate rules, YAML docs | Середній |
-| B-052 Raw ICMP v6 | JNA `sockaddr_in6`, cap, TTL/hop limit parity | Високий |
-| Trace parsers | Окремі regex/парсери для `traceroute -6`, Windows IPv6 tracert | Високий |
-| GUI / GeoIP | Підписи hop, CIDR hints для v6 | Середній |
-| Тести + CI | Фікстури v6 trace, matrix OS | Середній |
+1. Desktop utility для IPv4 LAN/corp сценаріїв.
+2. Складність trace output v6 за OS/локаллю.
+3. Raw ICMP v6 — лише Linux.
 
-**Орієнтовно:** 2–4 тижні full-stack; не атомарний MR.
+Збережено як **обмеження до фази 9**: raw v6 лишається P2; process trace — P0.
 
 ---
 
-## Рішення: **wontfix**
+## Мапінг SPIKE → ROADMAP
 
-**Обґрунтування:**
+| SPIKE компонент | ID задач |
+|-----------------|----------|
+| Validator RFC 5952 | V6-003, V6-010…V6-014 |
+| Trace parsers | V6-024…V6-029 |
+| Raw ICMP v6 | V6-040…V6-045 |
+| GUI / GeoIP | V6-035…V6-037, V6-060…V6-062 |
+| Тести + CI | V6-027…V6-029, V6-070…V6-073 |
 
-1. **MVP scope** — desktop utility для IPv4 маршрутів у корпоративних/LAN сценаріях; продукт уже задокументований як IPv4-only.
-2. **Probe складність** — формати виводу IPv6 trace різняться за ОС/локаллю сильніше за IPv4; ROI низький без попиту.
-3. **Raw ICMP v6** — окремий transport, лише Linux; не вирівнює Windows/macOS.
-4. ** Альтернатива** — hostname з AAAA резолвиться ОС у subprocess trace, але literal v6 і повний parity не потрібні для поточного MVP.
+**Орієнтовно:** 3–5 sprint; атомарні задачі ≤ 1 день кожна.
 
 ---
 
-## Наслідки (B-053)
+## DoD фази 9 (release)
 
-- Закрити B-051, B-052 як **cancelled / out of scope**
-- Залишити явну помилку валідатора для IPv6 literal
-- README / Help — без змін (вже IPv4-only)
-- Перегляд рішення — лише за явним ticket / product request
+- [x] Literal IPv6 у YAML (session validator)
+- [ ] Process trace v6 на Linux (macOS best-effort)
+- [ ] Windows `tracert -6` парситься (фікстури)
+- [ ] v4 regression green (`./gradlew check`)
+- [ ] CHECKLIST IPv6 smoke пройдено
+- [ ] Docs: dual-stack, не «IPv4-only»
 
 ---
 
 ## Посилання
 
-- [ROADMAP.md](ROADMAP.md) фаза 7  
+- [ROADMAP.md](ROADMAP.md) — Фаза 9  
 - [JAVA.md](JAVA.md) — probe limitations  
-- [LIVING_SPEC.md](LIVING_SPEC.md) — HostsConfig tests
+- [LIVING_SPEC.md](LIVING_SPEC.md) — оновлювати при V6-015

@@ -7,7 +7,7 @@
 | Парсинг Unix trace | `UnixTraceOutputParser`, `ProcessRouteProbe` | `ProcessRouteProbeTest` (unix fixtures) |
 | Парсинг Windows tracert | `WindowsTraceOutputParser`, `ProcessRouteProbe` | `ProcessRouteProbeTest` (win fixtures, `<1 ms`, wait ms) |
 | Trace argv (OS) | `TraceCommandBuilder`, `LinuxTracerouteCommand`, `MacTracerouteCommand`, `WindowsTracertCommand` | `ProcessRouteProbeTest` (timing); parity via `./gradlew check` |
-| Валідація хостів IPv4 | `HostsConfig`, `HostEntry` | `HostsConfigTest`, `HostEntryTest` (record API, withPingExpert/withPingOnly) |
+| Валідація хостів IPv4/IPv6 | `HostsConfig`, `HostAddressParser`, `HostEntry` | `HostsConfigTest`, `HostAddressParserTest`, `HostEntryTest` |
 | CLI interval vs YAML (M-014) | `CliProfileOverrides`, `ProfilesConfig` | `PinguiApplicationTest.m014_*` |
 | Build metadata | `AppInfo`, `generateBuildProperties` | `AppInfoTest` |
 | Layer deps (no ui in config) | `scripts/check-layer-deps.sh` | `./gradlew layerCheck` |

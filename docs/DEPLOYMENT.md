@@ -12,7 +12,7 @@
 
 Expert ping (режим «Експерт») — **лише Linux** (iputils `ping`).
 
-**IPv4-only:** цілі — IPv4 або hostname (ASCII); IPv6-літерали (`2001:db8::1`) не приймаються. Raw ICMP probe — `AF_INET` / IPv4.
+**IPv4 trace/raw ICMP; dual-stack config (V6-S1):** YAML і session приймають IPv6 literal (RFC 5952, напр. `2001:db8::1` або `[::1]`). Subprocess trace і raw ICMP для v6 — фаза 9.2+ ([ROADMAP.md](ROADMAP.md)); зараз probe лишається IPv4-oriented.
 
 ## Рекомендація щодо ОС
 

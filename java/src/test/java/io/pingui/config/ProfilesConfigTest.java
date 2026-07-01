@@ -336,4 +336,26 @@ class ProfilesConfigTest {
                 """);
         assertThrows(ConfigError.class, () -> ProfilesConfig.load(path));
     }
+
+    @Test
+    void loadMixedIpv4AndIpv6Hosts() throws Exception {
+        Path path = tempDir.resolve("dual.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    hosts:
+                      - "8.8.8.8"
+                      - "2001:db8::1"
+                      - address: "2001:4860:4860::8888"
+                        enabled: true
+                """);
+        ProfileDocument doc = ProfilesConfig.load(path);
+        assertEquals(3, doc.active().hosts().size());
+        assertEquals("2001:db8::1", doc.active().hosts().get(1).address());
+        ProfilesConfig.save(path, doc);
+        assertEquals(3, ProfilesConfig.load(path).active().hosts().size());
+    }
 }
