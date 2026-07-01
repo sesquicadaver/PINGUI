@@ -7,6 +7,7 @@
 
 ### Changed
 
+- **Tests:** B-064e — `HostEntryTest`; розширено `GeoCountryTest` (YAML validation, 0.0.0.0/0) та `ProfilesConfigTest` (type errors, save max hosts).
 - **Tests:** B-064d — `GeoCountryTest` (longest-prefix, loopback/link-local, invalid hints, IPv6); `ProfilesConfigTest` (string host flags, invalid boolean, save round-trip).
 - **Tests:** B-064c — розширено `HostsConfigTest`/`ProfileDocumentTest`/`GeoCountryTest`; покриття config/geoip ↑.
 - **Java monitor:** `MonitorService` використовує `PingOnlyResolver` (live `SessionStore`) для ping-only режиму.
