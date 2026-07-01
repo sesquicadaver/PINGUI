@@ -11,7 +11,15 @@ import java.util.OptionalDouble;
 
 /** Replaces hop RTT with expert {@code ping} measurements when configured. */
 public final class ExpertPingEnricher {
-    private final ProcessExpertPing ping = new ProcessExpertPing();
+    private final ProcessExpertPing ping;
+
+    public ExpertPingEnricher() {
+        this(new ProcessExpertPing());
+    }
+
+    ExpertPingEnricher(ProcessExpertPing ping) {
+        this.ping = ping;
+    }
 
     public RouteSnapshot enrich(RouteSnapshot snapshot, PingExpertEntry expert, double timeoutSeconds) {
         if (expert == null || !expert.isConfigured()) {

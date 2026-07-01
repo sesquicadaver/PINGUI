@@ -169,4 +169,13 @@ class GeoCountryTest {
         org.junit.jupiter.api.Assertions.assertThrows(
                 IllegalArgumentException.class, () -> GeoCountry.configure(true, hints));
     }
+
+    @Test
+    void invalidNetworkInCidrRejected(@TempDir Path tempDir) throws Exception {
+        Path hints = tempDir.resolve("badnet.yaml");
+        java.nio.file.Files.writeString(
+                hints, "prefixes:\n  999.999.999.999/24: AA\n", java.nio.charset.StandardCharsets.UTF_8);
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class, () -> GeoCountry.configure(true, hints));
+    }
 }
