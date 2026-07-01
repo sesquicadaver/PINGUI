@@ -59,7 +59,7 @@ CLI: `--probe auto|process|raw` (default: `auto`).
 
 | Область | Поведінка |
 |---------|-----------|
-| **IPv6 trace output** | Не підтримується; рядки IPv6 ігноруються або не матчаться regex |
+| **IPv6 trace output** | Literal v6: `-6` у traceroute/tracert + парсери v6 (фікстури `unix_v6_*`, `win_v6_*`). Hostname AAAA — резолв ОС, не PINGUI |
 | **ASN / IGP labels** | Не парсяться; hop IP береться з першого IPv4-токена або `[IP]` |
 | **Unix hostname hops** | Token після номера hop зберігається як «IP» (може бути hostname) |
 | **Windows локалізація** | Timeout: `timed out`, `timeout`, `перевищ…`; RTT: `ms` / `мс`, `<1 ms` → 0.5 |

@@ -7,6 +7,7 @@
 
 ### Added
 
+- **IPv6 trace (V6-S2):** `TraceTarget`, `-6` у traceroute/tracert, парсери v6 + фікстури `unix_v6_*`/`win_v6_*`.
 - **IPv6 config (V6-S1):** `HostAddressParser` — RFC 5952 normalize, mixed IPv4/IPv6 profiles у YAML.
 
 ### Changed

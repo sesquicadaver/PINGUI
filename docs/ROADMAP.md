@@ -148,17 +148,17 @@
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **V6-020** | [ ] `TraceTarget` — визначення address family з literal | `probe/TraceTarget.java` | Unit-тест: v4/v6/hostname |
-| **V6-021** | [ ] `LinuxTracerouteCommand`: `-6` для v6 literal | `LinuxTracerouteCommand.java` | Test: argv містить `-6` |
-| **V6-022** | [ ] `MacTracerouteCommand`: `-6` для v6 literal | `MacTracerouteCommand.java` | Test: argv містить `-6` |
-| **V6-023** | [ ] `WindowsTracertCommand`: `-6` для v6 literal | `WindowsTracertCommand.java` | Test: argv містить `-6` |
-| **V6-024** | [ ] `UnixTraceOutputParser`: hop token `[2001:db8::n]` | `UnixTraceOutputParser.java` | Regex + unit-тест |
-| **V6-025** | [ ] `UnixTraceOutputParser`: compressed v6 без дужок (GNU) | `UnixTraceOutputParser.java` | Фікстура + test |
-| **V6-026** | [ ] `WindowsTraceOutputParser`: IPv6 tracert рядки | `WindowsTraceOutputParser.java` | Фікстура + test |
-| **V6-027** | [ ] Фікстури `trace/unix_v6_*.txt` (≥3) | `src/test/resources/trace/` | ok / timeout / multihop |
-| **V6-028** | [ ] Фікстури `trace/win_v6_*.txt` (≥2) | `src/test/resources/trace/` | ok / timeout |
-| **V6-029** | [ ] `ProcessRouteProbeTest` — v6 fixtures green | `ProcessRouteProbeTest.java` | Hop count + IP match |
-| **V6-030** | [ ] Документ: hostname AAAA — резолв ОС, не PINGUI | `docs/JAVA.md` | Known limitations оновлено |
+| **V6-020** | [x] `TraceTarget` — визначення address family з literal | `probe/TraceTarget.java` | Unit-тест: v4/v6/hostname |
+| **V6-021** | [x] `LinuxTracerouteCommand`: `-6` для v6 literal | `LinuxTracerouteCommand.java` | Test: argv містить `-6` |
+| **V6-022** | [x] `MacTracerouteCommand`: `-6` для v6 literal | `MacTracerouteCommand.java` | Test: argv містить `-6` |
+| **V6-023** | [x] `WindowsTracertCommand`: `-6` для v6 literal | `WindowsTracertCommand.java` | Test: argv містить `-6` |
+| **V6-024** | [x] `UnixTraceOutputParser`: hop token `[2001:db8::n]` | `UnixTraceOutputParser.java` | Regex + unit-тест |
+| **V6-025** | [x] `UnixTraceOutputParser`: compressed v6 без дужок (GNU) | `UnixTraceOutputParser.java` | Фікстура + test |
+| **V6-026** | [x] `WindowsTraceOutputParser`: IPv6 tracert рядки | `WindowsTraceOutputParser.java` | Фікстура + test |
+| **V6-027** | [x] Фікстури `trace/unix_v6_*.txt` (≥3) | `src/test/resources/trace/` | ok / timeout / multihop |
+| **V6-028** | [x] Фікстури `trace/win_v6_*.txt` (≥2) | `src/test/resources/trace/` | ok / timeout |
+| **V6-029** | [x] `ProcessRouteProbeTest` — v6 fixtures green | `ProcessRouteProbeTest.java` | Hop count + IP match |
+| **V6-030** | [x] Документ: hostname AAAA — резолв ОС, не PINGUI | `docs/JAVA.md` | Known limitations оновлено |
 
 ### 9.3 — GeoIP v6 (P1)
 

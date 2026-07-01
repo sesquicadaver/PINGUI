@@ -13,7 +13,10 @@ final class WindowsTraceOutputParser {
 
     private static final Pattern WINDOWS_HOP = Pattern.compile("^\\s*(\\d+)\\s+(.+)$");
     private static final Pattern WINDOWS_IP_IN_BRACKETS = Pattern.compile("\\[(\\d{1,3}(?:\\.\\d{1,3}){3})\\]");
+    private static final Pattern WINDOWS_IP6_IN_BRACKETS = Pattern.compile("\\[([0-9a-fA-F:]+)\\]");
     private static final Pattern WINDOWS_BARE_IP = Pattern.compile("(?<!\\d)(\\d{1,3}(?:\\.\\d{1,3}){3})(?!\\.\\d)");
+    private static final Pattern WINDOWS_BARE_V6 =
+            Pattern.compile("(?:^|\\s)((?:[0-9a-fA-F]{0,4}:){2,}[0-9a-fA-F:]{0,4})\\s*$");
     private static final Pattern WINDOWS_RTT_MS = Pattern.compile(
             "(?:<\\s*1|(\\d+(?:\\.\\d+)?))\\s*(?:ms|мс)", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 
@@ -52,13 +55,24 @@ final class WindowsTraceOutputParser {
     }
 
     static String extractIp(String rest) {
-        Matcher bracket = WINDOWS_IP_IN_BRACKETS.matcher(rest);
+        Matcher v6Bracket = WINDOWS_IP6_IN_BRACKETS.matcher(rest);
         String ip = null;
+        while (v6Bracket.find()) {
+            ip = v6Bracket.group(1).toLowerCase(Locale.ROOT);
+        }
+        if (ip != null) {
+            return ip;
+        }
+        Matcher bracket = WINDOWS_IP_IN_BRACKETS.matcher(rest);
         while (bracket.find()) {
             ip = bracket.group(1);
         }
         if (ip != null) {
             return ip;
+        }
+        Matcher bareV6 = WINDOWS_BARE_V6.matcher(rest.trim());
+        if (bareV6.find()) {
+            return bareV6.group(1).toLowerCase(Locale.ROOT);
         }
         Matcher bare = WINDOWS_BARE_IP.matcher(rest);
         while (bare.find()) {
