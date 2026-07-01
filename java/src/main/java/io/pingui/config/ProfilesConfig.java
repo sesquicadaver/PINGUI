@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import org.yaml.snakeyaml.DumperOptions;
@@ -118,7 +117,7 @@ public final class ProfilesConfig {
         Set<String> seen = new HashSet<>();
         for (Object entry : hostsList) {
             HostEntry parsed = parseHostEntry(entry, profileName);
-            String key = parsed.address().toLowerCase(Locale.ROOT);
+            String key = HostAddressParser.duplicateKey(parsed.address());
             if (!seen.add(key)) {
                 throw new ConfigError("Duplicate host in profile '" + profileName + "': " + parsed.address());
             }

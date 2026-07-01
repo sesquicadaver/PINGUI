@@ -116,10 +116,13 @@ profiles:
     hosts:
       - address: "8.8.8.8"
         enabled: true
-        ping_only: false   # true — лише ping, без traceroute (рекомендовано на Windows)
+        ping_only: false
         ping_expert:
           chain: false
           args: ["-4", "-s", "128"]
+      - "2001:db8::1"
+      - address: "2001:4860:4860::8888"
+        enabled: true
 ```
 
 ## Збірка

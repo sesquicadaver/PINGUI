@@ -27,10 +27,28 @@ class HostsConfigTest {
     }
 
     @Test
-    void validateSessionHost_rejectsIpv6_withExplicitMessage() {
-        ConfigError error =
-                assertThrows(ConfigError.class, () -> HostsConfig.validateSessionHost("2001:db8::1", List.of()));
-        assertEquals("IPv6 addresses are not supported (IPv4-only): '2001:db8::1'", error.getMessage());
+    void validateSessionHost_acceptsIpv6Literal() {
+        String host = HostsConfig.validateSessionHost("2001:db8::1", List.of());
+        assertEquals("2001:db8::1", host);
+    }
+
+    @Test
+    void validateSessionHost_acceptsBracketedIpv6() {
+        String host = HostsConfig.validateSessionHost("[2001:db8::1]", List.of());
+        assertEquals("2001:db8::1", host);
+    }
+
+    @Test
+    void validateSessionHost_rejectsIpv6DuplicateCanonicalForms() {
+        HostsConfig.validateSessionHost("2001:db8::1", List.of());
+        assertThrows(
+                ConfigError.class,
+                () -> HostsConfig.validateSessionHost("2001:DB8:0:0:0:0:0:1", List.of("2001:db8::1")));
+    }
+
+    @Test
+    void validateSessionHost_rejectsInvalidIpv6() {
+        assertThrows(ConfigError.class, () -> HostsConfig.validateSessionHost("not:valid:ipv6:xyz", List.of()));
     }
 
     @Test

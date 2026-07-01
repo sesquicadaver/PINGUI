@@ -24,7 +24,7 @@
 
 | Шар | IPv4 сьогодні | Ціль фази 9 |
 |-----|---------------|-------------|
-| `HostsConfig` | Literal v4 + hostname; `:` → error | V6-010…V6-014: RFC 5952, mixed profile |
+| `HostsConfig` | Literal v4 + hostname; v6 literal RFC 5952 (V6-S1) | V6-020+ trace для v6 |
 | `ProcessRouteProbe` / parsers | Regex IPv4 | V6-024…V6-029: v6 tokens + fixtures |
 | Trace commands | без `-6` | V6-021…V6-023 |
 | `GeoCountry` | `Inet4Address` only | V6-035…V6-037 |
@@ -60,7 +60,7 @@
 
 ## DoD фази 9 (release)
 
-- [ ] Literal IPv6 у YAML і UI Add Host
+- [x] Literal IPv6 у YAML (session validator)
 - [ ] Process trace v6 на Linux (macOS best-effort)
 - [ ] Windows `tracert -6` парситься (фікстури)
 - [ ] v4 regression green (`./gradlew check`)

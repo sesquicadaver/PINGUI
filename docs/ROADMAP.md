@@ -129,20 +129,20 @@
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **V6-001** | [ ] Оновити SPIKE: статус **planned**, цілі фази 9, матриця OS | `docs/SPIKE_IPV6.md` | Таблиця «шар → v4 → v6 → OS»; посилання на V6-* |
-| **V6-002** | [ ] ADR: політика dual-stack (literal v6, hostname→AAAA, mixed profile) | `docs/ARCHITECTURE.md` або `docs/ADR_IPV6.md` | Рішення: bracket YAML, canonical RFC 5952, probe fallback |
-| **V6-003** | [ ] `HostAddressKind` + `HostAddressParser` (IPv4 / IPv6 / hostname) | `config/HostAddress*.java` | Unit-тест: parse/normalize без UI |
+| **V6-001** | [x] Оновити SPIKE: статус **planned**, цілі фази 9, матриця OS | `docs/SPIKE_IPV6.md` | Таблиця «шар → v4 → v6 → OS»; посилання на V6-* |
+| **V6-002** | [x] ADR: політика dual-stack (literal v6, hostname→AAAA, mixed profile) | `docs/ADR_IPV6.md` | Рішення: bracket YAML, canonical RFC 5952, probe fallback |
+| **V6-003** | [x] `HostAddressKind` + `HostAddressParser` (IPv4 / IPv6 / hostname) | `config/HostAddress*.java` | Unit-тест: parse/normalize без UI |
 
 ### 9.1 — Config / validator (P0)
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **V6-010** | [ ] RFC 5952 normalize для IPv6 literal | `HostsConfig.java`, `HostAddressParser` | `2001:db8::1` → canonical; `[::1]` strip brackets |
-| **V6-011** | [ ] Приймати IPv6 у `normalizeHostEntry` / `isValidHost` | `HostsConfig.java` | Прибрати blanket `:` → error; зберегти reject invalid |
-| **V6-012** | [ ] Duplicate key: canonical v6 (case-insensitive hex) | `HostsConfig.java`, `ProfilesConfig` | `HostsConfigTest`: dup `2001:DB8::1` vs `2001:db8:0:0:0:0:0:1` |
-| **V6-013** | [ ] Bracket notation у YAML прикладах | `java/README.md`, `docs/DEPLOYMENT.md` | Приклад `address: "2001:db8::1"` |
-| **V6-014** | [ ] Mixed profile: IPv4 + IPv6 hosts в одному профілі | `ProfilesConfigTest` | load/save round-trip 2+2 hosts |
-| **V6-015** | [ ] LIVING_SPEC: рядки HostAddress / v6 validator | `docs/LIVING_SPEC.md` | Матриця оновлена |
+| **V6-010** | [x] RFC 5952 normalize для IPv6 literal | `HostsConfig.java`, `HostAddressParser` | `2001:db8::1` → canonical; `[::1]` strip brackets |
+| **V6-011** | [x] Приймати IPv6 у `normalizeHostEntry` / `isValidHost` | `HostsConfig.java` | Прибрати blanket `:` → error; зберегти reject invalid |
+| **V6-012** | [x] Duplicate key: canonical v6 (case-insensitive hex) | `HostsConfig.java`, `ProfilesConfig` | `HostsConfigTest`: dup `2001:DB8::1` vs `2001:db8:0:0:0:0:0:1` |
+| **V6-013** | [x] Bracket notation у YAML прикладах | `java/README.md`, `docs/DEPLOYMENT.md` | Приклад `address: "2001:db8::1"` |
+| **V6-014** | [x] Mixed profile: IPv4 + IPv6 hosts в одному профілі | `ProfilesConfigTest` | load/save round-trip 2+2 hosts |
+| **V6-015** | [x] LIVING_SPEC: рядки HostAddress / v6 validator | `docs/LIVING_SPEC.md` | Матриця оновлена |
 
 ### 9.2 — Process trace (subprocess, P0)
 
@@ -315,5 +315,7 @@ flowchart LR
 **Sprint 19 (2025-06-26):** B-064e — `HostEntryTest`; GeoIP YAML validation + ProfilesConfig type/save guards.
 
 **Sprint 20 (2025-06-26):** B-064f — `PingExpertValidator` + `ExpertPingEnricher` stub tests; −exclusion `ExpertPingEnricher`.
+
+**IPv6-S1 (2026-06-26):** V6-001…V6-015 — `HostAddressParser`, RFC 5952, mixed v4/v6 YAML.
 
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.
