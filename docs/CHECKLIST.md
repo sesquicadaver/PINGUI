@@ -1,3 +1,5 @@
+> **Мова:** Українська · [English](en/CHECKLIST.md)
+
 # Checklist розгортання PINGUI (Java)
 
 Checklist для Java-редакції на **Linux / Windows / macOS**.

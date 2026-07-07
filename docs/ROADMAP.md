@@ -1,3 +1,5 @@
+> **Мова:** Українська · [English](en/ROADMAP.md)
+
 # ROADMAP — PINGUI Java (`main` / `beta`)
 
 План виправлень після аудиту `main` (MVP desktop utility, production readiness: низька–середня).

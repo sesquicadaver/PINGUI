@@ -1,3 +1,5 @@
+> **Мова:** Українська · [English](README.en.md)
+
 # PINGUI
 
 ![Java CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/java.yml/badge.svg)
@@ -10,7 +12,7 @@
 | Гілка | Зміст |
 |-------|--------|
 | **`main`** | Java-редакція + документація + unit-тести + JaCoCo + CI |
-| **`beta`** | Python-редакція, тести, CI, специфікації, roadmap |
+| **`beta`** | Python + Java, pytest, JaCoCo, повний CI, специфікації |
 
 ## Швидкий старт
 
@@ -26,7 +28,7 @@ chmod +x pingui-java.sh gradlew
 
 **Windows**
 
-> ⚠ **Не найкращий вибір для інтенсивного моніторингу.** `tracert` значно повільніший за Linux `traceroute` (3 probe/hop, довгі таймаути). Перший trace може тривати 1–4 хв на ціль; Expert ping недоступний. Для Windows: **Ping only** на хості або `interval: 30`+ у профілі. Див. [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md#рекомендація-щодо-ос).
+> ⚠ **Не найкращий вибір для інтенсивного моніторингу.** `tracert` значно повільніший за Linux `traceroute` (3 probe/hop, довгі таймаути). Перший trace може тривати 1–4 хв на ціль; Expert ping недоступний. Для Windows: **Ping only** на хості або `interval: 30`+ у профілі. Див. [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#рекомендація-щодо-ос).
 
 Потрібен **JDK 21**: [Eclipse Temurin 21 (Windows x64)](https://adoptium.net/temurin/releases/?version=21) — під час інсталяції увімкніть **Add to PATH** та **Set JAVA_HOME**.
 
@@ -46,7 +48,7 @@ pingui-java.bat
 - **Expert ping** (Linux, iputils) — діалог **Exten.** на хост
 - Трасування через `traceroute` / `tracert` (без `CAP_NET_RAW` за замовч.)
 - Опційно на Linux: raw ICMP (`probe: auto|raw` + `cap_net_raw`)
-- **IPv4-only:** IPv6-літерали та IPv6 trace не підтримуються (див. [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md))
+- **Dual-stack config:** IPv6 literal у YAML (RFC 5952); subprocess trace v6 — фаза 9 ([docs/DEPLOYMENT.md](docs/DEPLOYMENT.md))
 
 ## CLI
 
@@ -68,18 +70,19 @@ cd java
 
 Без `--interval` / `--max-hops` / `--timeout` / `--probe` значення беруться з YAML профілю.
 
-## Структура репозиторію (`main`)
+## Структура репозиторію
+
+**`main`:** Java + docs. **`beta`:** + `src/pingui/` (Python), `tests/`, `pyproject.toml`, `pingui.sh`.
 
 ```
 PINGUI/
 ├── java/                 # Java edition (JavaFX)
-│   ├── pingui-java.sh    # Linux / macOS launcher
-│   ├── pingui-java.bat   # Windows launcher
-│   ├── build.gradle.kts
-│   └── src/main/java/io/pingui/
-├── docs/                 # Документація
-├── CHANGELOG.md
-└── ISSUES.txt
+├── src/pingui/           # Python edition (beta)
+├── tests/                # pytest (beta)
+├── docs/
+│   ├── en/               # English documentation
+│   └── …                 # Українська документація
+└── CHANGELOG.md
 ```
 
 ## Документація
@@ -87,35 +90,12 @@ PINGUI/
 | Файл | Призначення |
 |------|-------------|
 | [java/README.md](java/README.md) | Запуск, Gradle, GUI, YAML |
+| [docs/README.md](docs/README.md) | Індекс документації (UA) |
+| [docs/en/README.md](docs/en/README.md) | Documentation index (EN) |
 | [docs/CHECKLIST.md](docs/CHECKLIST.md) | Checklist Linux / Windows / macOS |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Розгортання |
 | [docs/JAVA.md](docs/JAVA.md) | Архітектура Java-редакції |
-| [docs/README.md](docs/README.md) | Індекс документації |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | План виправлень |
 | [CHANGELOG.md](CHANGELOG.md) | Історія змін |
 
-Розробка, тести та Python-редакція — гілка **`beta`**.
-
-## Support the project
-
-If this project is useful to you, you may support its development with a voluntary donation in USDT.
-
-Donations are optional and do not provide ownership, equity, tokens, governance rights, paid support, priority service, or any investment return.
-
-### USDT donations
-
-| Network | Address |
-|---|---|
-| USDT ERC-20 / Ethereum | 0xfa9821efd142228d53e1418fe335bb1cd8ff3c39 |
-| USDT TRC-20 / Tron | TNnhueeGqujf6AAUhcgissoEkL7tdzmqQv |
-
-### Important
-
-Please make sure that the selected network matches the address type.
-
-- Send **USDT ERC-20** only to the Ethereum address.
-- Send **USDT TRC-20** only to the Tron address.
-
-Transactions sent to the wrong network may be permanently lost.
-
-Thank you for supporting the project.
+Python: `./pingui.sh` на гілці **`beta`** (venv). Java: `cd java && ./gradlew check`.

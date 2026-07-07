@@ -1,3 +1,5 @@
+> **Мова:** Українська · [English](en/DEPLOYMENT.md)
+
 # Розгортання PINGUI (Java)
 
 ## Платформи

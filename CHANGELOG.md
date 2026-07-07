@@ -1,3 +1,5 @@
+> **Мова:** Українська · [English](CHANGELOG.en.md)
+
 # Changelog
 
 Формат базується на [Keep a Changelog](https://keepachangelog.com/uk/1.1.0/).
@@ -5,10 +7,17 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **IPv6 literal:** `DualStackRouteProbe` — auto probe використовує subprocess trace для v6 (raw ICMP лишається v4-only).
+- **Expert/ping v6:** auto `-6` для IPv6 literal; `-4`/`-6` конфлікт з типом цілі.
+- **Expert ping UI:** `-4`/`-6` — один вибір сімейства адрес; `-n`/`-H`, `-F`/IPv6, `-r`/`-I` — взаємовиключення в діалозі.
+
 ### Added
 
 - **IPv6 trace (V6-S2):** `TraceTarget`, `-6` у traceroute/tracert, парсери v6 + фікстури `unix_v6_*`/`win_v6_*`.
 - **IPv6 config (V6-S1):** `HostAddressParser` — RFC 5952 normalize, mixed IPv4/IPv6 profiles у YAML.
+- **Двомовна документація:** українська (`docs/`) та англійська (`docs/en/`, `README.en.md`, `java/README.en.md`).
 
 ### Changed
 
@@ -20,25 +29,24 @@
 - **Tests:** B-064 — розширено `MonitorService`/`SessionStore`/`IcmpPacket` unit-тести; прибрано JaCoCo exclusion для `IcmpPacket`.
 - **Tests:** B-064 — розширено config/monitor unit-тести; звужено JaCoCo exclusions (RoutePoller, HopStats, HostEntry, ProfileDocument, HostTargetStats, GeoCountry lookup).
 - **Гілки:** sync `beta` → `main` — повний Java test suite + JaCoCo ≥80% (Sprint 11).
+- **Гілки:** sync `main` → `beta` — Java roadmap sprints 1–9 (UI split, probe refactor, Checkstyle, build metadata; Sprint 10).
 - **Java probe:** `ProcessRouteProbe` розділено — `TraceCommandBuilder` (Linux/macOS/Windows), `UnixTraceOutputParser`, `WindowsTraceOutputParser`.
 - **Build:** Checkstyle (UnusedImports, RedundantImport) у `./gradlew check` (M-023).
-- **Build:** About показує версію + git sha (+ CI build number); Gradle `generateBuildProperties`; `layerCheck` у `./gradlew check`.
-- **IPv6:** SPIKE → wontfix; `HostsConfig` повертає явну помилку для IPv6 literal (B-050/B-053).
-- **CLI:** M-014 unit-тест — YAML `interval: 30` без `--interval`; GUI/CLI smoke — `docs/CHECKLIST.md`.
-- **Java UI:** `MainController` розділено на координатори (`ProfileUiCoordinator`, `HostListPresenter`, `MonitorLifecycle`, `ViewModeController`, `RouteGraphPresenter`); ~715 → ~387 рядків.
-- **Build:** Spotless (Palantir Java Format) + `./gradlew check` = compile + format + test.
-- **Java CLI:** `--interval` / `--max-hops` / `--timeout` / `--probe` перезаписують активний YAML-профіль **лише якщо передані** (`CliProfileOverrides`).
-- **Docs:** IPv4-only — README, DEPLOYMENT, JAVA, Help dialog.
-- **Docs:** [docs/ROADMAP.md](docs/ROADMAP.md) — атомарний план виправлень після аудиту `main`.
-- **Docs:** попередження про повільність Windows (`tracert`) та рекомендація Linux для щоденної роботи — README, DEPLOYMENT, CHECKLIST, JAVA.
-- **Гілки:** `main` — лише Java-редакція та документація для запуску; `beta` — Python, тести, CI, специфікації.
+- **Build:** About показує версію + git sha; `generateBuildProperties`; `layerCheck`.
+- **IPv6:** SPIKE → wontfix; явна помилка для IPv6 literal (B-050/B-053).
+- **CLI:** M-014 unit-тест — YAML `interval: 30` без `--interval`.
+- **Java UI:** `MainController` розділено на координатори (~715 → ~387 рядків).
+- **Build:** Spotless + `./gradlew check`.
+- **Java CLI:** `CliProfileOverrides` — merge лише переданих прапорів.
+- **Docs:** IPv4-only, ROADMAP, Windows warning, CHECKLIST smoke sections.
+- **Гілки:** `main` — Java + docs + CI; `beta` — Python + Java, pytest, JaCoCo.
 
 ### Added
 
-- **CI:** GitHub Actions [Java CI](.github/workflows/java.yml) — `./gradlew check` on Ubuntu; Windows optional.
-- **Tests:** JUnit 5 на `main` — парсери trace, HostsConfig, ProfilesConfig, CLI overrides, PingExpertValidator (21 tests).
-- **Docs:** [docs/LIVING_SPEC.md](docs/LIVING_SPEC.md) — матриця модуль → тести.
-- **Java UI:** меню **Про** та **Довідка** (F1) з діалогами версії та короткої довідки.
+- **CI:** GitHub Actions [Java CI](.github/workflows/java.yml).
+- **Tests:** JUnit 5 contract tests + beta JaCoCo coverage gate.
+- **Docs:** [docs/LIVING_SPEC.md](docs/LIVING_SPEC.md), [docs/SPIKE_IPV6.md](docs/SPIKE_IPV6.md).
+- **Java UI:** меню **Про** та **Довідка** (F1).
 - **Java UI:** чекбокс «Ping only» на кожному хості — лише ping до цілі без traceroute (`ping_only` у YAML).
 - **Java UI:** кнопка «Exten.» лишається видимою в ping-only при увімкненому «Експерт»; без чекбокса «ланцюжок».
 - **Docs:** [docs/CHECKLIST.md](docs/CHECKLIST.md) — checklist розгортання Linux / Windows / macOS.
@@ -46,7 +54,7 @@
 ### Fixed
 
 - **Java:** прибрано дубльований import у `RawIcmpRouteProbe`.
-- **Java CLI:** старт без прапорів більше не затирає `interval`/`max_hops`/`timeout`/`probe` у YAML defaults.
+- **Java CLI:** старт без прапорів більше не затирає YAML defaults.
 - **Java UI:** після створення/видалення профілю — чорний фрейм (sizeToScene не зменшує вікно на Linux; reload без applyViewMode).
 - **Java (Windows):** парсер `tracert` — `<1 ms`, `hostname [IP]`, System32 fallback, `-d`, charset ОС.
 - **Java (Windows):** виправлено timeout/deadlock `tracert` (drain stdout, `-w` ≥4000 ms, довший process wait).

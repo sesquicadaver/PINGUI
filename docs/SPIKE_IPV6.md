@@ -1,3 +1,5 @@
+> **Мова:** Українська · [English](en/SPIKE_IPV6.md)
+
 # SPIKE: IPv6 trace + ping (B-050)
 
 **Дата:** 2025-06-26  

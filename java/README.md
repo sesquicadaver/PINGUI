@@ -1,3 +1,5 @@
+> **Мова:** Українська · [English](README.en.md)
+
 # PINGUI Java
 
 Крос-платформова версія PINGUI на **Java 21 + JavaFX**.
