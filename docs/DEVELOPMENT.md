@@ -1,3 +1,5 @@
+> **Мова:** Українська · [English](en/DEVELOPMENT.md)
+
 # Розробка PINGUI
 
 ## Передумови
@@ -52,6 +54,7 @@ pytest tests -m "not network" -q
 # Повний CI (як у GitHub Actions)
 ./scripts/ci_venv.sh
 python scripts/check_imports.py
+python scripts/check_doc_parity.py
 ```
 
 ## Стандарти коду

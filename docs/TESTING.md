@@ -1,3 +1,5 @@
+> **Мова:** Українська · [English](en/TESTING.md)
+
 # Тестування PINGUI
 
 ## Стратегія
@@ -90,6 +92,21 @@ python scripts/check_imports.py
 ```
 
 Виконується в `--deploy` і CI.
+
+## Documentation parity (UK/EN)
+
+```bash
+python scripts/check_doc_parity.py
+# OK: UK/EN documentation parity
+```
+
+Перевіряє:
+
+- парність `docs/*.md` ↔ `docs/en/*.md`;
+- перемикачі мов у README, `java/README`, root `ROADMAP`;
+- наявність UK-банера в `CHANGELOG.md` з посиланням на `docs/en/`.
+
+Виконується в `./scripts/ci_venv.sh`, Java CI (`.github/workflows/java.yml`) та Python CI.
 
 ## Manual QA
 

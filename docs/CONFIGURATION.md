@@ -1,3 +1,5 @@
+> **Мова:** Українська · [English](en/CONFIGURATION.md)
+
 # Конфігурація PINGUI
 
 ## YAML — список цілей

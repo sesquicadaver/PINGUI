@@ -1,22 +1,22 @@
 # ROADMAP — PINGUI
 
-> **Мова:** Українська · [English](ROADMAP.en.md)
+> **Language:** English · [Українська](ROADMAP.md)
 
-**Статус MVP:** ✅ реалізовано (2026-06-26)
+**MVP status:** ✅ implemented (2026-06-26)
 
-- Запуск: `./pingui.sh` / `./pingui.sh --deploy`
+- Launch: `./pingui.sh` / `./pingui.sh --deploy`
 - CI: ruff + mypy + pytest, coverage ≥ 80%
-- Документація: `README.md`, `docs/MVP_SPEC.md`, `docs/LIVING_SPEC.md`
+- Documentation: `README.md`, `docs/MVP_SPEC.md`, `docs/LIVING_SPEC.md`
 
 ---
 
-## Ціль MVP
+## MVP goal
 
-Linux-додаток: моніторинг до 10 цілей у списку, ICMP traceroute, RTT по hop, детекція зміни маршруту, топологічна карта в GUI, дані тільки в RAM на час сесії, редагування списку цілей у GUI.
+Linux desktop app: monitor up to 10 targets in a list, ICMP traceroute, RTT per hop, route change detection, topological map in GUI, data in RAM for the session only, edit target list in GUI.
 
 ---
 
-## Структура репозиторію (актуальна)
+## Repository layout (current)
 
 ```
 PINGUI/
@@ -29,7 +29,8 @@ PINGUI/
 ├── README.md
 ├── ROADMAP.md
 ├── docs/
-│   ├── README.md           # індекс документації
+│   ├── README.md           # documentation index
+│   ├── en/                 # English documentation
 │   ├── USER_GUIDE.md
 │   ├── ARCHITECTURE.md
 │   ├── DEPLOYMENT.md
@@ -70,6 +71,7 @@ PINGUI/
 │   ├── ci_venv.sh
 │   ├── check_caps.sh
 │   ├── check_imports.py
+│   ├── check_doc_parity.py
 │   └── setup_caps.sh
 └── systemd/
     └── pingui-dev.service.example
@@ -77,27 +79,27 @@ PINGUI/
 
 ---
 
-## Фази (статус)
+## Phases (status)
 
-| Фаза | Опис | Статус |
-|------|------|--------|
-| P0 | Ініціалізація проєкту, venv, CI | ✅ |
-| P1 | Моделі та конфіг | ✅ |
+| Phase | Description | Status |
+|-------|-------------|--------|
+| P0 | Project init, venv, CI | ✅ |
+| P1 | Models and config | ✅ |
 | P2 | ICMP / traceroute | ✅ |
 | P3 | In-memory session store | ✅ |
 | P4 | Background worker (QThread) | ✅ |
 | P5 | GUI (PyQt6 + graph) | ✅ |
-| P6 | Інтеграція, CLI, logging | ✅ |
+| P6 | Integration, CLI, logging | ✅ |
 | P7 | CI, anti-stub, coverage ≥ 80% | ✅ |
 | P8 | Linux deployment helpers | ✅ |
 | **P9** | **Java cross-platform edition** | **✅ MVP** |
 
 ---
 
-## Фаза P9 — Java (cross-platform)
+## Phase P9 — Java (cross-platform)
 
-| ID | Задача | Статус |
-|----|--------|--------|
+| ID | Task | Status |
+|----|------|--------|
 | J-P9-01 | Gradle + JavaFX scaffold (`java/`) | done |
 | J-P9-02 | Models, config, monitor port | done |
 | J-P9-03 | ProcessRouteProbe (traceroute/tracert) | done |
@@ -105,36 +107,36 @@ PINGUI/
 | J-P9-05 | JUnit tests + java-ci.yml | done |
 | J-P9-06 | JavaFX graph parity | done |
 
-## Backlog (після MVP)
+## Backlog (post-MVP)
 
-| ID | Задача |
+| ID | Task |
 |----|--------|
-| B-01 | SQLite persistence між сесіями | ✅ Python `--session-db` |
-| B-02 | Експорт звітів CSV/HTML | ✅ |
-| B-03 | GeoIP (груба країна) в підписах нод | ✅ |
-| B-04 | Folium geo-map у окремому view | ✅ |
+| B-01 | SQLite persistence between sessions | ✅ Python `--session-db` |
+| B-02 | CSV/HTML report export | ✅ |
+| B-03 | GeoIP (rough country) in node labels | ✅ |
+| B-04 | Folium geo-map in separate view | ✅ |
 | B-05 | TimescaleDB/InfluxDB backend | ✅ |
-| B-06 | Jitter/loss statistics по hop | ✅ |
+| B-06 | Jitter/loss statistics per hop | ✅ |
 | **J-01** | **Java: JavaFX topological graph** | ✅ |
 | **J-02** | **Java: jpackage installers** | ✅ Linux .deb |
 | **J-04** | **Java: launcher `pingui-java.sh` / `pingui-java.bat`** | ✅ |
 | **J-03** | **Java: optional raw ICMP (JNA)** | ✅ Linux |
 | **J-05** | **Java: CI matrix + jpackage msi/dmg** | ✅ |
-| **J-06** | **Java: hop jitter/loss у graph labels** | ✅ |
+| **J-06** | **Java: hop jitter/loss in graph labels** | ✅ |
 
 ---
 
-## Definition of Done (на кожну фічу)
+## Definition of Done (per feature)
 
-1. Код у `src/pingui/`, без заглушок у production-шляхах.
-2. Unit/contract/integration тест там, де є логіка.
-3. `./pingui.sh --deploy` проходить у venv.
-4. Рядок оновлено в `docs/LIVING_SPEC.md`.
-5. Якщо змінюється запуск — оновлено `README.md` або service file.
+1. Code in `src/pingui/`, no stubs in production paths.
+2. Unit/contract/integration tests where logic exists.
+3. `./pingui.sh --deploy` passes in venv.
+4. Row updated in `docs/LIVING_SPEC.md`.
+5. If launch changes — update `README.md` or service file.
 
 ---
 
-## Критичний шлях (MVP — завершено)
+## Critical path (MVP — complete)
 
 ```
 pingui.sh → config/models → icmp/tracer → session_store → worker → main_window/graph → CI

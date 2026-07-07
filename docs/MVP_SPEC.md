@@ -1,3 +1,5 @@
+> **Мова:** Українська · [English](en/MVP_SPEC.md)
+
 # MVP — технічна специфікація PINGUI
 
 Короткий звод вимог для поточного релізу (in-memory desktop monitor).

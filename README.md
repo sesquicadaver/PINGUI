@@ -1,5 +1,7 @@
 # PINGUI
 
+> **Мова:** Українська · [English](README.en.md)
+
 ![Java CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/java.yml/badge.svg)
 
 Крос-платформний монітор маршрутів і RTT до 10 цілей одночасно (Java 21 + JavaFX).
@@ -85,11 +87,13 @@ PINGUI/
 
 | Файл | Призначення |
 |------|-------------|
-| [java/README.md](java/README.md) | Запуск, Gradle, GUI, YAML |
+| [docs/README.md](docs/README.md) | Індекс документації (UK) |
+| [docs/en/README.md](docs/en/README.md) | Documentation index (EN) |
+| [java/README.md](java/README.md) | Запуск, Gradle, GUI, YAML (UK) |
+| [java/README.en.md](java/README.en.md) | Launch, Gradle, GUI, YAML (EN) |
 | [docs/CHECKLIST.md](docs/CHECKLIST.md) | Checklist Linux / Windows / macOS |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Розгортання |
 | [docs/JAVA.md](docs/JAVA.md) | Архітектура Java-редакції |
-| [docs/README.md](docs/README.md) | Індекс документації |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | План виправлень |
 | [CHANGELOG.md](CHANGELOG.md) | Історія змін |
 

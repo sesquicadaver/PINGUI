@@ -1,5 +1,7 @@
 # PINGUI Java
 
+> **Мова:** Українська · [English](README.en.md)
+
 Крос-платформова версія PINGUI на **Java 21 + JavaFX**.
 
 Працює на **Linux, macOS та Windows**: трасування через системні

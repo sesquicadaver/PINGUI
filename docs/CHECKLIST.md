@@ -1,3 +1,5 @@
+> **Мова:** Українська · [English](en/CHECKLIST.md)
+
 # Checklist розгортання PINGUI (Java)
 
 Checklist для Java-редакції на **Linux / Windows / macOS**.
@@ -217,8 +219,12 @@ chmod +x pingui-java.sh gradlew
 Перевірка відповідності README ↔ фактичний CLI:
 
 - [ ] `java/README.md` — прапорці `--config`, `--interval`, `--probe`, `--geoip-hints` збігаються з `./pingui-java.sh --help`
+- [ ] `java/README.en.md` — той самий CLI parity (EN)
 - [ ] `docs/JAVA.md` — таблиця CLI vs YAML актуальна
-- [ ] `docs/DEPLOYMENT.md` — JDK 21, Windows warning, IPv4-only
+- [ ] `docs/en/JAVA.md` — EN parity з UK
+- [ ] `docs/DEPLOYMENT.md` — JDK 21, Windows warning, dual-stack
+- [ ] `docs/en/` — перемикачі мов і відповідність з `docs/` (bilingual smoke)
+- [ ] `python3 scripts/check_doc_parity.py` — green (CI gate)
 - [ ] `docs/ROADMAP.md` — закриті задачі позначені `[x]`
 - [ ] Badge CI у `README.md` — відображає останній push
 

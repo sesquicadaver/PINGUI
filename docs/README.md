@@ -1,5 +1,7 @@
 # Документація PINGUI
 
+> **Мова:** Українська · [English](en/README.md)
+
 На **`beta`** — повний пакет (Java + Python). На **`main`** — Java docs для запуску.
 
 ## Навігація
@@ -20,7 +22,9 @@
 | [TESTING.md](TESTING.md) | QA | pytest, coverage, CI |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Контрибутор | PR, anti-stub |
 | [MVP_SPEC.md](MVP_SPEC.md) | Усі | MVP вимоги |
-| [../java/README.md](../java/README.md) | Усі | Java launcher, Gradle |
+| [../java/README.md](../java/README.md) | Усі | Java launcher, Gradle (UK) |
+| [../java/README.en.md](../java/README.en.md) | Усі | Java launcher, Gradle (EN) |
+| [en/README.md](en/README.md) | Усі | English documentation index |
 | [../.github/workflows/java.yml](../.github/workflows/java.yml) | CI | Java `./gradlew check` |
 | [../.github/workflows/ci.yml](../.github/workflows/ci.yml) | CI | Python pytest (beta) |
 

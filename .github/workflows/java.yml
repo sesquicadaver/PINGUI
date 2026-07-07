@@ -20,6 +20,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check documentation parity (UK/EN)
+        working-directory: ${{ github.workspace }}
+        run: python3 scripts/check_doc_parity.py
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

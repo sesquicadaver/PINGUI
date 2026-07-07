@@ -1,3 +1,5 @@
+> **Мова:** Українська · [English](en/ARCHITECTURE.md)
+
 # Архітектура PINGUI
 
 ## Огляд

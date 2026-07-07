@@ -1,3 +1,5 @@
+> **Мова:** Українська · [English](en/ADR_IPV6.md)
+
 # ADR: Dual-stack host addresses (V6-002)
 
 **Статус:** accepted (IPv6-S1)  

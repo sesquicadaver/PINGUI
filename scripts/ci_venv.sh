@@ -14,3 +14,5 @@ export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-offscreen}"
 .venv/bin/ruff check src tests
 .venv/bin/mypy src/pingui
 .venv/bin/pytest tests -m "not network" --cov=pingui --cov-report=term-missing --cov-fail-under=80
+python scripts/check_imports.py
+python scripts/check_doc_parity.py

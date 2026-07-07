@@ -5,6 +5,7 @@
 ## Living Spec
 
 - [ ] Updated `docs/LIVING_SPEC.md` if behavior/modules changed
+- [ ] If docs changed: `python3 scripts/check_doc_parity.py` passes (UK/EN parity)
 
 ## Anti-stub review
 
@@ -16,6 +17,6 @@
 - [ ] `./pingui.sh --deploy` passes in venv (or `./scripts/ci_venv.sh`)
 - [ ] Manual QA checklist in README (if UI/network touched)
 
-Link Living Spec matrix: [docs/LIVING_SPEC.md](docs/LIVING_SPEC.md)
+Link Living Spec matrix: [docs/LIVING_SPEC.md](docs/LIVING_SPEC.md) · [docs/en/LIVING_SPEC.md](docs/en/LIVING_SPEC.md)
 
-Documentation index: [docs/README.md](docs/README.md)
+Documentation index: [docs/README.md](docs/README.md) · [docs/en/README.md](docs/en/README.md)

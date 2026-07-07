@@ -1,8 +1,8 @@
-> **Мова:** Українська · [English](en/MODULES.md)
+> **Language:** English · [Українська](../MODULES.md)
 
-# Довідник модулів PINGUI
+# PINGUI Module Reference
 
-Публічні API пакету `pingui` (версія 0.1.0).
+Public APIs of the `pingui` package (version 0.1.0).
 
 ---
 
@@ -10,31 +10,31 @@
 
 ### `HopNode` (frozen dataclass)
 
-| Поле | Тип | Опис |
-|------|-----|------|
-| `hop` | int | Номер hop (TTL) |
-| `ip` | str | IPv4 або `"*"` при timeout |
-| `ping_ms` | float \| None | RTT мілісекунди |
-| `is_timeout` | bool | True якщо probe не відповів |
+| Field | Type | Description |
+|-------|------|-------------|
+| `hop` | int | Hop number (TTL) |
+| `ip` | str | IPv4 or `"*"` on timeout |
+| `ping_ms` | float \| None | RTT in milliseconds |
+| `is_timeout` | bool | True if probe did not respond |
 
-**Клас-метод:** `HopNode.timeout(hop: int) -> HopNode`
+**Class method:** `HopNode.timeout(hop: int) -> HopNode`
 
 ### `RouteSnapshot`
 
-| Поле | Тип |
-|------|-----|
-| `target` | str — hostname/IP як у конфігу |
+| Field | Type |
+|-------|------|
+| `target` | str — hostname/IP as in config |
 | `target_ip` | str — resolved IPv4 |
 | `nodes` | list[HopNode] |
 | `timestamp` | datetime (UTC) |
 
-**Метод:** `route_ips() -> list[str]` — IP без timeout.
+**Method:** `route_ips() -> list[str]` — IPs excluding timeouts.
 
 ### `HostSessionData`
 
-In-memory стан однієї цілі: `current_route`, `previous_route`, `last_known_by_hop`, `ping_history`, `enabled`.
+In-memory state for a single target: `current_route`, `previous_route`, `last_known_by_hop`, `ping_history`, `enabled`.
 
-### Константа
+### Constant
 
 `TIMEOUT_IP = "*"`
 
@@ -42,18 +42,18 @@ In-memory стан однієї цілі: `current_route`, `previous_route`, `la
 
 ## pingui.config
 
-### Винятки
+### Exceptions
 
 `ConfigError(ValueError)`
 
-### Константи
+### Constants
 
 `MIN_HOSTS = 0`, `MAX_HOSTS = 10`
 
-### Функції
+### Functions
 
-| Функція | Опис |
-|---------|------|
+| Function | Description |
+|----------|-------------|
 | `normalize_host_entry(entry: str) -> str` | Trim + validate |
 | `validate_session_host(host, existing) -> str` | Dedup + limit |
 | `load_hosts_config(path) -> list[str]` | Read YAML |
@@ -74,17 +74,17 @@ In-memory стан однієї цілі: `current_route`, `previous_route`, `la
 def send_probe(target_ip: str, ttl: int, timeout: float) -> ProbeResult | None
 ```
 
-### Функції
+### Functions
 
-| Функція | Опис |
-|---------|------|
+| Function | Description |
+|----------|-------------|
 | `check_raw_icmp_permission() -> None` | Raises `RawIcmpPermissionError` |
-| `resolve_target(host) -> str` | Alias resolve_host_ipv4 |
+| `resolve_target(host) -> str` | Alias for resolve_host_ipv4 |
 | `send_probe(..., transport=None) -> ProbeResult \| None` | Default: ScapyProbeTransport |
 
-### Клас
+### Class
 
-`ScapyProbeTransport` — production ICMP через scapy `sr1`.
+`ScapyProbeTransport` — production ICMP via scapy `sr1`.
 
 ---
 
@@ -99,7 +99,7 @@ def trace_route(
 ) -> RouteSnapshot
 ```
 
-TTL 1..max_hops; зупинка при `is_target` або max_hops.
+TTL 1..max_hops; stops on `is_target` or max_hops.
 
 ---
 
@@ -131,16 +131,16 @@ def detect_route_change(
 ) -> tuple[bool, list[str], list[str]]
 ```
 
-Перше спостереження (`previous_ips` порожній) — `changed=False`.
+First observation (`previous_ips` empty) — `changed=False`.
 
 ---
 
 ## pingui.monitor.route_history
 
-| Функція | Опис |
-|---------|------|
-| `record_last_known(last_known, nodes)` | Оновити dict hop→HopNode |
-| `route_with_last_known_ips(route, last_known)` | Замінити `*` на last known |
+| Function | Description |
+|----------|-------------|
+| `record_last_known(last_known, nodes)` | Update dict hop→HopNode |
+| `route_with_last_known_ips(route, last_known)` | Replace `*` with last known |
 
 ---
 
@@ -148,18 +148,18 @@ def detect_route_change(
 
 ### `SessionStore`
 
-| Метод | Опис |
-|-------|------|
-| `hosts() -> list[str]` | Ключі |
+| Method | Description |
+|--------|-------------|
+| `hosts() -> list[str]` | Keys |
 | `can_add_host() -> bool` | < MAX_HOSTS |
 | `add_host(host, *, enabled=False) -> str` | |
 | `remove_host(host) -> None` | |
 | `rename_host(old, new) -> str` | |
 | `set_enabled(host, enabled)` | |
 | `get(host) -> HostSessionData` | |
-| `update_route(host, snapshot)` | Зберігає previous при зміні |
+| `update_route(host, snapshot)` | Saves previous on change |
 | `inactive_route(host) -> list[HopNode]` | Previous + last known |
-| `append_ping_samples(host, snapshot)` | Trim до 50/IP |
+| `append_ping_samples(host, snapshot)` | Trim to 50/IP |
 | `avg_ping(host, ip) -> float \| None` | |
 | `extract_route_ips(snapshot)` | static |
 
@@ -171,20 +171,20 @@ def detect_route_change(
 
 ### `LightweightMonitorWorker(QThread)`
 
-**Сигнали:**
+**Signals:**
 
 - `data_received(str, object)` — RouteSnapshot
 - `route_changed(str, list, list)` — host, old_ips, new_ips
 - `probe_error(str, str)` — host, message
 
-**Методи:**
+**Methods:**
 
-| Метод | Опис |
-|-------|------|
+| Method | Description |
+|--------|-------------|
 | `hosts()`, `enabled_hosts()` | Thread-safe lists |
 | `can_add_host()`, `add_host()`, `remove_host()`, `rename_host()` | |
 | `set_host_enabled(host, enabled)` | Max 10 enabled |
-| `stop()` | Завершити цикл |
+| `stop()` | Stop loop |
 | `run()` | Background loop |
 
 ---
@@ -193,11 +193,11 @@ def detect_route_change(
 
 ### `app.run_app(hosts, config_path, interval_seconds, max_hops, timeout, *, quiet=True) -> int`
 
-Qt event loop; повертає exit code.
+Qt event loop; returns exit code.
 
 ### `MainWindow(QMainWindow)`
 
-Конструктор: `hosts`, `config_path`, `interval_seconds`, `max_hops`, `timeout`.
+Constructor: `hosts`, `config_path`, `interval_seconds`, `max_hops`, `timeout`.
 
 ### `graph_canvas.GraphCanvas`
 
@@ -213,7 +213,7 @@ Qt event loop; повертає exit code.
 def main(argv: list[str] | None = None) -> int
 ```
 
-Entry point для `python -m pingui` та console script `pingui`.
+Entry point for `python -m pingui` and the console script `pingui`.
 
 ---
 
@@ -223,14 +223,14 @@ Entry point для `python -m pingui` та console script `pingui`.
 def setup_logging(*, verbose: bool = False) -> None
 ```
 
-Root logger: ERROR (GUI) або DEBUG (`--verbose`).
+Root logger: ERROR (GUI) or DEBUG (`--verbose`).
 
 ---
 
-## Скрипти (не importable)
+## Scripts (not importable)
 
-| Скрипт | Призначення |
-|--------|-------------|
+| Script | Purpose |
+|--------|---------|
 | `pingui.sh` | Deploy / GUI / destroy |
 | `scripts/ci_venv.sh` | CI pipeline |
 | `scripts/check_caps.sh` | ICMP permission smoke |

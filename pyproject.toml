@@ -10,6 +10,13 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "PINGUI Team" }]
+
+[project.urls]
+Documentation = "https://github.com/sesquicadaver/PINGUI/blob/main/docs/README.md"
+Documentation-EN = "https://github.com/sesquicadaver/PINGUI/blob/main/docs/en/README.md"
+Repository = "https://github.com/sesquicadaver/PINGUI"
+Changelog = "https://github.com/sesquicadaver/PINGUI/blob/main/CHANGELOG.md"
+
 dependencies = [
     "PyQt6>=6.6",
     "PyQt6-WebEngine>=6.6",
