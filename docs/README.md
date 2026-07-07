@@ -22,6 +22,7 @@
 | [TESTING.md](TESTING.md) | QA | pytest, coverage, CI |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Контрибутор | PR, anti-stub |
 | [MVP_SPEC.md](MVP_SPEC.md) | Усі | MVP вимоги |
+| [USER_GUIDE.md](USER_GUIDE.md) | Користувач | Керівництво користувача |
 | [../java/README.md](../java/README.md) | Усі | Java launcher, Gradle (UK) |
 | [../java/README.en.md](../java/README.en.md) | Усі | Java launcher, Gradle (EN) |
 | [en/README.md](en/README.md) | Усі | English documentation index |
@@ -32,4 +33,4 @@
 
 **Java:** [../README.md](../README.md) → CHECKLIST → [../java/README.md](../java/README.md)
 
-**Python (beta):** DEVELOPMENT → TESTING → CONFIGURATION
+**Python (beta):** DEVELOPMENT → TESTING → CONFIGURATION → USER_GUIDE

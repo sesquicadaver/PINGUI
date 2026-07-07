@@ -30,6 +30,7 @@ PINGUI/
 ├── ROADMAP.md
 ├── docs/
 │   ├── README.md           # індекс документації
+│   ├── en/                 # English documentation
 │   ├── USER_GUIDE.md
 │   ├── ARCHITECTURE.md
 │   ├── DEPLOYMENT.md

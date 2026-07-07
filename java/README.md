@@ -1,3 +1,5 @@
+> **Мова:** Українська · [English](README.en.md)
+
 # PINGUI Java
 
 > **Мова:** Українська · [English](README.en.md)

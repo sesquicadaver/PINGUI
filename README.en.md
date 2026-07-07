@@ -5,14 +5,14 @@
 ![Java CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/java.yml/badge.svg)
 
 Cross-platform route and RTT monitor for up to 10 targets simultaneously (Java 21 + JavaFX).
-Data is stored **in RAM only** for the session duration.
+Data is stored **in RAM only** for the session.
 
-> **OS recommendation:** for daily use choose **Linux** — fastest tracing and full feature set (Expert ping, raw ICMP). **Windows** is supported, but slow `tracert` (3 probes per hop, seconds of wait each) means a full 20-hop trace can take **minutes**; on Windows prefer **Ping only** mode or `interval` ≥ 30 s. Details: [docs/en/DEPLOYMENT.md](docs/en/DEPLOYMENT.md#os-recommendation).
+> **OS recommendation:** use **Linux** for daily work — fastest tracing and full feature set (Expert ping, raw ICMP). **Windows** is supported, but `tracert` is slow (3 probes per hop, seconds of wait each); a full trace to 20 hops can take **minutes**. On Windows prefer **Ping only** or `interval` ≥ 30 s. Details: [docs/en/DEPLOYMENT.md](docs/en/DEPLOYMENT.md#os-recommendation).
 
 | Branch | Contents |
 |--------|----------|
 | **`main`** | Java edition + docs + unit tests + JaCoCo + CI |
-| **`beta`** | Python + Java, pytest, JaCoCo, full CI, specifications |
+| **`beta`** | Python + Java, pytest, JaCoCo, full CI, specs |
 
 ## Quick start
 
@@ -44,11 +44,11 @@ Requirements: **JDK 21** ([Eclipse Temurin](https://adoptium.net/temurin/release
 
 - Up to **10 targets**, checkbox = active tracing
 - **Tracing profiles** in one YAML (`active_profile` + `profiles`)
-- **Simple** / **Extended** UI mode; loss %, min/avg/max RTT
-- **Expert ping** (Linux, iputils) — **Exten.** button on host row
+- **Simple** / **Extended** UI modes; loss %, min/avg/max RTT
+- **Expert ping** (Linux, iputils) — **Exten.** dialog per host
 - Tracing via `traceroute` / `tracert` (no `CAP_NET_RAW` by default)
 - Optional on Linux: raw ICMP (`probe: auto|raw` + `cap_net_raw`)
-- **Dual-stack config:** IPv6 literals in YAML; subprocess trace for v6 (see [docs/en/DEPLOYMENT.md](docs/en/DEPLOYMENT.md))
+- **Dual-stack config:** IPv6 literals in YAML (RFC 5952); subprocess trace v6 — phase 9 ([docs/en/DEPLOYMENT.md](docs/en/DEPLOYMENT.md))
 
 ## CLI
 
@@ -57,8 +57,8 @@ cd java
 ./pingui-java.sh -- --config config/hosts.example.yaml --interval 2 --max-hops 15
 ```
 
-| Parameter | Description |
-|-----------|-------------|
+| Option | Description |
+|--------|-------------|
 | `--config` | YAML with 0–10 targets (v2 `profiles:` or legacy `hosts:`) |
 | `--interval` | Override active profile `interval` **only if passed** |
 | `--max-hops` | Override active profile `max_hops` **only if passed** |
@@ -89,12 +89,38 @@ PINGUI/
 
 | File | Purpose |
 |------|---------|
-| [java/README.en.md](java/README.en.md) | Launch, Gradle, GUI, YAML |
-| [docs/en/CHECKLIST.md](docs/en/CHECKLIST.md) | Linux / Windows / macOS checklist |
+| [docs/en/README.md](docs/en/README.md) | Documentation index (EN) |
+| [docs/README.md](docs/README.md) | Індекс документації (UA) |
+| [java/README.en.md](java/README.en.md) | Launch, Gradle, GUI, YAML (EN) |
+| [java/README.md](java/README.md) | Запуск, Gradle, GUI, YAML (UA) |
+| [docs/en/CHECKLIST.md](docs/en/CHECKLIST.md) | Checklist Linux / Windows / macOS |
 | [docs/en/DEPLOYMENT.md](docs/en/DEPLOYMENT.md) | Deployment |
 | [docs/en/JAVA.md](docs/en/JAVA.md) | Java edition architecture |
-| [docs/en/README.md](docs/en/README.md) | Documentation index |
 | [docs/en/ROADMAP.md](docs/en/ROADMAP.md) | Fix plan |
 | [CHANGELOG.md](CHANGELOG.md) | Change history |
 
 Python: `./pingui.sh` on branch **`beta`** (venv). Java: `cd java && ./gradlew check`.
+
+## Support the project
+
+If this project is useful to you, you may support its development with a voluntary donation in USDT.
+
+Donations are optional and do not provide ownership, equity, tokens, governance rights, paid support, priority service, or any investment return.
+
+### USDT donations
+
+| Network | Address |
+|---|---|
+| USDT ERC-20 / Ethereum | 0xfa9821efd142228d53e1418fe335bb1cd8ff3c39 |
+| USDT TRC-20 / Tron | TNnhueeGqujf6AAUhcgissoEkL7tdzmqQv |
+
+### Important
+
+Please make sure that the selected network matches the address type.
+
+- Send **USDT ERC-20** only to the Ethereum address.
+- Send **USDT TRC-20** only to the Tron address.
+
+Transactions sent to the wrong network may be permanently lost.
+
+Thank you for supporting the project.

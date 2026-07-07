@@ -48,7 +48,7 @@ pingui-java.bat
 - **Expert ping** (Linux, iputils) — діалог **Exten.** на хост
 - Трасування через `traceroute` / `tracert` (без `CAP_NET_RAW` за замовч.)
 - Опційно на Linux: raw ICMP (`probe: auto|raw` + `cap_net_raw`)
-- **IPv4-only:** IPv6-літерали та IPv6 trace не підтримуються (див. [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md))
+- **Dual-stack config:** IPv6 literal у YAML (RFC 5952); subprocess trace v6 — фаза 9 ([docs/DEPLOYMENT.md](docs/DEPLOYMENT.md))
 
 ## CLI
 
@@ -80,6 +80,8 @@ PINGUI/
 ├── src/pingui/           # Python edition (beta)
 ├── tests/                # pytest (beta)
 ├── docs/
+│   ├── en/               # English documentation
+│   └── *.md              # Ukrainian documentation
 └── CHANGELOG.md
 ```
 
