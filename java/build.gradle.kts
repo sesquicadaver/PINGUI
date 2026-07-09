@@ -27,6 +27,7 @@ dependencies {
     implementation("org.slf4j:slf4j-simple:2.0.16")
     implementation("net.java.dev.jna:jna:5.15.0")
     implementation("net.java.dev.jna:jna-platform:5.15.0")
+    implementation("org.xerial:sqlite-jdbc:3.47.2.0")
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
 }
 
@@ -197,7 +198,7 @@ tasks.register("layerCheck") {
     description = "Fail if lower layers import io.pingui.ui (B-063)"
     doLast {
         val src = file("src/main/java/io/pingui")
-        val layers = listOf("config", "monitor", "probe", "model", "geoip", "platform")
+        val layers = listOf("config", "monitor", "probe", "model", "geoip", "platform", "persistence")
         val violations = mutableListOf<String>()
         for (layer in layers) {
             val dir = src.resolve(layer)

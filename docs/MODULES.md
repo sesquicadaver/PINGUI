@@ -343,6 +343,25 @@ Root logger: ERROR (GUI) або DEBUG (`--verbose`).
 
 ---
 
+## Java (`io.pingui.persistence`) — P11-010
+
+### `SessionDatabase`
+
+SQLite JDBC для Java GUI (parity з Python `session_db.py`).
+
+| Метод | Опис |
+|-------|------|
+| `load(host) -> HostSessionData \| null` | Відновити метрики цілі |
+| `save(host, data)` | Upsert `host_session` |
+| `delete(host)`, `rename(old, new)` | CRUD хоста |
+| `insertEvent(type, host, profile, payload, at)` | Append `persistence_event` (P11-011+) |
+| `deleteEventsByType(type) -> int` | Purge для P11-014 |
+| `close()` | Закрити JDBC |
+
+Schema v3: `host_session` (Python v2 parity) + `persistence_event`. Залежність: `sqlite-jdbc`. Wire у `SessionStore` — P11-011; CLI `--session-db` — P11-012.
+
+---
+
 ## Скрипти (не importable)
 
 | Скрипт | Призначення |

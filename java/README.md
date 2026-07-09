@@ -7,7 +7,7 @@
 Крос-платформова версія PINGUI на **Java 21 + JavaFX**.
 
 Працює на **Linux, macOS та Windows**: трасування через системні
-`traceroute` / `tracert`. Дані сесії — лише в RAM.
+`traceroute` / `tracert`. Дані сесії — в RAM; SQLite через `SessionDatabase` (P11-010, wire у P11-011…012).
 
 > **Рекомендація:** **Linux** — оптимальна платформа (швидкий `traceroute -q 1`, Expert ping, raw ICMP). **Windows** — для періодичних перевірок: повний trace повільний через `tracert`; у GUI використовуйте **Ping only** або збільште `interval` у YAML. [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md#рекомендація-щодо-ос)
 

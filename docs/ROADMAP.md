@@ -392,7 +392,7 @@ flowchart TD
 |----|--------|-------|-----|
 | **P11-001** | [x] SPIKE: схема SQLite для Java (routes, events, samples) | `docs/SPIKE_PERSISTENCE.md` | Parity з Python `session_db.py` |
 | **P11-002** | [x] SPIKE amend: політика подій, меню, YAML, purge rules | `docs/SPIKE_PERSISTENCE.md` | Defaults: state+route_change+probe_error; poll-cycle |
-| **P11-010** | [ ] `SessionDatabase` — open/migrate/close | `persistence/SessionDatabase.java` | Flyway або ручна schema v1 |
+| **P11-010** | [x] `SessionDatabase` — open/migrate/close | `persistence/SessionDatabase.java` | JDBC schema v3 (`host_session` + `persistence_event`) |
 | **P11-011** | [ ] Запис `host_session` + `persistence_event` | `MonitorService`, `SessionDatabase` | Unit-тест insert/query |
 | **P11-012** | [ ] CLI `--session-db PATH` | `PinguiApplication`, `java/README.md` | Optional; без PATH — RAM-only |
 | **P11-013** | [ ] `PersistencePolicy` + gate у writer | `persistence/PersistencePolicy.java` | Default events; poll-cycle swap |

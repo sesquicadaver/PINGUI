@@ -5,7 +5,7 @@
 Cross-platform PINGUI built with **Java 21 + JavaFX**.
 
 Runs on **Linux, macOS, and Windows**: route tracing via system
-`traceroute` / `tracert`. Session data lives in RAM only.
+`traceroute` / `tracert`. Session data is RAM-only; SQLite via `SessionDatabase` (P11-010, wired in P11-011…012).
 
 > **Recommendation:** **Linux** is the optimal platform (fast `traceroute -q 1`, Expert ping, raw ICMP). **Windows** is suitable for periodic checks: full trace is slow via `tracert`; in the GUI use **Ping only** or increase `interval` in YAML. [docs/DEPLOYMENT.md](../docs/en/DEPLOYMENT.md#os-recommendation)
 

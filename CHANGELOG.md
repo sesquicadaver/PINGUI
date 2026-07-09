@@ -16,6 +16,7 @@
 - **Expert ping IPv6 resolve (V6-055):** hostname targets resolve to AAAA when expert ping uses `-6`.
 - **Persistence SPIKE (P11-001):** `docs/SPIKE_PERSISTENCE.md` — Java SQLite schema v1 parity + v2 route events.
 - **Persistence policy SPIKE (P11-002):** event menu, YAML `persistence.events`, defaults (state+route_change+probe_error), purge confirm, poll-cycle policy.
+- **Java SessionDatabase (P11-010):** `io.pingui.persistence.SessionDatabase` — SQLite open/migrate/close, Python-parity `host_session`, `persistence_event` schema v3, unit tests.
 
 ## [0.2.0] - 2026-07-09
 
