@@ -9,6 +9,7 @@
 
 ### Fixed
 
+- **Java UI:** додавання другого хоста більше не перемикає фільтр «Ціль» в «Історії змін» на новий хост — історія лишається для поточної цілі.
 - **CI:** GitHub Actions оновлено на Node.js 24 (`checkout@v6`, `setup-java@v5`, `setup-python@v6`) — прибирає deprecation Node 20.
 - **Java persistence:** `appendPingSamples` no longer crashes after SQLite reopen when ping history lists were loaded as immutable (`UnsupportedOperationException` on GUI poll).
 

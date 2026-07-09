@@ -93,6 +93,26 @@ class RouteHistoryPresenterTest {
         });
     }
 
+    @Test
+    void rebuildHostFilterPreservesActiveHostWhenSecondHostAdded() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            PresenterHarness harness = new PresenterHarness(tempDir.resolve("e.db"));
+            harness.presenter.configure();
+            harness.filter.setValue("8.8.8.8");
+            harness.presenter.refresh();
+            assertEquals(1, harness.historyList.getItems().size());
+            assertEquals(
+                    "8.8.8.8", harness.historyList.getItems().get(0).event().host());
+
+            harness.presenter.rebuildHostFilter(List.of("8.8.8.8", "1.1.1.1"));
+
+            assertEquals("8.8.8.8", harness.filter.getValue());
+            assertEquals(1, harness.historyList.getItems().size());
+            assertEquals(
+                    "8.8.8.8", harness.historyList.getItems().get(0).event().host());
+        });
+    }
+
     private static final class PresenterHarness {
         final ComboBox<String> filter = new ComboBox<>();
         final ListView<RouteHistoryItem> historyList = new ListView<>();

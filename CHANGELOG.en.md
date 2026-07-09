@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Java UI:** adding a second host no longer switches the route-history target filter to the new host — history stays on the current target.
 - **CI:** GitHub Actions upgraded to Node.js 24 (`checkout@v6`, `setup-java@v5`, `setup-python@v6`) — removes Node 20 deprecation warnings.
 - **Java persistence:** `appendPingSamples` no longer crashes after SQLite reopen when ping history lists were loaded as immutable (`UnsupportedOperationException` on GUI poll).
 

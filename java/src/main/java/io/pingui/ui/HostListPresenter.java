@@ -35,6 +35,7 @@ final class HostListPresenter {
     private final java.util.function.BiConsumer<String, String> onHostRenamed;
     private final Runnable startEasterEgg;
     private final Runnable fitWindow;
+    private final Consumer<Runnable> runWithoutHistoryFilterSync;
     private boolean updatingList;
 
     HostListPresenter(
@@ -50,7 +51,8 @@ final class HostListPresenter {
             Runnable clearHistoryReplay,
             java.util.function.BiConsumer<String, String> onHostRenamed,
             Runnable startEasterEgg,
-            Runnable fitWindow) {
+            Runnable fitWindow,
+            Consumer<Runnable> runWithoutHistoryFilterSync) {
         this.hostItems = hostItems;
         this.hostList = hostList;
         this.hostInput = hostInput;
@@ -64,6 +66,7 @@ final class HostListPresenter {
         this.onHostRenamed = onHostRenamed;
         this.startEasterEgg = startEasterEgg;
         this.fitWindow = fitWindow;
+        this.runWithoutHistoryFilterSync = runWithoutHistoryFilterSync;
     }
 
     void configure() {
@@ -122,7 +125,7 @@ final class HostListPresenter {
             session.addHost(host, false, false, PingExpertEntry.empty());
             HostItem item = new HostItem(host, false);
             hostItems.add(item);
-            hostList.getSelectionModel().select(item);
+            selectHostWithoutHistoryFilterSync(item);
             hostInput.clear();
             appendLog.accept("Додано ціль: " + host);
             syncControls.run();
@@ -201,6 +204,16 @@ final class HostListPresenter {
 
     private static double listHeightForRows(int rows) {
         return rows * HOST_ROW_HEIGHT + HOST_LIST_INSET;
+    }
+
+    /** Keeps route-history host filter when a newly added row is auto-selected. */
+    private void selectHostWithoutHistoryFilterSync(HostItem item) {
+        Runnable select = () -> hostList.getSelectionModel().select(item);
+        if (runWithoutHistoryFilterSync != null) {
+            runWithoutHistoryFilterSync.accept(select);
+        } else {
+            select.run();
+        }
     }
 
     private void onToggleEnabled(HostItem item, boolean enabled) {

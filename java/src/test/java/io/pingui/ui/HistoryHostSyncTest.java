@@ -57,6 +57,17 @@ class HistoryHostSyncTest {
     }
 
     @Test
+    void syncFilterFromHostListSkippedWhileSyncing() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            final String[] filter = {"8.8.8.8"};
+            HistoryHostSync sync = new HistoryHostSync();
+            sync.runWhileSyncing(() -> sync.syncFilterFromHostList("1.1.1.1", filter[0], value -> filter[0] = value));
+            assertEquals("8.8.8.8", filter[0]);
+            assertFalse(sync.isSyncing());
+        });
+    }
+
+    @Test
     void syncSkipsWhenAlreadyAligned() throws Exception {
         FxTestSupport.runOnFxThread(() -> {
             var items = FXCollections.observableArrayList(new HostItem("8.8.8.8", true));

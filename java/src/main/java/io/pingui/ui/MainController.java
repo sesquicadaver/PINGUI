@@ -233,7 +233,8 @@ public final class MainController {
                 this::clearHistoryReplay,
                 this::onHostRenamed,
                 this::startEasterEgg,
-                () -> viewModeController.fitWindowToContent());
+                () -> viewModeController.fitWindowToContent(),
+                historyHostSync::runWhileSyncing);
 
         viewModeController = new ViewModeController(
                 graphPanel,
