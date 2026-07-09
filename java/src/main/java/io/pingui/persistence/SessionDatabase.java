@@ -1,6 +1,7 @@
 package io.pingui.persistence;
 
 import io.pingui.model.Models.HostSessionData;
+import io.pingui.monitor.RouteChangeEvent;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -156,12 +157,54 @@ public final class SessionDatabase implements AutoCloseable {
     public synchronized void rename(String oldHost, String newHost) {
         Objects.requireNonNull(oldHost, "oldHost");
         Objects.requireNonNull(newHost, "newHost");
+        if (oldHost.equals(newHost)) {
+            return;
+        }
         HostSessionData data = load(oldHost);
         if (data == null) {
             return;
         }
-        delete(oldHost);
         save(newHost, data);
+        rewriteEventHosts(oldHost, newHost);
+        delete(oldHost);
+    }
+
+    private void rewriteEventHosts(String oldHost, String newHost) {
+        try (PreparedStatement select = connection.prepareStatement(
+                "SELECT id, event_type, payload_json FROM persistence_event WHERE host = ?")) {
+            select.setString(1, oldHost);
+            try (ResultSet rs = select.executeQuery()) {
+                while (rs.next()) {
+                    long id = rs.getLong(1);
+                    String eventType = rs.getString(2);
+                    String payload = rs.getString(3);
+                    String rewritten = rewriteEventPayload(eventType, oldHost, newHost, payload);
+                    try (PreparedStatement update = connection.prepareStatement(
+                            "UPDATE persistence_event SET host = ?, payload_json = ? WHERE id = ?")) {
+                        update.setString(1, newHost);
+                        update.setString(2, rewritten);
+                        update.setLong(3, id);
+                        update.executeUpdate();
+                    }
+                }
+            }
+            connection.commit();
+        } catch (SQLException ex) {
+            rollbackQuietly();
+            throw new PersistenceException("Failed to rename persistence events: " + oldHost + " -> " + newHost, ex);
+        }
+    }
+
+    private static String rewriteEventPayload(String eventType, String oldHost, String newHost, String payload) {
+        if (!PersistenceEventType.ROUTE_CHANGE.id().equals(eventType)) {
+            return payload;
+        }
+        RouteChangeEvent event = RouteChangeEvent.fromJson(payload);
+        if (!oldHost.equals(event.host())) {
+            return payload;
+        }
+        return new RouteChangeEvent(newHost, event.oldIps(), event.newIps(), event.timestamp(), event.profile())
+                .toJson();
     }
 
     /** Returns all hosts with persisted session rows, sorted lexicographically. */

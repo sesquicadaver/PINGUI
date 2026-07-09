@@ -70,6 +70,8 @@ public final class MainController {
     private final RadioButton historyRange24h = new RadioButton("24 год");
     private final RadioButton historyRange7d = new RadioButton("7 днів");
     private final Label historyLabel = new Label("Історія змін");
+    private final ComboBox<String> historyHostFilter = new ComboBox<>();
+    private final HBox historyFilterBar = new HBox(8);
     private final HBox historyRangeBar = new HBox(8);
     private final Label statusLabel = new Label("Очікування даних…");
     private final VBox graphPanel = new VBox(8);
@@ -91,6 +93,7 @@ public final class MainController {
     private ViewModeController viewModeController;
     private RouteGraphPresenter routeGraphPresenter;
     private RouteHistoryPresenter routeHistoryPresenter;
+    private final HistoryHostSync historyHostSync = new HistoryHostSync();
 
     public MainController(AppOptions options, ProfileDocument document) {
         this.options = options;
@@ -226,7 +229,9 @@ public final class MainController {
                 expertMode,
                 this::appendLog,
                 () -> hostListPresenter.syncInputLimits(),
-                () -> routeGraphPresenter.redrawIfExtended(),
+                this::redrawRouteGraph,
+                this::clearHistoryReplay,
+                this::onHostRenamed,
                 this::startEasterEgg,
                 () -> viewModeController.fitWindowToContent());
 
@@ -248,7 +253,7 @@ public final class MainController {
 
         routeHistoryPresenter = new RouteHistoryPresenter(
                 () -> store,
-                hostList,
+                historyHostFilter,
                 historyList,
                 historyRange24h,
                 historyRange7d,
@@ -256,27 +261,90 @@ public final class MainController {
                 routeGraphPresenter::replayRouteChange,
                 routeGraphPresenter::clearReplay);
         routeHistoryPresenter.configure();
+        hostItems.addListener(
+                (javafx.collections.ListChangeListener<? super HostItem>) change -> syncHistoryHostFilter());
+        hostList.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, item) -> {
+            historyHostSync.syncFilterFromHostList(
+                    item != null ? item.getHost() : null, historyHostFilter.getValue(), historyHostFilter::setValue);
+        });
+        historyHostFilter.valueProperty().addListener((obs, oldHost, newHost) -> {
+            if (historyHostSync.isSyncing()) {
+                return;
+            }
+            historyHostSync.syncHostListFromFilter(newHost, hostItems, hostList);
+            redrawRouteGraph();
+        });
+    }
+
+    private void syncHistoryHostFilter() {
+        if (routeHistoryPresenter == null) {
+            return;
+        }
+        routeHistoryPresenter.rebuildHostFilter(
+                hostItems.stream().map(HostItem::getHost).toList());
     }
 
     private void configureHistoryPanel() {
         updateHistoryPanelVisibility();
         historyList.setPrefHeight(120);
+        historyHostFilter.setPromptText("Оберіть ціль…");
+        historyHostFilter.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(historyHostFilter, Priority.ALWAYS);
+        historyFilterBar.getChildren().addAll(new Label("Ціль:"), historyHostFilter);
         Button refreshHistory = new Button("Оновити");
         refreshHistory.setOnAction(e -> refreshRouteHistory());
         historyRangeBar.getChildren().addAll(historyRange24h, historyRange7d, refreshHistory);
-        graphPanel.getChildren().addAll(historyLabel, historyRangeBar, historyList);
+        graphPanel.getChildren().addAll(historyLabel, historyFilterBar, historyRangeBar, historyList);
+        syncHistoryHostFilter();
     }
 
     private void refreshRouteHistory() {
         if (routeHistoryPresenter != null) {
-            routeHistoryPresenter.refresh();
+            routeHistoryPresenter.reloadKeepingFilter();
         }
+    }
+
+    private void redrawRouteGraph() {
+        if (routeGraphPresenter != null) {
+            routeGraphPresenter.redrawIfExtended();
+        }
+    }
+
+    private void clearHistoryReplay() {
+        if (routeHistoryPresenter != null) {
+            routeHistoryPresenter.clearSelection();
+        }
+    }
+
+    private void resetReplayState() {
+        clearHistoryReplay();
+        if (routeGraphPresenter != null) {
+            routeGraphPresenter.clearReplay();
+        }
+    }
+
+    private void onHostRenamed(String oldHost, String newHost) {
+        if (oldHost.equals(historyHostFilter.getValue())) {
+            historyHostSync.runWhileSyncing(() -> historyHostFilter.setValue(newHost));
+        }
+        syncHistoryHostFilter();
+    }
+
+    private String viewHost() {
+        String filterHost = historyHostFilter.getValue();
+        if (filterHost != null && !filterHost.isBlank()) {
+            return filterHost;
+        }
+        HostItem selected = hostList.getSelectionModel().getSelectedItem();
+        return selected != null ? selected.getHost() : null;
     }
 
     private void updateHistoryPanelVisibility() {
         boolean persistence = store.hasPersistence();
         historyLabel.setVisible(persistence);
         historyLabel.setManaged(persistence);
+        historyFilterBar.setVisible(persistence);
+        historyFilterBar.setManaged(persistence);
         historyRangeBar.setVisible(persistence);
         historyRangeBar.setManaged(persistence);
         historyList.setVisible(persistence);
@@ -405,13 +473,15 @@ public final class MainController {
         monitor = createMonitor(profile, liveEntries);
         updateHistoryPanelVisibility();
         hostListPresenter.rebuild(liveEntries);
+        syncHistoryHostFilter();
         hostList.getSelectionModel().clearSelection();
         if (!hostItems.isEmpty()) {
             hostList.getSelectionModel().select(0);
         }
         hostListPresenter.syncInputLimits();
         viewModeController.apply();
-        routeGraphPresenter.redrawIfExtended();
+        resetReplayState();
+        redrawRouteGraph();
     }
 
     private void applyCliOverridesToActiveProfile() {
@@ -435,12 +505,15 @@ public final class MainController {
         monitor = createMonitor(profile, sessionHosts);
         updateHistoryPanelVisibility();
         hostListPresenter.rebuild(sessionHosts);
+        syncHistoryHostFilter();
         hostList.getSelectionModel().clearSelection();
         if (!hostItems.isEmpty()) {
             hostList.getSelectionModel().select(0);
         }
         hostListPresenter.syncInputLimits();
         viewModeController.apply();
+        resetReplayState();
+        redrawRouteGraph();
     }
 
     private void onSaveConfig() {
@@ -469,10 +542,10 @@ public final class MainController {
             hostListPresenter.syncMetrics(item);
         }
         if (viewModeController.isExtended() && !easterEggActive) {
-            HostItem selected = hostList.getSelectionModel().getSelectedItem();
-            if (selected != null && host.equals(selected.getHost())) {
+            String activeHost = viewHost();
+            if (activeHost != null && host.equals(activeHost)) {
                 statusLabel.setText("Останнє оновлення [" + host + "]: " + TIME_FMT.format(snapshot.timestamp()));
-                routeGraphPresenter.redrawIfExtended();
+                redrawRouteGraph();
             }
         }
     }
@@ -487,14 +560,14 @@ public final class MainController {
                 appendLog("⚠ ЗМІНА МАРШРУТУ до " + host + "\nБуло: " + oldStr + "\nСтало: "
                         + String.join(" -> ", newIps));
             }
-            HostItem selected = hostList.getSelectionModel().getSelectedItem();
-            if (selected != null && host.equals(selected.getHost()) && !easterEggActive) {
+            routeHistoryPresenter.onRouteChanged(host);
+            String activeHost = viewHost();
+            if (activeHost != null && host.equals(activeHost)) {
                 routeGraphPresenter.clearReplay();
                 routeHistoryPresenter.clearSelection();
-                routeGraphPresenter.redrawIfExtended();
+                redrawRouteGraph();
             }
         }
-        refreshRouteHistory();
     }
 
     private void startEasterEgg() {

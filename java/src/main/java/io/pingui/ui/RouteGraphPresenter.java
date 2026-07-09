@@ -68,4 +68,8 @@ final class RouteGraphPresenter {
         replayEvent = null;
         redrawIfExtended();
     }
+
+    boolean isReplaying() {
+        return replayEvent != null;
+    }
 }

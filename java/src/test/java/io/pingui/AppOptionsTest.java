@@ -16,5 +16,7 @@ class AppOptionsTest {
         assertFalse(options.verbose());
         assertTrue(options.geoipEnabled());
         assertEquals(Path.of("config/geoip_hints.yaml"), options.geoipHintsPath());
+        assertEquals(CliRunMode.GUI, options.runMode());
+        assertEquals(AppOptions.defaultPidFile(), options.pidFilePath());
     }
 }

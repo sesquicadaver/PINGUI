@@ -29,6 +29,7 @@
 | GUI SQLite connection (P11-016) | `PersistenceConfig`, `SessionDbResolver`, `PersistenceSettingsDialog`, `MainController` | `SessionDbResolverTest`, `ProfilesConfigTest.loadPersistenceSessionDbSection` |
 | Hop stats labels from history (P11-040) | `SessionStore`, `PingColor`, `RouteGraphPresenter` | `SessionStorePersistenceTest.hopStatsPersistAcrossReopen`, `PingColorTest.nodeLabelIncludesHopStats` |
 | Default target ping + baseline history | `DefaultTargetPingEnricher`, `MonitorService`, `RouteHistoryItem` | `DefaultTargetPingEnricherTest`, `MonitorServiceTest.persistsBaselineRouteChangeOnFirstPoll` |
+| Java headless daemon (P12) | `DaemonRunner`, `DaemonPidFile`, `PinguiApplication` | `DaemonPidFileTest`, `PinguiApplicationTest` daemon/stop/status |
 | SQLite disk/retention (P11-050) | `docs/DEPLOYMENT.md` | Manual smoke; purge via GUI; no auto-TTL on `host_session` |
 | Raw ICMP packet | `IcmpPacket`, `IcmpV6Packet` | `IcmpPacketTest`, `IcmpV6PacketTest` |
 | Expert ping flags | `PingExpertValidator`, `ProcessExpertPing`, `ExpertPingArgs`, `HostAddressResolver` | `PingExpertValidatorTest`, `ExpertPingArgsTest`, `ProcessExpertPingTest`, `ExpertPingUiRulesTest`, `HostAddressResolverTest`, `PingTargetResolverTest` |

@@ -1,0 +1,28 @@
+# PINGUI Java headless daemon (beta) — NOC / server
+# Install: sudo cp systemd/pingui-java.service.example /etc/systemd/system/pingui-java.service
+# Edit User, WorkingDirectory, paths; then: sudo systemctl daemon-reload && sudo systemctl enable --now pingui-java
+
+[Unit]
+Description=PINGUI Java route monitor (headless)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pingui
+Group=pingui
+WorkingDirectory=/opt/pingui
+Environment=PATH=/opt/pingui/java:/usr/bin
+ExecStart=/opt/pingui/pingui-java.sh -- --daemon \
+  --config /opt/pingui/config/hosts.yaml \
+  --session-db /var/lib/pingui/ping.db \
+  --pid-file /run/pingui/pingui-java.pid \
+  --alert-webhook https://hooks.example.com/pingui
+ExecStop=/opt/pingui/pingui-java.sh -- --stop --pid-file /run/pingui/pingui-java.pid
+Restart=on-failure
+RestartSec=5
+RuntimeDirectory=pingui
+RuntimeDirectoryMode=0755
+
+[Install]
+WantedBy=multi-user.target

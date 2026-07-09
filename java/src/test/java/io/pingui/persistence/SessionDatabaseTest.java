@@ -69,6 +69,31 @@ class SessionDatabaseTest {
     }
 
     @Test
+    void renamePreservesRouteChangeEvents() {
+        Path dbPath = tempDir.resolve("rename-events.db");
+        try (SessionDatabase db = new SessionDatabase(dbPath)) {
+            HostSessionData data = new HostSessionData();
+            data.setEnabled(true);
+            db.save("old", data);
+
+            Instant when = Instant.parse("2026-07-09T10:00:00Z");
+            RouteChangeEvent event = RouteChangeEvent.fromRouteChange(
+                    "old", List.of("10.0.0.1"), List.of("192.168.1.1"), "default", when);
+            db.insertEvent(PersistenceEventType.ROUTE_CHANGE, "old", "default", event.toJson(), when);
+
+            db.rename("old", "new");
+
+            List<PersistenceEventRecord> rows =
+                    db.listEvents(PersistenceEventType.ROUTE_CHANGE, "new", when.minusSeconds(60), 10);
+            assertEquals(1, rows.size());
+            assertEquals(
+                    "new", RouteChangeEvent.fromJson(rows.get(0).payloadJson()).host());
+            assertTrue(db.listEvents(PersistenceEventType.ROUTE_CHANGE, "old", when.minusSeconds(60), 10)
+                    .isEmpty());
+        }
+    }
+
+    @Test
     void insertAndPurgePersistenceEvent() {
         Path dbPath = tempDir.resolve("events.db");
         try (SessionDatabase db = new SessionDatabase(dbPath)) {

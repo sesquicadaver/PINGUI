@@ -26,6 +26,7 @@
 - **Java GUI SQLite connection (P11-016):** `PersistenceConfig`, `SessionDbResolver` — file picker in «База даних…», YAML `persistence.session_db`, menu active without CLI.
 - **Java hop stats from history (P11-040):** `hop_stats` persist to SQLite on every probe; graph labels (`j:`/`loss:`) survive session reopen.
 - **SQLite disk/retention docs (P11-050):** `docs/DEPLOYMENT.md` — no auto-TTL on `host_session`, manual event purge, sizing notes.
+- **Java headless daemon (P12-001…040):** `--daemon`, `--pid-file`, `--stop`, `--status`; `DaemonRunner`; `systemd/pingui-java.service.example`; [ADR_DAEMON.md](docs/ADR_DAEMON.md).
 
 ### Fixed
 

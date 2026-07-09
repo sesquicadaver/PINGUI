@@ -31,6 +31,8 @@ final class HostListPresenter {
     private final Consumer<String> appendLog;
     private final Runnable syncControls;
     private final Runnable redrawRoute;
+    private final Runnable clearHistoryReplay;
+    private final java.util.function.BiConsumer<String, String> onHostRenamed;
     private final Runnable startEasterEgg;
     private final Runnable fitWindow;
     private boolean updatingList;
@@ -45,6 +47,8 @@ final class HostListPresenter {
             Consumer<String> appendLog,
             Runnable syncControls,
             Runnable redrawRoute,
+            Runnable clearHistoryReplay,
+            java.util.function.BiConsumer<String, String> onHostRenamed,
             Runnable startEasterEgg,
             Runnable fitWindow) {
         this.hostItems = hostItems;
@@ -56,6 +60,8 @@ final class HostListPresenter {
         this.appendLog = appendLog;
         this.syncControls = syncControls;
         this.redrawRoute = redrawRoute;
+        this.clearHistoryReplay = clearHistoryReplay;
+        this.onHostRenamed = onHostRenamed;
         this.startEasterEgg = startEasterEgg;
         this.fitWindow = fitWindow;
     }
@@ -149,7 +155,9 @@ final class HostListPresenter {
             session.renameHost(oldHost, renamed);
             selected.hostProperty().set(renamed);
             hostInput.setText(renamed);
+            onHostRenamed.accept(oldHost, renamed);
             appendLog.accept("Змінено ціль: " + oldHost + " → " + renamed);
+            clearHistoryReplay.run();
             redrawRoute.run();
         } catch (ConfigError ex) {
             appendLog.accept("Не вдалося змінити ціль: " + ex.getMessage());
@@ -203,6 +211,7 @@ final class HostListPresenter {
             item.enabledProperty().set(enabled);
             updatingList = false;
             syncMetrics(item);
+            clearHistoryReplay.run();
             redrawRoute.run();
         } catch (ConfigError ex) {
             appendLog.accept(ex.getMessage());
@@ -228,6 +237,7 @@ final class HostListPresenter {
             item.pingOnlyProperty().set(pingOnly);
             updatingList = false;
             hostList.refresh();
+            clearHistoryReplay.run();
             redrawRoute.run();
             appendLog.accept("Ping only [" + item.getHost() + "]: " + (pingOnly ? "увімкнено" : "вимкнено"));
         } catch (ConfigError ex) {

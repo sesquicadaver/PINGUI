@@ -3,6 +3,8 @@ package io.pingui;
 import io.pingui.config.ConfigError;
 import io.pingui.config.ProfileDocument;
 import io.pingui.config.ProfilesConfig;
+import io.pingui.daemon.DaemonPidFile;
+import io.pingui.daemon.DaemonRunner;
 import io.pingui.export.SessionReportExporter;
 import io.pingui.persistence.SessionDatabase;
 import io.pingui.probe.ProbeMode;
@@ -77,6 +79,24 @@ public final class PinguiApplication extends Application {
             }
             exportReport = Optional.of(Path.of(value.strip()));
         }
+        CliRunMode runMode = CliRunMode.GUI;
+        if (params.containsKey("daemon")) {
+            runMode = CliRunMode.DAEMON;
+        } else if (params.containsKey("stop")) {
+            runMode = CliRunMode.STOP;
+        } else if (params.containsKey("status")) {
+            runMode = CliRunMode.STATUS;
+        } else if (exportReport.isPresent()) {
+            runMode = CliRunMode.EXPORT;
+        }
+        Path pidFile = AppOptions.defaultPidFile();
+        if (params.containsKey("pid-file")) {
+            String value = params.get("pid-file");
+            if (value == null || value.isBlank()) {
+                throw new IllegalArgumentException("Missing value for --pid-file");
+            }
+            pidFile = Path.of(value.strip());
+        }
         return new AppOptions(
                 config,
                 profileOverrides,
@@ -86,7 +106,9 @@ public final class PinguiApplication extends Application {
                 geoipEnabled,
                 geoipHints,
                 sessionDb,
-                exportReport);
+                exportReport,
+                runMode,
+                pidFile);
     }
 
     private static CliPersistenceOverrides parsePersistenceOverrides(Map<String, String> params) {
@@ -198,9 +220,24 @@ public final class PinguiApplication extends Application {
         LoggingSetup.configure(verbose);
         Map<String, String> params = parseRawArgs(raw);
         AppOptions options = parseOptions(params);
-        if (options.exportReportPath().isPresent()) {
-            runExportReport(options);
-            return;
+        switch (options.runMode()) {
+            case EXPORT -> {
+                runExportReport(options);
+                return;
+            }
+            case DAEMON -> {
+                runDaemon(options);
+                return;
+            }
+            case STOP -> {
+                runStop(options);
+                return;
+            }
+            case STATUS -> {
+                runStatus(options);
+                return;
+            }
+            default -> {}
         }
         List<String> fxArgs = new ArrayList<>();
         for (Map.Entry<String, String> entry : params.entrySet()) {
@@ -253,6 +290,45 @@ public final class PinguiApplication extends Application {
         return name.endsWith(".html") || name.endsWith(".htm");
     }
 
+    private static void runDaemon(AppOptions options) {
+        try (DaemonRunner runner = new DaemonRunner(options, options.pidFilePath())) {
+            runner.start();
+            runner.await();
+        } catch (IllegalStateException | ConfigError | IllegalArgumentException ex) {
+            failCli(ex.getMessage());
+        } catch (IOException ex) {
+            failCli(ex.getMessage());
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private static void runStop(AppOptions options) {
+        try {
+            boolean stopped = DaemonPidFile.stop(options.pidFilePath(), 5000);
+            if (!stopped) {
+                failCli("No running daemon (PID file: " + options.pidFilePath().toAbsolutePath() + ")");
+            }
+            System.out.println("Daemon stopped");
+        } catch (IOException | InterruptedException ex) {
+            failCli("Stop failed: " + ex.getMessage());
+        }
+    }
+
+    private static void runStatus(AppOptions options) {
+        try {
+            if (DaemonPidFile.isRunning(options.pidFilePath())) {
+                long pid = DaemonPidFile.read(options.pidFilePath()).orElse(-1);
+                System.out.println("running pid=" + pid + " pid-file="
+                        + options.pidFilePath().toAbsolutePath());
+            } else {
+                System.out.println("stopped pid-file=" + options.pidFilePath().toAbsolutePath());
+            }
+        } catch (IOException ex) {
+            failCli("Status failed: " + ex.getMessage());
+        }
+    }
+
     private static void failCli(String message) {
         System.err.println("Config error: " + message);
         System.exit(1);
@@ -277,6 +353,10 @@ public final class PinguiApplication extends Application {
                   --alert-rate-limit N Max alerts per host per hour (default: 10)
                   --session-db PATH  SQLite session metrics + events (optional)
                   --export-report PATH  Export CSV/HTML from --session-db and exit (no GUI)
+                  --daemon            Headless monitor loop (no JavaFX)
+                  --pid-file PATH     PID file for daemon/stop/status (default: $TMP/pingui-java.pid)
+                  --stop              Stop daemon using --pid-file
+                  --status            Print daemon running/stopped
                   --no-persist-route-change  Disable route_change events in session DB
                   --no-persist-probe-error     Disable probe_error events in session DB
                   --geoip-hints PATH  CIDR→country YAML (default: config/geoip_hints.yaml)
