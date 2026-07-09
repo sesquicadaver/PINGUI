@@ -20,7 +20,7 @@
 ## Обмеження
 
 - **Raw ICMP** — Linux only (`AF_INET` / `AF_INET6`); `probe: auto` лишає IPv6 literal на subprocess trace (V6-044); `probe: raw` — raw v6 з `cap_net_raw`.
-- **Hostname AAAA** — резолв ОС для trace/ping; явний `-6` у Expert або literal v6 у YAML.
+- **Hostname AAAA** — trace: резолв ОС; expert ping `-6`: AAAA через `HostAddressResolver` (V6-055).
 
 ## CLI vs YAML профіль
 

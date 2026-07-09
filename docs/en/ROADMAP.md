@@ -192,6 +192,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | **V6-052** | [ ] Validator: `-4` + v6 target → `ConfigError` (profile save) | `PingExpertValidator` or host-level check | Unit test |
 | **V6-053** | [x] `-F` flow label — only with v6 target (UI hint) | `PingExpertDialog.java`, `ExpertPingUiRules.java` | Tooltip / disable when target v4 |
 | **V6-054** | [x] Expert ping: single AF (-4 or -6), default IPv4 | `ExpertPingArgs.java`, `PingExpertDialog.java` | No dual-stack ping; hostname/v4 → `-4` |
+| **V6-055** | [x] Expert ping `-6`: hostname → AAAA resolve before ping | `HostAddressResolver.java`, `PingTargetResolver.java` | Unit test literals + localhost |
 
 ### 9.6 — UI / docs (P1)
 
@@ -694,6 +695,8 @@ Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 **IPv6 expert UI (2026-07-09):** V6-053 — `-F` flow label gated by IPv6 target / `-6` AF.
 
 **IPv6 expert AF default (2026-07-09):** V6-054 — single address family for expert ping; default `-4` (no OS delegation / no dual AF).
+
+**IPv6 expert hostname resolve (2026-07-09):** V6-055 — expert ping `-6` resolves hostname to AAAA before argv.
 
 **IPv6 deployment docs (2026-07-09):** V6-045 — `cap_net_raw` matrix for dual-stack (v4 raw vs v6 process trace).
 

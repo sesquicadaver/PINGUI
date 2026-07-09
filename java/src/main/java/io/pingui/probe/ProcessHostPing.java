@@ -75,7 +75,7 @@ public final class ProcessHostPing {
         int waitSec = Math.max(1, (int) Math.ceil(timeoutSeconds));
         List<String> command = new ArrayList<>(List.of("ping", "-n", "-c", "1", "-W", String.valueOf(waitSec)));
         appendExpertArgs(command, expert, target);
-        command.add(target);
+        command.add(PingTargetResolver.resolve(target, expert));
         return List.copyOf(command);
     }
 

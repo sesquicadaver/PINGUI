@@ -192,6 +192,7 @@
 | **V6-052** | [x] Validator: `-4` + v6 target → `ConfigError` | `ExpertPingArgs.java` | Unit-тест |
 | **V6-053** | [x] `-F` flow label — лише з v6 target (UI hint) | `PingExpertDialog.java`, `ExpertPingUiRules.java` | Tooltip / disable when target v4 |
 | **V6-054** | [x] Expert ping: один AF (-4 або -6), default IPv4 | `ExpertPingArgs.java`, `PingExpertDialog.java` | Без dual-stack ping; hostname/v4 → `-4` |
+| **V6-055** | [x] Expert ping `-6`: hostname → AAAA resolve перед ping | `HostAddressResolver.java`, `PingTargetResolver.java` | Unit-тест literals + localhost |
 
 ### 9.6 — UI / docs (P1)
 
@@ -694,6 +695,8 @@ flowchart LR
 **IPv6 expert UI (2026-07-09):** V6-053 — `-F` flow label gated by IPv6 target / `-6` AF.
 
 **IPv6 expert AF default (2026-07-09):** V6-054 — single address family for expert ping; default `-4` (no OS-delegation / no dual AF).
+
+**IPv6 expert hostname resolve (2026-07-09):** V6-055 — expert ping `-6` resolves hostname to AAAA before argv.
 
 **IPv6 deployment docs (2026-07-09):** V6-045 — `cap_net_raw` matrix for dual-stack (v4 raw vs v6 process trace).
 

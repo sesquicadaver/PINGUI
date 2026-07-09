@@ -20,7 +20,7 @@ Enable route monitoring **independently of OS** without Python/PyQt6 and without
 ## Limitations
 
 - **Raw ICMP** — Linux only (`AF_INET` / `AF_INET6`); `probe: auto` keeps IPv6 literals on subprocess trace (V6-044); `probe: raw` uses raw v6 with `cap_net_raw`.
-- **Hostname AAAA** — OS resolve for trace/ping; explicit `-6` in Expert or v6 literal in YAML.
+- **Hostname AAAA** — trace: OS resolve; expert ping `-6`: AAAA via `HostAddressResolver` (V6-055).
 
 ## CLI vs YAML profile
 

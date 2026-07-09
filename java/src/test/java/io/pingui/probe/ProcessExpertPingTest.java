@@ -33,8 +33,9 @@ class ProcessExpertPingTest {
 
     @Test
     void buildCommandAutoAddsIpv4ForHostname() {
-        List<String> cmd = ProcessExpertPing.buildCommand("example.com", PingExpertEntry.empty(), 0.5);
+        List<String> cmd = ProcessExpertPing.buildCommand("localhost", PingExpertEntry.empty(), 0.5);
         assertTrue(cmd.contains("-4"));
-        assertEquals("example.com", cmd.get(cmd.size() - 1));
+        String target = cmd.get(cmd.size() - 1);
+        assertTrue(target.contains(".") || target.contains(":"));
     }
 }
