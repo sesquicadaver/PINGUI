@@ -86,7 +86,7 @@ public final class MainController {
         GeoCountry.configure(options.geoipEnabled(), options.geoipHintsPath());
         TracingProfile active = profileDocument.active();
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(active.hosts());
-        this.store = SessionStore.fromEntries(sessionHosts);
+        this.store = SessionStore.fromEntries(sessionHosts, openSessionDatabase());
         this.monitor = createMonitor(active);
         initCoordinators();
         hostListPresenter.rebuild(sessionHosts);
@@ -189,6 +189,7 @@ public final class MainController {
     public void shutdown() {
         dismissEasterEgg();
         monitor.close();
+        store.close();
     }
 
     private void initCoordinators() {
@@ -271,7 +272,14 @@ public final class MainController {
                         Platform.runLater(() -> appendLog("Помилка [" + host + "]: " + message));
                     }
                 },
-                options.alertOverrides().applyTo(profile.alerts()));
+                options.alertOverrides().applyTo(profile.alerts()),
+                store.database());
+    }
+
+    private io.pingui.persistence.SessionDatabase openSessionDatabase() {
+        return options.sessionDbPath()
+                .map(io.pingui.persistence.SessionDatabase::new)
+                .orElse(null);
     }
 
     private void applyCliOverridesToActiveProfile() {
@@ -288,7 +296,8 @@ public final class MainController {
         TracingProfile profile = profileDocument.active();
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(profile.hosts());
         monitor.close();
-        store = SessionStore.fromEntries(sessionHosts);
+        store.close();
+        store = SessionStore.fromEntries(sessionHosts, openSessionDatabase());
         monitor = createMonitor(profile);
         hostListPresenter.rebuild(sessionHosts);
         hostList.getSelectionModel().clearSelection();

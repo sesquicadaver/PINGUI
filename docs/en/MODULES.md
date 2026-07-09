@@ -358,7 +358,15 @@ SQLite JDBC for the Java GUI (parity with Python `session_db.py`).
 | `deleteEventsByType(type) -> int` | Purge for P11-014 |
 | `close()` | Close JDBC |
 
-Schema v3: `host_session` (Python v2 parity) + `persistence_event`. Dependency: `sqlite-jdbc`. Wire into `SessionStore` — P11-011; CLI `--session-db` — P11-012.
+Schema v3: `host_session` (Python v2 parity) + `persistence_event`. Dependency: `sqlite-jdbc`. Wire into `SessionStore` + `PersistenceEventWriter` (P11-011); CLI `--session-db` (P11-012).
+
+### `PersistenceEventWriter`
+
+Writes discrete events to `persistence_event` (P11-011). `writeRouteChange`, `writeProbeError`; policy gate — P11-013.
+
+### `SessionStore` (persistence)
+
+Optional `SessionDatabase`: `load`/`save`/`delete` on route, ping history, enabled changes; `close()` flush + close JDBC.
 
 ---
 

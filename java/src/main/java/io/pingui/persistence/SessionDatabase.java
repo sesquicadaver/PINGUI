@@ -59,7 +59,7 @@ public final class SessionDatabase implements AutoCloseable {
         return path;
     }
 
-    public int schemaVersion() {
+    public synchronized int schemaVersion() {
         try (PreparedStatement ps = connection.prepareStatement("SELECT version FROM schema_meta LIMIT 1");
                 ResultSet rs = ps.executeQuery()) {
             if (!rs.next()) {
@@ -72,7 +72,7 @@ public final class SessionDatabase implements AutoCloseable {
     }
 
     /** Loads persisted metrics for {@code host}, or {@code null} when absent. */
-    public HostSessionData load(String host) {
+    public synchronized HostSessionData load(String host) {
         Objects.requireNonNull(host, "host");
         try (PreparedStatement ps = connection.prepareStatement(
                 """
@@ -104,7 +104,7 @@ public final class SessionDatabase implements AutoCloseable {
     }
 
     /** Upserts route/ping metrics for {@code host}. */
-    public void save(String host, HostSessionData data) {
+    public synchronized void save(String host, HostSessionData data) {
         Objects.requireNonNull(host, "host");
         Objects.requireNonNull(data, "data");
         String now = ISO_UTC.format(Instant.now());
@@ -139,7 +139,7 @@ public final class SessionDatabase implements AutoCloseable {
         }
     }
 
-    public void delete(String host) {
+    public synchronized void delete(String host) {
         Objects.requireNonNull(host, "host");
         try (PreparedStatement ps = connection.prepareStatement("DELETE FROM host_session WHERE host = ?")) {
             ps.setString(1, host);
@@ -151,7 +151,7 @@ public final class SessionDatabase implements AutoCloseable {
         }
     }
 
-    public void rename(String oldHost, String newHost) {
+    public synchronized void rename(String oldHost, String newHost) {
         Objects.requireNonNull(oldHost, "oldHost");
         Objects.requireNonNull(newHost, "newHost");
         HostSessionData data = load(oldHost);
@@ -165,7 +165,7 @@ public final class SessionDatabase implements AutoCloseable {
     /**
      * Appends a discrete event row (P11-011+). Table is created by schema v3 migration.
      */
-    public void insertEvent(
+    public synchronized void insertEvent(
             PersistenceEventType eventType, String host, String profile, String payloadJson, Instant observedAt) {
         Objects.requireNonNull(eventType, "eventType");
         Objects.requireNonNull(host, "host");
@@ -191,7 +191,7 @@ public final class SessionDatabase implements AutoCloseable {
     }
 
     /** Deletes all rows of {@code eventType}; used by purge policy (P11-014). */
-    public int deleteEventsByType(PersistenceEventType eventType) {
+    public synchronized int deleteEventsByType(PersistenceEventType eventType) {
         Objects.requireNonNull(eventType, "eventType");
         try (PreparedStatement ps = connection.prepareStatement("DELETE FROM persistence_event WHERE event_type = ?")) {
             ps.setString(1, eventType.id());
@@ -204,8 +204,22 @@ public final class SessionDatabase implements AutoCloseable {
         }
     }
 
+    /** Returns number of rows for {@code eventType} (tests / diagnostics). */
+    public synchronized int countEvents(PersistenceEventType eventType) {
+        Objects.requireNonNull(eventType, "eventType");
+        try (PreparedStatement ps =
+                connection.prepareStatement("SELECT COUNT(*) FROM persistence_event WHERE event_type = ?")) {
+            ps.setString(1, eventType.id());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to count events: " + eventType.id(), ex);
+        }
+    }
+
     @Override
-    public void close() {
+    public synchronized void close() {
         try {
             connection.close();
         } catch (SQLException ex) {

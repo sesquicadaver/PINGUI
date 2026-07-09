@@ -386,15 +386,15 @@ flowchart TD
 
 **Goal:** route history across sessions; replay «when hop N changed».
 
-**Context:** Python `beta` has `--session-db`, export, jitter/loss; Java `main` is RAM-only.
+**Context:** Python `beta` has `--session-db`, export, jitter/loss; Java `beta` has `--session-db` + wired `SessionStore`/`MonitorService` (policy GUI — P11-013+).
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
 | **P11-001** | [x] SPIKE: SQLite schema for Java (routes, events, samples) | `docs/SPIKE_PERSISTENCE.md` | Parity with Python `session_db.py` |
 | **P11-002** | [x] SPIKE amend: event policy, menu, YAML, purge rules | `docs/SPIKE_PERSISTENCE.md` | Defaults: state+route_change+probe_error; poll-cycle |
 | **P11-010** | [x] `SessionDatabase` — open/migrate/close | `persistence/SessionDatabase.java` | JDBC schema v3 (`host_session` + `persistence_event`) |
-| **P11-011** | [ ] Write `host_session` + `persistence_event` | `MonitorService`, `SessionDatabase` | Unit test insert/query |
-| **P11-012** | [ ] CLI `--session-db PATH` | `PinguiApplication`, `java/README.md` | Optional; without PATH — RAM-only |
+| **P11-011** | [x] Write `host_session` + `persistence_event` | `SessionStore`, `PersistenceEventWriter`, `MonitorService` | `SessionStorePersistenceTest`, `PersistenceEventWriterTest`, `MonitorServiceTest` |
+| **P11-012** | [x] CLI `--session-db PATH` | `PinguiApplication`, `java/README.md` | Optional; without PATH — RAM-only |
 | **P11-013** | [ ] `PersistencePolicy` + writer gate | `persistence/PersistencePolicy.java` | Default events; poll-cycle swap |
 | **P11-014** | [ ] GUI “Database…” + confirm purge | `PersistenceSettingsDialog.java` | Checkboxes route_change / probe_error |
 | **P11-015** | [ ] YAML `persistence.events` + CLI override | `ProfilesConfig`, `CONFIGURATION.md` | Priority like ADR_ALERTS |
@@ -725,5 +725,7 @@ Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 **Persistence SPIKE (2026-07-09):** P11-001 — `SPIKE_PERSISTENCE.md` (schema v1 Python parity, v2 `persistence_event`).
 
 **Persistence policy SPIKE (2026-07-09):** P11-002 — event menu, YAML `persistence.events`, purge confirm, poll-cycle policy swap; PY-P11 for Python parity.
+
+**Java persistence wire (2026-07-09):** P11-011…P11-012 — `SessionStore`/`PersistenceEventWriter`/`MonitorService` + CLI `--session-db`.
 
 Update this file when closing a task: `[x] M-001` + date in CHANGELOG.

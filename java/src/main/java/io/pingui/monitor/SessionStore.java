@@ -9,27 +9,46 @@ import io.pingui.model.Models.HopProbeStats;
 import io.pingui.model.Models.HopStatsSummary;
 import io.pingui.model.Models.HostSessionData;
 import io.pingui.model.Models.RouteSnapshot;
+import io.pingui.persistence.SessionDatabase;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** In-memory session storage for route and ping metrics. */
-public final class SessionStore {
+/** In-memory session storage for route and ping metrics; optional SQLite persistence (P11-011). */
+public final class SessionStore implements AutoCloseable {
     public static final int MAX_PING_SAMPLES = 50;
 
     private final Map<String, HostSessionData> data = new LinkedHashMap<>();
+    private SessionDatabase database;
 
     public SessionStore(List<String> hosts) {
+        this(hosts, null);
+    }
+
+    public SessionStore(List<String> hosts, SessionDatabase database) {
+        this.database = database;
         for (String host : hosts) {
-            data.put(host, new HostSessionData());
+            data.put(host, loadOrCreate(host));
         }
     }
 
     public static SessionStore fromEntries(List<HostEntry> entries) {
-        SessionStore store = new SessionStore(List.of());
+        return fromEntries(entries, null);
+    }
+
+    public static SessionStore fromEntries(List<HostEntry> entries, SessionDatabase database) {
+        SessionStore store = new SessionStore(List.of(), database);
         store.loadHostEntries(entries);
         return store;
+    }
+
+    public boolean hasPersistence() {
+        return database != null;
+    }
+
+    public SessionDatabase database() {
+        return database;
     }
 
     public List<String> hosts() {
@@ -62,6 +81,7 @@ public final class SessionStore {
         session.setPingOnly(pingOnly);
         session.setPingExpert(pingExpert);
         data.put(normalized, session);
+        persist(normalized);
         return normalized;
     }
 
@@ -70,10 +90,14 @@ public final class SessionStore {
             throw new ConfigError("Unknown host: " + host);
         }
         data.remove(host);
+        if (database != null) {
+            database.delete(host);
+        }
     }
 
     public void setEnabled(String host, boolean enabled) {
         get(host).setEnabled(enabled);
+        persist(host);
     }
 
     public PingExpertEntry getPingExpert(String host) {
@@ -94,16 +118,18 @@ public final class SessionStore {
         session.setCurrentRoute(List.of());
         session.setPreviousRoute(List.of());
         session.getLastKnownByHop().clear();
+        persist(host);
     }
 
     public void loadHostEntries(List<HostEntry> entries) {
         data.clear();
         for (HostEntry entry : entries) {
-            HostSessionData session = new HostSessionData();
+            HostSessionData session = database != null ? loadOrCreate(entry.address()) : new HostSessionData();
             session.setEnabled(entry.enabled());
             session.setPingOnly(entry.pingOnly());
             session.setPingExpert(entry.pingExpert());
             data.put(entry.address(), session);
+            persist(entry.address());
         }
     }
 
@@ -125,6 +151,11 @@ public final class SessionStore {
             throw new ConfigError("Unknown host: " + oldHost);
         }
         data.put(normalized, session);
+        if (database != null) {
+            database.rename(oldHost, normalized);
+        } else {
+            persist(normalized);
+        }
         return normalized;
     }
 
@@ -151,11 +182,13 @@ public final class SessionStore {
         }
         RouteHistory.recordLastKnown(session.getLastKnownByHop(), snapshot.nodes());
         session.setCurrentRoute(snapshot.nodes());
+        persist(host);
     }
 
     public void appendPingSamples(String host, RouteSnapshot snapshot) {
         recordHopProbes(host, snapshot);
         Map<String, List<Double>> history = get(host).getPingHistory();
+        boolean changed = false;
         for (HopNode node : snapshot.nodes()) {
             if (!node.isReachable() || node.pingMs() == null) {
                 continue;
@@ -165,6 +198,10 @@ public final class SessionStore {
             if (samples.size() > MAX_PING_SAMPLES) {
                 samples.subList(0, samples.size() - MAX_PING_SAMPLES).clear();
             }
+            changed = true;
+        }
+        if (changed) {
+            persist(host);
         }
     }
 
@@ -196,11 +233,37 @@ public final class SessionStore {
         return HopStats.targetStats(terminal, stats);
     }
 
+    @Override
+    public void close() {
+        if (database == null) {
+            return;
+        }
+        for (String host : hosts()) {
+            database.save(host, get(host));
+        }
+        database.close();
+        database = null;
+    }
+
     private void recordHopProbes(String host, RouteSnapshot snapshot) {
         HostSessionData session = get(host);
         for (HopNode node : snapshot.nodes()) {
             HopProbeStats stats = session.getHopStats().computeIfAbsent(node.hop(), ignored -> new HopProbeStats());
             HopStats.recordProbe(stats, node);
+        }
+    }
+
+    private HostSessionData loadOrCreate(String host) {
+        if (database == null) {
+            return new HostSessionData();
+        }
+        HostSessionData loaded = database.load(host);
+        return loaded != null ? loaded : new HostSessionData();
+    }
+
+    private void persist(String host) {
+        if (database != null) {
+            database.save(host, get(host));
         }
     }
 

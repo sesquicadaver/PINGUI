@@ -5,7 +5,7 @@
 Cross-platform PINGUI built with **Java 21 + JavaFX**.
 
 Runs on **Linux, macOS, and Windows**: route tracing via system
-`traceroute` / `tracert`. Session data is RAM-only; SQLite via `SessionDatabase` (P11-010, wired in P11-011…012).
+`traceroute` / `tracert`. Session data is RAM-only by default; optional SQLite via `--session-db` (P11-011…012).
 
 > **Recommendation:** **Linux** is the optimal platform (fast `traceroute -q 1`, Expert ping, raw ICMP). **Windows** is suitable for periodic checks: full trace is slow via `tracert`; in the GUI use **Ping only** or increase `interval` in YAML. [docs/DEPLOYMENT.md](../docs/en/DEPLOYMENT.md#os-recommendation)
 
@@ -78,6 +78,7 @@ gradlew.bat run        # Windows
 | `--alert-webhook` | off | POST JSON `RouteChangeEvent` on route change |
 | `--desktop-alerts` | off | Linux `notify-send` on route change |
 | `--alert-rate-limit` | `10` | Max alerts per host / hour |
+| `--session-db` | off | SQLite session metrics + events (`host_session`, `persistence_event`) |
 | `--geoip-hints` | `config/geoip_hints.yaml` | Offline CIDR→country |
 | `--no-geoip` | off | Disable country in labels |
 | `--verbose` | off | Debug log |
@@ -102,6 +103,7 @@ io.pingui
 ├── probe/           RouteProbeFactory, ProcessRouteProbe, TraceCommandBuilder,
                        UnixTraceOutputParser, WindowsTraceOutputParser, ProcessExpertPing
 ├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
+├── persistence/     SessionDatabase, PersistenceEventWriter (P11-010…011)
 └── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,
                        MonitorLifecycle, ViewModeController, RouteGraphPresenter, GraphCanvas
 ```

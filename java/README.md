@@ -7,7 +7,7 @@
 Крос-платформова версія PINGUI на **Java 21 + JavaFX**.
 
 Працює на **Linux, macOS та Windows**: трасування через системні
-`traceroute` / `tracert`. Дані сесії — в RAM; SQLite через `SessionDatabase` (P11-010, wire у P11-011…012).
+`traceroute` / `tracert`. Дані сесії — в RAM за замовчуванням; опційно SQLite через `--session-db` (P11-011…012).
 
 > **Рекомендація:** **Linux** — оптимальна платформа (швидкий `traceroute -q 1`, Expert ping, raw ICMP). **Windows** — для періодичних перевірок: повний trace повільний через `tracert`; у GUI використовуйте **Ping only** або збільште `interval` у YAML. [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md#рекомендація-щодо-ос)
 
@@ -80,6 +80,7 @@ gradlew.bat run        # Windows
 | `--alert-webhook` | off | POST JSON `RouteChangeEvent` при зміні маршруту |
 | `--desktop-alerts` | off | Linux `notify-send` при зміні маршруту |
 | `--alert-rate-limit` | `10` | Макс. алертів на host / годину |
+| `--session-db` | off | SQLite метрики сесії + події (`host_session`, `persistence_event`) |
 | `--geoip-hints` | `config/geoip_hints.yaml` | Offline CIDR→країна |
 | `--no-geoip` | off | Вимкнути країну в підписах |
 | `--verbose` | off | Debug-лог |
@@ -104,6 +105,7 @@ io.pingui
 ├── probe/           RouteProbeFactory, ProcessRouteProbe, TraceCommandBuilder,
                        UnixTraceOutputParser, WindowsTraceOutputParser, ProcessExpertPing
 ├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
+├── persistence/     SessionDatabase, PersistenceEventWriter (P11-010…011)
 └── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,
                        MonitorLifecycle, ViewModeController, RouteGraphPresenter, GraphCanvas
 ```

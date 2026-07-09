@@ -358,7 +358,15 @@ SQLite JDBC для Java GUI (parity з Python `session_db.py`).
 | `deleteEventsByType(type) -> int` | Purge для P11-014 |
 | `close()` | Закрити JDBC |
 
-Schema v3: `host_session` (Python v2 parity) + `persistence_event`. Залежність: `sqlite-jdbc`. Wire у `SessionStore` — P11-011; CLI `--session-db` — P11-012.
+Schema v3: `host_session` (Python v2 parity) + `persistence_event`. Залежність: `sqlite-jdbc`. Wire у `SessionStore` + `PersistenceEventWriter` (P11-011); CLI `--session-db` (P11-012).
+
+### `PersistenceEventWriter`
+
+Запис дискретних подій у `persistence_event` (P11-011). `writeRouteChange`, `writeProbeError`; policy gate — P11-013.
+
+### `SessionStore` (persistence)
+
+Опційний `SessionDatabase`: `load`/`save`/`delete` на зміну маршруту, ping history, enabled; `close()` flush + close JDBC.
 
 ---
 

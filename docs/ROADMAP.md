@@ -386,15 +386,15 @@ flowchart TD
 
 **Мета:** історія маршрутів між сесіями; replay «коли змінився hop N».
 
-**Контекст:** Python `beta` має `--session-db`, export, jitter/loss; Java `main` — RAM-only.
+**Контекст:** Python `beta` має `--session-db`, export, jitter/loss; Java `beta` — `--session-db` + wire `SessionStore`/`MonitorService` (policy GUI — P11-013+).
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
 | **P11-001** | [x] SPIKE: схема SQLite для Java (routes, events, samples) | `docs/SPIKE_PERSISTENCE.md` | Parity з Python `session_db.py` |
 | **P11-002** | [x] SPIKE amend: політика подій, меню, YAML, purge rules | `docs/SPIKE_PERSISTENCE.md` | Defaults: state+route_change+probe_error; poll-cycle |
 | **P11-010** | [x] `SessionDatabase` — open/migrate/close | `persistence/SessionDatabase.java` | JDBC schema v3 (`host_session` + `persistence_event`) |
-| **P11-011** | [ ] Запис `host_session` + `persistence_event` | `MonitorService`, `SessionDatabase` | Unit-тест insert/query |
-| **P11-012** | [ ] CLI `--session-db PATH` | `PinguiApplication`, `java/README.md` | Optional; без PATH — RAM-only |
+| **P11-011** | [x] Запис `host_session` + `persistence_event` | `SessionStore`, `PersistenceEventWriter`, `MonitorService` | `SessionStorePersistenceTest`, `PersistenceEventWriterTest`, `MonitorServiceTest` |
+| **P11-012** | [x] CLI `--session-db PATH` | `PinguiApplication`, `java/README.md` | Optional; без PATH — RAM-only |
 | **P11-013** | [ ] `PersistencePolicy` + gate у writer | `persistence/PersistencePolicy.java` | Default events; poll-cycle swap |
 | **P11-014** | [ ] GUI «База даних…» + confirm purge | `PersistenceSettingsDialog.java` | Чекбокси route_change / probe_error |
 | **P11-015** | [ ] YAML `persistence.events` + CLI override | `ProfilesConfig`, `CONFIGURATION.md` | Пріоритет як ADR_ALERTS |
@@ -725,5 +725,7 @@ flowchart LR
 **Persistence SPIKE (2026-07-09):** P11-001 — `SPIKE_PERSISTENCE.md` (schema v1 Python parity, v2 `persistence_event`).
 
 **Persistence policy SPIKE (2026-07-09):** P11-002 — event menu, YAML `persistence.events`, purge confirm, poll-cycle policy swap; PY-P11 for Python parity.
+
+**Java persistence wire (2026-07-09):** P11-011…P11-012 — `SessionStore`/`PersistenceEventWriter`/`MonitorService` + CLI `--session-db`.
 
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.

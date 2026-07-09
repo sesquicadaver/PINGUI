@@ -58,7 +58,15 @@ public final class PinguiApplication extends Application {
         boolean geoipEnabled = !params.containsKey("no-geoip");
         Path geoipHints =
                 params.containsKey("geoip-hints") ? Path.of(params.get("geoip-hints")) : defaults.geoipHintsPath();
-        return new AppOptions(config, profileOverrides, alertOverrides, verbose, geoipEnabled, geoipHints);
+        Optional<Path> sessionDb = Optional.empty();
+        if (params.containsKey("session-db")) {
+            String value = params.get("session-db");
+            if (value == null || value.isBlank()) {
+                throw new IllegalArgumentException("Missing value for --session-db");
+            }
+            sessionDb = Optional.of(Path.of(value.strip()));
+        }
+        return new AppOptions(config, profileOverrides, alertOverrides, verbose, geoipEnabled, geoipHints, sessionDb);
     }
 
     private static CliAlertOverrides parseAlertOverrides(Map<String, String> params) {
@@ -197,6 +205,7 @@ public final class PinguiApplication extends Application {
                   --alert-webhook URL  POST route-change JSON (secrets not logged)
                   --desktop-alerts     Linux desktop notifications (notify-send)
                   --alert-rate-limit N Max alerts per host per hour (default: 10)
+                  --session-db PATH  SQLite session metrics + events (optional)
                   --geoip-hints PATH  CIDR→country YAML (default: config/geoip_hints.yaml)
                   --no-geoip        Disable country hints in hop labels
                   --verbose         Debug logging

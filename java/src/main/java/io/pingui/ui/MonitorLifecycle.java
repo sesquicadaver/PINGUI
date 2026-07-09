@@ -6,6 +6,8 @@ import io.pingui.config.TracingProfile;
 import io.pingui.monitor.AlertDispatchers;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
+import io.pingui.persistence.PersistenceEventWriter;
+import io.pingui.persistence.SessionDatabase;
 
 /** Factory for session {@link MonitorService} wired to the active tracing profile. */
 final class MonitorLifecycle {
@@ -18,12 +20,25 @@ final class MonitorLifecycle {
             SessionStore store,
             MonitorService.Listener listener,
             AlertConfig alerts) {
+        return create(profile, profileName, store, listener, alerts, null);
+    }
+
+    static MonitorService create(
+            TracingProfile profile,
+            String profileName,
+            SessionStore store,
+            MonitorService.Listener listener,
+            AlertConfig alerts,
+            SessionDatabase sessionDatabase) {
         MonitorService service = new MonitorService(
                 profile.intervalSeconds(), profile.maxHops(), profile.timeoutSeconds(), profile.probeMode());
         service.setAlertProfileName(profileName);
         service.setAlertDispatcher(AlertDispatchers.build(alerts));
         service.setExpertResolver(store::getPingExpert);
         service.setPingOnlyResolver(store::isPingOnly);
+        if (sessionDatabase != null) {
+            service.setPersistenceEventWriter(new PersistenceEventWriter(sessionDatabase));
+        }
         service.setListener(listener);
         for (HostEntry entry : profile.hosts()) {
             if (!HostViewRules.matches(entry.address())) {

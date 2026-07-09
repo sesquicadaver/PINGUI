@@ -91,6 +91,13 @@ class PinguiApplicationTest {
     }
 
     @Test
+    void parseOptions_sessionDbPath() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of("session-db", "data/ping.db"));
+        assertEquals(
+                java.nio.file.Path.of("data/ping.db"), options.sessionDbPath().orElseThrow());
+    }
+
+    @Test
     void alertOverrides_mergePreservesYamlFields() {
         io.pingui.config.AlertConfig yaml = new io.pingui.config.AlertConfig(true, "https://yaml.example/hook", 10);
         CliAlertOverrides partial = new CliAlertOverrides(
