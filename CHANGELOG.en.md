@@ -14,6 +14,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 - **Java hop stats from history (P11-040):** `hop_stats` persist to SQLite on every probe; graph labels (`j:`/`loss:`) survive session reopen.
 - **SQLite disk/retention docs (P11-050):** `docs/DEPLOYMENT.md` — no auto-TTL on `host_session`, manual event purge, sizing notes.
 - **Java headless daemon (P12-001…040):** `--daemon`, `--pid-file`, `--stop`, `--status`; `DaemonRunner`; `systemd/pingui-java.service.example`; [ADR_DAEMON.md](docs/ADR_DAEMON.md).
+- **Probe modes ADR (P13-001):** [ADR_PROBE_MODES.md](docs/en/ADR_PROBE_MODES.md) — `trace | mtr | ping_only` vs transport `probe: auto|process|raw`; MTR = continuous per-hop.
 
 ### Fixed
 
