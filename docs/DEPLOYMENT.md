@@ -146,6 +146,7 @@ Daemon з PID-файлом (PY-030…032):
 | «No hops parsed» | Встановити `traceroute`; на macOS — `/usr/sbin/traceroute` |
 | JavaFX runtime missing | `./gradlew run` або jpackage installer |
 | Expert ping без RTT | Linux + `iputils-ping` |
+| `dbind-WARNING` / `accessibility bus` | Нормально без a11y; не запускайте через `sudo`; або `NO_AT_BRIDGE=1` (у `pingui-java.sh` за замовч.) |
 | IPv6 trace «немає hop-ів» | `traceroute -6` у PATH; raw cap **не** потрібен для v6 literal |
 | Raw ICMP v4 «permission denied» | `setcap cap_net_raw+ep` на JDK binary (див. § Raw ICMP) |
 

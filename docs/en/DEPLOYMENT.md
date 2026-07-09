@@ -146,6 +146,7 @@ systemd example: `systemd/pingui.service.example` (Type=simple, `ExecStart=... d
 | “No hops parsed” | Install `traceroute`; on macOS — `/usr/sbin/traceroute` |
 | JavaFX runtime missing | `./gradlew run` or jpackage installer |
 | Expert ping without RTT | Linux + `iputils-ping` |
+| `dbind-WARNING` / `accessibility bus` | Harmless without a11y; do not run via `sudo`; or `NO_AT_BRIDGE=1` (default in `pingui-java.sh`) |
 | IPv6 trace “no hops” | `traceroute -6` on PATH; raw cap **not** required for v6 literal |
 | Raw ICMP v4 “permission denied” | `setcap cap_net_raw+ep` on JDK binary (see § Raw ICMP) |
 

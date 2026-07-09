@@ -67,6 +67,9 @@ resolve_java_home() {
 
 resolve_java_home
 
+# GTK/JavaFX: harmless when D-Bus AT-SPI is missing (SSH, Docker, sudo). Override: NO_AT_BRIDGE=0
+export NO_AT_BRIDGE="${NO_AT_BRIDGE:-1}"
+
 CMD="${1:-run}"
 shift || true
 
