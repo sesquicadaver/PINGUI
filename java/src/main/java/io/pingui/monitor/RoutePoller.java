@@ -42,6 +42,12 @@ public final class RoutePoller {
         return new HostPollOutcome(snapshot, null, change.changed(), change.oldIps(), change.newIps(), currentIps);
     }
 
+    public void resetMtrHost(String host) {
+        if (mtrProbe != null) {
+            mtrProbe.resetHost(host);
+        }
+    }
+
     public HostPollOutcome pollHostRoute(String host, List<String> previousIps, int maxHops, double timeoutSeconds) {
         try {
             RouteSnapshot snapshot = probe.trace(host, maxHops, timeoutSeconds);

@@ -49,7 +49,7 @@ public final class DaemonRunner implements AutoCloseable {
         GeoCountry.configure(options.geoipEnabled(), options.geoipHintsPath());
         TracingProfile active = profileDocument.active();
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(active.hosts());
-        store = SessionStore.fromEntries(sessionHosts, openSessionDatabase(active));
+        store = SessionStore.fromEntries(sessionHosts, openSessionDatabase(active), active.hostProbeMode());
         monitor = createMonitor(active, sessionHosts);
         DaemonPidFile.write(pidFile, ProcessHandle.current().pid());
         Runtime.getRuntime().addShutdownHook(new Thread(this::closeQuietly, "pingui-daemon-shutdown"));

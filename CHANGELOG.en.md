@@ -16,6 +16,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 ### Added
 
 - **MTR probe (P13-010):** `MtrProbe` — per-hop state machine (DISCOVERING → MONITORING), one TTL per poll; `RoutePoller.pollHostMtr`.
+- **Probe mode YAML (P13-011):** `probe_mode: trace | mtr | ping_only` on profile and host; `MonitorService` branches trace/mtr/ping_only; `ping_only: true` backward compat.
 - **Java GUI SQLite connection (P11-016):** file picker in Database settings, YAML `persistence.session_db`, active menu without CLI `--session-db`.
 - **Java hop stats from history (P11-040):** `hop_stats` persist to SQLite on every probe; graph labels (`j:`/`loss:`) survive session reopen.
 - **SQLite disk/retention docs (P11-050):** `docs/DEPLOYMENT.md` — no auto-TTL on `host_session`, manual event purge, sizing notes.

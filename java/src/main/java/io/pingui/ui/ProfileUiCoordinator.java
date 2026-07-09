@@ -54,6 +54,7 @@ final class ProfileUiCoordinator {
                         current.maxHops(),
                         current.timeoutSeconds(),
                         current.probeMode(),
+                        current.hostProbeMode(),
                         hosts,
                         current.alerts(),
                         current.persistence()));

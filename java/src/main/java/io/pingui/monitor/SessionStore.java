@@ -38,8 +38,13 @@ public final class SessionStore implements AutoCloseable {
     }
 
     public static SessionStore fromEntries(List<HostEntry> entries, SessionDatabase database) {
+        return fromEntries(entries, database, HostProbeMode.TRACE);
+    }
+
+    public static SessionStore fromEntries(
+            List<HostEntry> entries, SessionDatabase database, HostProbeMode profileDefault) {
         SessionStore store = new SessionStore(List.of(), database);
-        store.loadHostEntries(entries);
+        store.loadHostEntries(entries, profileDefault);
         return store;
     }
 
@@ -72,13 +77,17 @@ public final class SessionStore implements AutoCloseable {
     }
 
     public String addHost(String host, boolean enabled, boolean pingOnly, PingExpertEntry pingExpert) {
+        return addHost(host, enabled, pingOnly ? HostProbeMode.PING_ONLY : HostProbeMode.TRACE, pingExpert);
+    }
+
+    public String addHost(String host, boolean enabled, HostProbeMode probeMode, PingExpertEntry pingExpert) {
         String normalized = HostsConfig.validateSessionHost(host, hosts());
         if (data.containsKey(normalized)) {
             throw new ConfigError("Host already in list: " + normalized);
         }
         HostSessionData session = new HostSessionData();
         session.setEnabled(enabled);
-        session.setPingOnly(pingOnly);
+        session.setProbeMode(probeMode);
         session.setPingExpert(pingExpert);
         data.put(normalized, session);
         persist(normalized);
@@ -112,21 +121,34 @@ public final class SessionStore implements AutoCloseable {
         return get(host).isPingOnly();
     }
 
-    public void setPingOnly(String host, boolean pingOnly) {
+    public HostProbeMode getProbeMode(String host) {
+        return get(host).getProbeMode();
+    }
+
+    public void setProbeMode(String host, HostProbeMode probeMode) {
         HostSessionData session = get(host);
-        session.setPingOnly(pingOnly);
+        session.setProbeMode(probeMode);
+        session.setProbeModeOverride(null);
         session.setCurrentRoute(List.of());
         session.setPreviousRoute(List.of());
         session.getLastKnownByHop().clear();
         persist(host);
     }
 
+    public void setPingOnly(String host, boolean pingOnly) {
+        setProbeMode(host, pingOnly ? HostProbeMode.PING_ONLY : HostProbeMode.TRACE);
+    }
+
     public void loadHostEntries(List<HostEntry> entries) {
+        loadHostEntries(entries, HostProbeMode.TRACE);
+    }
+
+    public void loadHostEntries(List<HostEntry> entries, HostProbeMode profileDefault) {
         data.clear();
         for (HostEntry entry : entries) {
             HostSessionData session = database != null ? loadOrCreate(entry.address()) : new HostSessionData();
             session.setEnabled(entry.enabled());
-            session.setPingOnly(entry.pingOnly());
+            session.applyProbeFromEntry(entry, profileDefault);
             session.setPingExpert(entry.pingExpert());
             data.put(entry.address(), session);
             persist(entry.address());
@@ -137,7 +159,13 @@ public final class SessionStore implements AutoCloseable {
         List<HostEntry> out = new ArrayList<>();
         for (Map.Entry<String, HostSessionData> entry : data.entrySet()) {
             HostSessionData session = entry.getValue();
-            out.add(new HostEntry(entry.getKey(), session.isEnabled(), session.isPingOnly(), session.getPingExpert()));
+            boolean pingOnly = session.isPingOnly() && session.getProbeModeOverride() == null;
+            out.add(new HostEntry(
+                    entry.getKey(),
+                    session.isEnabled(),
+                    pingOnly,
+                    session.getPingExpert(),
+                    session.getProbeModeOverride()));
         }
         return List.copyOf(out);
     }

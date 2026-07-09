@@ -29,6 +29,7 @@ public record CliProfileOverrides(
                 maxHops.orElse(profile.maxHops()),
                 timeoutSeconds.orElse(profile.timeoutSeconds()),
                 probeMode.orElse(profile.probeMode()),
+                profile.hostProbeMode(),
                 profile.hosts(),
                 profile.alerts(),
                 profile.persistence());

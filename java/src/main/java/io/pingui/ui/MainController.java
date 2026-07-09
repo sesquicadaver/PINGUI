@@ -102,7 +102,8 @@ public final class MainController {
         GeoCountry.configure(options.geoipEnabled(), options.geoipHintsPath());
         TracingProfile active = profileDocument.active();
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(active.hosts());
-        this.store = SessionStore.fromEntries(sessionHosts, openSessionDatabase());
+        this.store = SessionStore.fromEntries(
+                sessionHosts, openSessionDatabase(), profileDocument.active().hostProbeMode());
         this.monitor = createMonitor(active, sessionHosts);
         initCoordinators();
         hostListPresenter.rebuild(sessionHosts);
@@ -469,7 +470,7 @@ public final class MainController {
         TracingProfile profile = profileDocument.active();
         monitor.close();
         store.close();
-        store = SessionStore.fromEntries(liveEntries, openSessionDatabase());
+        store = SessionStore.fromEntries(liveEntries, openSessionDatabase(), profile.hostProbeMode());
         sessionPersistenceOverride = policyOverride != null ? policyOverride : Optional.empty();
         monitor = createMonitor(profile, liveEntries);
         updateHistoryPanelVisibility();
@@ -502,7 +503,7 @@ public final class MainController {
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(profile.hosts());
         monitor.close();
         store.close();
-        store = SessionStore.fromEntries(sessionHosts, openSessionDatabase());
+        store = SessionStore.fromEntries(sessionHosts, openSessionDatabase(), profile.hostProbeMode());
         monitor = createMonitor(profile, sessionHosts);
         updateHistoryPanelVisibility();
         hostListPresenter.rebuild(sessionHosts);

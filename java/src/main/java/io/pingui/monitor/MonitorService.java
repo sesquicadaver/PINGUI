@@ -5,6 +5,8 @@ import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.persistence.PersistenceEventWriter;
 import io.pingui.persistence.PersistencePolicy;
 import io.pingui.persistence.PersistencePolicyHolder;
+import io.pingui.probe.MtrHopProbers;
+import io.pingui.probe.MtrProbe;
 import io.pingui.probe.ProbeMode;
 import io.pingui.probe.RouteProbe;
 import io.pingui.probe.RouteProbeFactory;
@@ -42,7 +44,14 @@ public final class MonitorService implements AutoCloseable {
         PingExpertEntry resolve(String host);
     }
 
-    /** Supplies per-host ping-only flag (skip traceroute). */
+    /** Supplies per-host monitoring strategy (trace / mtr / ping_only). */
+    @FunctionalInterface
+    public interface HostProbeModeResolver {
+        HostProbeMode resolve(String host);
+    }
+
+    /** @deprecated use {@link HostProbeModeResolver} */
+    @Deprecated
     @FunctionalInterface
     public interface PingOnlyResolver {
         boolean resolve(String host);
@@ -58,6 +67,7 @@ public final class MonitorService implements AutoCloseable {
     private final List<String> hosts = new ArrayList<>();
     private final Map<String, Boolean> enabled = new HashMap<>();
     private final Map<String, Boolean> pingOnly = new HashMap<>();
+    private final Map<String, HostProbeMode> probeModes = new HashMap<>();
     private final Map<String, List<String>> lastRoutes = new HashMap<>();
     private final Map<String, AtomicBoolean> pollsInFlight = new ConcurrentHashMap<>();
     private final double intervalSeconds;
@@ -67,7 +77,9 @@ public final class MonitorService implements AutoCloseable {
     private volatile AlertDispatcher alertDispatcher = AlertDispatcher.noop();
     private volatile String alertProfileName = "default";
     private volatile PingExpertResolver expertResolver;
+    private volatile HostProbeModeResolver probeModeResolver;
     private volatile PingOnlyResolver pingOnlyResolver;
+    private HostProbeMode profileProbeMode = HostProbeMode.TRACE;
     private volatile PersistenceEventWriter persistenceEvents;
     private final PersistencePolicyHolder persistencePolicy = new PersistencePolicyHolder();
 
@@ -80,10 +92,14 @@ public final class MonitorService implements AutoCloseable {
     }
 
     MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds, RouteProbe probe) {
+        this(intervalSeconds, maxHops, timeoutSeconds, probe, new MtrProbe(MtrHopProbers.platformDefault()));
+    }
+
+    MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds, RouteProbe probe, MtrProbe mtrProbe) {
         this.intervalSeconds = intervalSeconds;
         this.maxHops = maxHops;
         this.timeoutSeconds = timeoutSeconds;
-        this.poller = new RoutePoller(probe);
+        this.poller = new RoutePoller(probe, mtrProbe);
         this.probePool = Executors.newFixedThreadPool(MAX_PARALLEL_PROBES, r -> {
             Thread thread = new Thread(r, "pingui-probe");
             thread.setDaemon(true);
@@ -117,6 +133,15 @@ public final class MonitorService implements AutoCloseable {
         this.expertResolver = expertResolver;
     }
 
+    public void setHostProbeModeResolver(HostProbeModeResolver probeModeResolver) {
+        this.probeModeResolver = probeModeResolver;
+    }
+
+    public void setProfileProbeMode(HostProbeMode profileProbeMode) {
+        this.profileProbeMode = profileProbeMode != null ? profileProbeMode : HostProbeMode.TRACE;
+    }
+
+    @Deprecated
     public void setPingOnlyResolver(PingOnlyResolver pingOnlyResolver) {
         this.pingOnlyResolver = pingOnlyResolver;
     }
@@ -159,13 +184,19 @@ public final class MonitorService implements AutoCloseable {
     }
 
     public void addHost(String host, boolean hostEnabled, boolean hostPingOnly) {
+        addHost(host, hostEnabled, hostPingOnly ? HostProbeMode.PING_ONLY : HostProbeMode.TRACE);
+    }
+
+    public void addHost(String host, boolean hostEnabled, HostProbeMode probeMode) {
         synchronized (lock) {
             if (hosts.contains(host)) {
                 throw new io.pingui.config.ConfigError("Host already in list: " + host);
             }
             hosts.add(host);
             enabled.put(host, hostEnabled);
-            pingOnly.put(host, hostPingOnly);
+            boolean legacyPingOnly = probeMode == HostProbeMode.PING_ONLY;
+            pingOnly.put(host, legacyPingOnly);
+            probeModes.put(host, probeMode);
             lastRoutes.put(host, List.of());
         }
     }
@@ -177,6 +208,7 @@ public final class MonitorService implements AutoCloseable {
             }
             enabled.remove(host);
             pingOnly.remove(host);
+            probeModes.remove(host);
             lastRoutes.remove(host);
         }
         pollsInFlight.remove(host);
@@ -197,6 +229,10 @@ public final class MonitorService implements AutoCloseable {
             if (wasPingOnly != null) {
                 pingOnly.put(newHost, wasPingOnly);
             }
+            HostProbeMode wasMode = probeModes.remove(oldHost);
+            if (wasMode != null) {
+                probeModes.put(newHost, wasMode);
+            }
             lastRoutes.put(newHost, lastRoutes.remove(oldHost));
             AtomicBoolean inFlight = pollsInFlight.remove(oldHost);
             if (inFlight != null) {
@@ -215,13 +251,20 @@ public final class MonitorService implements AutoCloseable {
     }
 
     public void setHostPingOnly(String host, boolean hostPingOnly) {
+        setHostProbeMode(host, hostPingOnly ? HostProbeMode.PING_ONLY : HostProbeMode.TRACE);
+    }
+
+    public void setHostProbeMode(String host, HostProbeMode probeMode) {
         synchronized (lock) {
             if (!hosts.contains(host)) {
                 throw new io.pingui.config.ConfigError("Unknown host: " + host);
             }
-            pingOnly.put(host, hostPingOnly);
+            HostProbeMode mode = probeMode != null ? probeMode : HostProbeMode.TRACE;
+            probeModes.put(host, mode);
+            pingOnly.put(host, mode == HostProbeMode.PING_ONLY);
             lastRoutes.put(host, List.of());
         }
+        poller.resetMtrHost(host);
     }
 
     private void cycle() {
@@ -274,17 +317,20 @@ public final class MonitorService implements AutoCloseable {
             return;
         }
         List<String> previousIps;
-        boolean hostPingOnly;
+        HostProbeMode probeMode;
         synchronized (lock) {
             if (!hosts.contains(host)) {
                 return;
             }
             previousIps = List.copyOf(lastRoutes.getOrDefault(host, List.of()));
-            hostPingOnly = resolvePingOnly(host);
+            probeMode = resolveProbeMode(host);
         }
-        HostPollOutcome outcome = hostPingOnly
-                ? poller.pollHostPingOnly(host, previousIps, timeoutSeconds, resolveExpert(host))
-                : poller.pollHostRoute(host, previousIps, maxHops, timeoutSeconds);
+        HostPollOutcome outcome =
+                switch (probeMode) {
+                    case PING_ONLY -> poller.pollHostPingOnly(host, previousIps, timeoutSeconds, resolveExpert(host));
+                    case MTR -> poller.pollHostMtr(host, previousIps, maxHops, timeoutSeconds);
+                    case TRACE -> poller.pollHostRoute(host, previousIps, maxHops, timeoutSeconds);
+                };
         Listener current = listener;
         if (current == null || !isKnownHost(host)) {
             return;
@@ -308,7 +354,7 @@ public final class MonitorService implements AutoCloseable {
         }
         if (outcome.snapshot() != null && isKnownHost(host)) {
             RouteSnapshot snapshot = outcome.snapshot();
-            if (!hostPingOnly) {
+            if (probeMode != HostProbeMode.PING_ONLY) {
                 PingExpertEntry expert = resolveExpert(host);
                 if (expert.isConfigured()) {
                     snapshot = expertEnricher.enrich(snapshot, expert, timeoutSeconds);
@@ -382,13 +428,19 @@ public final class MonitorService implements AutoCloseable {
         return expert != null ? expert : PingExpertEntry.empty();
     }
 
-    /** Live ping-only flag: resolver (SessionStore) when wired, else per-host map. */
-    private boolean resolvePingOnly(String host) {
-        PingOnlyResolver resolver = pingOnlyResolver;
+    private HostProbeMode resolveProbeMode(String host) {
+        HostProbeModeResolver resolver = probeModeResolver;
         if (resolver != null) {
-            return resolver.resolve(host);
+            HostProbeMode resolved = resolver.resolve(host);
+            if (resolved != null) {
+                return resolved;
+            }
         }
-        return Boolean.TRUE.equals(pingOnly.get(host));
+        PingOnlyResolver legacyResolver = pingOnlyResolver;
+        if (legacyResolver != null && legacyResolver.resolve(host)) {
+            return HostProbeMode.PING_ONLY;
+        }
+        return probeModes.getOrDefault(host, profileProbeMode);
     }
 
     @Override

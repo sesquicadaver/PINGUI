@@ -38,14 +38,15 @@ public final class MonitorLifecycle {
         service.setAlertProfileName(profileName);
         service.setAlertDispatcher(AlertDispatchers.build(alerts));
         service.setExpertResolver(store::getPingExpert);
-        service.setPingOnlyResolver(store::isPingOnly);
+        service.setProfileProbeMode(profile.hostProbeMode());
+        service.setHostProbeModeResolver(store::getProbeMode);
         if (sessionDatabase != null) {
             service.setPersistenceEventWriter(new PersistenceEventWriter(sessionDatabase, service.persistencePolicy()));
         }
         service.setListener(listener);
         for (HostEntry entry : sessionHosts) {
             if (!HostViewRules.matches(entry.address())) {
-                service.addHost(entry.address(), entry.enabled(), entry.pingOnly());
+                service.addHost(entry.address(), entry.enabled(), entry.effectiveProbeMode(profile.hostProbeMode()));
             }
         }
         return service;
