@@ -2,6 +2,7 @@ package io.pingui.monitor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,8 +13,11 @@ import io.pingui.config.PingExpertEntry;
 import io.pingui.model.Models;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;
+import io.pingui.persistence.SessionDatabase;
+import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class SessionStoreTest {
     @Test
@@ -164,5 +168,28 @@ class SessionStoreTest {
     void getUnknownHostThrows() {
         SessionStore store = new SessionStore(List.of());
         assertThrows(ConfigError.class, () -> store.get("missing"));
+    }
+
+    @Test
+    void reconnectUsesLiveEnabledStateNotYamlDefault(@TempDir Path tempDir) {
+        HostEntry yamlDefault = new HostEntry("8.8.8.8", false, false, PingExpertEntry.empty());
+        SessionStore ram = SessionStore.fromEntries(List.of(yamlDefault));
+        ram.setEnabled("8.8.8.8", true);
+
+        Path dbPath = tempDir.resolve("live.db");
+        try (SessionDatabase database = new SessionDatabase(dbPath)) {
+            SessionStore persisted = SessionStore.fromEntries(ram.toHostEntries(), database);
+            assertTrue(persisted.get("8.8.8.8").isEnabled());
+
+            RouteSnapshot snapshot =
+                    new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
+            persisted.updateRoute("8.8.8.8", snapshot);
+
+            var loaded = database.load("8.8.8.8");
+            assertNotNull(loaded);
+            assertTrue(loaded.isEnabled());
+            assertEquals(1, loaded.getCurrentRoute().size());
+            assertEquals("10.0.0.1", loaded.getCurrentRoute().get(0).ip());
+        }
     }
 }

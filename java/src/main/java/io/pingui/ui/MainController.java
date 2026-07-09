@@ -100,7 +100,7 @@ public final class MainController {
         TracingProfile active = profileDocument.active();
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(active.hosts());
         this.store = SessionStore.fromEntries(sessionHosts, openSessionDatabase());
-        this.monitor = createMonitor(active);
+        this.monitor = createMonitor(active, sessionHosts);
         initCoordinators();
         hostListPresenter.rebuild(sessionHosts);
     }
@@ -310,7 +310,7 @@ public final class MainController {
         return root.getScene() != null ? root.getScene().getWindow() : null;
     }
 
-    private MonitorService createMonitor(TracingProfile profile) {
+    private MonitorService createMonitor(TracingProfile profile, List<HostEntry> sessionHosts) {
         MonitorService service = MonitorLifecycle.create(
                 profile,
                 profileDocument.activeProfile(),
@@ -332,7 +332,8 @@ public final class MainController {
                     }
                 },
                 options.alertOverrides().applyTo(profile.alerts()),
-                store.database());
+                store.database(),
+                sessionHosts);
         applyPersistencePolicy(service, profile);
         return service;
     }
@@ -368,14 +369,18 @@ public final class MainController {
     private void handlePersistenceSettings(PersistenceSettingsDialog.Result result) {
         if (result.sessionDbPath().isPresent()) {
             sessionGuiDbOverride = result.sessionDbPath();
-            sessionPersistenceOverride = Optional.of(result.policy());
-            reconnectPersistence();
-            appendLog("SQLite підключено: " + result.sessionDbPath().get().toAbsolutePath());
+            reconnectPersistence(Optional.of(result.policy()));
+            notifyPersistenceConnected(result.sessionDbPath().get());
         } else {
             sessionPersistenceOverride = Optional.of(result.policy());
             monitor.setPendingPersistencePolicy(result.policy());
         }
         appendLog("Політика persistence оновлена (з наступного poll-циклу)");
+    }
+
+    private void notifyPersistenceConnected(Path dbPath) {
+        appendLog("SQLite підключено: " + dbPath.toAbsolutePath());
+        statusLabel.setText("SQLite: " + dbPath.toAbsolutePath());
     }
 
     private Optional<Path> resolveSessionDbPath() {
@@ -389,17 +394,17 @@ public final class MainController {
                 .orElse(null);
     }
 
-    private void reconnectPersistence() {
+    private void reconnectPersistence(Optional<PersistencePolicy> policyOverride) {
         dismissEasterEgg();
-        sessionPersistenceOverride = Optional.empty();
+        List<HostEntry> liveEntries = HostViewRules.entriesForConfig(store.toHostEntries());
         TracingProfile profile = profileDocument.active();
-        List<HostEntry> sessionHosts = HostViewRules.sessionEntries(profile.hosts());
         monitor.close();
         store.close();
-        store = SessionStore.fromEntries(sessionHosts, openSessionDatabase());
-        monitor = createMonitor(profile);
+        store = SessionStore.fromEntries(liveEntries, openSessionDatabase());
+        sessionPersistenceOverride = policyOverride != null ? policyOverride : Optional.empty();
+        monitor = createMonitor(profile, liveEntries);
         updateHistoryPanelVisibility();
-        hostListPresenter.rebuild(sessionHosts);
+        hostListPresenter.rebuild(liveEntries);
         hostList.getSelectionModel().clearSelection();
         if (!hostItems.isEmpty()) {
             hostList.getSelectionModel().select(0);
@@ -427,7 +432,7 @@ public final class MainController {
         monitor.close();
         store.close();
         store = SessionStore.fromEntries(sessionHosts, openSessionDatabase());
-        monitor = createMonitor(profile);
+        monitor = createMonitor(profile, sessionHosts);
         updateHistoryPanelVisibility();
         hostListPresenter.rebuild(sessionHosts);
         hostList.getSelectionModel().clearSelection();

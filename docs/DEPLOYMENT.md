@@ -145,6 +145,8 @@ Daemon з PID-файлом (PY-030…032):
 | Метрики маршруту | Таблиця `host_session` (JSON: routes, `ping_history`, `hop_stats`) |
 | Події | Таблиця `persistence_event` (`route_change`, `probe_error`) |
 
+**Запис у БД:** після підключення SQLite увімкніть чекбокс цілі в списку хостів — legacy YAML за замовчуванням має `enabled: false`, без активного моніторингу маршрут і `hop_stats` не оновлюються. Рядки `host_session` з’являються одразу при connect; `current_route_json` / `hop_stats` — після першого успішного poll.
+
 **Диск і retention (P11-050):**
 
 - Автоматичного TTL / ротації для `host_session` **немає** — файл росте з кількістю хостів і накопиченими `ping_history` / `hop_stats` (обмеження в RAM: до 50 RTT на hop у `hop_stats`, історія ping по IP).
@@ -159,6 +161,7 @@ Daemon з PID-файлом (PY-030…032):
 
 | Симптом | Рішення |
 |---------|---------|
+| SQLite порожня / немає маршруту | Підключити БД (CLI/YAML/GUI), **увімкнути чекбокс хоста**, дочекатись poll; перевірка: `sqlite3 data/ping.db "SELECT host, enabled, length(current_route_json) FROM host_session;"` |
 | Trace на Windows «зависає» / дуже довгий | Нормально для `tracert`; увімкніть **Ping only** або збільште `interval` |
 | Gradle «What went wrong: 25.0.3» | JDK 21: `export PINGUI_JAVA_HOME=.../java-21-openjdk-*` |
 | «No hops parsed» | Встановити `traceroute`; на macOS — `/usr/sbin/traceroute` |

@@ -8,6 +8,7 @@ import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
 import io.pingui.persistence.PersistenceEventWriter;
 import io.pingui.persistence.SessionDatabase;
+import java.util.List;
 
 /** Factory for session {@link MonitorService} wired to the active tracing profile. */
 final class MonitorLifecycle {
@@ -20,7 +21,8 @@ final class MonitorLifecycle {
             SessionStore store,
             MonitorService.Listener listener,
             AlertConfig alerts) {
-        return create(profile, profileName, store, listener, alerts, null);
+        return create(
+                profile, profileName, store, listener, alerts, null, HostViewRules.sessionEntries(profile.hosts()));
     }
 
     static MonitorService create(
@@ -29,7 +31,8 @@ final class MonitorLifecycle {
             SessionStore store,
             MonitorService.Listener listener,
             AlertConfig alerts,
-            SessionDatabase sessionDatabase) {
+            SessionDatabase sessionDatabase,
+            List<HostEntry> sessionHosts) {
         MonitorService service = new MonitorService(
                 profile.intervalSeconds(), profile.maxHops(), profile.timeoutSeconds(), profile.probeMode());
         service.setAlertProfileName(profileName);
@@ -40,7 +43,7 @@ final class MonitorLifecycle {
             service.setPersistenceEventWriter(new PersistenceEventWriter(sessionDatabase, service.persistencePolicy()));
         }
         service.setListener(listener);
-        for (HostEntry entry : profile.hosts()) {
+        for (HostEntry entry : sessionHosts) {
             if (!HostViewRules.matches(entry.address())) {
                 service.addHost(entry.address(), entry.enabled(), entry.pingOnly());
             }

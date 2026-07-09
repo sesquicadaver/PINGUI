@@ -27,6 +27,10 @@
 - **Java hop stats from history (P11-040):** `hop_stats` persist to SQLite on every probe; graph labels (`j:`/`loss:`) survive session reopen.
 - **SQLite disk/retention docs (P11-050):** `docs/DEPLOYMENT.md` — no auto-TTL on `host_session`, manual event purge, sizing notes.
 
+### Fixed
+
+- **Java GUI SQLite reconnect (P11-016):** `reconnectPersistence` зберігає live enabled/ping-only з `SessionStore`, не скидає до YAML; `MonitorLifecycle` реєструє хости з поточного store — маршрут і `hop_stats` знову пишуться після **Налаштування → База даних…**.
+
 ## [0.2.0] - 2026-07-09
 
 ### Added
