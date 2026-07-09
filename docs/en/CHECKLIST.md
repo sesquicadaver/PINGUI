@@ -10,6 +10,14 @@ Python edition and tests — branch **`beta`**.
 
 Details: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 
+### Python daemon smoke (beta)
+
+- [ ] `./pingui.sh --deploy` — venv + doc parity
+- [ ] `.venv/bin/python -m pingui monitor --config config/hosts.example.yaml` — foreground headless (Ctrl+C)
+- [ ] `.venv/bin/python -m pingui daemon --session-db data/ping.db --pid-file /tmp/pingui.pid`
+- [ ] `.venv/bin/python -m pingui status --pid-file /tmp/pingui.pid` → running
+- [ ] `.venv/bin/python -m pingui stop --pid-file /tmp/pingui.pid`
+
 ---
 
 ## Linux (Ubuntu 22.04 / 24.04 / 26.04)

@@ -224,9 +224,42 @@ Optional deps: `pip install -e ".[timeseries]"`.
 
 ---
 
+## pingui.monitor.monitor_loop
+
+### `MonitorLoop`
+
+Headless цикл моніторингу на `threading` (без Qt). Callbacks замість signals.
+
+| Метод | Опис |
+|-------|------|
+| `hosts()`, `enabled_hosts()` | З `SessionStore` або внутрішній список |
+| `add_host()`, `remove_host()`, `rename_host()`, `set_host_enabled()` | Делегує в store, якщо задано |
+| `start()`, `stop()`, `join()`, `is_running()` | Життєвий цикл потоку |
+
+`MonitorCallbacks` — `on_data_received`, `on_route_changed`, `on_probe_error`.
+
+---
+
+## pingui.monitor.daemon_runner
+
+### `run_headless_monitor(...) -> int`
+
+Foreground/daemon моніторинг до SIGINT/SIGTERM; опційно PID file.
+
+### `PidFile`
+
+| Метод | Опис |
+|-------|------|
+| `acquire()` / `release()` | Запис/видалення PID |
+| `stop(path)` / `status(path)` | CLI `stop` / `status` |
+
+---
+
 ## pingui.monitor.worker
 
 ### `LightweightMonitorWorker(QThread)`
+
+Тонка Qt-обгортка над `MonitorLoop`; делегує host CRUD і enabled state.
 
 **Сигнали:**
 

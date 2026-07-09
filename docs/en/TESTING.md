@@ -75,6 +75,9 @@ Lowest: `worker.run()` (background loop) — partially covered by `test_worker_r
 | `test_session_db.py` | SQLite round-trip, schema v2 |
 | `test_session_export.py` | CSV/HTML row builder |
 | `test_main_export.py` | CLI `--export-csv` / `--export-html` headless |
+| `test_main_subcommands.py` | CLI `monitor` / `daemon` / `export` / `stop` |
+| `test_monitor_loop.py` | Headless loop, callbacks, store integration |
+| `test_daemon_runner.py` | PID file, `run_headless_monitor`, stop/status |
 | `test_timeseries.py` | influx/timescale factory, memory backend |
 | `test_geoip_country.py` | CIDR longest-prefix, LAN |
 | `test_geo_map.py` | folium map builder |

@@ -94,6 +94,26 @@ profiles:
         enabled: true
 ```
 
+## Python NOC (headless, `beta` branch)
+
+No Qt — background monitoring for servers / NOC:
+
+```bash
+cd /path/to/PINGUI
+./pingui.sh --deploy   # venv + parity (first time)
+.venv/bin/python -m pingui monitor --config config/hosts.example.yaml --session-db data/ping.db
+```
+
+Daemon with PID file (PY-030…032):
+
+```bash
+.venv/bin/python -m pingui daemon --session-db data/ping.db --pid-file /tmp/pingui.pid
+.venv/bin/python -m pingui status --pid-file /tmp/pingui.pid
+.venv/bin/python -m pingui stop --pid-file /tmp/pingui.pid
+```
+
+systemd example: `systemd/pingui.service.example` (Type=simple, `ExecStart=... daemon`).
+
 ## Troubleshooting
 
 | Symptom | Solution |

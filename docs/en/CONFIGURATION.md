@@ -30,11 +30,25 @@ Config path is passed at startup (`MainWindow.config_path`, usually the same fil
 
 ## CLI
 
+### Subcommands (PY-023)
+
 ```bash
-.venv/bin/python -m pingui [OPTIONS]
-# or
+.venv/bin/python -m pingui run              # GUI (default)
+.venv/bin/python -m pingui export --csv out.csv
+.venv/bin/python -m pingui monitor --config config/hosts.example.yaml
+.venv/bin/python -m pingui daemon --session-db data/ping.db --pid-file /tmp/pingui.pid
+.venv/bin/python -m pingui stop --pid-file /tmp/pingui.pid
+.venv/bin/python -m pingui status --pid-file /tmp/pingui.pid
+```
+
+Flat legacy CLI (`--export-csv`, `--session-db` without subcommand) remains for backward compatibility.
+
+### Launcher
+
+```bash
 ./pingui.sh                              # GUI, config/hosts.example.yaml
 ./pingui.sh --export-csv report.csv      # headless export
+./pingui.sh monitor --config config/hosts.example.yaml
 ./pingui.sh -- --session-db data/ping.db # explicit launcher/CLI separator
 ```
 

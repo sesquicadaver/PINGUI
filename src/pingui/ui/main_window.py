@@ -126,7 +126,7 @@ class MainWindow(QMainWindow):
         root.addWidget(self._route_tabs, stretch=2)
 
         self._worker = LightweightMonitorWorker(
-            hosts,
+            session_store=self._store,
             interval_seconds=interval_seconds,
             max_hops=max_hops,
             timeout=timeout,
@@ -135,9 +135,6 @@ class MainWindow(QMainWindow):
         self._worker.route_changed.connect(self._on_route_changed)
         self._worker.probe_error.connect(self._on_probe_error)
         self._worker.start()
-        for host in hosts:
-            if self._store.get(host).enabled:
-                self._worker.set_host_enabled(host, True)
 
         if self._host_list.count() > 0:
             self._host_list.setCurrentRow(0)
@@ -194,8 +191,7 @@ class MainWindow(QMainWindow):
 
     def _rename_host_item(self, item: QListWidgetItem, old_key: str, new_text: str) -> bool:
         try:
-            renamed = self._worker.rename_host(old_key, new_text)
-            self._store.rename_host(old_key, renamed)
+            renamed = self._store.rename_host(old_key, new_text)
         except ConfigError as exc:
             ts = time.strftime("%H:%M:%S")
             self._log.append(f"[{ts}] {exc}\n")
@@ -228,7 +224,6 @@ class MainWindow(QMainWindow):
         if self._store.get(host_key).enabled == enabled:
             return
         try:
-            self._worker.set_host_enabled(host_key, enabled)
             self._store.set_enabled(host_key, enabled)
         except ConfigError as exc:
             ts = time.strftime("%H:%M:%S")
@@ -246,8 +241,7 @@ class MainWindow(QMainWindow):
         if not raw.strip():
             return
         try:
-            host = self._worker.add_host(raw, enabled=False)
-            self._store.add_host(host, enabled=False)
+            host = self._store.add_host(raw, enabled=False)
         except ConfigError as exc:
             ts = time.strftime("%H:%M:%S")
             self._log.append(f"[{ts}] Не вдалося додати ціль: {exc}\n")
@@ -283,7 +277,6 @@ class MainWindow(QMainWindow):
             return
         host = str(item.data(HOST_KEY_ROLE))
         try:
-            self._worker.remove_host(host)
             self._store.remove_host(host)
         except ConfigError as exc:
             ts = time.strftime("%H:%M:%S")

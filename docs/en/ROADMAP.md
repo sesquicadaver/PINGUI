@@ -274,10 +274,10 @@ flowchart TD
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **PY-020** | [ ] `MonitorLoop` on stdlib `threading` | `monitor/monitor_loop.py` | Loop enabled hosts → `poll_host_route()`; callbacks instead of Qt signals |
-| **PY-021** | [ ] `LightweightMonitorWorker` — thin wrapper | `monitor/worker.py` | Worker delegates to `MonitorLoop`; existing Qt tests green |
-| **PY-022** | [ ] Single `enabled` state | `session_store.py`, `worker.py`, `ui/main_window.py` | Remove duplicate `worker._enabled` vs `HostSessionData.enabled` |
-| **PY-023** | [ ] CLI subcommands: `run` \| `export` \| `monitor` | `src/pingui/__main__.py` | `argparse` subparsers; backward compat: no subcommand = `run` |
+| **PY-020** | [x] `MonitorLoop` on stdlib `threading` | `monitor/monitor_loop.py` | Loop enabled hosts → `poll_host_route()`; callbacks instead of Qt signals |
+| **PY-021** | [x] `LightweightMonitorWorker` — thin wrapper | `monitor/worker.py` | Worker delegates to `MonitorLoop`; existing Qt tests green |
+| **PY-022** | [x] Single `enabled` state | `session_store.py`, `worker.py`, `ui/main_window.py` | Remove duplicate `worker._enabled` vs `HostSessionData.enabled` |
+| **PY-023** | [x] CLI subcommands: `run` \| `export` \| `monitor` \| `daemon` \| `stop` \| `status` | `src/pingui/__main__.py` | `argparse` subparsers; backward compat: no subcommand = `run` |
 
 **Estimate:** 1–2 sprint. **Prerequisite** for PY-030…034 and Python P12.
 
@@ -285,11 +285,11 @@ flowchart TD
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **PY-030** | [ ] `--daemon`: no PyQt, `MonitorLoop` only | `__main__.py`, `monitor/daemon_runner.py` | `./pingui.sh -- --daemon --session-db PATH` — process stays running |
-| **PY-031** | [ ] PID file + `--stop` / `--status` | `monitor/daemon_runner.py` | Contract test start/stop |
-| **PY-032** | [ ] `systemd/pingui.service.example` | `systemd/` | `Type=simple`, `Restart=on-failure`, `User=`, `AmbientCapabilities=CAP_NET_RAW` |
-| **PY-033** | [ ] DEPLOYMENT § Python NOC headless | `docs/DEPLOYMENT.md` | cap_net_raw, `--session-db`, daemon flags |
-| **PY-034** | [ ] CHECKLIST § Python daemon smoke | `docs/CHECKLIST.md` | start → route change → SQLite row |
+| **PY-030** | [x] `daemon`: no PyQt, `MonitorLoop` only | `__main__.py`, `monitor/daemon_runner.py` | `python -m pingui daemon --session-db PATH` — process stays running |
+| **PY-031** | [x] PID file + `stop` / `status` | `monitor/daemon_runner.py` | Contract test start/stop |
+| **PY-032** | [x] `systemd/pingui.service.example` | `systemd/` | `Type=simple`, `Restart=on-failure`, `User=` |
+| **PY-033** | [x] DEPLOYMENT § Python NOC headless | `docs/DEPLOYMENT.md` | `--session-db`, daemon flags |
+| **PY-034** | [x] CHECKLIST § Python daemon smoke | `docs/CHECKLIST.md` | start → status → stop |
 
 **Estimate:** 1–2 sprint. **Parallel** with P12-001…P12-040 (Java).
 

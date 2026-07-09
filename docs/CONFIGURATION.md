@@ -30,11 +30,25 @@ hosts:
 
 ## CLI
 
+### Підкоманди (PY-023)
+
 ```bash
-.venv/bin/python -m pingui [OPTIONS]
-# або
+.venv/bin/python -m pingui run              # GUI (за замовч.)
+.venv/bin/python -m pingui export --csv out.csv
+.venv/bin/python -m pingui monitor --config config/hosts.example.yaml
+.venv/bin/python -m pingui daemon --session-db data/ping.db --pid-file /tmp/pingui.pid
+.venv/bin/python -m pingui stop --pid-file /tmp/pingui.pid
+.venv/bin/python -m pingui status --pid-file /tmp/pingui.pid
+```
+
+Плоский legacy-CLI (`--export-csv`, `--session-db` без підкоманди) збережено для зворотної сумісності.
+
+### Launcher
+
+```bash
 ./pingui.sh                              # GUI, config/hosts.example.yaml
 ./pingui.sh --export-csv report.csv      # headless export
+./pingui.sh monitor --config config/hosts.example.yaml
 ./pingui.sh -- --session-db data/ping.db # явний роздільник launcher/CLI
 ```
 

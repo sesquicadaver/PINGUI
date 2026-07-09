@@ -224,9 +224,42 @@ Optional deps: `pip install -e ".[timeseries]"`.
 
 ---
 
+## pingui.monitor.monitor_loop
+
+### `MonitorLoop`
+
+Headless monitoring loop on `threading` (no Qt). Callbacks instead of signals.
+
+| Method | Description |
+|--------|-------------|
+| `hosts()`, `enabled_hosts()` | From `SessionStore` or internal list |
+| `add_host()`, `remove_host()`, `rename_host()`, `set_host_enabled()` | Delegates to store when set |
+| `start()`, `stop()`, `join()`, `is_running()` | Thread lifecycle |
+
+`MonitorCallbacks` — `on_data_received`, `on_route_changed`, `on_probe_error`.
+
+---
+
+## pingui.monitor.daemon_runner
+
+### `run_headless_monitor(...) -> int`
+
+Foreground/daemon monitoring until SIGINT/SIGTERM; optional PID file.
+
+### `PidFile`
+
+| Method | Description |
+|--------|-------------|
+| `acquire()` / `release()` | Write/remove PID |
+| `stop(path)` / `status(path)` | CLI `stop` / `status` |
+
+---
+
 ## pingui.monitor.worker
 
 ### `LightweightMonitorWorker(QThread)`
+
+Thin Qt wrapper over `MonitorLoop`; delegates host CRUD and enabled state.
 
 **Signals:**
 
