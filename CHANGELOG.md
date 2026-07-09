@@ -16,6 +16,7 @@
 ### Added
 
 - **Python IPv6 (PY-S4):** `config.py` — RFC 5952 IPv6 literals, mixed v4+v6 profiles; `icmp/process_tracer.py` — subprocess `traceroute -6`; `geoip/country.py` — `prefixes_v6` longest-prefix.
+- **Java GeoIP v6 (V6-S3):** `GeoCountry` — `prefixes_v6` longest-prefix, IPv6 LAN (loopback/link-local/ULA).
 - **Docs:** bilingual documentation — Ukrainian (`docs/`) and English (`docs/en/`); `README.en.md`, `java/README.en.md`, `ROADMAP.en.md`.
 - **IPv6 trace (V6-S2):** `TraceTarget`, `-6` у traceroute/tracert, парсери v6 + фікстури `unix_v6_*`/`win_v6_*`.
 - **IPv6 config (V6-S1):** `HostAddressParser` — RFC 5952 normalize, mixed IPv4/IPv6 profiles у YAML.

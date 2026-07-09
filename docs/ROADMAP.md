@@ -168,9 +168,9 @@
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **V6-035** | [ ] `GeoCountry`: `Inet6Address` — loopback/link-local/ULA → `LAN` | `GeoCountry.java` | `GeoCountryTest` |
-| **V6-036** | [ ] `GeoCountry`: longest-prefix для IPv6 CIDR | `GeoCountry.java`, `geoip_hints.yaml` | Test: `2001:db8::/32` |
-| **V6-037** | [ ] Схема YAML: optional `prefixes_v6` (або unified map) | `GeoCountry.java`, docs | Backward compat v4 hints |
+| **V6-035** | [x] `GeoCountry`: `Inet6Address` — loopback/link-local/ULA → `LAN` | `GeoCountry.java` | `GeoCountryTest` |
+| **V6-036** | [x] `GeoCountry`: longest-prefix для IPv6 CIDR | `GeoCountry.java`, `geoip_hints.yaml` | Test: `2001:db8::/32` |
+| **V6-037** | [x] Схема YAML: optional `prefixes_v6` (або unified map) | `GeoCountry.java`, docs | Backward compat v4 hints |
 
 ### 9.4 — Raw ICMP v6 (Linux only, P2)
 
@@ -683,5 +683,7 @@ flowchart LR
 **Roadmap Python (2026-07-09):** фаза PY — атомарні ticket-и PY-010…PY-064: launcher, docs, MonitorLoop, daemon, alerts, IPv6, CI/packaging (`beta` only).
 
 **PY-S4 (2026-07-09):** PY-050…PY-052 — Python IPv6 dual-stack (`config.py`, `process_tracer.py`, `prefixes_v6`); commit `6a33133` на `beta`.
+
+**IPv6-S3 (2026-07-09):** V6-035…V6-037 — `GeoCountry` IPv6 longest-prefix + `prefixes_v6` YAML.
 
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.
