@@ -7,6 +7,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- **Alerts ADR (P10-001):** `docs/ADR_ALERTS.md` — channels (webhook, desktop), `RouteChangeEvent` JSON, rate limit, failure policy.
+
 ## [0.2.0] - 2026-07-09
 
 ### Added
