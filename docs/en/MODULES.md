@@ -360,9 +360,13 @@ SQLite JDBC for the Java GUI (parity with Python `session_db.py`).
 
 Schema v3: `host_session` (Python v2 parity) + `persistence_event`. Dependency: `sqlite-jdbc`. Wire into `SessionStore` + `PersistenceEventWriter` (P11-011); CLI `--session-db` (P11-012).
 
+### `PersistencePolicy` / `PersistencePolicyHolder` (P11-013)
+
+`PersistencePolicy` — which events to write (`route_change`, `probe_error`; default on). `PersistencePolicyHolder` — `active` vs `pending`; `MonitorService` calls `applyPendingAfterCycle()` after each poll cycle.
+
 ### `PersistenceEventWriter`
 
-Writes discrete events to `persistence_event` (P11-011). `writeRouteChange`, `writeProbeError`; policy gate — P11-013.
+Writes discrete events to `persistence_event` (P11-011). `writeRouteChange`, `writeProbeError`; checks `PersistencePolicyHolder.active()` (P11-013); YAML/GUI — P11-014…015.
 
 ### `SessionStore` (persistence)
 

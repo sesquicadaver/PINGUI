@@ -395,7 +395,7 @@ flowchart TD
 | **P11-010** | [x] `SessionDatabase` — open/migrate/close | `persistence/SessionDatabase.java` | JDBC schema v3 (`host_session` + `persistence_event`) |
 | **P11-011** | [x] Запис `host_session` + `persistence_event` | `SessionStore`, `PersistenceEventWriter`, `MonitorService` | `SessionStorePersistenceTest`, `PersistenceEventWriterTest`, `MonitorServiceTest` |
 | **P11-012** | [x] CLI `--session-db PATH` | `PinguiApplication`, `java/README.md` | Optional; без PATH — RAM-only |
-| **P11-013** | [ ] `PersistencePolicy` + gate у writer | `persistence/PersistencePolicy.java` | Default events; poll-cycle swap |
+| **P11-013** | [x] `PersistencePolicy` + gate у writer | `PersistencePolicy`, `PersistencePolicyHolder`, `PersistenceEventWriter`, `MonitorService` | `PersistencePolicyTest`, `MonitorServiceTest.appliesPersistencePolicyAfterPollCycle` |
 | **P11-014** | [ ] GUI «База даних…» + confirm purge | `PersistenceSettingsDialog.java` | Чекбокси route_change / probe_error |
 | **P11-015** | [ ] YAML `persistence.events` + CLI override | `ProfilesConfig`, `CONFIGURATION.md` | Пріоритет як ADR_ALERTS |
 | **P11-020** | [ ] UI: панель «Історія» — список route change за 24h/7d | `RouteHistoryPresenter.java` | Manual smoke |
@@ -727,5 +727,7 @@ flowchart LR
 **Persistence policy SPIKE (2026-07-09):** P11-002 — event menu, YAML `persistence.events`, purge confirm, poll-cycle policy swap; PY-P11 for Python parity.
 
 **Java persistence wire (2026-07-09):** P11-011…P11-012 — `SessionStore`/`PersistenceEventWriter`/`MonitorService` + CLI `--session-db`.
+
+**Java PersistencePolicy (2026-07-09):** P11-013 — active/pending policy gate; poll-cycle swap in `MonitorService`.
 
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.

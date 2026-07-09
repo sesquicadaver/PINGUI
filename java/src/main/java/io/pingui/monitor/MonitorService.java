@@ -3,6 +3,8 @@ package io.pingui.monitor;
 import io.pingui.config.PingExpertEntry;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.persistence.PersistenceEventWriter;
+import io.pingui.persistence.PersistencePolicy;
+import io.pingui.persistence.PersistencePolicyHolder;
 import io.pingui.probe.ProbeMode;
 import io.pingui.probe.RouteProbe;
 import io.pingui.probe.RouteProbeFactory;
@@ -66,6 +68,7 @@ public final class MonitorService implements AutoCloseable {
     private volatile PingExpertResolver expertResolver;
     private volatile PingOnlyResolver pingOnlyResolver;
     private volatile PersistenceEventWriter persistenceEvents;
+    private final PersistencePolicyHolder persistencePolicy = new PersistencePolicyHolder();
 
     public MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds) {
         this(intervalSeconds, maxHops, timeoutSeconds, ProbeMode.AUTO);
@@ -119,6 +122,15 @@ public final class MonitorService implements AutoCloseable {
 
     public void setPersistenceEventWriter(PersistenceEventWriter persistenceEvents) {
         this.persistenceEvents = persistenceEvents;
+    }
+
+    public PersistencePolicyHolder persistencePolicy() {
+        return persistencePolicy;
+    }
+
+    /** Sets policy effective from the next completed poll cycle (SPIKE P11-002). */
+    public void setPendingPersistencePolicy(PersistencePolicy policy) {
+        persistencePolicy.setPending(policy);
     }
 
     public List<String> hosts() {
@@ -222,6 +234,7 @@ public final class MonitorService implements AutoCloseable {
                     .toList();
         }
         if (active.isEmpty()) {
+            persistencePolicy.applyPendingAfterCycle();
             return;
         }
         try {
@@ -235,6 +248,8 @@ public final class MonitorService implements AutoCloseable {
             CompletableFuture.allOf(probes.toArray(CompletableFuture[]::new)).join();
         } catch (RuntimeException ex) {
             // Keep scheduler alive if a probe task fails unexpectedly.
+        } finally {
+            persistencePolicy.applyPendingAfterCycle();
         }
     }
 

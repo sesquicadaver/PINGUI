@@ -37,7 +37,7 @@ final class MonitorLifecycle {
         service.setExpertResolver(store::getPingExpert);
         service.setPingOnlyResolver(store::isPingOnly);
         if (sessionDatabase != null) {
-            service.setPersistenceEventWriter(new PersistenceEventWriter(sessionDatabase));
+            service.setPersistenceEventWriter(new PersistenceEventWriter(sessionDatabase, service.persistencePolicy()));
         }
         service.setListener(listener);
         for (HostEntry entry : profile.hosts()) {

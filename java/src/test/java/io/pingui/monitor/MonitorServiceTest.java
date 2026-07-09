@@ -333,17 +333,9 @@ class MonitorServiceTest {
     void persistsRouteChangeAndProbeErrorEvents() throws Exception {
         Path dbPath = java.nio.file.Files.createTempDirectory("pingui-events").resolve("events.db");
         try (SessionDatabase database = new SessionDatabase(dbPath)) {
-            io.pingui.persistence.PersistenceEventWriter writer =
-                    new io.pingui.persistence.PersistenceEventWriter(database);
-            RouteSnapshot first =
-                    new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
-            RouteSnapshot second =
-                    new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "192.168.1.1", 6.0, false)));
-            AtomicInteger probeCalls = new AtomicInteger();
-            RouteProbe probe =
-                    (targetHost, maxHops, timeoutSeconds) -> probeCalls.getAndIncrement() == 0 ? first : second;
-            MonitorService service = new MonitorService(0.05, 20, 0.5, probe);
-            service.setPersistenceEventWriter(writer);
+            MonitorService service = new MonitorService(0.05, 20, 0.5, singleRouteChangeProbe());
+            service.setPersistenceEventWriter(
+                    new io.pingui.persistence.PersistenceEventWriter(database, service.persistencePolicy()));
             service.setListener(new MonitorService.Listener() {
                 @Override
                 public void onDataReceived(String host, RouteSnapshot snap) {}
@@ -364,10 +356,9 @@ class MonitorServiceTest {
         }
 
         try (SessionDatabase database = new SessionDatabase(dbPath)) {
-            io.pingui.persistence.PersistenceEventWriter writer =
-                    new io.pingui.persistence.PersistenceEventWriter(database);
             MonitorService service = new MonitorService(0.05, 20, 0.5, FailingRouteProbe.io("timeout"));
-            service.setPersistenceEventWriter(writer);
+            service.setPersistenceEventWriter(
+                    new io.pingui.persistence.PersistenceEventWriter(database, service.persistencePolicy()));
             service.setListener(new MonitorService.Listener() {
                 @Override
                 public void onDataReceived(String host, RouteSnapshot snap) {}
@@ -386,5 +377,57 @@ class MonitorServiceTest {
             assertEquals(1, database.countEvents(PersistenceEventType.PROBE_ERROR));
             service.close();
         }
+    }
+
+    @Test
+    void appliesPersistencePolicyAfterPollCycle() throws Exception {
+        Path dbPath = java.nio.file.Files.createTempDirectory("pingui-policy").resolve("policy.db");
+        try (SessionDatabase database = new SessionDatabase(dbPath)) {
+            MonitorService service = new MonitorService(0.05, 20, 0.5, alternatingRouteChangeProbe());
+            service.setPersistenceEventWriter(
+                    new io.pingui.persistence.PersistenceEventWriter(database, service.persistencePolicy()));
+            service.setPendingPersistencePolicy(io.pingui.persistence.PersistencePolicy.of(false, true));
+            service.setListener(new MonitorService.Listener() {
+                @Override
+                public void onDataReceived(String host, RouteSnapshot snap) {}
+
+                @Override
+                public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
+
+                @Override
+                public void onProbeError(String host, String message) {}
+            });
+            service.addHost("8.8.8.8", true);
+
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(6);
+            while (System.nanoTime() < deadline && database.countEvents(PersistenceEventType.ROUTE_CHANGE) == 0) {
+                Thread.sleep(50);
+            }
+            assertEquals(0, database.countEvents(PersistenceEventType.ROUTE_CHANGE));
+
+            service.setPendingPersistencePolicy(io.pingui.persistence.PersistencePolicy.defaults());
+            deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(8);
+            while (database.countEvents(PersistenceEventType.ROUTE_CHANGE) == 0 && System.nanoTime() < deadline) {
+                Thread.sleep(50);
+            }
+            assertEquals(1, database.countEvents(PersistenceEventType.ROUTE_CHANGE));
+            service.close();
+        }
+    }
+
+    private static RouteProbe singleRouteChangeProbe() {
+        RouteSnapshot first = new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
+        RouteSnapshot second =
+                new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "192.168.1.1", 6.0, false)));
+        AtomicInteger probeCalls = new AtomicInteger();
+        return (targetHost, maxHops, timeoutSeconds) -> probeCalls.getAndIncrement() == 0 ? first : second;
+    }
+
+    private static RouteProbe alternatingRouteChangeProbe() {
+        RouteSnapshot first = new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
+        RouteSnapshot second =
+                new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "192.168.1.1", 6.0, false)));
+        AtomicInteger probeCalls = new AtomicInteger();
+        return (targetHost, maxHops, timeoutSeconds) -> probeCalls.getAndIncrement() % 2 == 0 ? first : second;
     }
 }

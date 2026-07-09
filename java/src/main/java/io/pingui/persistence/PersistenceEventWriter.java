@@ -2,17 +2,28 @@ package io.pingui.persistence;
 
 import io.pingui.monitor.RouteChangeEvent;
 import java.time.Instant;
+import java.util.Objects;
 
-/** Writes discrete events to SQLite (P11-011); policy gate arrives in P11-013. */
+/** Writes discrete events to SQLite (P11-011); policy gate (P11-013). */
 public final class PersistenceEventWriter {
     private final SessionDatabase database;
+    private final PersistencePolicyHolder policyHolder;
 
     public PersistenceEventWriter(SessionDatabase database) {
-        this.database = database;
+        this(database, new PersistencePolicyHolder());
+    }
+
+    public PersistenceEventWriter(SessionDatabase database, PersistencePolicyHolder policyHolder) {
+        this.database = Objects.requireNonNull(database, "database");
+        this.policyHolder = policyHolder != null ? policyHolder : new PersistencePolicyHolder();
+    }
+
+    public PersistencePolicyHolder policyHolder() {
+        return policyHolder;
     }
 
     public void writeRouteChange(RouteChangeEvent event) {
-        if (database == null || event == null) {
+        if (event == null || !policyHolder.active().allows(PersistenceEventType.ROUTE_CHANGE)) {
             return;
         }
         ensureHostRow(event.host());
@@ -21,7 +32,7 @@ public final class PersistenceEventWriter {
     }
 
     public void writeProbeError(String host, String message) {
-        if (database == null || host == null || host.isBlank()) {
+        if (host == null || host.isBlank() || !policyHolder.active().allows(PersistenceEventType.PROBE_ERROR)) {
             return;
         }
         ensureHostRow(host);

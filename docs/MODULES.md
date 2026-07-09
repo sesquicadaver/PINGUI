@@ -360,9 +360,13 @@ SQLite JDBC для Java GUI (parity з Python `session_db.py`).
 
 Schema v3: `host_session` (Python v2 parity) + `persistence_event`. Залежність: `sqlite-jdbc`. Wire у `SessionStore` + `PersistenceEventWriter` (P11-011); CLI `--session-db` (P11-012).
 
+### `PersistencePolicy` / `PersistencePolicyHolder` (P11-013)
+
+`PersistencePolicy` — які події писати (`route_change`, `probe_error`; default on). `PersistencePolicyHolder` — `active` vs `pending`; `MonitorService` викликає `applyPendingAfterCycle()` після кожного poll-циклу.
+
 ### `PersistenceEventWriter`
 
-Запис дискретних подій у `persistence_event` (P11-011). `writeRouteChange`, `writeProbeError`; policy gate — P11-013.
+Запис дискретних подій у `persistence_event` (P11-011). `writeRouteChange`, `writeProbeError`; перевіряє `PersistencePolicyHolder.active()` (P11-013); YAML/GUI — P11-014…015.
 
 ### `SessionStore` (persistence)
 
