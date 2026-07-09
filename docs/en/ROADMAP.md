@@ -398,8 +398,8 @@ flowchart TD
 | **P11-013** | [x] `PersistencePolicy` + writer gate | `PersistencePolicy`, `PersistencePolicyHolder`, `PersistenceEventWriter`, `MonitorService` | `PersistencePolicyTest`, `MonitorServiceTest.appliesPersistencePolicyAfterPollCycle` |
 | **P11-014** | [x] GUI “Database…” + confirm purge | `PersistenceSettingsDialog`, `MainController` | Manual smoke; purge via `SessionDatabase.deleteEventsByType` |
 | **P11-015** | [x] YAML `persistence.events` + CLI override | `PersistenceEventsConfig`, `CliPersistenceOverrides`, `ProfilesConfig` | `ProfilesConfigTest.loadPersistenceEventsSection`, `PinguiApplicationTest.parseOptions_noPersistRouteChange` |
-| **P11-020** | [ ] UI: «History» panel — route changes 24h/7d | `RouteHistoryPresenter.java` | Manual smoke |
-| **P11-021** | [ ] UI: replay snapshot on graph (read-only) | `RouteGraphPresenter` | Select event → graph |
+| **P11-020** | [x] UI: «History» panel — route changes 24h/7d | `RouteHistoryPresenter`, `SessionDatabase.listEvents` | `SessionDatabaseTest.listRouteChangeEventsFiltersByHostAndTime` |
+| **P11-021** | [x] UI: replay snapshot on graph (read-only) | `RouteGraphPresenter`, `RouteHistoryPresenter` | Event selection → graph; `RouteHistoryPresenterTest` |
 | **P11-030** | [ ] Export CSV/HTML from DB (like Python `session_report`) | `export/SessionReportExporter.java` | CLI `--export-report` |
 | **P11-040** | [ ] Java parity: jitter/loss labels from history | `HopStats`, `GraphCanvas` | Parity with J-06 / B-06 |
 | **P11-050** | [ ] LIVING_SPEC + DEPLOYMENT (disk, retention) | `docs/LIVING_SPEC.md`, `docs/DEPLOYMENT.md` | Retention policy documented |
@@ -731,5 +731,7 @@ Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 **Java PersistencePolicy (2026-07-09):** P11-013 — active/pending policy gate; poll-cycle swap in `MonitorService`.
 
 **Java persistence GUI + YAML (2026-07-09):** P11-014…P11-015 — “Database…” dialog, purge confirm, `persistence.events` YAML, CLI `--no-persist-*`.
+
+**Java route history UI (2026-07-09):** P11-020…P11-021 — timeline list 24h/7d + read-only graph replay from `persistence_event`.
 
 Update this file when closing a task: `[x] M-001` + date in CHANGELOG.

@@ -364,7 +364,9 @@ Schema v3: `host_session` (Python v2 parity) + `persistence_event`. Залежн
 
 YAML `persistence.events` + CLI `--no-persist-route-change` / `--no-persist-probe-error`. Пріоритет: CLI > YAML > GUI session > default.
 
-### `PersistenceSettingsDialog` (P11-014)
+### `RouteHistoryPresenter` (P11-020…021)
+
+Панель «Історія змін» у розширеному режимі: `listEvents(ROUTE_CHANGE, host, since)`; перемикач 24h/7d; вибір рядка → read-only replay на `GraphCanvas`.
 
 Меню **Налаштування → База даних…** — чекбокси подій, confirm purge при вимкненні (`PersistencePolicySupport`).
 

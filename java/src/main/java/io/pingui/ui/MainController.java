@@ -63,6 +63,11 @@ public final class MainController {
     private final TextField hostInput = new TextField();
     private final TextArea logArea = new TextArea();
     private final GraphCanvas graphCanvas = new GraphCanvas();
+    private final ListView<RouteHistoryItem> historyList = new ListView<>();
+    private final RadioButton historyRange24h = new RadioButton("24 год");
+    private final RadioButton historyRange7d = new RadioButton("7 днів");
+    private final Label historyLabel = new Label("Історія змін");
+    private final HBox historyRangeBar = new HBox(8);
     private final Label statusLabel = new Label("Очікування даних…");
     private final VBox graphPanel = new VBox(8);
     private final VBox leftPanel = new VBox(8);
@@ -81,6 +86,7 @@ public final class MainController {
     private HostListPresenter hostListPresenter;
     private ViewModeController viewModeController;
     private RouteGraphPresenter routeGraphPresenter;
+    private RouteHistoryPresenter routeHistoryPresenter;
 
     public MainController(AppOptions options, ProfileDocument document) {
         this.options = options;
@@ -158,9 +164,10 @@ public final class MainController {
         });
 
         graphPanel.getChildren().addAll(new Label("Граф маршруту"), graphCanvas);
+        configureHistoryPanel();
         VBox.setVgrow(graphCanvas, Priority.ALWAYS);
         graphPanel.setPadding(new Insets(8));
-        graphCanvas.setMinSize(400, 400);
+        graphCanvas.setMinSize(400, 280);
 
         root.setLeft(leftPanel);
         root.setTop(createMenuBar());
@@ -225,12 +232,52 @@ public final class MainController {
                 root,
                 logArea,
                 statusLabel,
-                () -> routeGraphPresenter.redrawIfExtended(),
+                () -> {
+                    routeGraphPresenter.redrawIfExtended();
+                    refreshRouteHistory();
+                },
                 this::showEasterEggCanvas,
                 () -> easterEggActive);
 
         routeGraphPresenter = new RouteGraphPresenter(
                 graphCanvas, hostList, () -> store, () -> viewModeController.isExtended(), () -> easterEggActive);
+
+        routeHistoryPresenter = new RouteHistoryPresenter(
+                () -> store,
+                hostList,
+                historyList,
+                historyRange24h,
+                historyRange7d,
+                () -> viewModeController.isExtended(),
+                routeGraphPresenter::replayRouteChange,
+                routeGraphPresenter::clearReplay);
+        routeHistoryPresenter.configure();
+    }
+
+    private void configureHistoryPanel() {
+        updateHistoryPanelVisibility();
+        historyList.setPrefHeight(120);
+        Button refreshHistory = new Button("Оновити");
+        refreshHistory.setOnAction(e -> refreshRouteHistory());
+        historyRangeBar.getChildren().addAll(historyRange24h, historyRange7d, refreshHistory);
+        graphPanel.getChildren().addAll(historyLabel, historyRangeBar, historyList);
+    }
+
+    private void refreshRouteHistory() {
+        if (routeHistoryPresenter != null) {
+            routeHistoryPresenter.refresh();
+        }
+    }
+
+    private void updateHistoryPanelVisibility() {
+        boolean persistence = store.hasPersistence();
+        historyLabel.setVisible(persistence);
+        historyLabel.setManaged(persistence);
+        historyRangeBar.setVisible(persistence);
+        historyRangeBar.setManaged(persistence);
+        historyList.setVisible(persistence);
+        historyList.setManaged(persistence);
+        refreshRouteHistory();
     }
 
     private MenuBar createMenuBar() {
@@ -337,6 +384,7 @@ public final class MainController {
         store.close();
         store = SessionStore.fromEntries(sessionHosts, openSessionDatabase());
         monitor = createMonitor(profile);
+        updateHistoryPanelVisibility();
         hostListPresenter.rebuild(sessionHosts);
         hostList.getSelectionModel().clearSelection();
         if (!hostItems.isEmpty()) {
@@ -383,8 +431,11 @@ public final class MainController {
         appendLog("⚠ ЗМІНА МАРШРУТУ до " + host + "\nБуло: " + oldStr + "\nСтало: " + String.join(" -> ", newIps));
         HostItem selected = hostList.getSelectionModel().getSelectedItem();
         if (selected != null && host.equals(selected.getHost()) && !easterEggActive) {
+            routeGraphPresenter.clearReplay();
+            routeHistoryPresenter.clearSelection();
             routeGraphPresenter.redrawIfExtended();
         }
+        refreshRouteHistory();
     }
 
     private void startEasterEgg() {

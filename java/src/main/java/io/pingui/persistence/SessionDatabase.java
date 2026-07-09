@@ -12,6 +12,8 @@ import java.sql.Statement;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -215,6 +217,50 @@ public final class SessionDatabase implements AutoCloseable {
             }
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to count events: " + eventType.id(), ex);
+        }
+    }
+
+    /**
+     * Lists discrete events for {@code host} since {@code since} (P11-020). Newest first.
+     *
+     * @param limit max rows (must be &gt;= 1)
+     */
+    public synchronized List<PersistenceEventRecord> listEvents(
+            PersistenceEventType eventType, String host, Instant since, int limit) {
+        Objects.requireNonNull(eventType, "eventType");
+        Objects.requireNonNull(host, "host");
+        Objects.requireNonNull(since, "since");
+        if (limit < 1) {
+            throw new IllegalArgumentException("limit must be >= 1");
+        }
+        String sinceIso = ISO_UTC.format(since);
+        try (PreparedStatement ps = connection.prepareStatement(
+                """
+                SELECT id, event_type, host, profile, payload_json, observed_at
+                FROM persistence_event
+                WHERE event_type = ? AND host = ? AND observed_at >= ?
+                ORDER BY observed_at DESC
+                LIMIT ?
+                """)) {
+            ps.setString(1, eventType.id());
+            ps.setString(2, host);
+            ps.setString(3, sinceIso);
+            ps.setInt(4, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                List<PersistenceEventRecord> rows = new ArrayList<>();
+                while (rs.next()) {
+                    rows.add(new PersistenceEventRecord(
+                            rs.getLong(1),
+                            PersistenceEventType.fromId(rs.getString(2)),
+                            rs.getString(3),
+                            rs.getString(4),
+                            rs.getString(5),
+                            Instant.parse(rs.getString(6))));
+                }
+                return List.copyOf(rows);
+            }
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to list events for " + host, ex);
         }
     }
 

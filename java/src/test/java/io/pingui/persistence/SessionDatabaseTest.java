@@ -90,6 +90,35 @@ class SessionDatabaseTest {
     }
 
     @Test
+    void listRouteChangeEventsFiltersByHostAndTime() {
+        Path dbPath = tempDir.resolve("list.db");
+        try (SessionDatabase db = new SessionDatabase(dbPath)) {
+            HostSessionData data = new HostSessionData();
+            data.setEnabled(true);
+            db.save("8.8.8.8", data);
+            db.save("1.1.1.1", data);
+
+            Instant recent = Instant.parse("2026-07-09T10:00:00Z");
+            Instant old = Instant.parse("2026-07-08T10:00:00Z");
+            RouteChangeEvent recentEvent = RouteChangeEvent.fromRouteChange(
+                    "8.8.8.8", List.of("10.0.0.1"), List.of("192.168.1.1"), "default", recent);
+            RouteChangeEvent oldEvent =
+                    RouteChangeEvent.fromRouteChange("8.8.8.8", List.of("1.0.0.1"), List.of("2.0.0.1"), "default", old);
+            RouteChangeEvent otherHost = RouteChangeEvent.fromRouteChange(
+                    "1.1.1.1", List.of("9.9.9.9"), List.of("8.8.8.8"), "default", recent);
+            db.insertEvent(PersistenceEventType.ROUTE_CHANGE, "8.8.8.8", "default", recentEvent.toJson(), recent);
+            db.insertEvent(PersistenceEventType.ROUTE_CHANGE, "8.8.8.8", "default", oldEvent.toJson(), old);
+            db.insertEvent(PersistenceEventType.ROUTE_CHANGE, "1.1.1.1", "default", otherHost.toJson(), recent);
+
+            Instant since = Instant.parse("2026-07-09T00:00:00Z");
+            List<PersistenceEventRecord> rows = db.listEvents(PersistenceEventType.ROUTE_CHANGE, "8.8.8.8", since, 10);
+            assertEquals(1, rows.size());
+            assertEquals(recent, rows.get(0).observedAt());
+            assertEquals(recentEvent.toJson(), rows.get(0).payloadJson());
+        }
+    }
+
+    @Test
     void codecMatchesPythonShape() {
         HopNode hop = new HopNode(1, "10.0.0.1", 5.0, false);
         String json = SessionJsonCodec.routeToJson(List.of(hop));
