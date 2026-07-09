@@ -3,6 +3,7 @@
 # SPIKE: SQLite session persistence (P11-001)
 
 **Date:** 2026-07-09  
+**Updated:** 2026-07-09 (event policy, menu, YAML)  
 **Status:** **accepted** — implementation in [ROADMAP.md](ROADMAP.md) **Phase 11 (P11-*)**  
 **Branches:** `beta` (Java + Python reference), `main` (Java GUI)
 
@@ -15,8 +16,9 @@ What SQLite schema and API does Java need to:
 1. Persist session metrics across GUI restarts (parity with Python `--session-db`)
 2. Support a future route-change timeline (P11-020) and telemetry (P16-020)
 3. Keep RAM-only mode when `--session-db` is omitted
+4. Let the operator **choose** which discrete events are written to the DB and **safely change** that set without restart
 
-**Answer:** v1 mirrors Python `host_session`; v2 adds append-only `route_change_event`; v3 extends for telemetry samples (P16, separate).
+**Answer:** v1 — `host_session`; v2 — unified `persistence_event` + `PersistencePolicy`; v3 — telemetry samples (P16). Event policy — shared YAML (docs), Java first, Python in PY-P11.
 
 ---
 
@@ -27,14 +29,99 @@ What SQLite schema and API does Java need to:
 | In-memory | `SessionStore` | `SessionStore` |
 | SQLite | `persistence/session_db.py` (`SCHEMA_VERSION = 2`) | **none** |
 | CLI | `--session-db PATH` | **none** |
-| Route change in SQLite | **none** (timeseries backends only) | **none** |
+| Route change / probe_error in SQLite | **none** (timeseries only) | **none** |
+| Event selection menu | **none** | **none** |
 | Export CSV/HTML | `export/session_report.py` | **none** |
 
 Python `SessionStore._write_route_event` writes only to **timeseries**, not `session_db`.
 
 ---
 
-## Python reference — schema v2
+## Event taxonomy
+
+| ID | Event | Source | Default with `--session-db` | Menu |
+|----|-------|--------|----------------------------|------|
+| `session_state` | `host_session` snapshot | `SessionStore.save` | **on** | hidden (always) |
+| `route_change` | Hop IP change | `onRouteChanged` | **on** | checkbox |
+| `probe_error` | Trace/ping failure | `onProbeError` | **on** | checkbox |
+| `route_snapshot` | Every successful poll | `onDataReceived` | off | **not in P11 v1** (volume) |
+| `ping_sample` | RTT per hop | `appendPingSamples` | off | **P16** / timeseries |
+
+**Default on first `--session-db` enable:** `session_state` + `route_change` + `probe_error`.
+
+P10 alerts (webhook/desktop) are **independent** of persistence policy — disabling `route_change` in the DB does not disable alerts.
+
+---
+
+## Configuration (shared YAML)
+
+Schema is fixed in docs **before** implementation; Java — P11-010+; Python — **PY-P11** ticket (same YAML).
+
+```yaml
+persistence:
+  session_db: data/ping.db   # optional; complements CLI --session-db
+  events:
+    route_change: true       # default: true
+    probe_error: true        # default: true
+```
+
+**Priority** (same pattern as [ADR_ALERTS.md](ADR_ALERTS.md) §6):
+
+1. CLI flags (highest)
+2. Active profile YAML (`persistence.events`)
+3. GUI “Database…” — session override
+4. Default: `route_change` + `probe_error` on; `session_state` implicit
+
+Until PY-P11: Python may ignore unknown `persistence:` block (forward-compat).
+
+---
+
+## “Database…” menu (Java GUI, P11-014)
+
+Location: **Settings → Database…** (or adjacent to Alerts).
+
+| UI element | Behaviour |
+|------------|-----------|
+| File path | read-only if set via CLI; else file picker / hint |
+| ☑ Route changes | `persistence.events.route_change` |
+| ☑ Probe errors | `persistence.events.probe_error` |
+| Session state | not shown (always on with `--session-db`) |
+| Apply | Sets `pendingPolicy`; active from **next poll cycle** |
+
+---
+
+## Policy change rules
+
+### Enabling an event type
+
+- From the **next poll cycle**, `MonitorService` starts writing that type.
+- Existing rows are unchanged.
+
+### Disabling an event type
+
+1. User clears checkbox → confirm policy apply.
+2. **Always** show purge dialog (for any type):
+
+   > “Delete all stored events of type *X* from the database?”  
+   > **[Keep history]** — stop write from next cycle only  
+   > **[Delete]** — `DELETE FROM persistence_event WHERE event_type = ?` immediately after confirm
+
+3. `pendingPolicy` (stop write) takes effect after the **current** poll cycle completes.
+4. Purge SQL runs **immediately** after confirm (does not wait for cycle).
+
+### `MonitorService` implementation
+
+```
+activePolicy  — used when writing events
+pendingPolicy — set from UI/YAML/CLI
+after cycle(): activePolicy = pendingPolicy
+```
+
+`session_state` (`host_session` upsert) does not go through event-type `PersistencePolicy` gate.
+
+---
+
+## Python reference — schema v2 (`host_session`)
 
 Tables (`session_db.py`):
 
@@ -55,19 +142,7 @@ CREATE TABLE host_session (
 );
 ```
 
-**JSON columns** (parity contract):
-
-| Column | Content |
-|--------|---------|
-| `current_route_json` | `HopNode[]` |
-| `previous_route_json` | `HopNode[]` |
-| `last_known_json` | `map<hop, HopNode>` |
-| `ping_history_json` | `map<ip, float[]>` (trim 50) |
-| `hop_stats_json` | `map<hop, {probes, successes, rtt_samples}>` |
-
 API: `load(host)`, `save(host, data)`, `delete(host)`, `rename(old, new)`, `close()`.
-
-Migrations: manual (`ALTER TABLE` v1→v2 for `hop_stats_json`).
 
 ---
 
@@ -75,58 +150,73 @@ Migrations: manual (`ALTER TABLE` v1→v2 for `hop_stats_json`).
 
 ### v1 — parity (P11-010…P11-012)
 
-**Identical** to Python `host_session` + `schema_meta`. JSON serialization uses the same hop object contract (`HopNode` in Java).
+**Identical** to Python `host_session` + `schema_meta`.
 
 Package: `io.pingui.persistence.SessionDatabase`  
-Dependency: `org.xerial:sqlite-jdbc` (Maven Central, JDBC URL `jdbc:sqlite:path`).
-
-Wire from `SessionStore` (optional delegate), same as Python:
+Dependency: `org.xerial:sqlite-jdbc`
 
 ```
-MonitorService → SessionStore → [SessionDatabase?]
+MonitorService → SessionStore → host_session (session_state)
+MonitorService → PersistenceWriter → persistence_event (policy gate)
 ```
 
-Without `PATH` — current RAM-only behaviour.
+Without `--session-db` / without `session_db` in YAML — RAM-only.
 
-### v2 — timeline events (P11-011, P11-020)
+### v2 — discrete events (P11-011, P11-013…P11-015)
 
-Append-only table for the History UI (not a duplicate of P16 timeseries):
+Unified append-only table (instead of `route_change_event` only):
 
 ```sql
-CREATE TABLE route_change_event (
+CREATE TABLE persistence_event (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_type TEXT NOT NULL,   -- route_change | probe_error
     host TEXT NOT NULL,
-    profile TEXT NOT NULL DEFAULT 'default',
-    old_ips_json TEXT NOT NULL,
-    new_ips_json TEXT NOT NULL,
+    profile TEXT,
+    payload_json TEXT NOT NULL,
     observed_at TEXT NOT NULL,
     FOREIGN KEY (host) REFERENCES host_session(host) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_route_change_host_time ON route_change_event(host, observed_at);
+CREATE INDEX idx_pe_host_type_time ON persistence_event(host, event_type, observed_at);
 ```
 
-Write from `MonitorService` after `onRouteChanged` (alongside P10 alerts).  
-Payload aligned with `RouteChangeEvent` (P10); v2 stores IP lists only, not full hop snapshots.
+**Payload:**
 
-### v3 — telemetry samples (P16-020, out of scope P11-001)
+| `event_type` | JSON |
+|--------------|------|
+| `route_change` | [RouteChangeEvent](ADR_ALERTS.md) contract (P10) |
+| `probe_error` | `{"message":"…","host":"…"}` |
 
-Separate migration: `telemetry_sample`, `telemetry_event` — see [ROADMAP.md](ROADMAP.md) phase 16. Does not block P11 v1.
+Write after `onRouteChanged` / `onProbeError` if `activePolicy.allows(type)`.
+
+### v3 — telemetry (P16-020)
+
+Separate migration; does not block P11.
 
 ---
 
 ## Diagram (P11 target)
 
 ```mermaid
-flowchart LR
+flowchart TB
   MS[MonitorService]
+  PP[PersistencePolicy]
+  PW[PersistenceWriter]
   SS[SessionStore]
   SD[SessionDatabase]
   DB[(SQLite)]
+  UI[GUI Database menu]
+  YAML[persistence.events]
+  MS --> PP
+  UI -->|pendingPolicy| PP
+  YAML --> PP
   MS --> SS
-  SS -->|save/load host_session| SD
+  SS -->|session_state| SD
+  MS --> PW
+  PW -->|if allowed| SD
   SD --> DB
-  MS -->|route_change v2| SD
+  SD -->|host_session| DB
+  SD -->|persistence_event| DB
 ```
 
 ---
@@ -135,13 +225,14 @@ flowchart LR
 
 | Topic | Decision |
 |-------|----------|
-| ORM | **No** — JDBC + prepared statements (like Python `sqlite3`) |
-| Migrations v1 | Manual `schema_meta.version` (Python parity); Flyway optional P2 |
-| Transactions | `save` per host autocommit; batch flush P2 |
-| Retention | P11-050: document; purge events > N days P2 |
-| DB path | CLI `--session-db`; default off |
-| Layer | `persistence` — no `ui` imports; `monitor` imports `persistence` |
-| Dual-stack IPs in JSON | RFC 5952 strings as in RAM (`HopNode.ip`) |
+| ORM | **No** — JDBC + prepared statements |
+| Migrations | Manual `schema_meta.version`; v2 adds `persistence_event` |
+| Default events | `session_state` + `route_change` + `probe_error` |
+| Purge on disable | **Always** confirm; optional DELETE |
+| Policy change | **Next poll cycle**; purge — immediate |
+| Python parity | **Shared YAML in docs**; Java P11-010+; Python **PY-P11** |
+| Layer | `persistence` without `ui`; `PersistencePolicy` in config or persistence |
+| P10 alerts | Independent of persistence policy |
 
 ---
 
@@ -149,32 +240,41 @@ flowchart LR
 
 | SPIKE | ID |
 |-------|-----|
+| SPIKE amend (this doc) | P11-001 ✅, policy — **P11-002** |
+| `PersistencePolicy` + gate | P11-013 |
+| GUI “Database…” + purge rules | P11-014 |
+| YAML `persistence.events` + CLI | P11-015 |
 | Schema v1 + `SessionDatabase` | P11-010 |
-| Wire save + route_change insert | P11-011 |
+| Wire save + event insert | P11-011 |
 | CLI `--session-db` | P11-012 |
-| UI timeline query v2 | P11-020, P11-021 |
-| Export | P11-030 |
-| hop_stats parity labels | P11-040 |
-| Docs retention | P11-050 |
-| Telemetry tables | P16-020 (not P11) |
-
-**Estimate:** v1 parity — 1 sprint; v2 timeline UI — +1 sprint.
+| UI timeline | P11-020, P11-021 |
+| Python event write parity | **PY-P11** |
+| Telemetry tables | P16-020 |
 
 ---
 
-## P11-001 DoD
+## DoD
+
+### P11-001 (schema)
 
 - [x] UK + EN document
-- [x] v1 parity schema documented
-- [x] v2 `route_change_event` proposed for timeline
-- [x] Boundaries with P10 (`RouteChangeEvent`) and P16 (telemetry) fixed
-- [x] ROADMAP link `[x]`
+- [x] v1 Python parity schema
+- [x] v2 events for timeline
+- [x] P10 / P16 boundaries
+
+### P11-002 (event policy, SPIKE amend)
+
+- [x] Event taxonomy + defaults
+- [x] YAML schema + config priority
+- [x] Purge rules (always confirm) + poll-cycle
+- [x] GUI menu scope → P11-014
+- [x] Python parity path (PY-P11)
 
 ---
 
 ## References
 
 - Python: `src/pingui/persistence/session_db.py`, `tests/unit/test_session_db.py`
-- Java: `io.pingui.monitor.SessionStore`, `io.pingui.model.Models.HostSessionData`
+- Java: `io.pingui.monitor.SessionStore`, `io.pingui.monitor.MonitorService`
 - [ROADMAP.md](ROADMAP.md) — Phase 11  
-- [ADR_ALERTS.md](ADR_ALERTS.md) — `RouteChangeEvent` JSON (P10)
+- [ADR_ALERTS.md](ADR_ALERTS.md) — `RouteChangeEvent` (P10)

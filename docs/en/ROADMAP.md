@@ -318,6 +318,14 @@ flowchart TD
 
 **Estimate:** 2–3 sprint after V6-015. **Out of scope v1:** raw ICMPv6 (see V6-040…V6-045).
 
+### PY.4b — Persistence events Python (P1) — parity with P11-002
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **PY-P11** | [ ] YAML `persistence.events` + SQLite writes | `config.py`, `session_db.py`, `session_store.py` | Shared YAML with SPIKE; `route_change` + `probe_error` in `persistence_event` |
+
+**Estimate:** 1 sprint after Java P11-013. **Does not block** Java P11-010.
+
 ### PY.5 — Packaging and CI hygiene (P1–P2)
 
 | ID | Task | Files | DoD |
@@ -383,9 +391,13 @@ flowchart TD
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
 | **P11-001** | [x] SPIKE: SQLite schema for Java (routes, events, samples) | `docs/SPIKE_PERSISTENCE.md` | Parity with Python `session_db.py` |
+| **P11-002** | [x] SPIKE amend: event policy, menu, YAML, purge rules | `docs/SPIKE_PERSISTENCE.md` | Defaults: state+route_change+probe_error; poll-cycle |
 | **P11-010** | [ ] `SessionDatabase` — open/migrate/close | `persistence/SessionDatabase.java` | Flyway or manual schema v1 |
-| **P11-011** | [ ] Persist route snapshot + route_change event | `MonitorService`, `SessionDatabase` | Unit test insert/query |
+| **P11-011** | [ ] Write `host_session` + `persistence_event` | `MonitorService`, `SessionDatabase` | Unit test insert/query |
 | **P11-012** | [ ] CLI `--session-db PATH` | `PinguiApplication`, `java/README.md` | Optional; without PATH — RAM-only |
+| **P11-013** | [ ] `PersistencePolicy` + writer gate | `persistence/PersistencePolicy.java` | Default events; poll-cycle swap |
+| **P11-014** | [ ] GUI “Database…” + confirm purge | `PersistenceSettingsDialog.java` | Checkboxes route_change / probe_error |
+| **P11-015** | [ ] YAML `persistence.events` + CLI override | `ProfilesConfig`, `CONFIGURATION.md` | Priority like ADR_ALERTS |
 | **P11-020** | [ ] UI: «History» panel — route changes 24h/7d | `RouteHistoryPresenter.java` | Manual smoke |
 | **P11-021** | [ ] UI: replay snapshot on graph (read-only) | `RouteGraphPresenter` | Select event → graph |
 | **P11-030** | [ ] Export CSV/HTML from DB (like Python `session_report`) | `export/SessionReportExporter.java` | CLI `--export-report` |
@@ -710,6 +722,8 @@ Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 
 **Java alerts pipeline (2026-07-09):** P10-020…P10-050 — webhook, desktop, YAML/CLI config, rate limit, tests + CHECKLIST.
 
-**Persistence SPIKE (2026-07-09):** P11-001 — `SPIKE_PERSISTENCE.md` (schema v1 Python parity, v2 route_change_event for timeline).
+**Persistence SPIKE (2026-07-09):** P11-001 — `SPIKE_PERSISTENCE.md` (schema v1 Python parity, v2 `persistence_event`).
+
+**Persistence policy SPIKE (2026-07-09):** P11-002 — event menu, YAML `persistence.events`, purge confirm, poll-cycle policy swap; PY-P11 for Python parity.
 
 Update this file when closing a task: `[x] M-001` + date in CHANGELOG.
