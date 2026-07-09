@@ -368,7 +368,11 @@ YAML `persistence.events` + CLI `--no-persist-route-change` / `--no-persist-prob
 
 Панель «Історія змін» у розширеному режимі: `listEvents(ROUTE_CHANGE, host, since)`; перемикач 24h/7d; вибір рядка → read-only replay на `GraphCanvas`.
 
+### `PersistenceSettingsDialog` (P11-014)
+
 Меню **Налаштування → База даних…** — чекбокси подій, confirm purge при вимкненні (`PersistencePolicySupport`).
+
+### `PersistencePolicy` / `PersistencePolicyHolder` (P11-013)
 
 `PersistencePolicy` — які події писати (`route_change`, `probe_error`; default on). `PersistencePolicyHolder` — `active` vs `pending`; `MonitorService` викликає `applyPendingAfterCycle()` після кожного poll-циклу.
 

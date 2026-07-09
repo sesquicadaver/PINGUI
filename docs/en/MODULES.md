@@ -368,9 +368,11 @@ YAML `persistence.events` + CLI `--no-persist-route-change` / `--no-persist-prob
 
 “History” panel in extended mode: `listEvents(ROUTE_CHANGE, host, since)`; 24h/7d toggle; row selection → read-only replay on `GraphCanvas`.
 
+### `PersistenceSettingsDialog` (P11-014)
+
 Menu **Settings → Database…** — event checkboxes, purge confirm on disable (`PersistencePolicySupport`).
 
-`PersistencePolicy` — which events to write (`route_change`, `probe_error`; default on). `PersistencePolicyHolder` — `active` vs `pending`; `MonitorService` calls `applyPendingAfterCycle()` after each poll cycle.
+### `PersistencePolicy` / `PersistencePolicyHolder` (P11-013)
 
 ### `PersistenceEventWriter`
 
