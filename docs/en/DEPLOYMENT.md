@@ -71,11 +71,33 @@ cd java
 
 ## Raw ICMP (Linux, optional)
 
-By default `traceroute`/`tracert` is used. Raw ICMP (`probe: auto|raw`):
+By default `traceroute`/`tracert` is used. Raw ICMP (`probe: auto|raw`) on **Linux** opens a raw `AF_INET` (ICMPv4) socket — requires:
 
 ```bash
 sudo setcap cap_net_raw+ep "$(readlink -f "$(which java)")"
 ```
+
+Restart PINGUI after `setcap`. The same capability is required for Python raw ICMP (scapy); it applies to the process opening the raw socket, not the venv itself.
+
+### IPv6 and `cap_net_raw` (dual-stack, `beta`)
+
+| Trace/ping path | Target | `cap_net_raw`? | Notes |
+|-----------------|--------|----------------|-------|
+| `probe: auto` / `raw` | IPv4 literal, hostname (A) | **Yes** (raw) | Without cap → fallback to `traceroute` |
+| `probe: auto` | IPv6 literal | **No** | Always subprocess `traceroute -6` (Java and Python) |
+| Expert ping `-6` | IPv6 literal / `-6` | **No** | iputils `ping`, not a raw socket |
+| Raw ICMPv6 (future, V6-040+) | IPv6 literal | **Yes** | Not implemented in `beta`; see [ROADMAP.md](ROADMAP.md) |
+
+**Current behaviour:** even with `cap_net_raw` on the JDK, **IPv6 literals never use raw ICMP** — only process trace. The capability affects v4/hostname in `auto|raw` mode.
+
+**Verify cap (Linux):**
+
+```bash
+getcap "$(readlink -f "$(which java)")"
+# expected: cap_net_raw=ep
+```
+
+If raw v4 cannot open, PINGUI logs a socket error and (`probe: auto`) falls back to `traceroute`.
 
 ## Configuration
 
@@ -124,6 +146,8 @@ systemd example: `systemd/pingui.service.example` (Type=simple, `ExecStart=... d
 | “No hops parsed” | Install `traceroute`; on macOS — `/usr/sbin/traceroute` |
 | JavaFX runtime missing | `./gradlew run` or jpackage installer |
 | Expert ping without RTT | Linux + `iputils-ping` |
+| IPv6 trace “no hops” | `traceroute -6` on PATH; raw cap **not** required for v6 literal |
+| Raw ICMP v4 “permission denied” | `setcap cap_net_raw+ep` on JDK binary (see § Raw ICMP) |
 
 ## Development
 

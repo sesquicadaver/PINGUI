@@ -19,6 +19,7 @@
 - **Java GeoIP v6 (V6-S3):** `GeoCountry` — `prefixes_v6` longest-prefix, IPv6 LAN (loopback/link-local/ULA).
 - **Java dual-stack UI (V6-S4):** Help/About text, IPv6 bracket hop labels (`HopDisplay`), host input prompts.
 - **Expert ping UI (V6-053):** `-F` flow label disabled with tooltip unless IPv6 literal or `-6` selected.
+- **Deployment docs (V6-045):** `cap_net_raw` matrix — v4 raw vs IPv6 subprocess trace; future raw ICMPv6 note.
 - **IPv6 beta (phase 9, `beta` branch):** Java dual-stack YAML + subprocess trace v6 + GeoIP `prefixes_v6`; Python edition parity (PY-S4). Semver: next Java release **0.2.0** when merged to `main`.
 - **Docs:** bilingual documentation — Ukrainian (`docs/`) and English (`docs/en/`); `README.en.md`, `java/README.en.md`, `ROADMAP.en.md`.
 - **IPv6 trace (V6-S2):** `TraceTarget`, `-6` у traceroute/tracert, парсери v6 + фікстури `unix_v6_*`/`win_v6_*`.

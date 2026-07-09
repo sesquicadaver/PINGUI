@@ -71,11 +71,33 @@ cd java
 
 ## Raw ICMP (Linux, опційно)
 
-За замовч. використовується `traceroute`/`tracert`. Raw ICMP (`probe: auto|raw`):
+За замовч. використовується `traceroute`/`tracert`. Raw ICMP (`probe: auto|raw`) на **Linux** відкриває сирцевий сокет `AF_INET` (ICMPv4) — потрібні права:
 
 ```bash
 sudo setcap cap_net_raw+ep "$(readlink -f "$(which java)")"
 ```
+
+Після `setcap` перезапустіть PINGUI. Той самий capability потрібен для Python raw ICMP (scapy) на JDK/venv не стосується — лише для процесу, що відкриває raw socket.
+
+### IPv6 і `cap_net_raw` (dual-stack, `beta`)
+
+| Шлях trace/ping | Ціль | `cap_net_raw`? | Примітка |
+|-----------------|------|----------------|----------|
+| `probe: auto` / `raw` | IPv4 literal, hostname (A) | **Так** (raw) | Без cap → fallback на `traceroute` |
+| `probe: auto` | IPv6 literal | **Ні** | Завжди subprocess `traceroute -6` (Java і Python) |
+| Expert ping `-6` | IPv6 literal / `-6` | **Ні** | iputils `ping`, не raw socket |
+| Raw ICMPv6 (майбутнє, V6-040+) | IPv6 literal | **Так** | Не реалізовано в `beta`; див. [ROADMAP.md](ROADMAP.md) |
+
+**Поточна поведінка:** навіть із `cap_net_raw` на JDK, **IPv6 literal ніколи не йде через raw ICMP** — лише процесний trace. Capability впливає на v4/hostname у режимі `auto|raw`.
+
+**Перевірка cap (Linux):**
+
+```bash
+getcap "$(readlink -f "$(which java)")"
+# очікується: cap_net_raw=ep
+```
+
+Якщо raw v4 не відкривається, PINGUI логує помилку сокета і (у `probe: auto`) перемикається на `traceroute`.
 
 ## Конфігурація
 
@@ -124,6 +146,8 @@ Daemon з PID-файлом (PY-030…032):
 | «No hops parsed» | Встановити `traceroute`; на macOS — `/usr/sbin/traceroute` |
 | JavaFX runtime missing | `./gradlew run` або jpackage installer |
 | Expert ping без RTT | Linux + `iputils-ping` |
+| IPv6 trace «немає hop-ів» | `traceroute -6` у PATH; raw cap **не** потрібен для v6 literal |
+| Raw ICMP v4 «permission denied» | `setcap cap_net_raw+ep` на JDK binary (див. § Raw ICMP) |
 
 ## Розробка
 

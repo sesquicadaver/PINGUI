@@ -181,7 +181,7 @@
 | **V6-042** | [ ] `LinuxJnaIcmpTransport` dual: v4/v6 socket | `LinuxJnaIcmpTransport.java` | Integration test optional; mock-friendly unit |
 | **V6-043** | [ ] `RawIcmpRouteProbe`: hop limit для v6 | `RawIcmpRouteProbe.java` | v6 target → trace hops |
 | **V6-044** | [x] `RouteProbeFactory`: v6 literal → process fallback при AUTO+raw | `DualStackRouteProbe.java` | Test: v6 → process, v4 → raw |
-| **V6-045** | [ ] DEPLOYMENT: cap note для ICMPv6 | `docs/DEPLOYMENT.md` | Linux-only raw v6 documented |
+| **V6-045** | [x] DEPLOYMENT: cap note для ICMPv6 | `docs/DEPLOYMENT.md`, `docs/en/DEPLOYMENT.md` | Linux-only raw v6 documented |
 
 ### 9.5 — Expert ping v6 (P1)
 
@@ -691,5 +691,7 @@ flowchart LR
 **IPv6-S4 QA (2026-07-09):** V6-070…V6-074 — CHECKLIST smoke, v4 fixture regression test, JaCoCo notes, IPv6 beta release note.
 
 **IPv6 expert UI (2026-07-09):** V6-053 — `-F` flow label gated by IPv6 target / `-6` AF.
+
+**IPv6 deployment docs (2026-07-09):** V6-045 — `cap_net_raw` matrix for dual-stack (v4 raw vs v6 process trace).
 
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.
