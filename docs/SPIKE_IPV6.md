@@ -32,7 +32,7 @@
 | `GeoCountry` | `Inet4Address` only | V6-035…V6-037 |
 | `RawIcmpRouteProbe` | `AF_INET` | V6-040…V6-045 (Linux P2) |
 | Expert ping | iputils `-4`/`-6` catalog, v4 targets | V6-050…V6-053 |
-| Документація | IPv4-only | V6-060, V6-063, V6-074 |
+| Документація | Dual-stack (V6-S4) | V6-074 |
 
 ---
 
@@ -67,7 +67,7 @@
 - [x] Windows `tracert -6` парситься (фікстури)
 - [x] v4 regression green (`./gradlew check`)
 - [ ] CHECKLIST IPv6 smoke пройдено
-- [ ] Docs: dual-stack, не «IPv4-only»
+- [x] Docs: dual-stack, не «IPv4-only»
 
 ---
 

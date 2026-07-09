@@ -196,10 +196,10 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **V6-060** | [ ] Help/About: dual-stack instead of «IPv4-only» | `AppMenuDialogs.java`, `README.md` | Text updated |
-| **V6-061** | [ ] `GraphCanvas` / labels: bracket display for long v6 | `GraphCanvas.java`, `RouteGraphLayout` | Manual smoke note in CHECKLIST |
-| **V6-062** | [ ] Input validation in Add Host dialog for v6 | `HostListPresenter` / dialog | Invalid v6 → log error |
-| **V6-063** | [ ] CHANGELOG + ROADMAP `[x]` on subphase closure | `CHANGELOG.md` | Per-sprint notes |
+| **V6-060** | [x] Help/About: dual-stack instead of «IPv4-only» | `AppMenuDialogs.java`, `README.md` | Text updated |
+| **V6-061** | [x] `GraphCanvas` / labels: bracket display for long v6 | `HopDisplay.java`, `PingColor.java` | Manual smoke note in CHECKLIST |
+| **V6-062** | [x] Input validation in Add Host dialog for v6 | `HostListPresenter` | Invalid v6 → log error |
+| **V6-063** | [x] CHANGELOG + ROADMAP `[x]` on subphase closure | `CHANGELOG.md` | Per-sprint notes |
 
 ### 9.7 — QA / release gate (P0)
 
@@ -681,5 +681,11 @@ Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 **Roadmap Telemetry (2026-07-09):** phase 16 — network metrics collection, local storage (SQLite/JSONL), LOG-server export (syslog/GELF/Loki).
 
 **Roadmap Python (2026-07-09):** phase PY — atomic tickets PY-010…PY-064: launcher, docs, MonitorLoop, daemon, alerts, IPv6, CI/packaging (`beta` only).
+
+**PY-S4 (2026-07-09):** PY-050…PY-052 — Python IPv6 dual-stack on `beta`.
+
+**IPv6-S3 (2026-07-09):** V6-035…V6-037 — `GeoCountry` IPv6 longest-prefix + `prefixes_v6` YAML.
+
+**IPv6-S4 (2026-07-09):** V6-060…V6-063 — dual-stack Help/About, IPv6 graph labels, host input validation.
 
 Update this file when closing a task: `[x] M-001` + date in CHANGELOG.

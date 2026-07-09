@@ -50,18 +50,19 @@ public final class PingColor {
         }
         String countryLine = countryLine(node.ip());
         String statsLine = statsLine(node.hop(), hopStatsFn);
+        String displayIp = HopDisplay.formatHopIp(node.ip());
         Double avg = avgPingFn.apply(node.ip());
         if (avg != null) {
-            return "Hop " + node.hop() + "\n" + node.ip() + countryLine + "\n" + avg.intValue() + " ms" + statsLine;
+            return "Hop " + node.hop() + "\n" + displayIp + countryLine + "\n" + avg.intValue() + " ms" + statsLine;
         }
         if (node.pingMs() != null) {
-            return "Hop " + node.hop() + "\n" + node.ip() + countryLine + "\n"
+            return "Hop " + node.hop() + "\n" + displayIp + countryLine + "\n"
                     + node.pingMs().intValue() + " ms" + statsLine;
         }
         if (!countryLine.isEmpty() || !statsLine.isEmpty()) {
-            return "Hop " + node.hop() + "\n" + node.ip() + countryLine + statsLine;
+            return "Hop " + node.hop() + "\n" + displayIp + countryLine + statsLine;
         }
-        return "Hop " + node.hop() + "\n" + node.ip();
+        return "Hop " + node.hop() + "\n" + displayIp;
     }
 
     private static String countryLine(String ip) {

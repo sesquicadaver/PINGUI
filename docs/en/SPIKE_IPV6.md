@@ -32,7 +32,7 @@ Should IPv6 support be added for:
 | `GeoCountry` | `Inet4Address` only | V6-035…V6-037 |
 | `RawIcmpRouteProbe` | `AF_INET` | V6-040…V6-045 (Linux P2) |
 | Expert ping | iputils `-4`/`-6` catalog, v4 targets | V6-050…V6-053 |
-| Documentation | IPv4-only | V6-060, V6-063, V6-074 |
+| Documentation | Dual-stack (V6-S4) | V6-074 |
 
 ---
 
@@ -67,7 +67,8 @@ Retained as **constraints until phase 9**: raw v6 remains P2; process trace — 
 - [x] Windows `tracert -6` parsed (fixtures)
 - [x] v4 regression green (`./gradlew check`)
 - [ ] CHECKLIST IPv6 smoke passed
-- [ ] Docs: dual-stack, not «IPv4-only»
+- [ ] CHECKLIST IPv6 smoke passed
+- [x] Docs: dual-stack, not «IPv4-only»
 
 ---
 

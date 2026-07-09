@@ -25,6 +25,12 @@ Python-редакція та тести — гілка **`beta`**.
 - [ ] `.venv/bin/python -c "from pingui.icmp.tracer import trace_route; print(trace_route('::1', max_hops=3))"` — ≥1 hop
 - [ ] GeoIP v6: `country_code_for_ip('2001:4860:4860::8888')` → `US` (з `config/geoip_hints.yaml`)
 
+### Java IPv6 UI smoke (beta)
+
+- [ ] Довідка (F1) згадує IPv4/IPv6 literal
+- [ ] Додати ціль `2001:db8::1` — нормалізується в лог; невалідна `not:valid:ipv6` → помилка в журналі
+- [ ] Граф hop з v6 показує IP у дужках `[2001:4860:4860::8888]`
+
 ### Python alert smoke (beta)
 
 - [ ] `python -m pingui monitor --alert-webhook http://127.0.0.1:9/hook` — старт без crash (webhook недоступний → log)

@@ -25,6 +25,12 @@ Details: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 - [ ] `.venv/bin/python -c "from pingui.icmp.tracer import trace_route; print(trace_route('::1', max_hops=3))"` — ≥1 hop
 - [ ] GeoIP v6: `country_code_for_ip('2001:4860:4860::8888')` → `US` (from `config/geoip_hints.yaml`)
 
+### Java IPv6 UI smoke (beta)
+
+- [ ] Help (F1) mentions IPv4/IPv6 literals
+- [ ] Add target `2001:db8::1` — normalized in log; invalid `not:valid:ipv6` → error in journal
+- [ ] Route graph hop with v6 shows bracketed IP `[2001:4860:4860::8888]`
+
 ### Python alert smoke (beta)
 
 - [ ] `python -m pingui monitor --alert-webhook http://127.0.0.1:9/hook` — starts without crash (unreachable webhook → log)
