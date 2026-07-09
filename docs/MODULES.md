@@ -144,6 +144,63 @@ def detect_route_change(
 
 ---
 
+## pingui.persistence.session_db
+
+### `SessionDatabase`
+
+SQLite persistence для `SessionStore` (опційно `--session-db`).
+
+| Метод | Опис |
+|-------|------|
+| `load(host) -> HostSessionData \| None` | Відновити стан цілі |
+| `save(host, data)` | Запис snapshot + ping history |
+| `close()` | Flush і закрити з'єднання |
+
+Schema v2: JSON для hops, routes, `hop_stats`.
+
+---
+
+## pingui.export.session_report
+
+| Функція | Опис |
+|---------|------|
+| `export_session_csv(store, path)` | Flat CSV (`ROUTE_CSV_FIELDS`) |
+| `export_session_html(store, path)` | Standalone HTML з таблицями per host |
+| `build_route_rows(store)` | current / inactive / previous routes + stats |
+
+---
+
+## pingui.geoip
+
+| Модуль | Опис |
+|--------|------|
+| `country.configure(enabled, hints_path)` | Offline CIDR→country з YAML |
+| `country.lookup_country(ip) -> str \| None` | Longest-prefix match |
+| `coordinates.centroid_for_ip(ip)` | Lat/lon для folium |
+| `map_builder.build_geo_map(hosts, store)` | HTML для WebEngine tab |
+
+---
+
+## pingui.persistence.timeseries
+
+| Модуль | Опис |
+|--------|------|
+| `factory.create_timeseries_backend(...)` | `influx` / `timescale` / `None` |
+| `base.TimeSeriesBackend` | Protocol: `record_rtt`, `record_route` |
+| `memory.MemoryTimeSeriesBackend` | In-memory (tests) |
+
+Optional deps: `pip install -e ".[timeseries]"`.
+
+---
+
+## pingui.monitor.hop_stats
+
+| Функція | Опис |
+|---------|------|
+| `hop_stats_summary(samples) -> HopStatsSummary` | avg RTT, jitter, loss % |
+
+---
+
 ## pingui.monitor.session_store
 
 ### `SessionStore`
@@ -231,8 +288,9 @@ Root logger: ERROR (GUI) або DEBUG (`--verbose`).
 
 | Скрипт | Призначення |
 |--------|-------------|
-| `pingui.sh` | Deploy / GUI / destroy |
+| `pingui.sh` | Deploy / GUI / destroy; прокидання CLI-прапорців |
 | `scripts/ci_venv.sh` | CI pipeline |
 | `scripts/check_caps.sh` | ICMP permission smoke |
 | `scripts/setup_caps.sh` | Manual setcap |
 | `scripts/check_imports.py` | Cycle detection |
+| `scripts/check_doc_parity.py` | UK/EN docs parity |

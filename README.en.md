@@ -3,6 +3,7 @@
 > **Language:** English · [Українська](README.md)
 
 ![Java CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/java.yml/badge.svg)
+![Python CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/ci.yml/badge.svg)
 
 Cross-platform route and RTT monitor for up to 10 targets simultaneously (Java 21 + JavaFX).
 Data is stored **in RAM only** for the session.

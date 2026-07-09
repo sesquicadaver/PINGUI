@@ -127,7 +127,7 @@
 
 **Передумови:** `./gradlew check` green; B-064 JaCoCo gate ≥80%.
 
-**Поза scope фази 9 (окремі ticket):** Python-шар на `beta`; повний Windows expert-ping parity (див. backlog після V6-059).
+**Поза scope фази 9 (окремі ticket):** Python IPv6 — **Фаза PY.4 (PY-050…PY-052)**; повний Windows expert-ping parity (див. backlog після V6-059).
 
 ### 9.0 — Design gate
 
@@ -241,6 +241,112 @@ flowchart TD
 | IPv6-S3 | V6-035…V6-037, V6-050…V6-053 (GeoIP + expert) |
 | IPv6-S4 | V6-060…V6-063, V6-070…V6-074 (UI + QA) |
 | IPv6-S5 (opt.) | V6-040…V6-045 (raw ICMP v6 Linux) |
+
+---
+
+## Фаза PY — Python CLI/NOC hardening (`beta`, P0–P1)
+
+**Мета:** перетворити post-MVP Python-шар на повноцінний NOC-інструмент: launcher, документація, headless monitor, daemon; узгодження з фазами P10–P12.
+
+**Контекст:** B-01…B-06 ✅ (`--session-db`, export, GeoIP, geo-map, timeseries, jitter/loss). Фази 10–16 описані переважно Java-файлами; Python **випереджає** в P11/P15, але **відстає** в launcher, docs, daemon, alerts.
+
+**Гілка:** лише `beta` (Python-дерево на `main` не додається).
+
+**Звʼязок:** PY-S1 — перед Pro-S2; PY-S2 — передумова Python-частини P12; PY-S3 — Python parity P10.
+
+### PY.0 — CLI launcher і документація (P0)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **PY-010** | [x] `pingui.sh`: прокидання CLI-прапорців у `python -m pingui` | `pingui.sh` | `./pingui.sh --export-csv out.csv` або `./pingui.sh -- --session-db db.sqlite` працює; `--deploy`/`--help` без змін |
+| **PY-011** | [x] `CONFIGURATION.md`: повний довідник CLI + env | `docs/CONFIGURATION.md`, `docs/en/CONFIGURATION.md` | Усі прапорці з `__main__.py`; `INFLUXDB_*`, `PINGUI_TIMESCALE_DSN` |
+| **PY-012** | [x] `MODULES.md`: post-MVP Python-модулі | `docs/MODULES.md`, `docs/en/MODULES.md` | `session_db`, `export`, `geoip`, `timeseries`, `hop_stats` |
+| **PY-013** | [x] Python Living Spec: матриця модуль → тест | `docs/LIVING_SPEC.md`, `docs/en/LIVING_SPEC.md` | Секція «Python (`beta`)»; закриває прогалину B-023 для Python |
+| **PY-014** | [x] Unit: CLI `--export-html` без GUI | `tests/unit/test_main_export.py` | `main([...,"--export-html", path])` → файл існує |
+| **PY-015** | [x] Deploy gate = CI gate | `pingui.sh`, `scripts/ci_venv.sh` | `./pingui.sh --deploy` запускає `check_doc_parity.py` |
+| **PY-016** | [x] `TESTING.md`: таблиця post-MVP тестів | `docs/TESTING.md`, `docs/en/TESTING.md` | `test_session_db`, `test_timeseries`, `test_geo_*`, `test_main_export` |
+
+**Орієнтовно:** 1 sprint (≤ 1 день на ticket).
+
+### PY.1 — Monitor loop без Qt (P1)
+
+**Проблема:** `LightweightMonitorWorker` = `QThread`; headless/daemon неможливий без PyQt.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **PY-020** | [ ] `MonitorLoop` на stdlib `threading` | `monitor/monitor_loop.py` | Цикл enabled hosts → `poll_host_route()`; callbacks замість Qt signals |
+| **PY-021** | [ ] `LightweightMonitorWorker` — тонка обгортка | `monitor/worker.py` | Worker делегує в `MonitorLoop`; існуючі Qt-тести green |
+| **PY-022** | [ ] Єдиний `enabled` state | `session_store.py`, `worker.py`, `ui/main_window.py` | Прибрати дубль `worker._enabled` vs `HostSessionData.enabled` |
+| **PY-023** | [ ] CLI subcommands: `run` \| `export` \| `monitor` | `src/pingui/__main__.py` | `argparse` subparsers; backward compat: без subcommand = `run` |
+
+**Орієнтовно:** 1–2 sprint. **Передумова** для PY-030…034 і Python P12.
+
+### PY.2 — Headless daemon (P1) — Python parity з P12
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **PY-030** | [ ] `--daemon`: без PyQt, лише `MonitorLoop` | `__main__.py`, `monitor/daemon_runner.py` | `./pingui.sh -- --daemon --session-db PATH` — процес не завершується |
+| **PY-031** | [ ] PID file + `--stop` / `--status` | `monitor/daemon_runner.py` | Contract test start/stop |
+| **PY-032** | [ ] `systemd/pingui.service.example` | `systemd/` | `Type=simple`, `Restart=on-failure`, `User=`, `AmbientCapabilities=CAP_NET_RAW` |
+| **PY-033** | [ ] DEPLOYMENT § Python NOC headless | `docs/DEPLOYMENT.md` | cap_net_raw, `--session-db`, daemon flags |
+| **PY-034** | [ ] CHECKLIST § Python daemon smoke | `docs/CHECKLIST.md` | start → route change → рядок у SQLite |
+
+**Орієнтовно:** 1–2 sprint. **Паралельно** з P12-001…P12-040 (Java).
+
+### PY.3 — Alerts Python (P0) — parity з P10
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **PY-040** | [ ] `RouteChangeEvent` у `models.py` | `models.py`, `tests/unit/test_route_change_event.py` | Serialize/deserialize JSON; спільний контракт з P10-010 |
+| **PY-041** | [ ] `AlertDispatcher` + `WebhookAlertDispatcher` | `monitor/alert_dispatcher.py` | POST JSON; contract test з mock HTTP |
+| **PY-042** | [ ] CLI `--alert-webhook URL` | `__main__.py` | Secret не в логах; помилка мережі → log, не crash |
+| **PY-043** | [ ] Desktop notify (`notify-send`) | `monitor/desktop_notifier.py` | Linux smoke: route change → notification |
+| **PY-044** | [ ] Rate limit alerts | `monitor/alert_rate_limiter.py` | Unit-тест burst per host |
+| **PY-045** | [ ] Daemon + alerts | `daemon_runner.py` | Route change → webhook без GUI (Python P12-030) |
+
+**Орієнтовно:** 1–2 sprint. **Може йти паралельно** з Pro-S2 (P10).
+
+### PY.4 — IPv6 Python (P2) — parity з V6
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **PY-050** | [ ] IPv6 literal у `config.py` | `config.py`, `tests/unit/test_config.py` | RFC 5952 normalize; mixed v4+v6 profile |
+| **PY-051** | [ ] Dual-stack ICMP trace | `icmp/tracer.py`, `icmp/raw_socket.py` | v6 literal → trace hops; `@pytest.mark.network` optional |
+| **PY-052** | [ ] GeoIP `prefixes_v6` | `geoip/country.py`, `config/geoip_hints.yaml` | Parity з V6-036…V6-037 |
+
+**Орієнтовно:** 2–3 sprint після V6-015. **Поза scope v1:** raw ICMPv6 (див. V6-040…V6-045).
+
+### PY.5 — Packaging і CI hygiene (P1–P2)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **PY-060** | [ ] `optional-dependencies.gui` | `pyproject.toml` | Base: `scapy`, `PyYAML`, `networkx`; extra: PyQt6, WebEngine, folium, matplotlib |
+| **PY-061** | [x] CI push на `beta` | `.github/workflows/ci.yml` | `branches: [main, master, beta]` |
+| **PY-062** | [x] Python CI badge у README | `README.md`, `README.en.md` | Badge поруч з Java CI |
+| **PY-063** | [x] mypy `python_version` узгоджено з CI runtime | `pyproject.toml` | CI `setup-python` 3.11; mypy 3.12 (numpy stubs); numpy `ignore_errors` |
+| **PY-064** | [ ] Coverage: зменшити omit після PY-020/030 | `pyproject.toml` | `__main__.py` у gate ≥80% або documented exclusion |
+
+**Орієнтовно:** 1 sprint; PY-060…064 можна cherry-pick у PY-S1.
+
+### Рекомендований порядок (фаза PY)
+
+```mermaid
+flowchart TD
+  PY010[PY-010 pingui.sh CLI] --> PY011[PY-011 CONFIGURATION]
+  PY011 --> PY013[PY-013 Living Spec]
+  PY013 --> PY020[PY-020 MonitorLoop]
+  PY020 --> PY030[PY-030 --daemon]
+  PY030 --> PY040[PY-040 RouteChangeEvent]
+  PY040 --> PY045[PY-045 daemon alerts]
+  PY020 --> PY050[PY-050 IPv6 config]
+```
+
+| Sprint (пропоз.) | Задачі | Пріоритет |
+|------------------|--------|-----------|
+| **PY-S1** | PY-010…PY-016, PY-060…PY-064 (частково) | P0 |
+| **PY-S2** | PY-020…PY-023, PY-030…PY-034 | P1 |
+| **PY-S3** | PY-040…PY-045 | P0 |
+| **PY-S4 (opt.)** | PY-050…PY-052 | P2 |
 
 ---
 
@@ -457,19 +563,28 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  V6070[V6-070 IPv6 QA gate] --> P10010[P10 alerts]
+  V6070[V6-070 IPv6 QA gate] --> PYS1[PY-S1 launcher docs]
+  PYS1 --> PYS2[PY-S2 MonitorLoop daemon]
+  PYS1 --> P10010[P10 alerts]
+  P10010 --> PYS3[PY-S3 Python alerts]
   P10010 --> P11010[P11 SQLite Java]
-  P11010 --> P12010[P12 daemon]
+  P11010 --> PYS2
+  PYS2 --> P12010[P12 daemon Java]
   P12010 --> P13010[P13 MTR / smart interval]
   P13010 --> P14010[P14 route diff / tags]
   P14010 --> P15010[P15 Prometheus / API]
   P15010 --> P16010[P16 telemetry / LOG-server]
+  V6070 --> PY50[PY-S4 IPv6 Python opt]
 ```
 
 | Пріоритет | Sprint (пропоз.) | Фаза | Задачі |
 |-----------|------------------|------|--------|
+| **P0** | PY-S1 | PY.0 + PY.5 | PY-010…PY-016, PY-060…PY-064 |
+| **P1** | PY-S2 | PY.1 + PY.2 | PY-020…PY-034 |
+| **P0** | PY-S3 | PY.3 | PY-040…PY-045 |
+| **P2** | PY-S4 (opt.) | PY.4 | PY-050…PY-052 |
 | **P0** | Pro-S1 | 9 (закриття) | V6-035…V6-037, V6-060…V6-074 |
-| **P0** | Pro-S2 | 10 | P10-001…P10-050 |
+| **P0** | Pro-S2 | 10 | P10-001…P10-050 (+ PY-S3 Python) |
 | **P0** | Pro-S3–S4 | 11 | P11-001…P11-050 |
 | **P1** | Pro-S5 | 12 | P12-001…P12-040 |
 | **P1** | Pro-S6–S7 | 13 | P13-001…P13-050 |
@@ -510,7 +625,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog:** M/B roadmap закрито; B-064 coverage ongoing; **IPv6 — Фаза 9 (V6-*)**; **Pro — Фази 10–16 (P10–P16)**.
+**Backlog:** M/B roadmap закрито; B-064 coverage ongoing; **IPv6 — Фаза 9 (V6-*)**; **Python NOC — Фаза PY (PY-*)**; **Pro — Фази 10–16 (P10–P16)**.
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 
@@ -564,5 +679,7 @@ flowchart LR
 **Roadmap Pro (2026-07-09):** додано фази 10–15 (alerts, persistence, daemon, MTR, GUI pro, integrations) — офіційний план для NOC/SRE.
 
 **Roadmap Telemetry (2026-07-09):** фаза 16 — збір метрик мережі, локальне збереження (SQLite/JSONL), відправка на LOG-server (syslog/GELF/Loki).
+
+**Roadmap Python (2026-07-09):** фаза PY — атомарні ticket-и PY-010…PY-064: launcher, docs, MonitorLoop, daemon, alerts, IPv6, CI/packaging (`beta` only).
 
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.

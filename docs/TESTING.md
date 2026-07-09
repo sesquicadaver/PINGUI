@@ -72,6 +72,15 @@ Integration-тести GUI створюють `QApplication` перед `MainWin
 | `test_ui_smoke.py` | MainWindow CRUD, logs, checkbox |
 | `test_tracer.py` (contract) | trace_route з mock transport |
 | `test_worker_store.py` (contract) | worker → store flow |
+| `test_session_db.py` | SQLite round-trip, schema v2 |
+| `test_session_export.py` | CSV/HTML row builder |
+| `test_main_export.py` | CLI `--export-csv` / `--export-html` headless |
+| `test_timeseries.py` | influx/timescale factory, memory backend |
+| `test_geoip_country.py` | CIDR longest-prefix, LAN |
+| `test_geo_map.py` | folium map builder |
+| `test_hop_stats.py` | jitter/loss summary |
+| `test_doc_parity.py` | UK/EN banner parity |
+| `test_pingui_sh.py` | `pingui.sh` syntax + passthrough args |
 
 ## Java edition (`java/`)
 
@@ -106,7 +115,7 @@ python scripts/check_doc_parity.py
 - перемикачі мов у README, `java/README`, root `ROADMAP`;
 - наявність UK-банера в `CHANGELOG.md` з посиланням на `docs/en/`.
 
-Виконується в `./scripts/ci_venv.sh`, Java CI (`.github/workflows/java.yml`) та Python CI.
+Виконується в `./pingui.sh --deploy`, `./scripts/ci_venv.sh` і Python CI.
 
 ## Manual QA
 

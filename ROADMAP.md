@@ -21,6 +21,7 @@
 | P0–P8 | Python MVP: venv, ICMP, GUI, CI | ✅ |
 | **P9** | Java cross-platform edition | ✅ |
 | **9** | IPv6 dual-stack (V6-*) | 🔄 в роботі |
+| **PY** | Python CLI/NOC hardening (PY-010…PY-064) | 📋 заплановано |
 | **10** | Оповіщення про зміну маршруту (webhook, desktop) | 📋 заплановано |
 | **11** | Персистентність і таймлайн (Java parity з Python) | 📋 заплановано |
 | **12** | Headless / daemon + systemd (Linux NOC) | 📋 заплановано |
@@ -50,22 +51,27 @@ Linux desktop-додаток: моніторинг до 10 цілей, ICMP trac
 
 ## Рекомендований порядок (2026 Q3–Q4)
 
-1. **Закрити фазу 9** — IPv6 QA gate (V6-035…074)
-2. **Фаза 10** — alerts (найвищий ROI для NOC)
-3. **Фаза 11** — SQLite + history в Java
-4. **Фаза 12** — daemon для 24/7 моніторингу
-5. **Фази 13–15** — MTR, pro GUI, Prometheus/API
-6. **Фаза 16** — telemetry: локальне збереження + LOG-server
+1. **PY-S1** — launcher + docs + CI (`PY-010…016`) — швидкий ROI на `beta`
+2. **Закрити фазу 9** — IPv6 QA gate (V6-035…074)
+3. **PY-S2 + Фаза 10** — MonitorLoop/daemon (Python) + alerts (Java/Python)
+4. **Фаза 11** — SQLite + history в Java (Python уже має)
+5. **Фаза 12** — daemon Java (Python — PY-030…034)
+6. **Фази 13–15** — MTR, pro GUI, Prometheus/API
+7. **Фаза 16** — telemetry: локальне збереження + LOG-server
+8. **PY-S4 (opt.)** — IPv6 Python (PY-050…052)
 
 ```mermaid
 flowchart LR
-  F9[Phase 9 IPv6] --> F10[Phase 10 Alerts]
+  PY1[PY-S1 launcher docs] --> F9[Phase 9 IPv6]
+  PY1 --> F10[Phase 10 Alerts]
+  F10 --> PY2[PY-S2 daemon]
   F10 --> F11[Phase 11 Persistence]
-  F11 --> F12[Phase 12 Daemon]
+  PY2 --> F12[Phase 12 Daemon]
   F12 --> F13[Phase 13 MTR]
   F13 --> F14[Phase 14 Pro GUI]
   F14 --> F15[Phase 15 Integrations]
   F15 --> F16[Phase 16 Telemetry]
+  F9 --> PY4[PY-S4 IPv6 Python]
 ```
 
 ---
@@ -104,4 +110,4 @@ PINGUI/
 pingui.sh → config/models → icmp/tracer → session_store → worker → main_window/graph → CI
 ```
 
-Task details P10-001…P16-080: [docs/ROADMAP.md](docs/ROADMAP.md).
+Task details PY-010…PY-064, P10-001…P16-080: [docs/ROADMAP.md](docs/ROADMAP.md).

@@ -3,6 +3,7 @@
 > **Мова:** Українська · [English](README.en.md)
 
 ![Java CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/java.yml/badge.svg)
+![Python CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/ci.yml/badge.svg)
 
 Крос-платформний монітор маршрутів і RTT до 10 цілей одночасно (Java 21 + JavaFX).
 Дані зберігаються **лише в RAM** протягом сесії.

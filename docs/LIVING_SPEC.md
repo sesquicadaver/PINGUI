@@ -32,3 +32,29 @@
 **CI:** push/PR на `main` / `beta` → workflow [Java CI](../.github/workflows/java.yml)
 
 Фікстури trace: `java/src/test/resources/trace/`
+
+---
+
+## Python (`beta`)
+
+Матриця «модуль → тести» для Python-редакції. Оновлюй при додаванні фіч (PY-013).
+
+| Модуль / ТЗ | Клас / модуль | Тести |
+|-------------|---------------|-------|
+| YAML hosts | `config.py` | `test_config.py`, `test_config_resolve.py` |
+| ICMP probe | `icmp/raw_socket.py`, `icmp/tracer.py` | `test_raw_socket.py`, `contract/test_tracer.py`, `integration/test_tracer_network.py` |
+| Polling / route change | `monitor/polling.py`, `route_change.py` | `test_polling.py`, `test_route_change.py`, `test_route_history.py` |
+| Session store | `monitor/session_store.py` | `test_session_store.py`, `contract/test_worker_store.py` |
+| Hop stats | `monitor/hop_stats.py` | `test_hop_stats.py` |
+| Worker | `monitor/worker.py` | `test_worker.py`, `integration/test_worker_run.py` |
+| SQLite persistence | `persistence/session_db.py` | `test_session_db.py` |
+| Time-series | `persistence/timeseries/` | `test_timeseries.py` |
+| Export reports | `export/session_report.py` | `test_session_export.py`, `test_main_export.py` |
+| GeoIP | `geoip/country.py`, `map_builder.py` | `test_geoip_country.py`, `test_geo_map.py` |
+| GUI | `ui/main_window.py`, `graph_canvas.py` | `test_graph_canvas.py`, `integration/test_ui_smoke.py` |
+| CLI entry | `__main__.py` | `test_main.py`, `test_main_cli_validation.py`, `test_main_export.py` |
+| Import graph | `scripts/check_imports.py` | `python scripts/check_imports.py` |
+| Doc parity UK/EN | `scripts/check_doc_parity.py` | `test_doc_parity.py`, CI |
+| CI gate Python | `scripts/ci_venv.sh`, `.github/workflows/ci.yml` | `./pingui.sh --deploy` або `bash scripts/ci_venv.sh` |
+
+**Прогін локально (Python):** `bash scripts/ci_venv.sh` або `./pingui.sh --deploy`

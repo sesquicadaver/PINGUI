@@ -21,6 +21,7 @@ MODE="run"
 SKIP_TESTS=0
 FORCE_VENV=0
 QUIET=0
+PASSTHROUGH_ARGS=()
 
 log() {
   [[ "$QUIET" -eq 0 ]] && printf '[pingui] %s\n' "$*"
@@ -38,9 +39,16 @@ PINGUI — монітор маршрутів (Python edition, Linux)
   ./pingui.sh
       Запуск GUI. Мінімальна перевірка venv і cap_net_raw, без зайвого виводу.
 
+  ./pingui.sh [PINGUI_OPTIONS...]
+      Прокидання прапорців у `python -m pingui` (напр. --export-csv, --session-db).
+      Якщо прапорців немає — використовується config/hosts.example.yaml.
+
+  ./pingui.sh -- [PINGUI_OPTIONS...]
+      Явний роздільник після launcher-опцій (еквівалент форми без `--`).
+
   ./pingui.sh --deploy
       Повне розгортання: системні пакети (apt), venv (--copies), cap_net_raw,
-      ruff + mypy + pytest. Опції лише з --deploy:
+      ruff + mypy + pytest + check_imports + check_doc_parity. Опції лише з --deploy:
         --skip-tests   без pytest/ruff/mypy
         --force-venv   перестворити .venv
 
@@ -58,31 +66,52 @@ Java edition (cross-platform): java/pingui-java.sh (Unix) або java/pingui-jav
 EOF
 }
 
-for arg in "$@"; do
-  case "$arg" in
-    --deploy) MODE="deploy" ;;
-    --destroy) MODE="destroy" ;;
-    --help|-h) MODE="help" ;;
-    --skip-tests)
-      [[ "$MODE" == deploy ]] || die "Опція --skip-tests лише з --deploy."
-      SKIP_TESTS=1
-      ;;
-    --force-venv)
-      [[ "$MODE" == deploy ]] || die "Опція --force-venv лише з --deploy."
-      FORCE_VENV=1
-      ;;
-    --run)
-      echo "Застаріло: ./pingui.sh --run → просто ./pingui.sh" >&2
-      MODE="run"
-      ;;
-    --java|--java=*)
-      die "Java edition: використовуйте java/pingui-java.sh (не pingui.sh --java)."
-      ;;
-    *)
-      die "Невідомий аргумент: $arg (див. ./pingui.sh --help)"
-      ;;
-  esac
-done
+parse_args() {
+  PASSTHROUGH_ARGS=()
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --deploy) MODE="deploy" ;;
+      --destroy) MODE="destroy" ;;
+      --help|-h) MODE="help" ;;
+      --skip-tests)
+        [[ "$MODE" == "deploy" ]] || die "Опція --skip-tests лише з --deploy."
+        SKIP_TESTS=1
+        ;;
+      --force-venv)
+        [[ "$MODE" == "deploy" ]] || die "Опція --force-venv лише з --deploy."
+        FORCE_VENV=1
+        ;;
+      --run)
+        echo "Застаріло: ./pingui.sh --run → просто ./pingui.sh" >&2
+        MODE="run"
+        ;;
+      --java|--java=*)
+        die "Java edition: використовуйте java/pingui-java.sh (не pingui.sh --java)."
+        ;;
+      --)
+        shift
+        PASSTHROUGH_ARGS+=("$@")
+        return 0
+        ;;
+      *)
+        case "$MODE" in
+          deploy|destroy|help)
+            die "Невідомий аргумент: $1 (див. ./pingui.sh --help)"
+            ;;
+          *)
+            PASSTHROUGH_ARGS+=("$1")
+            ;;
+        esac
+        ;;
+    esac
+    shift
+  done
+  if [[ "$MODE" == "deploy" || "$MODE" == "destroy" ]] && ((${#PASSTHROUGH_ARGS[@]} > 0)); then
+    die "CLI-прапорці PINGUI не поєднуються з --deploy/--destroy. Спочатку launcher, потім ./pingui.sh [OPTIONS]."
+  fi
+}
+
+parse_args "$@"
 
 if [[ "$MODE" == run ]]; then
   QUIET=1
@@ -212,12 +241,13 @@ verify_icmp_permission() {
 }
 
 run_quality_gates() {
-  log "ruff + mypy + pytest"
+  log "ruff + mypy + pytest + doc parity"
   export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-offscreen}"
   "$VENV/bin/ruff" check src tests
   "$VENV/bin/mypy" src/pingui
   "$VENV/bin/pytest" tests -m "not network" --cov=pingui --cov-fail-under=80 -q
   "$PYTHON" "${ROOT}/scripts/check_imports.py"
+  "$PYTHON" "${ROOT}/scripts/check_doc_parity.py"
 }
 
 prepare_runtime() {
@@ -243,7 +273,10 @@ launch_app() {
   unset QT_QPA_PLATFORM
   export QT_LOGGING_RULES="${QT_LOGGING_RULES:-*.debug=false;qt.qpa.*=false}"
   export PYTHONWARNINGS="${PYTHONWARNINGS:-ignore}"
-  exec "$PYTHON" -m pingui --config "$CONFIG" "$@"
+  if ((${#PASSTHROUGH_ARGS[@]} > 0)); then
+    exec "$PYTHON" -m pingui "${PASSTHROUGH_ARGS[@]}"
+  fi
+  exec "$PYTHON" -m pingui --config "$CONFIG"
 }
 
 run_gui() {
@@ -293,4 +326,4 @@ main() {
   esac
 }
 
-main "$@"
+main

@@ -33,8 +33,12 @@ hosts:
 ```bash
 .venv/bin/python -m pingui [OPTIONS]
 # або
-./pingui.sh    # еквівалент з config/hosts.example.yaml
+./pingui.sh                              # GUI, config/hosts.example.yaml
+./pingui.sh --export-csv report.csv      # headless export
+./pingui.sh -- --session-db data/ping.db # явний роздільник launcher/CLI
 ```
+
+### Базові опції
 
 | Опція | Тип | За замовч. | Опис |
 |-------|-----|------------|------|
@@ -44,7 +48,36 @@ hosts:
 | `--timeout` | float | `0.5` | Таймаут одного ICMP probe (с) |
 | `--verbose` | flag | off | DEBUG-лог у stderr |
 
+### Персистентність і export
+
+| Опція | Тип | За замовч. | Опис |
+|-------|-----|------------|------|
+| `--session-db` | Path | — | SQLite: маршрути/ping між сесіями |
+| `--export-csv` | Path | — | Експорт CSV і вихід (без GUI/ICMP) |
+| `--export-html` | Path | — | Експорт HTML і вихід (без GUI/ICMP) |
+
+### GeoIP і карта
+
+| Опція | Тип | За замовч. | Опис |
+|-------|-----|------------|------|
+| `--geoip-hints` | Path | `config/geoip_hints.yaml` | CIDR→country для міток hop |
+| `--no-geoip` | flag | off | Вимкнути country hints |
+| `--no-geo-map` | flag | off | Вимкнути вкладку folium geo-map |
+
+### Time-series (optional extra: `pip install -e ".[timeseries]"`)
+
+| Опція | Тип | За замовч. | Опис |
+|-------|-----|------------|------|
+| `--ts-backend` | `influx` \| `timescale` | — | Backend для RTT/route metrics |
+| `--influx-url` | str | env `INFLUXDB_URL` | InfluxDB URL |
+| `--influx-token` | str | env `INFLUXDB_TOKEN` | Token |
+| `--influx-org` | str | env `INFLUXDB_ORG` | Org |
+| `--influx-bucket` | str | env `INFLUXDB_BUCKET` | Bucket |
+| `--timescale-dsn` | str | env `PINGUI_TIMESCALE_DSN` | PostgreSQL/Timescale DSN |
+
 Валідація: `--interval`, `--timeout` > 0; `--max-hops` ≥ 1.
+
+Режим export (`--export-csv` / `--export-html`) не вимагає raw ICMP і не запускає GUI.
 
 ## Змінні середовища
 
@@ -54,6 +87,11 @@ hosts:
 | `MPLBACKEND=Agg` | Тести | Non-interactive Matplotlib |
 | `QT_LOGGING_RULES` | `./pingui.sh` GUI | Приглушення Qt-шуму |
 | `PYTHONWARNINGS=ignore` | `./pingui.sh` GUI | Менше warnings у консолі |
+| `INFLUXDB_URL` | `--ts-backend influx` | InfluxDB endpoint |
+| `INFLUXDB_TOKEN` | `--ts-backend influx` | InfluxDB token |
+| `INFLUXDB_ORG` | `--ts-backend influx` | InfluxDB org |
+| `INFLUXDB_BUCKET` | `--ts-backend influx` | InfluxDB bucket |
+| `PINGUI_TIMESCALE_DSN` | `--ts-backend timescale` | PostgreSQL/Timescale DSN |
 
 ## Константи в коді
 

@@ -127,7 +127,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 **Prerequisites:** `./gradlew check` green; B-064 JaCoCo gate ≥80%.
 
-**Out of phase 9 scope (separate ticket):** Python layer on `beta`; full Windows expert-ping parity (see backlog after V6-059).
+**Out of phase 9 scope (separate ticket):** Python IPv6 — **Phase PY.4 (PY-050…PY-052)**; full Windows expert-ping parity (see backlog after V6-059).
 
 ### 9.0 — Design gate
 
@@ -241,6 +241,112 @@ flowchart TD
 | IPv6-S3 | V6-035…V6-037, V6-050…V6-053 (GeoIP + expert) |
 | IPv6-S4 | V6-060…V6-063, V6-070…V6-074 (UI + QA) |
 | IPv6-S5 (opt.) | V6-040…V6-045 (raw ICMP v6 Linux) |
+
+---
+
+## Phase PY — Python CLI/NOC hardening (`beta`, P0–P1)
+
+**Goal:** turn the post-MVP Python stack into a full NOC tool: launcher, documentation, headless monitor, daemon; aligned with phases P10–P12.
+
+**Context:** B-01…B-06 ✅ (`--session-db`, export, GeoIP, geo-map, timeseries, jitter/loss). Phases 10–16 are mostly Java-oriented; Python **leads** on P11/P15 but **lags** on launcher, docs, daemon, alerts.
+
+**Branch:** `beta` only (Python tree is not added to `main`).
+
+**Links:** PY-S1 — before Pro-S2; PY-S2 — Python prerequisite for P12; PY-S3 — Python parity for P10.
+
+### PY.0 — CLI launcher and documentation (P0)
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **PY-010** | [x] `pingui.sh`: forward CLI flags to `python -m pingui` | `pingui.sh` | `./pingui.sh --export-csv out.csv` or `./pingui.sh -- --session-db db.sqlite` works; `--deploy`/`--help` unchanged |
+| **PY-011** | [x] `CONFIGURATION.md`: full CLI reference + env | `docs/CONFIGURATION.md`, `docs/en/CONFIGURATION.md` | All flags from `__main__.py`; `INFLUXDB_*`, `PINGUI_TIMESCALE_DSN` |
+| **PY-012** | [x] `MODULES.md`: post-MVP Python modules | `docs/MODULES.md`, `docs/en/MODULES.md` | `session_db`, `export`, `geoip`, `timeseries`, `hop_stats` |
+| **PY-013** | [x] Python Living Spec: module → test matrix | `docs/LIVING_SPEC.md`, `docs/en/LIVING_SPEC.md` | Section «Python (`beta`)»; closes B-023 gap for Python |
+| **PY-014** | [x] Unit: CLI `--export-html` without GUI | `tests/unit/test_main_export.py` | `main([...,"--export-html", path])` → file exists |
+| **PY-015** | [x] Deploy gate = CI gate | `pingui.sh`, `scripts/ci_venv.sh` | `./pingui.sh --deploy` runs `check_doc_parity.py` |
+| **PY-016** | [x] `TESTING.md`: post-MVP test table | `docs/TESTING.md`, `docs/en/TESTING.md` | `test_session_db`, `test_timeseries`, `test_geo_*`, `test_main_export` |
+
+**Estimate:** 1 sprint (≤ 1 day per ticket).
+
+### PY.1 — Monitor loop without Qt (P1)
+
+**Problem:** `LightweightMonitorWorker` is a `QThread`; headless/daemon is impossible without PyQt.
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **PY-020** | [ ] `MonitorLoop` on stdlib `threading` | `monitor/monitor_loop.py` | Loop enabled hosts → `poll_host_route()`; callbacks instead of Qt signals |
+| **PY-021** | [ ] `LightweightMonitorWorker` — thin wrapper | `monitor/worker.py` | Worker delegates to `MonitorLoop`; existing Qt tests green |
+| **PY-022** | [ ] Single `enabled` state | `session_store.py`, `worker.py`, `ui/main_window.py` | Remove duplicate `worker._enabled` vs `HostSessionData.enabled` |
+| **PY-023** | [ ] CLI subcommands: `run` \| `export` \| `monitor` | `src/pingui/__main__.py` | `argparse` subparsers; backward compat: no subcommand = `run` |
+
+**Estimate:** 1–2 sprint. **Prerequisite** for PY-030…034 and Python P12.
+
+### PY.2 — Headless daemon (P1) — Python parity with P12
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **PY-030** | [ ] `--daemon`: no PyQt, `MonitorLoop` only | `__main__.py`, `monitor/daemon_runner.py` | `./pingui.sh -- --daemon --session-db PATH` — process stays running |
+| **PY-031** | [ ] PID file + `--stop` / `--status` | `monitor/daemon_runner.py` | Contract test start/stop |
+| **PY-032** | [ ] `systemd/pingui.service.example` | `systemd/` | `Type=simple`, `Restart=on-failure`, `User=`, `AmbientCapabilities=CAP_NET_RAW` |
+| **PY-033** | [ ] DEPLOYMENT § Python NOC headless | `docs/DEPLOYMENT.md` | cap_net_raw, `--session-db`, daemon flags |
+| **PY-034** | [ ] CHECKLIST § Python daemon smoke | `docs/CHECKLIST.md` | start → route change → SQLite row |
+
+**Estimate:** 1–2 sprint. **Parallel** with P12-001…P12-040 (Java).
+
+### PY.3 — Python alerts (P0) — parity with P10
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **PY-040** | [ ] `RouteChangeEvent` in `models.py` | `models.py`, `tests/unit/test_route_change_event.py` | JSON serialize/deserialize; shared contract with P10-010 |
+| **PY-041** | [ ] `AlertDispatcher` + `WebhookAlertDispatcher` | `monitor/alert_dispatcher.py` | POST JSON; contract test with mock HTTP |
+| **PY-042** | [ ] CLI `--alert-webhook URL` | `__main__.py` | Secret not logged; network error → log, no crash |
+| **PY-043** | [ ] Desktop notify (`notify-send`) | `monitor/desktop_notifier.py` | Linux smoke: route change → notification |
+| **PY-044** | [ ] Alert rate limit | `monitor/alert_rate_limiter.py` | Unit test burst per host |
+| **PY-045** | [ ] Daemon + alerts | `daemon_runner.py` | Route change → webhook without GUI (Python P12-030) |
+
+**Estimate:** 1–2 sprint. **Can run in parallel** with Pro-S2 (P10).
+
+### PY.4 — Python IPv6 (P2) — parity with V6
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **PY-050** | [ ] IPv6 literal in `config.py` | `config.py`, `tests/unit/test_config.py` | RFC 5952 normalize; mixed v4+v6 profile |
+| **PY-051** | [ ] Dual-stack ICMP trace | `icmp/tracer.py`, `icmp/raw_socket.py` | v6 literal → trace hops; `@pytest.mark.network` optional |
+| **PY-052** | [ ] GeoIP `prefixes_v6` | `geoip/country.py`, `config/geoip_hints.yaml` | Parity with V6-036…V6-037 |
+
+**Estimate:** 2–3 sprint after V6-015. **Out of scope v1:** raw ICMPv6 (see V6-040…V6-045).
+
+### PY.5 — Packaging and CI hygiene (P1–P2)
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **PY-060** | [ ] `optional-dependencies.gui` | `pyproject.toml` | Base: `scapy`, `PyYAML`, `networkx`; extra: PyQt6, WebEngine, folium, matplotlib |
+| **PY-061** | [x] CI push on `beta` | `.github/workflows/ci.yml` | `branches: [main, master, beta]` |
+| **PY-062** | [x] Python CI badge in README | `README.md`, `README.en.md` | Badge next to Java CI |
+| **PY-063** | [x] mypy `python_version` aligned with CI runtime | `pyproject.toml` | CI `setup-python` 3.11; mypy 3.12 (numpy stubs); numpy `ignore_errors` |
+| **PY-064** | [ ] Coverage: reduce omit after PY-020/030 | `pyproject.toml` | `__main__.py` in ≥80% gate or documented exclusion |
+
+**Estimate:** 1 sprint; PY-060…064 can be cherry-picked into PY-S1.
+
+### Recommended order (phase PY)
+
+```mermaid
+flowchart TD
+  PY010[PY-010 pingui.sh CLI] --> PY011[PY-011 CONFIGURATION]
+  PY011 --> PY013[PY-013 Living Spec]
+  PY013 --> PY020[PY-020 MonitorLoop]
+  PY020 --> PY030[PY-030 --daemon]
+  PY030 --> PY040[PY-040 RouteChangeEvent]
+  PY040 --> PY045[PY-045 daemon alerts]
+  PY020 --> PY050[PY-050 IPv6 config]
+```
+
+| Sprint (proposed) | Tasks | Priority |
+|-------------------|-------|----------|
+| **PY-S1** | PY-010…PY-016, PY-060…PY-064 (partial) | P0 |
+| **PY-S2** | PY-020…PY-023, PY-030…PY-034 | P1 |
+| **PY-S3** | PY-040…PY-045 | P0 |
+| **PY-S4 (opt.)** | PY-050…PY-052 | P2 |
 
 ---
 
@@ -457,19 +563,28 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  V6070[V6-070 IPv6 QA gate] --> P10010[P10 alerts]
+  V6070[V6-070 IPv6 QA gate] --> PYS1[PY-S1 launcher docs]
+  PYS1 --> PYS2[PY-S2 MonitorLoop daemon]
+  PYS1 --> P10010[P10 alerts]
+  P10010 --> PYS3[PY-S3 Python alerts]
   P10010 --> P11010[P11 SQLite Java]
-  P11010 --> P12010[P12 daemon]
+  P11010 --> PYS2
+  PYS2 --> P12010[P12 daemon Java]
   P12010 --> P13010[P13 MTR / smart interval]
   P13010 --> P14010[P14 route diff / tags]
   P14010 --> P15010[P15 Prometheus / API]
   P15010 --> P16010[P16 telemetry / LOG-server]
+  V6070 --> PY50[PY-S4 IPv6 Python opt]
 ```
 
 | Priority | Sprint (prop.) | Phase | Tasks |
 |----------|----------------|-------|-------|
+| **P0** | PY-S1 | PY.0 + PY.5 | PY-010…PY-016, PY-060…PY-064 |
+| **P1** | PY-S2 | PY.1 + PY.2 | PY-020…PY-034 |
+| **P0** | PY-S3 | PY.3 | PY-040…PY-045 |
+| **P2** | PY-S4 (opt.) | PY.4 | PY-050…PY-052 |
 | **P0** | Pro-S1 | 9 (close) | V6-035…V6-037, V6-060…V6-074 |
-| **P0** | Pro-S2 | 10 | P10-001…P10-050 |
+| **P0** | Pro-S2 | 10 | P10-001…P10-050 (+ PY-S3 Python) |
 | **P0** | Pro-S3–S4 | 11 | P11-001…P11-050 |
 | **P1** | Pro-S5 | 12 | P12-001…P12-040 |
 | **P1** | Pro-S6–S7 | 13 | P13-001…P13-050 |
@@ -510,7 +625,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog:** M/B roadmap closed; B-064 coverage ongoing; **IPv6 — Phase 9 (V6-*)**; **Pro — Phases 10–16 (P10–P16)**.
+**Backlog:** M/B roadmap closed; B-064 coverage ongoing; **IPv6 — Phase 9 (V6-*)**; **Python NOC — Phase PY (PY-*)**; **Pro — Phases 10–16 (P10–P16)**.
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 
@@ -564,5 +679,7 @@ Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 **Roadmap Pro (2026-07-09):** added phases 10–15 (alerts, persistence, daemon, MTR, pro GUI, integrations) — official NOC/SRE plan.
 
 **Roadmap Telemetry (2026-07-09):** phase 16 — network metrics collection, local storage (SQLite/JSONL), LOG-server export (syslog/GELF/Loki).
+
+**Roadmap Python (2026-07-09):** phase PY — atomic tickets PY-010…PY-064: launcher, docs, MonitorLoop, daemon, alerts, IPv6, CI/packaging (`beta` only).
 
 Update this file when closing a task: `[x] M-001` + date in CHANGELOG.

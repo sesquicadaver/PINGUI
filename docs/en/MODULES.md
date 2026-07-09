@@ -144,6 +144,63 @@ First observation (`previous_ips` empty) — `changed=False`.
 
 ---
 
+## pingui.persistence.session_db
+
+### `SessionDatabase`
+
+SQLite persistence for `SessionStore` (optional `--session-db`).
+
+| Method | Description |
+|--------|-------------|
+| `load(host) -> HostSessionData \| None` | Restore host state |
+| `save(host, data)` | Write snapshot + ping history |
+| `close()` | Flush and close connection |
+
+Schema v2: JSON for hops, routes, `hop_stats`.
+
+---
+
+## pingui.export.session_report
+
+| Function | Description |
+|----------|-------------|
+| `export_session_csv(store, path)` | Flat CSV (`ROUTE_CSV_FIELDS`) |
+| `export_session_html(store, path)` | Standalone HTML with per-host tables |
+| `build_route_rows(store)` | current / inactive / previous routes + stats |
+
+---
+
+## pingui.geoip
+
+| Module | Description |
+|--------|-------------|
+| `country.configure(enabled, hints_path)` | Offline CIDR→country from YAML |
+| `country.lookup_country(ip) -> str \| None` | Longest-prefix match |
+| `coordinates.centroid_for_ip(ip)` | Lat/lon for folium |
+| `map_builder.build_geo_map(hosts, store)` | HTML for WebEngine tab |
+
+---
+
+## pingui.persistence.timeseries
+
+| Module | Description |
+|--------|-------------|
+| `factory.create_timeseries_backend(...)` | `influx` / `timescale` / `None` |
+| `base.TimeSeriesBackend` | Protocol: `record_rtt`, `record_route` |
+| `memory.MemoryTimeSeriesBackend` | In-memory (tests) |
+
+Optional deps: `pip install -e ".[timeseries]"`.
+
+---
+
+## pingui.monitor.hop_stats
+
+| Function | Description |
+|----------|-------------|
+| `hop_stats_summary(samples) -> HopStatsSummary` | avg RTT, jitter, loss % |
+
+---
+
 ## pingui.monitor.session_store
 
 ### `SessionStore`
@@ -231,8 +288,9 @@ Root logger: ERROR (GUI) or DEBUG (`--verbose`).
 
 | Script | Purpose |
 |--------|---------|
-| `pingui.sh` | Deploy / GUI / destroy |
+| `pingui.sh` | Deploy / GUI / destroy; forwards CLI flags |
 | `scripts/ci_venv.sh` | CI pipeline |
 | `scripts/check_caps.sh` | ICMP permission smoke |
 | `scripts/setup_caps.sh` | Manual setcap |
 | `scripts/check_imports.py` | Cycle detection |
+| `scripts/check_doc_parity.py` | UK/EN docs parity |
