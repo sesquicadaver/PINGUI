@@ -18,6 +18,12 @@ Details: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 - [ ] `.venv/bin/python -m pingui status --pid-file /tmp/pingui.pid` → running
 - [ ] `.venv/bin/python -m pingui stop --pid-file /tmp/pingui.pid`
 
+### Python alert smoke (beta)
+
+- [ ] `python -m pingui monitor --alert-webhook http://127.0.0.1:9/hook` — starts without crash (unreachable webhook → log)
+- [ ] `python -m pingui run --desktop-alerts` — GUI + notify-send on route change (Linux)
+- [ ] `python -m pingui daemon --alert-webhook URL --session-db data/ping.db` — route change → POST JSON
+
 ---
 
 ## Linux (Ubuntu 22.04 / 24.04 / 26.04)

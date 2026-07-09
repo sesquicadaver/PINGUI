@@ -13,6 +13,7 @@ from pingui.geoip import configure as configure_geoip
 from pingui.geoip.country import GeoIpHintsError
 from pingui.icmp.raw_socket import RawIcmpPermissionError, check_raw_icmp_permission
 from pingui.logging_setup import setup_logging
+from pingui.monitor.alert_dispatcher import AlertDispatcher, build_alert_dispatcher
 from pingui.monitor.daemon_runner import (
     DEFAULT_PID_FILE,
     DaemonError,
@@ -113,12 +114,32 @@ def _add_monitor_args(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def _add_alert_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--alert-webhook",
+        default=None,
+        help="POST route-change JSON to this webhook URL (secrets are not logged)",
+    )
+    parser.add_argument(
+        "--desktop-alerts",
+        action="store_true",
+        help="Linux desktop notifications on route change (notify-send)",
+    )
+    parser.add_argument(
+        "--alert-rate-limit",
+        type=int,
+        default=10,
+        help="Max alerts per host per hour (default: 10)",
+    )
+
+
 def build_legacy_parser() -> argparse.ArgumentParser:
     """Flat CLI (backward compatible with pre-PY-023 invocations)."""
     parser = argparse.ArgumentParser(
         description="PINGUI — Linux route and ping monitor (in-memory session)",
     )
     _add_monitor_args(parser)
+    _add_alert_args(parser)
     parser.add_argument(
         "--export-csv",
         type=Path,
@@ -142,6 +163,7 @@ def build_command_parser() -> argparse.ArgumentParser:
 
     run_parser = sub.add_parser("run", help="Launch PyQt6 GUI (default mode)")
     _add_monitor_args(run_parser)
+    _add_alert_args(run_parser)
 
     export_parser = sub.add_parser("export", help="Export session report and exit")
     _add_monitor_args(export_parser)
@@ -153,12 +175,14 @@ def build_command_parser() -> argparse.ArgumentParser:
         help="Headless foreground monitoring (no GUI)",
     )
     _add_monitor_args(monitor_parser)
+    _add_alert_args(monitor_parser)
 
     daemon_parser = sub.add_parser(
         "daemon",
         help="Headless monitoring with PID file (NOC/systemd)",
     )
     _add_monitor_args(daemon_parser)
+    _add_alert_args(daemon_parser)
     daemon_parser.add_argument(
         "--pid-file",
         type=Path,
@@ -195,7 +219,22 @@ def _validate_timing(args: argparse.Namespace) -> int | None:
     if args.timeout <= 0:
         print("Config error: --timeout must be positive", file=sys.stderr)
         return 1
+    rate_limit = getattr(args, "alert_rate_limit", 10)
+    if rate_limit < 1:
+        print("Config error: --alert-rate-limit must be >= 1", file=sys.stderr)
+        return 1
     return None
+
+
+def _build_alert_dispatcher(args: argparse.Namespace) -> AlertDispatcher | None:
+    webhook = getattr(args, "alert_webhook", None)
+    desktop = getattr(args, "desktop_alerts", False)
+    rate_limit = getattr(args, "alert_rate_limit", 10)
+    return build_alert_dispatcher(
+        webhook_url=webhook,
+        desktop_alerts=desktop,
+        max_alerts_per_hour=rate_limit,
+    )
 
 
 def _load_hosts(args: argparse.Namespace) -> list[str] | int:
@@ -275,6 +314,7 @@ def _run_gui(args: argparse.Namespace, hosts: list[str]) -> int:
         session_db_path=args.session_db,
         geo_map_enabled=not args.no_geo_map,
         timeseries_backend=timeseries_backend,
+        alert_dispatcher=_build_alert_dispatcher(args),
     )
 
 
@@ -291,6 +331,7 @@ def _run_headless(args: argparse.Namespace, hosts: list[str], *, pid_file: Path 
         session_db_path=args.session_db,
         timeseries_backend=timeseries_backend,
         pid_file=pid_file,
+        alert_dispatcher=_build_alert_dispatcher(args),
     )
 
 

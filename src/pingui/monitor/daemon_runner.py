@@ -8,6 +8,8 @@ import time
 from pathlib import Path
 
 from pingui.icmp.raw_socket import ProbeTransport
+from pingui.models import RouteChangeEvent
+from pingui.monitor.alert_dispatcher import AlertDispatcher
 from pingui.monitor.monitor_loop import MonitorCallbacks, MonitorLoop
 from pingui.monitor.session_store import SessionStore
 from pingui.persistence.session_db import SessionDatabase
@@ -87,7 +89,12 @@ class PidFile:
         return 0
 
 
-def _store_callbacks(store: SessionStore) -> MonitorCallbacks:
+def _store_callbacks(
+    store: SessionStore,
+    *,
+    alert_dispatcher: AlertDispatcher | None = None,
+    profile: str = "default",
+) -> MonitorCallbacks:
     def on_data(host: str, snapshot: object) -> None:
         from pingui.models import RouteSnapshot
 
@@ -106,6 +113,14 @@ def _store_callbacks(store: SessionStore) -> MonitorCallbacks:
             " ".join(old_ips) or "(none)",
             " ".join(new_ips) or "(none)",
         )
+        if alert_dispatcher is not None:
+            event = RouteChangeEvent.from_route_change(
+                host,
+                old_ips,
+                new_ips,
+                profile=profile,
+            )
+            alert_dispatcher.dispatch(event)
 
     def on_error(host: str, message: str) -> None:
         logger.warning("Probe error %s: %s", host, message)
@@ -128,6 +143,8 @@ def run_headless_monitor(
     pid_file: Path | None = None,
     enable_all_hosts: bool = True,
     transport: ProbeTransport | None = None,
+    alert_dispatcher: AlertDispatcher | None = None,
+    profile: str = "default",
 ) -> int:
     """
     Run monitoring loop until SIGINT/SIGTERM.
@@ -146,7 +163,11 @@ def run_headless_monitor(
         max_hops=max_hops,
         timeout=timeout,
         transport=transport,
-        callbacks=_store_callbacks(store),
+        callbacks=_store_callbacks(
+            store,
+            alert_dispatcher=alert_dispatcher,
+            profile=profile,
+        ),
     )
 
     pid = PidFile(pid_file) if pid_file is not None else None

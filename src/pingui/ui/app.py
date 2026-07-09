@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import QApplication
 from pingui.ui.main_window import MainWindow
 
 if TYPE_CHECKING:
+    from pingui.monitor.alert_dispatcher import AlertDispatcher
     from pingui.persistence.timeseries.base import TimeSeriesBackend
 
 
@@ -42,6 +43,7 @@ def run_app(
     session_db_path: Path | None = None,
     geo_map_enabled: bool = True,
     timeseries_backend: TimeSeriesBackend | None = None,
+    alert_dispatcher: AlertDispatcher | None = None,
 ) -> int:
     """Create QApplication and run main window event loop."""
     if quiet:
@@ -56,6 +58,7 @@ def run_app(
         session_db_path=session_db_path,
         geo_map_enabled=geo_map_enabled,
         timeseries_backend=timeseries_backend,
+        alert_dispatcher=alert_dispatcher,
     )
     window.show()
     return app.exec()

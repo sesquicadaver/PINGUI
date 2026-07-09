@@ -297,12 +297,12 @@ flowchart TD
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **PY-040** | [ ] `RouteChangeEvent` у `models.py` | `models.py`, `tests/unit/test_route_change_event.py` | Serialize/deserialize JSON; спільний контракт з P10-010 |
-| **PY-041** | [ ] `AlertDispatcher` + `WebhookAlertDispatcher` | `monitor/alert_dispatcher.py` | POST JSON; contract test з mock HTTP |
-| **PY-042** | [ ] CLI `--alert-webhook URL` | `__main__.py` | Secret не в логах; помилка мережі → log, не crash |
-| **PY-043** | [ ] Desktop notify (`notify-send`) | `monitor/desktop_notifier.py` | Linux smoke: route change → notification |
-| **PY-044** | [ ] Rate limit alerts | `monitor/alert_rate_limiter.py` | Unit-тест burst per host |
-| **PY-045** | [ ] Daemon + alerts | `daemon_runner.py` | Route change → webhook без GUI (Python P12-030) |
+| **PY-040** | [x] `RouteChangeEvent` у `models.py` | `models.py`, `tests/unit/test_route_change_event.py` | Serialize/deserialize JSON; спільний контракт з P10-010 |
+| **PY-041** | [x] `AlertDispatcher` + `WebhookAlertDispatcher` | `monitor/alert_dispatcher.py` | POST JSON; contract test з mock HTTP |
+| **PY-042** | [x] CLI `--alert-webhook URL` | `__main__.py` | Secret не в логах; помилка мережі → log, не crash |
+| **PY-043** | [x] Desktop notify (`notify-send`) | `monitor/desktop_notifier.py` | Linux smoke: route change → notification |
+| **PY-044** | [x] Rate limit alerts | `monitor/alert_rate_limiter.py` | Unit-тест burst per host |
+| **PY-045** | [x] Daemon + alerts | `daemon_runner.py` | Route change → webhook без GUI (Python P12-030) |
 
 **Орієнтовно:** 1–2 sprint. **Може йти паралельно** з Pro-S2 (P10).
 

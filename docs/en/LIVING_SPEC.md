@@ -47,6 +47,10 @@ Module → test matrix for the Python edition. Update when adding features (PY-0
 | Session store | `monitor/session_store.py` | `test_session_store.py`, `contract/test_worker_store.py` |
 | Monitor loop | `monitor/monitor_loop.py` | `test_monitor_loop.py` |
 | Daemon runner | `monitor/daemon_runner.py` | `test_daemon_runner.py` |
+| Alert dispatcher | `monitor/alert_dispatcher.py` | `contract/test_alert_webhook.py` |
+| Alert rate limit | `monitor/alert_rate_limiter.py` | `test_alert_rate_limiter.py` |
+| Desktop notifier | `monitor/desktop_notifier.py` | `test_desktop_notifier.py` |
+| Route change event | `models.py` (`RouteChangeEvent`) | `test_route_change_event.py` |
 | Hop stats | `monitor/hop_stats.py` | `test_hop_stats.py` |
 | Worker | `monitor/worker.py` | `test_worker.py`, `integration/test_worker_run.py` |
 | SQLite persistence | `persistence/session_db.py` | `test_session_db.py` |

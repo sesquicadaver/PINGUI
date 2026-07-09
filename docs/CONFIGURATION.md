@@ -70,6 +70,16 @@ hosts:
 | `--export-csv` | Path | — | Експорт CSV і вихід (без GUI/ICMP) |
 | `--export-html` | Path | — | Експорт HTML і вихід (без GUI/ICMP) |
 
+### Alerts (PY-042…044)
+
+| Опція | Тип | За замовч. | Опис |
+|-------|-----|------------|------|
+| `--alert-webhook` | URL | — | POST JSON `RouteChangeEvent` при зміні маршруту |
+| `--desktop-alerts` | flag | off | Linux `notify-send` при зміні маршруту |
+| `--alert-rate-limit` | int | `10` | Макс. алертів на host / годину |
+
+Секрети в URL не логуються; помилки webhook — лише WARNING, процес не падає.
+
 ### GeoIP і карта
 
 | Опція | Тип | За замовч. | Опис |

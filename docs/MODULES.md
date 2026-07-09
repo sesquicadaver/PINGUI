@@ -253,6 +253,30 @@ Foreground/daemon моніторинг до SIGINT/SIGTERM; опційно PID f
 | `acquire()` / `release()` | Запис/видалення PID |
 | `stop(path)` / `status(path)` | CLI `stop` / `status` |
 
+При `alert_dispatcher` route change → webhook/desktop (PY-045).
+
+---
+
+## pingui.monitor.alert_dispatcher
+
+### `build_alert_dispatcher(...)`
+
+Збирає webhook + desktop канали з rate limit.
+
+### `WebhookAlertDispatcher`
+
+POST JSON `RouteChangeEvent`; URL у логах без секретів.
+
+### `AlertRateLimiter`
+
+Макс. N алертів на host / годину (PY-044).
+
+---
+
+## pingui.monitor.desktop_notifier
+
+`notify_route_change(event)` — Linux `notify-send` (PY-043).
+
 ---
 
 ## pingui.monitor.worker

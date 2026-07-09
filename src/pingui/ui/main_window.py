@@ -25,7 +25,8 @@ from PyQt6.QtWidgets import (
 
 from pingui.config import ConfigError, save_hosts_config
 from pingui.export.session_report import export_session_csv, export_session_html
-from pingui.models import RouteSnapshot
+from pingui.models import RouteChangeEvent, RouteSnapshot
+from pingui.monitor.alert_dispatcher import AlertDispatcher
 from pingui.monitor.session_store import SessionStore
 from pingui.monitor.worker import LightweightMonitorWorker
 from pingui.persistence.session_db import SessionDatabase
@@ -49,6 +50,7 @@ class MainWindow(QMainWindow):
         session_db_path: Path | None = None,
         geo_map_enabled: bool = True,
         timeseries_backend: TimeSeriesBackend | None = None,
+        alert_dispatcher: AlertDispatcher | None = None,
     ) -> None:
         super().__init__()
         self.setWindowTitle("PINGUI — Сесійний монітор маршрутів Linux")
@@ -63,6 +65,7 @@ class MainWindow(QMainWindow):
             session_db=self._session_db,
             timeseries=timeseries_backend,
         )
+        self._alert_dispatcher = alert_dispatcher
         self._last_update: datetime | None = None
         self._updating_list = False
 
@@ -358,6 +361,9 @@ class MainWindow(QMainWindow):
             f"Було: {old_str}\n"
             f"Стало: {new_str}\n"
         )
+        if self._alert_dispatcher is not None:
+            event = RouteChangeEvent.from_route_change(host, old_ips, new_ips)
+            self._alert_dispatcher.dispatch(event)
 
     def _on_probe_error(self, host: str, message: str) -> None:
         ts = time.strftime("%H:%M:%S")

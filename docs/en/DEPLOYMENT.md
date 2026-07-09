@@ -108,6 +108,7 @@ Daemon with PID file (PY-030…032):
 
 ```bash
 .venv/bin/python -m pingui daemon --session-db data/ping.db --pid-file /tmp/pingui.pid
+.venv/bin/python -m pingui daemon --alert-webhook https://hooks.example.com/pingui --session-db data/ping.db
 .venv/bin/python -m pingui status --pid-file /tmp/pingui.pid
 .venv/bin/python -m pingui stop --pid-file /tmp/pingui.pid
 ```

@@ -253,6 +253,30 @@ Foreground/daemon monitoring until SIGINT/SIGTERM; optional PID file.
 | `acquire()` / `release()` | Write/remove PID |
 | `stop(path)` / `status(path)` | CLI `stop` / `status` |
 
+With `alert_dispatcher`, route changes trigger webhook/desktop alerts (PY-045).
+
+---
+
+## pingui.monitor.alert_dispatcher
+
+### `build_alert_dispatcher(...)`
+
+Builds webhook + desktop channels with rate limiting.
+
+### `WebhookAlertDispatcher`
+
+POST JSON `RouteChangeEvent`; URLs logged without secrets.
+
+### `AlertRateLimiter`
+
+Max N alerts per host / hour (PY-044).
+
+---
+
+## pingui.monitor.desktop_notifier
+
+`notify_route_change(event)` — Linux `notify-send` (PY-043).
+
 ---
 
 ## pingui.monitor.worker

@@ -70,6 +70,16 @@ Flat legacy CLI (`--export-csv`, `--session-db` without subcommand) remains for 
 | `--export-csv` | Path | — | Export CSV and exit (no GUI/ICMP) |
 | `--export-html` | Path | — | Export HTML and exit (no GUI/ICMP) |
 
+### Alerts (PY-042…044)
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--alert-webhook` | URL | — | POST JSON `RouteChangeEvent` on route change |
+| `--desktop-alerts` | flag | off | Linux `notify-send` on route change |
+| `--alert-rate-limit` | int | `10` | Max alerts per host / hour |
+
+URL secrets are not logged; webhook failures are WARNING only (process continues).
+
 ### GeoIP and map
 
 | Option | Type | Default | Description |

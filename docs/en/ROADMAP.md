@@ -297,12 +297,12 @@ flowchart TD
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **PY-040** | [ ] `RouteChangeEvent` in `models.py` | `models.py`, `tests/unit/test_route_change_event.py` | JSON serialize/deserialize; shared contract with P10-010 |
-| **PY-041** | [ ] `AlertDispatcher` + `WebhookAlertDispatcher` | `monitor/alert_dispatcher.py` | POST JSON; contract test with mock HTTP |
-| **PY-042** | [ ] CLI `--alert-webhook URL` | `__main__.py` | Secret not logged; network error → log, no crash |
-| **PY-043** | [ ] Desktop notify (`notify-send`) | `monitor/desktop_notifier.py` | Linux smoke: route change → notification |
-| **PY-044** | [ ] Alert rate limit | `monitor/alert_rate_limiter.py` | Unit test burst per host |
-| **PY-045** | [ ] Daemon + alerts | `daemon_runner.py` | Route change → webhook without GUI (Python P12-030) |
+| **PY-040** | [x] `RouteChangeEvent` in `models.py` | `models.py`, `tests/unit/test_route_change_event.py` | JSON serialize/deserialize; shared contract with P10-010 |
+| **PY-041** | [x] `AlertDispatcher` + `WebhookAlertDispatcher` | `monitor/alert_dispatcher.py` | POST JSON; contract test with mock HTTP |
+| **PY-042** | [x] CLI `--alert-webhook URL` | `__main__.py` | Secret not logged; network error → log, no crash |
+| **PY-043** | [x] Desktop notify (`notify-send`) | `monitor/desktop_notifier.py` | Linux smoke: route change → notification |
+| **PY-044** | [x] Alert rate limit | `monitor/alert_rate_limiter.py` | Unit test burst per host |
+| **PY-045** | [x] Daemon + alerts | `daemon_runner.py` | Route change → webhook without GUI (Python P12-030) |
 
 **Estimate:** 1–2 sprint. **Can run in parallel** with Pro-S2 (P10).
 
