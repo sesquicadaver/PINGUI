@@ -58,7 +58,7 @@
 | Export reports | `export/session_report.py` | `test_session_export.py`, `test_main_export.py` |
 | GeoIP | `geoip/country.py`, `map_builder.py` | `test_geoip_country.py`, `test_geo_map.py` |
 | GUI | `ui/main_window.py`, `graph_canvas.py` | `test_graph_canvas.py`, `integration/test_ui_smoke.py` |
-| CLI entry | `__main__.py` | `test_main.py`, `test_main_cli_validation.py`, `test_main_export.py`, `test_main_subcommands.py` |
+| CLI entry | `__main__.py` | `test_main.py`, `test_main_cli_validation.py`, `test_main_export.py`, `test_main_subcommands.py`, `test_main_dispatch.py` |
 | Import graph | `scripts/check_imports.py` | `python scripts/check_imports.py` |
 | Doc parity UK/EN | `scripts/check_doc_parity.py` | `test_doc_parity.py`, CI |
 | CI gate Python | `scripts/ci_venv.sh`, `.github/workflows/ci.yml` | `./pingui.sh --deploy` або `bash scripts/ci_venv.sh` |

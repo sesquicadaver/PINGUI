@@ -18,6 +18,16 @@ chmod +x pingui.sh
 ./pingui.sh --verbose   # GUI with debug log
 ```
 
+### Dependencies (PY-060)
+
+| Extra | Install | Purpose |
+|-------|---------|---------|
+| *(base)* | `pip install -e .` | Headless monitor/daemon/export (scapy, PyYAML, networkx) |
+| `gui` | `pip install -e ".[gui]"` | PyQt6 GUI, folium map, matplotlib |
+| `dev` | `pip install -e ".[dev,gui]"` | ruff, mypy, pytest (same as CI) |
+
+`./pingui.sh --deploy` installs `.[dev,gui]`.
+
 ## Code Structure
 
 ```

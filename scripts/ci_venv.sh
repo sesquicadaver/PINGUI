@@ -7,7 +7,7 @@ cd "$ROOT"
 
 python3 -m venv .venv
 .venv/bin/pip install -U pip
-.venv/bin/pip install -e ".[dev]"
+.venv/bin/pip install -e ".[dev,gui]"
 
 export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-offscreen}"
 

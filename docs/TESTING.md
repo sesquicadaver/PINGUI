@@ -76,6 +76,7 @@ Integration-тести GUI створюють `QApplication` перед `MainWin
 | `test_session_export.py` | CSV/HTML row builder |
 | `test_main_export.py` | CLI `--export-csv` / `--export-html` headless |
 | `test_main_subcommands.py` | CLI `monitor` / `daemon` / `export` / `stop` |
+| `test_main_dispatch.py` | `__main__` parse/dispatch edge cases (PY-064) |
 | `test_monitor_loop.py` | Headless loop, callbacks, store integration |
 | `test_daemon_runner.py` | PID file, `run_headless_monitor`, stop/status |
 | `test_route_change_event.py` | `RouteChangeEvent` JSON round-trip |

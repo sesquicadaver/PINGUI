@@ -320,11 +320,11 @@ flowchart TD
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **PY-060** | [ ] `optional-dependencies.gui` | `pyproject.toml` | Base: `scapy`, `PyYAML`, `networkx`; extra: PyQt6, WebEngine, folium, matplotlib |
+| **PY-060** | [x] `optional-dependencies.gui` | `pyproject.toml` | Base: `scapy`, `PyYAML`, `networkx`; extra: PyQt6, WebEngine, folium, matplotlib |
 | **PY-061** | [x] CI push on `beta` | `.github/workflows/ci.yml` | `branches: [main, master, beta]` |
 | **PY-062** | [x] Python CI badge in README | `README.md`, `README.en.md` | Badge next to Java CI |
 | **PY-063** | [x] mypy `python_version` aligned with CI runtime | `pyproject.toml` | CI `setup-python` 3.11; mypy 3.12 (numpy stubs); numpy `ignore_errors` |
-| **PY-064** | [ ] Coverage: reduce omit after PY-020/030 | `pyproject.toml` | `__main__.py` in ≥80% gate or documented exclusion |
+| **PY-064** | [x] Coverage: `__main__.py` in gate | `pyproject.toml`, `tests/unit/test_main_dispatch.py` | omit removed; ≥80% total gate |
 
 **Estimate:** 1 sprint; PY-060…064 can be cherry-picked into PY-S1.
 

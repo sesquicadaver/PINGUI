@@ -198,7 +198,7 @@ install_python_packages() {
   [[ "$QUIET" -eq 1 ]] && quiet_flag=(-q)
   log "Встановлення Python-залежностей"
   "$PIP" install "${quiet_flag[@]}" -U pip
-  "$PIP" install "${quiet_flag[@]}" -e ".[dev]"
+  "$PIP" install "${quiet_flag[@]}" -e ".[dev,gui]"
 }
 
 pingui_importable() {

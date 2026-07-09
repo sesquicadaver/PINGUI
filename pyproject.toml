@@ -11,13 +11,9 @@ requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "PINGUI Team" }]
 dependencies = [
-    "PyQt6>=6.6",
-    "PyQt6-WebEngine>=6.6",
-    "folium>=0.15",
-    "matplotlib>=3.8",
-    "networkx>=3.2",
     "scapy>=2.5",
     "PyYAML>=6.0",
+    "networkx>=3.2",
 ]
 
 [project.urls]
@@ -27,6 +23,12 @@ Repository = "https://github.com/sesquicadaver/PINGUI"
 Changelog = "https://github.com/sesquicadaver/PINGUI/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
+gui = [
+    "PyQt6>=6.6",
+    "PyQt6-WebEngine>=6.6",
+    "folium>=0.15",
+    "matplotlib>=3.8",
+]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=4.1",
@@ -49,7 +51,6 @@ where = ["src"]
 source = ["pingui"]
 concurrency = ["thread"]
 omit = [
-    "*/pingui/__main__.py",
     "*/pingui/ui/app.py",
     "*/pingui/ui/map_view.py",
     "*/pingui/logging_setup.py",
