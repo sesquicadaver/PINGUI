@@ -211,7 +211,19 @@ public final class ProfilesConfig {
                 List<String> args = readStringList(expertMap.get("args"), "ping_expert.args", profileName);
                 expert = new PingExpertEntry(chain, args);
             }
-            return new HostEntry(normalized, enabled, pingOnly, expert, probeModeOverride);
+            Double intervalOverride = null;
+            Object intervalObj = hostMap.get("interval");
+            if (intervalObj != null) {
+                if (!(intervalObj instanceof Number number)) {
+                    throw new ConfigError("Host in profile '" + profileName + "' interval must be a number");
+                }
+                double parsed = number.doubleValue();
+                if (parsed <= 0) {
+                    throw new ConfigError("Host in profile '" + profileName + "' interval must be positive");
+                }
+                intervalOverride = parsed;
+            }
+            return new HostEntry(normalized, enabled, pingOnly, expert, probeModeOverride, intervalOverride);
         }
         throw new ConfigError("Each host in profile '" + profileName + "' must be a string or mapping, got "
                 + (entry == null ? "null" : entry.getClass().getSimpleName()));
@@ -264,7 +276,11 @@ public final class ProfilesConfig {
 
     private static Map<String, Object> hostEntryToMap(HostEntry host) {
         PingExpertEntry expert = host.pingExpert();
-        if (!host.enabled() && !host.pingOnly() && host.probeModeOverride() == null && !expert.isConfigured()) {
+        if (!host.enabled()
+                && !host.pingOnly()
+                && host.probeModeOverride() == null
+                && host.intervalSecondsOverride() == null
+                && !expert.isConfigured()) {
             return Map.of("address", host.address());
         }
         Map<String, Object> map = new LinkedHashMap<>();
@@ -278,6 +294,9 @@ public final class ProfilesConfig {
             map.put("probe_mode", host.probeModeOverride().yamlValue());
         } else if (host.probeModeOverride() == HostProbeMode.PING_ONLY) {
             map.put("probe_mode", HostProbeMode.PING_ONLY.yamlValue());
+        }
+        if (host.intervalSecondsOverride() != null) {
+            map.put("interval", host.intervalSecondsOverride());
         }
         if (expert.isConfigured()) {
             Map<String, Object> expertMap = new LinkedHashMap<>();

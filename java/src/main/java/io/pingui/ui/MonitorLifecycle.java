@@ -40,6 +40,7 @@ public final class MonitorLifecycle {
         service.setExpertResolver(store::getPingExpert);
         service.setProfileProbeMode(profile.hostProbeMode());
         service.setHostProbeModeResolver(store::getProbeMode);
+        service.setHostPollIntervalResolver(store::getIntervalOverride);
         if (sessionDatabase != null) {
             service.setPersistenceEventWriter(new PersistenceEventWriter(sessionDatabase, service.persistencePolicy()));
         }

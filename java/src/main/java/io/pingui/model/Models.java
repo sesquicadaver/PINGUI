@@ -90,6 +90,7 @@ public final class Models {
         private boolean pingOnly;
         private HostProbeMode probeMode = HostProbeMode.TRACE;
         private HostProbeMode probeModeOverride;
+        private Double intervalSecondsOverride;
         private PingExpertEntry pingExpert = PingExpertEntry.empty();
 
         public List<HopNode> getCurrentRoute() {
@@ -158,8 +159,20 @@ public final class Models {
             probeModeOverride = override;
         }
 
+        public Double getIntervalSecondsOverride() {
+            return intervalSecondsOverride;
+        }
+
+        public void setIntervalSecondsOverride(Double override) {
+            if (override != null && override <= 0) {
+                throw new IllegalArgumentException("interval must be positive");
+            }
+            intervalSecondsOverride = override;
+        }
+
         public void applyProbeFromEntry(io.pingui.config.HostEntry entry, HostProbeMode profileDefault) {
             probeModeOverride = entry.probeModeOverride();
+            intervalSecondsOverride = entry.intervalSecondsOverride();
             probeMode = entry.effectiveProbeMode(profileDefault);
             pingOnly = probeMode == HostProbeMode.PING_ONLY;
         }

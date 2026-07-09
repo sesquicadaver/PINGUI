@@ -265,6 +265,30 @@ class ProfilesConfigTest {
     }
 
     @Test
+    void loadHostIntervalOverride() throws Exception {
+        Path path = tempDir.resolve("host-interval.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    interval: 30.0
+                    hosts:
+                      - address: "8.8.8.8"
+                        enabled: true
+                        interval: 2.5
+                """);
+        HostEntry host = ProfilesConfig.load(path).active().hosts().get(0);
+        assertEquals(2.5, host.intervalSecondsOverride());
+        assertEquals(2.5, host.effectiveIntervalSeconds(HostProbeMode.TRACE, 30.0));
+
+        ProfilesConfig.save(path, ProfilesConfig.load(path));
+        HostEntry reloaded = ProfilesConfig.load(path).active().hosts().get(0);
+        assertEquals(2.5, reloaded.intervalSecondsOverride());
+    }
+
+    @Test
     void loadPingExpertWithChainAndArgs() throws Exception {
         Path path = tempDir.resolve("expert.yaml");
         Files.writeString(

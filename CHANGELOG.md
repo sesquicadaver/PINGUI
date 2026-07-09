@@ -36,6 +36,7 @@
 - **Probe modes ADR (P13-001):** [ADR_PROBE_MODES.md](docs/ADR_PROBE_MODES.md) — `trace | mtr | ping_only` vs transport `probe: auto|process|raw`; MTR = continuous per-hop.
 - **MTR probe (P13-010):** `MtrProbe` — per-hop state machine (DISCOVERING → MONITORING), one TTL per poll; `RoutePoller.pollHostMtr`.
 - **Probe mode YAML (P13-011):** `probe_mode: trace | mtr | ping_only` на профіль і хост; `MonitorService` гілкує trace/mtr/ping_only; `ping_only: true` → backward compat.
+- **Smart poll interval (P13-020):** `HostPollSchedule` — per-host cadence за `probe_mode` (`ping_only` 1.5s, `mtr` 10s, `trace` = profile `interval`); опційний `interval` на хост; `MonitorService` опитує лише due-хости (tick 0.25s).
 
 ### Fixed
 

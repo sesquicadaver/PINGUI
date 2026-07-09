@@ -227,6 +227,27 @@ class MonitorServiceTest {
     }
 
     @Test
+    void pollsHostsOnIndependentSchedules() throws Exception {
+        AtomicInteger tracePolls = new AtomicInteger();
+        AtomicInteger pingOnlyPolls = new AtomicInteger();
+        RouteProbe probe = (targetHost, maxHops, timeoutSeconds) -> {
+            if ("8.8.8.8".equals(targetHost)) {
+                tracePolls.incrementAndGet();
+            } else {
+                pingOnlyPolls.incrementAndGet();
+            }
+            return new RouteSnapshot(targetHost, targetHost, List.of(new HopNode(1, "10.0.0.1", 1.0, false)));
+        };
+        MonitorService service = new MonitorService(0.05, 20, 0.5, probe);
+        service.addHost("8.8.8.8", true, HostProbeMode.TRACE);
+        service.addHost("1.1.1.1", true, HostProbeMode.PING_ONLY);
+        Thread.sleep(900);
+        assertTrue(tracePolls.get() >= 3, "trace host should poll frequently");
+        assertTrue(pingOnlyPolls.get() <= 1, "ping_only host polls at most once in ~900ms");
+        service.close();
+    }
+
+    @Test
     void duplicateHostRejected() {
         MonitorService service = new MonitorService(
                 1.0,

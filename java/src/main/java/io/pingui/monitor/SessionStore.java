@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalDouble;
 
 /** In-memory session storage for route and ping metrics; optional SQLite persistence (P11-011). */
 public final class SessionStore implements AutoCloseable {
@@ -125,6 +126,11 @@ public final class SessionStore implements AutoCloseable {
         return get(host).getProbeMode();
     }
 
+    public OptionalDouble getIntervalOverride(String host) {
+        Double override = get(host).getIntervalSecondsOverride();
+        return override != null ? OptionalDouble.of(override) : OptionalDouble.empty();
+    }
+
     public void setProbeMode(String host, HostProbeMode probeMode) {
         HostSessionData session = get(host);
         session.setProbeMode(probeMode);
@@ -165,7 +171,8 @@ public final class SessionStore implements AutoCloseable {
                     session.isEnabled(),
                     pingOnly,
                     session.getPingExpert(),
-                    session.getProbeModeOverride()));
+                    session.getProbeModeOverride(),
+                    session.getIntervalSecondsOverride()));
         }
         return List.copyOf(out);
     }

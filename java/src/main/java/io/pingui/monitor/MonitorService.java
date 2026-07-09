@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import java.util.OptionalDouble;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -50,6 +50,12 @@ public final class MonitorService implements AutoCloseable {
         HostProbeMode resolve(String host);
     }
 
+    /** Supplies optional per-host poll interval override in seconds (P13-020). */
+    @FunctionalInterface
+    public interface HostPollIntervalResolver {
+        OptionalDouble resolve(String host);
+    }
+
     /** @deprecated use {@link HostProbeModeResolver} */
     @Deprecated
     @FunctionalInterface
@@ -69,8 +75,9 @@ public final class MonitorService implements AutoCloseable {
     private final Map<String, Boolean> pingOnly = new HashMap<>();
     private final Map<String, HostProbeMode> probeModes = new HashMap<>();
     private final Map<String, List<String>> lastRoutes = new HashMap<>();
+    private final Map<String, Instant> lastPollAt = new HashMap<>();
     private final Map<String, AtomicBoolean> pollsInFlight = new ConcurrentHashMap<>();
-    private final double intervalSeconds;
+    private final double profileIntervalSeconds;
     private final int maxHops;
     private final double timeoutSeconds;
     private Listener listener;
@@ -78,6 +85,7 @@ public final class MonitorService implements AutoCloseable {
     private volatile String alertProfileName = "default";
     private volatile PingExpertResolver expertResolver;
     private volatile HostProbeModeResolver probeModeResolver;
+    private volatile HostPollIntervalResolver intervalResolver;
     private volatile PingOnlyResolver pingOnlyResolver;
     private HostProbeMode profileProbeMode = HostProbeMode.TRACE;
     private volatile PersistenceEventWriter persistenceEvents;
@@ -96,7 +104,7 @@ public final class MonitorService implements AutoCloseable {
     }
 
     MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds, RouteProbe probe, MtrProbe mtrProbe) {
-        this.intervalSeconds = intervalSeconds;
+        this.profileIntervalSeconds = intervalSeconds;
         this.maxHops = maxHops;
         this.timeoutSeconds = timeoutSeconds;
         this.poller = new RoutePoller(probe, mtrProbe);
@@ -110,7 +118,8 @@ public final class MonitorService implements AutoCloseable {
             thread.setDaemon(true);
             return thread;
         });
-        scheduler.scheduleWithFixedDelay(this::cycle, 0, (long) (intervalSeconds * 1000), TimeUnit.MILLISECONDS);
+        long tickMs = Math.max(1L, Math.round(HostPollSchedule.TICK_SECONDS * 1000.0));
+        scheduler.scheduleWithFixedDelay(this::cycle, 0, tickMs, TimeUnit.MILLISECONDS);
     }
 
     public void setListener(Listener listener) {
@@ -135,6 +144,10 @@ public final class MonitorService implements AutoCloseable {
 
     public void setHostProbeModeResolver(HostProbeModeResolver probeModeResolver) {
         this.probeModeResolver = probeModeResolver;
+    }
+
+    public void setHostPollIntervalResolver(HostPollIntervalResolver intervalResolver) {
+        this.intervalResolver = intervalResolver;
     }
 
     public void setProfileProbeMode(HostProbeMode profileProbeMode) {
@@ -198,6 +211,7 @@ public final class MonitorService implements AutoCloseable {
             pingOnly.put(host, legacyPingOnly);
             probeModes.put(host, probeMode);
             lastRoutes.put(host, List.of());
+            lastPollAt.remove(host);
         }
     }
 
@@ -210,6 +224,7 @@ public final class MonitorService implements AutoCloseable {
             pingOnly.remove(host);
             probeModes.remove(host);
             lastRoutes.remove(host);
+            lastPollAt.remove(host);
         }
         pollsInFlight.remove(host);
     }
@@ -234,6 +249,10 @@ public final class MonitorService implements AutoCloseable {
                 probeModes.put(newHost, wasMode);
             }
             lastRoutes.put(newHost, lastRoutes.remove(oldHost));
+            Instant wasLastPoll = lastPollAt.remove(oldHost);
+            if (wasLastPoll != null) {
+                lastPollAt.put(newHost, wasLastPoll);
+            }
             AtomicBoolean inFlight = pollsInFlight.remove(oldHost);
             if (inFlight != null) {
                 pollsInFlight.put(newHost, inFlight);
@@ -263,6 +282,7 @@ public final class MonitorService implements AutoCloseable {
             probeModes.put(host, mode);
             pingOnly.put(host, mode == HostProbeMode.PING_ONLY);
             lastRoutes.put(host, List.of());
+            lastPollAt.remove(host);
         }
         poller.resetMtrHost(host);
     }
@@ -281,20 +301,23 @@ public final class MonitorService implements AutoCloseable {
             persistencePolicy.applyPendingAfterCycle();
             return;
         }
-        try {
-            List<CompletableFuture<Void>> probes = new ArrayList<>();
-            for (String host : active) {
-                if (!running.get()) {
-                    break;
-                }
-                probes.add(CompletableFuture.runAsync(() -> pollHost(host), probePool));
+        Instant now = Instant.now();
+        for (String host : active) {
+            if (!running.get()) {
+                break;
             }
-            CompletableFuture.allOf(probes.toArray(CompletableFuture[]::new)).join();
-        } catch (RuntimeException ex) {
-            // Keep scheduler alive if a probe task fails unexpectedly.
-        } finally {
-            persistencePolicy.applyPendingAfterCycle();
+            HostProbeMode mode = resolveProbeMode(host);
+            double intervalSeconds = resolveIntervalSeconds(host, mode);
+            Instant lastPoll;
+            synchronized (lock) {
+                lastPoll = lastPollAt.get(host);
+            }
+            if (!HostPollSchedule.isDue(lastPoll, now, intervalSeconds)) {
+                continue;
+            }
+            probePool.execute(() -> pollHost(host));
         }
+        persistencePolicy.applyPendingAfterCycle();
     }
 
     private void pollHost(String host) {
@@ -324,6 +347,7 @@ public final class MonitorService implements AutoCloseable {
             }
             previousIps = List.copyOf(lastRoutes.getOrDefault(host, List.of()));
             probeMode = resolveProbeMode(host);
+            lastPollAt.put(host, Instant.now());
         }
         HostPollOutcome outcome =
                 switch (probeMode) {
@@ -441,6 +465,18 @@ public final class MonitorService implements AutoCloseable {
             return HostProbeMode.PING_ONLY;
         }
         return probeModes.getOrDefault(host, profileProbeMode);
+    }
+
+    private double resolveIntervalSeconds(String host, HostProbeMode mode) {
+        OptionalDouble override = OptionalDouble.empty();
+        HostPollIntervalResolver resolver = intervalResolver;
+        if (resolver != null) {
+            OptionalDouble resolved = resolver.resolve(host);
+            if (resolved != null) {
+                override = resolved;
+            }
+        }
+        return HostPollSchedule.effectiveInterval(mode, profileIntervalSeconds, override);
     }
 
     @Override
