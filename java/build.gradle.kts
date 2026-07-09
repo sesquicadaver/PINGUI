@@ -192,11 +192,30 @@ tasks.named("processResources") {
     dependsOn("generateBuildProperties")
 }
 
-tasks.register<Exec>("layerCheck") {
+tasks.register("layerCheck") {
     group = "verification"
     description = "Fail if lower layers import io.pingui.ui (B-063)"
-    workingDir = projectDir
-    commandLine("bash", "scripts/check-layer-deps.sh")
+    doLast {
+        val src = file("src/main/java/io/pingui")
+        val layers = listOf("config", "monitor", "probe", "model", "geoip", "platform")
+        val violations = mutableListOf<String>()
+        for (layer in layers) {
+            val dir = src.resolve(layer)
+            if (!dir.isDirectory) continue
+            dir.walkTopDown().filter { it.isFile && it.extension == "java" }.forEach { javaFile ->
+                javaFile.readLines().forEach { line ->
+                    if (line.contains("import io.pingui.ui.")) {
+                        violations.add("io.pingui.$layer must not import io.pingui.ui (${javaFile.relativeTo(projectDir)}): $line")
+                    }
+                }
+            }
+        }
+        if (violations.isNotEmpty()) {
+            violations.forEach { logger.error(it) }
+            throw GradleException("layerCheck failed: ${violations.size} violation(s)")
+        }
+        logger.lifecycle("layerCheck OK: no forbidden ui imports in lower layers")
+    }
 }
 
 tasks.jar {
