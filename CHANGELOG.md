@@ -14,6 +14,7 @@
 - **Java alerts pipeline (P10-020…050):** webhook POST, desktop `notify-send`, YAML `alerts:` + CLI overrides, per-host rate limit, `RouteChangeNotifier`, tests and CHECKLIST smoke.
 - **Expert ping default IPv4 (V6-054):** single AF mode (`-4` or `-6`); default `-4` for hostname/IPv4; no dual-stack expert ping.
 - **Expert ping IPv6 resolve (V6-055):** hostname targets resolve to AAAA when expert ping uses `-6`.
+- **Persistence SPIKE (P11-001):** `docs/SPIKE_PERSISTENCE.md` — Java SQLite schema v1 parity + v2 route events.
 
 ## [0.2.0] - 2026-07-09
 

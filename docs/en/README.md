@@ -16,6 +16,7 @@ On **`beta`** — full package (Java + Python). On **`main`** — Java docs for 
 | [ADR_IPV6.md](ADR_IPV6.md) | Developer | Dual-stack config ADR (V6-002) |
 | [ADR_ALERTS.md](ADR_ALERTS.md) | Developer | Route-change alerts ADR (P10-001) |
 | [SPIKE_IPV6.md](SPIKE_IPV6.md) | Developer | IPv6 scope (**planned**, phase 9 V6-*) |
+| [SPIKE_PERSISTENCE.md](SPIKE_PERSISTENCE.md) | Developer | SQLite session schema (phase 11 P11-*) |
 | [CONFIGURATION.md](CONFIGURATION.md) | Developer | YAML, CLI (Python) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Developer | Python layers |
 | [MODULES.md](MODULES.md) | Developer | Module reference |
