@@ -17,6 +17,7 @@
 | YAML profiles v2 + legacy | `ProfilesConfig`, `ProfileDocument` | `ProfilesConfigTest` (host flags, type errors, save max hosts), `ProfileDocumentTest` |
 | CLI override профілю | `CliProfileOverrides`, `PinguiApplication` | `PinguiApplicationTest` |
 | Monitor polling | `MonitorService`, `RoutePoller`, `ExpertPingEnricher` | `MonitorServiceTest`, `ExpertPingEnricherTest` (stub ping) |
+| Route-change alerts | `RouteChangeEvent`, `AlertDispatcher` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
 | Raw ICMP packet | `IcmpPacket`, `IcmpV6Packet` | `IcmpPacketTest`, `IcmpV6PacketTest` |
 | Expert ping flags | `PingExpertValidator`, `ProcessExpertPing` | `PingExpertValidatorTest` (compatibility, value specs), `ProcessExpertPingTest` |

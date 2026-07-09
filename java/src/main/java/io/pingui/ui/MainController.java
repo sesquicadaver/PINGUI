@@ -251,7 +251,7 @@ public final class MainController {
     }
 
     private MonitorService createMonitor(TracingProfile profile) {
-        return MonitorLifecycle.create(profile, store, new MonitorService.Listener() {
+        return MonitorLifecycle.create(profile, profileDocument.activeProfile(), store, new MonitorService.Listener() {
             @Override
             public void onDataReceived(String host, RouteSnapshot snapshot) {
                 Platform.runLater(() -> handleData(host, snapshot));

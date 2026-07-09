@@ -10,6 +10,7 @@
 ### Added
 
 - **Alerts ADR (P10-001):** `docs/ADR_ALERTS.md` — channels (webhook, desktop), `RouteChangeEvent` JSON, rate limit, failure policy.
+- **Java alerts foundation (P10-010…011):** `RouteChangeEvent`, `AlertDispatcher`, dispatch from `MonitorService` on route change.
 
 ## [0.2.0] - 2026-07-09
 

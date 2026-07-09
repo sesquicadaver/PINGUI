@@ -359,8 +359,8 @@ flowchart TD
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
 | **P10-001** | [x] ADR: alert policy (channels, rate limit, payload) | `docs/ADR_ALERTS.md`, `docs/en/ADR_ALERTS.md` | Webhook + desktop; SNMP/email — out of scope v1 |
-| **P10-010** | [ ] Model `RouteChangeEvent` (host, old_ips, new_ips, ts, profile) | `monitor/RouteChangeEvent.java`, Python `models.py` | Unit test serialize/deserialize |
-| **P10-011** | [ ] `AlertDispatcher` interface + no-op default | `monitor/AlertDispatcher.java` | Monitor calls on `onRouteChanged` |
+| **P10-010** | [x] Model `RouteChangeEvent` (host, old_ips, new_ips, ts, profile) | `monitor/RouteChangeEvent.java`, Python `models.py` | Unit test serialize/deserialize |
+| **P10-011** | [x] `AlertDispatcher` interface + no-op default | `monitor/AlertDispatcher.java`, `MonitorService` | Monitor calls on `onRouteChanged` |
 | **P10-020** | [ ] Desktop notification (Linux notify-send / Windows toast / macOS) | `ui/RouteChangeNotifier.java` | Manual smoke: route change → notification |
 | **P10-021** | [ ] YAML/CLI: `alerts.desktop: true\|false` | `ProfilesConfig`, `PinguiApplication` | Default off; documented in CONFIGURATION |
 | **P10-030** | [ ] Webhook POST JSON (Slack-compatible + generic) | `monitor/WebhookAlertDispatcher.java` | Contract test with mock HTTP server |
@@ -699,5 +699,7 @@ Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 **IPv6 release 0.2.0 (2026-07-09):** semver bump, CHANGELOG `[0.2.0]`, SPIKE/CHECKLIST/DEPLOYMENT parity; phase 9 code-complete on `beta`.
 
 **Alerts ADR (2026-07-09):** P10-001 — `ADR_ALERTS.md` (webhook + desktop v1, payload, rate limit); Java P10-010+.
+
+**Java alerts foundation (2026-07-09):** P10-010…P10-011 — `RouteChangeEvent` JSON + `AlertDispatcher` wired in `MonitorService`.
 
 Update this file when closing a task: `[x] M-001` + date in CHANGELOG.

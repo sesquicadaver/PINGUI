@@ -10,9 +10,11 @@ final class MonitorLifecycle {
 
     private MonitorLifecycle() {}
 
-    static MonitorService create(TracingProfile profile, SessionStore store, MonitorService.Listener listener) {
+    static MonitorService create(
+            TracingProfile profile, String profileName, SessionStore store, MonitorService.Listener listener) {
         MonitorService service = new MonitorService(
                 profile.intervalSeconds(), profile.maxHops(), profile.timeoutSeconds(), profile.probeMode());
+        service.setAlertProfileName(profileName);
         service.setExpertResolver(store::getPingExpert);
         service.setPingOnlyResolver(store::isPingOnly);
         service.setListener(listener);
