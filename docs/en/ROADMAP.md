@@ -434,7 +434,7 @@ flowchart TD
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
 | **P13-001** | [x] ADR: `probe_mode: trace \| mtr \| ping_only` | `docs/ADR_PROBE_MODES.md` | MTR = continuous per-hop, not full trace each cycle |
-| **P13-010** | [ ] `MtrProbe` / per-hop poll state machine | `probe/MtrProbe.java` | Unit test state transitions |
+| **P13-010** | [x] `MtrProbe` / per-hop poll state machine | `probe/MtrProbe.java` | Unit test state transitions |
 | **P13-011** | [ ] YAML `probe_mode` per profile + host override | `ProfilesConfig`, `HostEntry` | Backward compat: default `trace` |
 | **P13-020** | [ ] Smart interval: `ping_only` 1–2s, `trace` 30–300s per host | `MonitorService`, `HostPollSchedule` | Profile default + per-host override |
 | **P13-021** | [ ] Burst on change: after route change — interval ×0.25 for 5 min | `BurstSchedulePolicy.java` | Unit test timer |

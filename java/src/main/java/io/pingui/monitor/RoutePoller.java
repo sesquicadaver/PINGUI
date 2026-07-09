@@ -4,6 +4,8 @@ import io.pingui.config.PingExpertEntry;
 import io.pingui.model.Models;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;
+import io.pingui.probe.MtrPollOutcome;
+import io.pingui.probe.MtrProbe;
 import io.pingui.probe.ProcessHostPing;
 import io.pingui.probe.RouteProbe;
 import java.io.IOException;
@@ -14,9 +16,30 @@ import java.util.OptionalDouble;
 public final class RoutePoller {
     private final RouteProbe probe;
     private final ProcessHostPing hostPing = new ProcessHostPing();
+    private final MtrProbe mtrProbe;
 
     public RoutePoller(RouteProbe probe) {
+        this(probe, null);
+    }
+
+    public RoutePoller(RouteProbe probe, MtrProbe mtrProbe) {
         this.probe = probe;
+        this.mtrProbe = mtrProbe;
+    }
+
+    /** Incremental MTR-style poll: one hop per call (P13-010). */
+    public HostPollOutcome pollHostMtr(String host, List<String> previousIps, int maxHops, double timeoutSeconds) {
+        if (mtrProbe == null) {
+            return HostPollOutcome.error(previousIps, "MTR probe not configured");
+        }
+        MtrPollOutcome outcome = mtrProbe.poll(host, maxHops, timeoutSeconds);
+        if (outcome.error() != null) {
+            return HostPollOutcome.error(previousIps, outcome.error());
+        }
+        RouteSnapshot snapshot = outcome.snapshot();
+        List<String> currentIps = snapshot.routeIps();
+        RouteChangeDetector.RouteChangeResult change = RouteChangeDetector.detect(previousIps, currentIps);
+        return new HostPollOutcome(snapshot, null, change.changed(), change.oldIps(), change.newIps(), currentIps);
     }
 
     public HostPollOutcome pollHostRoute(String host, List<String> previousIps, int maxHops, double timeoutSeconds) {

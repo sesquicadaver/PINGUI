@@ -17,6 +17,7 @@ Module → unit test matrix. Update when adding features.
 | YAML profiles v2 + legacy | `ProfilesConfig`, `ProfileDocument` | `ProfilesConfigTest` (host flags, type errors, save max hosts), `ProfileDocumentTest` |
 | CLI profile override | `CliProfileOverrides`, `PinguiApplication` | `PinguiApplicationTest` |
 | Monitor polling | `MonitorService`, `RoutePoller`, `ExpertPingEnricher` | `MonitorServiceTest`, `ExpertPingEnricherTest` (stub ping) |
+| MTR per-hop probe (P13-010) | `MtrProbe`, `MtrProbeState`, `RoutePoller.pollHostMtr` | `MtrProbeTest`, `RoutePollerTest.pollHostMtrDetectsIncrementalRouteChange` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
 | SQLite session (P11-010) | `SessionDatabase`, `SessionJsonCodec` | `SessionDatabaseTest` |
