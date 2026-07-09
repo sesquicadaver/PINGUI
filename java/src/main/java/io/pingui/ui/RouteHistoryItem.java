@@ -12,6 +12,7 @@ public record RouteHistoryItem(long id, RouteChangeEvent event) {
 
     public String summary() {
         String route = event.newIps().isEmpty() ? "—" : String.join(" → ", event.newIps());
-        return TIME_FMT.format(event.timestamp()) + "  " + route;
+        String prefix = event.oldIps().isEmpty() ? "Початковий маршрут  " : "";
+        return prefix + TIME_FMT.format(event.timestamp()) + "  " + route;
     }
 }

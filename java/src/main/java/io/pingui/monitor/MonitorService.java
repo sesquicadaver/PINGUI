@@ -50,6 +50,7 @@ public final class MonitorService implements AutoCloseable {
 
     private final RoutePoller poller;
     private final ExpertPingEnricher expertEnricher = new ExpertPingEnricher();
+    private final DefaultTargetPingEnricher defaultTargetPingEnricher = new DefaultTargetPingEnricher();
     private final ScheduledExecutorService scheduler;
     private final ExecutorService probePool;
     private final AtomicBoolean running = new AtomicBoolean(true);
@@ -308,12 +309,11 @@ public final class MonitorService implements AutoCloseable {
         if (outcome.snapshot() != null && isKnownHost(host)) {
             RouteSnapshot snapshot = outcome.snapshot();
             if (!hostPingOnly) {
-                PingExpertResolver resolver = expertResolver;
-                if (resolver != null) {
-                    PingExpertEntry expert = resolver.resolve(host);
-                    if (expert != null && expert.isConfigured()) {
-                        snapshot = expertEnricher.enrich(snapshot, expert, timeoutSeconds);
-                    }
+                PingExpertEntry expert = resolveExpert(host);
+                if (expert.isConfigured()) {
+                    snapshot = expertEnricher.enrich(snapshot, expert, timeoutSeconds);
+                } else {
+                    snapshot = defaultTargetPingEnricher.enrich(snapshot, timeoutSeconds);
                 }
             }
             current.onDataReceived(host, snapshot);
@@ -321,6 +321,27 @@ public final class MonitorService implements AutoCloseable {
         if (outcome.routeChanged()) {
             current.onRouteChanged(host, outcome.oldIps(), outcome.newIps());
             dispatchRouteChangeAlert(host, outcome.oldIps(), outcome.newIps());
+        } else if (isFirstBaseline(previousIps, outcome.currentIps())) {
+            persistBaselineRouteChange(host, outcome.currentIps());
+            current.onRouteChanged(host, List.of(), outcome.currentIps());
+        }
+    }
+
+    private static boolean isFirstBaseline(List<String> previousIps, List<String> currentIps) {
+        return previousIps.isEmpty() && currentIps != null && !currentIps.isEmpty();
+    }
+
+    private void persistBaselineRouteChange(String host, List<String> currentIps) {
+        RouteChangeEvent event =
+                RouteChangeEvent.fromRouteChange(host, List.of(), currentIps, alertProfileName, Instant.now());
+        PersistenceEventWriter events = persistenceEvents;
+        if (events == null || events.hasRouteChangeEvents(host)) {
+            return;
+        }
+        try {
+            events.writeRouteChange(event);
+        } catch (RuntimeException ex) {
+            LOG.warn("Persistence baseline route_change failed for {}: {}", host, ex.getMessage());
         }
     }
 

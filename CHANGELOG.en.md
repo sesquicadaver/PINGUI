@@ -17,6 +17,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - **Java GUI SQLite reconnect (P11-016):** `reconnectPersistence` keeps live enabled/ping-only from `SessionStore` instead of resetting to YAML; `MonitorLifecycle` registers hosts from the current store so routes and `hop_stats` persist after **Settings → Database…**.
+- **Java default target ping + baseline history:** `DefaultTargetPingEnricher` fills target RTT via `ping` when Expert ping is off; first trace writes a baseline `route_change` (no alert); history list labels «Початковий маршрут».
 
 ## [0.2.0] - 2026-07-09
 

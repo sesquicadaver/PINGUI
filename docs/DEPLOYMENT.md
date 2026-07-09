@@ -145,7 +145,7 @@ Daemon з PID-файлом (PY-030…032):
 | Метрики маршруту | Таблиця `host_session` (JSON: routes, `ping_history`, `hop_stats`) |
 | Події | Таблиця `persistence_event` (`route_change`, `probe_error`) |
 
-**Запис у БД:** після підключення SQLite увімкніть чекбокс цілі в списку хостів — legacy YAML за замовчуванням має `enabled: false`, без активного моніторингу маршрут і `hop_stats` не оновлюються. Рядки `host_session` з’являються одразу при connect; `current_route_json` / `hop_stats` — після першого успішного poll.
+**Запис у БД:** після підключення SQLite увімкніть чекбокс цілі в списку хостів — legacy YAML за замовчуванням має `enabled: false`, без активного моніторингу маршрут і `hop_stats` не оновлюються. Рядки `host_session` з’являються одразу при connect; `current_route_json` — після першого trace; `ping_history_json` — після першого poll (авто-`ping` цілі, якщо Expert ping вимкнено). **Історія змін:** перший trace дає рядок «Початковий маршрут»; наступні — лише при зміні IP-ланцюга.
 
 **Диск і retention (P11-050):**
 

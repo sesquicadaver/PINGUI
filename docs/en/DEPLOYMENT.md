@@ -145,7 +145,7 @@ systemd example: `systemd/pingui.service.example` (Type=simple, `ExecStart=... d
 | Route metrics | `host_session` table (JSON: routes, `ping_history`, `hop_stats`) |
 | Events | `persistence_event` table (`route_change`, `probe_error`) |
 
-**Writing to the DB:** after connecting SQLite, enable the target checkbox in the host list — legacy YAML defaults to `enabled: false`; without active monitoring, route and `hop_stats` are not updated. `host_session` rows appear on connect; `current_route_json` / `hop_stats` after the first successful poll.
+**Writing to the DB:** after connecting SQLite, enable the target checkbox in the host list — legacy YAML defaults to `enabled: false`; without active monitoring, route and `hop_stats` are not updated. `host_session` rows appear on connect; `current_route_json` after the first trace; `ping_history_json` after the first poll (auto target `ping` when Expert ping is off). **Route history:** the first trace adds a «Початковий маршрут» row; later rows appear only when the IP chain changes.
 
 **Disk and retention (P11-050):**
 
