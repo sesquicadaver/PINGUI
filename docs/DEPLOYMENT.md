@@ -137,6 +137,26 @@ Daemon з PID-файлом (PY-030…032):
 
 Приклад systemd: `systemd/pingui.service.example` (Type=simple, `ExecStart=... daemon`).
 
+## Java NOC (headless daemon, P12)
+
+Без JavaFX — той самий `MonitorService`, що й GUI:
+
+```bash
+cd /path/to/PINGUI
+./pingui-java.sh -- --daemon \
+  --config config/hosts.example.yaml \
+  --session-db data/ping.db \
+  --pid-file /tmp/pingui-java.pid \
+  --alert-webhook https://hooks.example.com/pingui
+
+./pingui-java.sh -- --status --pid-file /tmp/pingui-java.pid
+./pingui-java.sh -- --stop --pid-file /tmp/pingui-java.pid
+```
+
+У YAML увімкніть `enabled: true` для цілей (daemon не має чекбоксів UI).
+
+Приклад systemd: `systemd/pingui-java.service.example`. ADR: [ADR_DAEMON.md](ADR_DAEMON.md).
+
 ## SQLite session persistence (Java / Python)
 
 | Що | Де |

@@ -11,11 +11,11 @@ import io.pingui.persistence.SessionDatabase;
 import java.util.List;
 
 /** Factory for session {@link MonitorService} wired to the active tracing profile. */
-final class MonitorLifecycle {
+public final class MonitorLifecycle {
 
     private MonitorLifecycle() {}
 
-    static MonitorService create(
+    public static MonitorService create(
             TracingProfile profile,
             String profileName,
             SessionStore store,
@@ -25,7 +25,7 @@ final class MonitorLifecycle {
                 profile, profileName, store, listener, alerts, null, HostViewRules.sessionEntries(profile.hosts()));
     }
 
-    static MonitorService create(
+    public static MonitorService create(
             TracingProfile profile,
             String profileName,
             SessionStore store,

@@ -82,6 +82,10 @@ gradlew.bat run        # Windows
 | `--alert-rate-limit` | `10` | Макс. алертів на host / годину |
 | `--session-db` | off | SQLite метрики сесії + події (`host_session`, `persistence_event`); альтернатива — YAML `persistence.session_db` або GUI «База даних…» |
 | `--export-report` | off | Експорт CSV/HTML з `--session-db` і вихід (без GUI) |
+| `--daemon` | off | Headless `MonitorService` без JavaFX (NOC) |
+| `--pid-file` | `$TMP/pingui-java.pid` | PID-файл для `--daemon` / `--stop` / `--status` |
+| `--stop` | off | Зупинити daemon за PID-файлом |
+| `--status` | off | Статус daemon (running/stopped) |
 | `--no-persist-route-change` | off | Не писати `route_change` у SQLite |
 | `--no-persist-probe-error` | off | Не писати `probe_error` у SQLite |
 | `--geoip-hints` | `config/geoip_hints.yaml` | Offline CIDR→країна |

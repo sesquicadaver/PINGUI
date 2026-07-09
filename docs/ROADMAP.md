@@ -415,13 +415,13 @@ flowchart TD
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **P12-001** | [ ] ADR: daemon lifecycle (signals, single instance, logging) | `docs/ADR_DAEMON.md` | SIGHUP reload config |
-| **P12-010** | [ ] `--daemon` mode: без JavaFX, лише MonitorService loop | `PinguiApplication`, `DaemonRunner.java` | `./pingui-java.sh --daemon` exits 0, process stays |
-| **P12-011** | [ ] PID file + `--stop` / `--status` | `DaemonPidFile.java` | Contract test start/stop |
-| **P12-020** | [ ] `systemd/pingui.service.example` | `systemd/` | `Type=simple`, `Restart=on-failure` |
-| **P12-021** | [ ] DEPLOYMENT § NOC headless | `docs/DEPLOYMENT.md` | cap_net_raw, webhook, session-db |
-| **P12-030** | [ ] Інтеграція з P10 alerts у daemon | `DaemonRunner` | Route change → webhook без GUI |
-| **P12-040** | [ ] CHECKLIST § daemon smoke | `docs/CHECKLIST.md` | start → change route → webhook log |
+| **P12-001** | [x] ADR: daemon lifecycle (signals, single instance, logging) | `docs/ADR_DAEMON.md` | SIGHUP reload → P12-050 |
+| **P12-010** | [x] `--daemon` mode: без JavaFX, лише MonitorService loop | `PinguiApplication`, `DaemonRunner.java` | `./pingui-java.sh -- --daemon` blocks until stop |
+| **P12-011** | [x] PID file + `--stop` / `--status` | `DaemonPidFile.java` | `DaemonPidFileTest`, CLI parse tests |
+| **P12-020** | [x] `systemd/pingui-java.service.example` | `systemd/` | `Type=simple`, `Restart=on-failure` |
+| **P12-021** | [x] DEPLOYMENT § NOC headless | `docs/DEPLOYMENT.md` | webhook, session-db, enabled hosts |
+| **P12-030** | [x] Інтеграція з P10 alerts у daemon | `DaemonRunner` | `AlertDispatchers` via CLI `--alert-webhook` |
+| **P12-040** | [x] CHECKLIST § daemon smoke | `docs/CHECKLIST.md` | Java daemon smoke steps |
 
 **Орієнтовно:** 1–2 sprint. **Поза scope:** Windows service (окремий ticket).
 

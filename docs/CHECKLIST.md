@@ -10,6 +10,14 @@ Python-редакція та тести — гілка **`beta`**.
 
 Деталі: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 
+### Java daemon smoke (beta, P12)
+
+- [ ] `./pingui-java.sh -- --daemon --config config/hosts.example.yaml --session-db data/ping.db --pid-file /tmp/pingui-java.pid` (hosts `enabled: true` у YAML)
+- [ ] `./pingui-java.sh -- --status --pid-file /tmp/pingui-java.pid` → `running pid=…`
+- [ ] `sqlite3 data/ping.db "SELECT host FROM host_session;"` — рядки після poll
+- [ ] `./pingui-java.sh -- --daemon --alert-webhook URL …` — route change → POST (лог webhook)
+- [ ] `./pingui-java.sh -- --stop --pid-file /tmp/pingui-java.pid`
+
 ### Python daemon smoke (beta)
 
 - [ ] `./pingui.sh --deploy` — venv + doc parity

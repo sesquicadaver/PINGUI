@@ -13,7 +13,9 @@ public record AppOptions(
         boolean geoipEnabled,
         Path geoipHintsPath,
         Optional<Path> sessionDbPath,
-        Optional<Path> exportReportPath) {
+        Optional<Path> exportReportPath,
+        CliRunMode runMode,
+        Path pidFilePath) {
     public static AppOptions defaults() {
         return new AppOptions(
                 Path.of("config/hosts.example.yaml"),
@@ -24,6 +26,12 @@ public record AppOptions(
                 true,
                 Path.of("config/geoip_hints.yaml"),
                 Optional.empty(),
-                Optional.empty());
+                Optional.empty(),
+                CliRunMode.GUI,
+                defaultPidFile());
+    }
+
+    public static Path defaultPidFile() {
+        return Path.of(System.getProperty("java.io.tmpdir")).resolve("pingui-java.pid");
     }
 }

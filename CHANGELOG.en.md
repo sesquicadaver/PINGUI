@@ -18,6 +18,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 - **Java GUI SQLite reconnect (P11-016):** `reconnectPersistence` keeps live enabled/ping-only from `SessionStore` instead of resetting to YAML; `MonitorLifecycle` registers hosts from the current store so routes and `hop_stats` persist after **Settings → Database…**.
 - **Java default target ping + baseline history:** `DefaultTargetPingEnricher` fills target RTT via `ping` when Expert ping is off; first trace writes a baseline `route_change` (no alert); history list labels «Початковий маршрут».
+- **Java headless daemon (P12-001…040):** `--daemon`, `--pid-file`, `--stop`, `--status`; `DaemonRunner`; `systemd/pingui-java.service.example`; [ADR_DAEMON.md](docs/ADR_DAEMON.md).
 
 ## [0.2.0] - 2026-07-09
 

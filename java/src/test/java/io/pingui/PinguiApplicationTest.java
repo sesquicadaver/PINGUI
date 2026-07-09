@@ -110,6 +110,26 @@ class PinguiApplicationTest {
                 "export-report", "reports/out.csv"));
         assertEquals(Path.of("reports/out.csv"), options.exportReportPath().orElseThrow());
         assertEquals(Path.of("data/ping.db"), options.sessionDbPath().orElseThrow());
+        assertEquals(CliRunMode.EXPORT, options.runMode());
+    }
+
+    @Test
+    void parseOptions_daemonAndPidFile() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of(
+                "daemon", "true",
+                "pid-file", "/run/pingui/pingui-java.pid"));
+        assertEquals(CliRunMode.DAEMON, options.runMode());
+        assertEquals(Path.of("/run/pingui/pingui-java.pid"), options.pidFilePath());
+    }
+
+    @Test
+    void parseOptions_stopAndStatus() {
+        assertEquals(
+                CliRunMode.STOP,
+                PinguiApplication.parseOptions(Map.of("stop", "true")).runMode());
+        assertEquals(
+                CliRunMode.STATUS,
+                PinguiApplication.parseOptions(Map.of("status", "true")).runMode());
     }
 
     @Test
