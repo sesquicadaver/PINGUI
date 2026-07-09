@@ -131,7 +131,7 @@ public final class PingExpertDialog {
             row++;
         }
 
-        wireUiConstraints(addressFamily, flagChoices, textValues);
+        wireUiConstraints(host, addressFamily, flagChoices, textValues);
 
         ScrollPane scroll = new ScrollPane(grid);
         scroll.setFitToWidth(true);
@@ -246,6 +246,7 @@ public final class PingExpertDialog {
     }
 
     private static void wireUiConstraints(
+            String host,
             ComboBox<String> addressFamily,
             Map<String, ComboBox<String>> flagChoices,
             Map<String, TextField> textValues) {
@@ -257,15 +258,19 @@ public final class PingExpertDialog {
         }
 
         TextField flowLabel = textValues.get("-F");
+        PingOption flowOption = PingOptionCatalog.find("-F");
         Runnable updateFlowLabel = () -> {
-            boolean ipv6 = AF_IPV6.equals(addressFamily.getValue());
             if (flowLabel == null) {
                 return;
             }
-            flowLabel.setDisable(!ipv6);
-            if (!ipv6) {
+            boolean allowed = ExpertPingUiRules.flowLabelAllowed(host, addressFamily.getValue());
+            flowLabel.setDisable(!allowed);
+            if (!allowed) {
                 flowLabel.clear();
                 clearFieldError(flowLabel);
+                flowLabel.setTooltip(new Tooltip(ExpertPingUiRules.flowLabelDisabledHint()));
+            } else if (flowOption != null) {
+                flowLabel.setTooltip(new Tooltip(PingExpertValidator.describeValueSpec(flowOption)));
             }
         };
         addressFamily.valueProperty().addListener((obs, oldValue, newValue) -> updateFlowLabel.run());

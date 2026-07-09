@@ -190,7 +190,7 @@
 | **V6-050** | [x] Auto `-6` у `ProcessExpertPing.buildCommand` для v6 target | `ExpertPingArgs.java` | Test: v6 target → `-6` in argv |
 | **V6-051** | [x] `ProcessHostPing`: expert args + auto v6 на Linux/macOS | `ProcessHostPing.java` | Test: args appended |
 | **V6-052** | [x] Validator: `-4` + v6 target → `ConfigError` | `ExpertPingArgs.java` | Unit-тест |
-| **V6-053** | [ ] `-F` flow label — лише з v6 target (UI hint) | `PingExpertDialog.java` | Tooltip / disable when target v4 |
+| **V6-053** | [x] `-F` flow label — лише з v6 target (UI hint) | `PingExpertDialog.java`, `ExpertPingUiRules.java` | Tooltip / disable when target v4 |
 
 ### 9.6 — UI / docs (P1)
 
@@ -689,5 +689,7 @@ flowchart LR
 **IPv6-S4 (2026-07-09):** V6-060…V6-063 — dual-stack Help/About, IPv6 graph labels, host input validation.
 
 **IPv6-S4 QA (2026-07-09):** V6-070…V6-074 — CHECKLIST smoke, v4 fixture regression test, JaCoCo notes, IPv6 beta release note.
+
+**IPv6 expert UI (2026-07-09):** V6-053 — `-F` flow label gated by IPv6 target / `-6` AF.
 
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.

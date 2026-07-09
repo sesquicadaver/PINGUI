@@ -190,7 +190,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | **V6-050** | [ ] Auto `-6` in `ProcessExpertPing.buildCommand` for v6 target | `ProcessExpertPing.java` | Test: v6 target → `-6` in argv |
 | **V6-051** | [ ] `ProcessHostPing`: expert args + v6 on Linux/macOS | `ProcessHostPing.java` | Test: args appended |
 | **V6-052** | [ ] Validator: `-4` + v6 target → `ConfigError` (profile save) | `PingExpertValidator` or host-level check | Unit test |
-| **V6-053** | [ ] `-F` flow label — only with v6 target (UI hint) | `PingExpertDialog.java` | Tooltip / disable when target v4 |
+| **V6-053** | [x] `-F` flow label — only with v6 target (UI hint) | `PingExpertDialog.java`, `ExpertPingUiRules.java` | Tooltip / disable when target v4 |
 
 ### 9.6 — UI / docs (P1)
 
@@ -689,5 +689,7 @@ Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 **IPv6-S4 (2026-07-09):** V6-060…V6-063 — dual-stack Help/About, IPv6 graph labels, host input validation.
 
 **IPv6-S4 QA (2026-07-09):** V6-070…V6-074 — CHECKLIST smoke, v4 fixture regression test, JaCoCo notes, IPv6 beta release note.
+
+**IPv6 expert UI (2026-07-09):** V6-053 — `-F` flow label gated by IPv6 target / `-6` AF.
 
 Update this file when closing a task: `[x] M-001` + date in CHANGELOG.

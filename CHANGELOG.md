@@ -18,6 +18,7 @@
 - **Python IPv6 (PY-S4):** `config.py` — RFC 5952 IPv6 literals, mixed v4+v6 profiles; `icmp/process_tracer.py` — subprocess `traceroute -6`; `geoip/country.py` — `prefixes_v6` longest-prefix.
 - **Java GeoIP v6 (V6-S3):** `GeoCountry` — `prefixes_v6` longest-prefix, IPv6 LAN (loopback/link-local/ULA).
 - **Java dual-stack UI (V6-S4):** Help/About text, IPv6 bracket hop labels (`HopDisplay`), host input prompts.
+- **Expert ping UI (V6-053):** `-F` flow label disabled with tooltip unless IPv6 literal or `-6` selected.
 - **IPv6 beta (phase 9, `beta` branch):** Java dual-stack YAML + subprocess trace v6 + GeoIP `prefixes_v6`; Python edition parity (PY-S4). Semver: next Java release **0.2.0** when merged to `main`.
 - **Docs:** bilingual documentation — Ukrainian (`docs/`) and English (`docs/en/`); `README.en.md`, `java/README.en.md`, `ROADMAP.en.md`.
 - **IPv6 trace (V6-S2):** `TraceTarget`, `-6` у traceroute/tracert, парсери v6 + фікстури `unix_v6_*`/`win_v6_*`.
