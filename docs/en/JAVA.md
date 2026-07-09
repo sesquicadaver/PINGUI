@@ -19,9 +19,8 @@ Enable route monitoring **independently of OS** without Python/PyQt6 and without
 
 ## Limitations
 
-- **Raw ICMP** — IPv4 only (`AF_INET`); IPv6 literal with `probe: auto` on Linux automatically uses subprocess trace.
+- **Raw ICMP** — Linux only (`AF_INET` / `AF_INET6`); `probe: auto` keeps IPv6 literals on subprocess trace (V6-044); `probe: raw` uses raw v6 with `cap_net_raw`.
 - **Hostname AAAA** — OS resolve for trace/ping; explicit `-6` in Expert or v6 literal in YAML.
-- Full ICMPv6 raw trace — see [ROADMAP.md](../ROADMAP.md) V6-040+.
 
 ## CLI vs YAML profile
 
@@ -41,7 +40,7 @@ Python uses scapy + raw ICMP. Java supports two backends:
 | Backend | Class | OS | Requirements |
 |---------|-------|-----|--------------|
 | **process** (default) | `ProcessRouteProbe` | Linux, macOS, Windows | `traceroute` / `tracert` in PATH |
-| **raw-icmp** (Linux) | `RawIcmpRouteProbe` | Linux | JNA + `CAP_NET_RAW` or root |
+| **raw-icmp** (Linux) | `RawIcmpRouteProbe` | Linux | JNA + `CAP_NET_RAW`; v4 and v6 literal with `probe: raw` |
 | **auto** | `RouteProbeFactory` | Linux + cap → raw for v4/hostname, process for v6 literal |
 
 CLI: `--probe auto|process|raw` (default: `auto`).
@@ -71,9 +70,9 @@ Parsers: `UnixTraceOutputParser`, `WindowsTraceOutputParser`. Factory: `TraceCom
 
 ### RawIcmpRouteProbe (JNA, Linux)
 
-Incremental TTL 1..N via raw ICMP socket (parity with Python `trace_route`).
+Incremental TTL/hop limit 1..N via raw ICMP socket (IPv4 `IP_TTL`, IPv6 `IPV6_UNICAST_HOPS`).
 
-Requires: `sudo setcap cap_net_raw+ep` on JDK binary or run as root.
+Requires: `sudo setcap cap_net_raw+ep` on JDK binary or run as root. IPv6 literal with `probe: raw`; with `probe: auto` — subprocess `traceroute -6`.
 
 ## Monitor layer
 

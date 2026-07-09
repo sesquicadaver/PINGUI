@@ -86,7 +86,7 @@ sudo setcap cap_net_raw+ep "$(readlink -f "$(which java)")"
 | `probe: auto` / `raw` | IPv4 literal, hostname (A) | **Так** (raw) | Без cap → fallback на `traceroute` |
 | `probe: auto` | IPv6 literal | **Ні** | Завжди subprocess `traceroute -6` (Java і Python) |
 | Expert ping `-6` | IPv6 literal / `-6` | **Ні** | iputils `ping`, не raw socket |
-| Raw ICMPv6 (майбутнє, V6-040+) | IPv6 literal | **Так** | Не реалізовано в `beta`; див. [ROADMAP.md](ROADMAP.md) |
+| Raw ICMPv6 (`probe: raw`) | IPv6 literal | **Так** | Java `beta`: `LinuxJnaIcmpTransport` + `IcmpV6Packet`; `auto` лишає process trace |
 
 **Поточна поведінка:** навіть із `cap_net_raw` на JDK, **IPv6 literal ніколи не йде через raw ICMP** — лише процесний trace. Capability впливає на v4/hostname у режимі `auto|raw`.
 

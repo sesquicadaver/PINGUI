@@ -38,6 +38,20 @@ interface LinuxCLibrary extends Library {
         }
     }
 
+    /** sockaddr_in6 for IPv6 sendto(). */
+    final class SockaddrIn6 extends Structure {
+        public short sin6Family = (short) LinuxSocketConstants.AF_INET6;
+        public short sin6Port;
+        public int sin6Flowinfo;
+        public byte[] sin6Addr = new byte[16];
+        public int sin6ScopeId;
+
+        @Override
+        protected List<String> getFieldOrder() {
+            return Arrays.asList("sin6Family", "sin6Port", "sin6Flowinfo", "sin6Addr", "sin6ScopeId");
+        }
+    }
+
     /** struct timeval for SO_RCVTIMEO. */
     final class TimeVal extends Structure {
         public long tvSec;

@@ -86,7 +86,7 @@ Restart PINGUI after `setcap`. The same capability is required for Python raw IC
 | `probe: auto` / `raw` | IPv4 literal, hostname (A) | **Yes** (raw) | Without cap → fallback to `traceroute` |
 | `probe: auto` | IPv6 literal | **No** | Always subprocess `traceroute -6` (Java and Python) |
 | Expert ping `-6` | IPv6 literal / `-6` | **No** | iputils `ping`, not a raw socket |
-| Raw ICMPv6 (future, V6-040+) | IPv6 literal | **Yes** | Not implemented in `beta`; see [ROADMAP.md](ROADMAP.md) |
+| Raw ICMPv6 (`probe: raw`) | IPv6 literal | **Yes** | Java `beta`: `LinuxJnaIcmpTransport` + `IcmpV6Packet`; `auto` keeps process trace |
 
 **Current behaviour:** even with `cap_net_raw` on the JDK, **IPv6 literals never use raw ICMP** — only process trace. The capability affects v4/hostname in `auto|raw` mode.
 

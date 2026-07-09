@@ -23,6 +23,19 @@ class RawIcmpRouteProbeTest {
         assertFalse(snapshot.nodes().get(0).timeout());
     }
 
+    @Test
+    void traceIpv6UsesHopLimitSequence() throws Exception {
+        Map<Integer, ProbeResult> responses = new HashMap<>();
+        responses.put(1, new ProbeResult("fe80::1", 3.0, false));
+        responses.put(2, new ProbeResult("2001:db8::1", 6.0, true));
+        RawIcmpRouteProbe probe = new RawIcmpRouteProbe(() -> new MapIcmpTransport(responses));
+        var snapshot = probe.trace("2001:db8::1", 5, 0.5);
+        assertEquals(2, snapshot.nodes().size());
+        assertEquals("fe80::1", snapshot.nodes().get(0).ip());
+        assertEquals("2001:db8::1", snapshot.nodes().get(1).ip());
+        assertEquals("2001:db8::1", snapshot.targetIp());
+    }
+
     private static final class MapIcmpTransport implements IcmpProbeTransport {
         private final Map<Integer, ProbeResult> responses;
 

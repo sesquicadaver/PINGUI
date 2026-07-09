@@ -1,5 +1,7 @@
 package io.pingui.probe;
 
+import io.pingui.config.ConfigError;
+import io.pingui.config.HostAddressParser;
 import io.pingui.model.Models;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;
@@ -14,8 +16,8 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * Linux raw ICMP traceroute (TTL 1..N) for parity with Python scapy.
- * Requires CAP_NET_RAW or root.
+ * Linux raw ICMP traceroute (TTL/hop limit 1..N) for IPv4 and IPv6 literals.
+ * Requires CAP_NET_RAW or root. Use {@code probe: raw}; {@code auto} keeps v6 on subprocess trace.
  */
 public final class RawIcmpRouteProbe implements RouteProbe {
     private final Supplier<IcmpProbeTransport> transportFactory;
@@ -61,7 +63,13 @@ public final class RawIcmpRouteProbe implements RouteProbe {
 
     static String resolveTargetIp(String targetHost) throws IOException {
         try {
-            return InetAddress.getByName(targetHost).getHostAddress();
+            String resolved = InetAddress.getByName(targetHost).getHostAddress();
+            if (resolved.indexOf(':') >= 0) {
+                return HostAddressParser.normalize(resolved);
+            }
+            return resolved;
+        } catch (ConfigError ex) {
+            throw new IOException("Cannot resolve host: " + targetHost, ex);
         } catch (Exception ex) {
             throw new IOException("Cannot resolve host: " + targetHost, ex);
         }
