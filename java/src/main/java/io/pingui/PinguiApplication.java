@@ -53,11 +53,37 @@ public final class PinguiApplication extends Application {
         AppOptions defaults = AppOptions.defaults();
         Path config = params.containsKey("config") ? Path.of(params.get("config")) : defaults.configPath();
         CliProfileOverrides profileOverrides = parseProfileOverrides(params);
+        CliAlertOverrides alertOverrides = parseAlertOverrides(params);
         boolean verbose = params.containsKey("verbose");
         boolean geoipEnabled = !params.containsKey("no-geoip");
         Path geoipHints =
                 params.containsKey("geoip-hints") ? Path.of(params.get("geoip-hints")) : defaults.geoipHintsPath();
-        return new AppOptions(config, profileOverrides, verbose, geoipEnabled, geoipHints);
+        return new AppOptions(config, profileOverrides, alertOverrides, verbose, geoipEnabled, geoipHints);
+    }
+
+    private static CliAlertOverrides parseAlertOverrides(Map<String, String> params) {
+        Optional<String> webhook = Optional.empty();
+        if (params.containsKey("alert-webhook")) {
+            String value = params.get("alert-webhook");
+            if (value == null || value.isBlank()) {
+                throw new IllegalArgumentException("Missing value for --alert-webhook");
+            }
+            webhook = Optional.of(value.strip());
+        }
+        Optional<Boolean> desktop = Optional.empty();
+        if (params.containsKey("desktop-alerts")) {
+            String value = params.get("desktop-alerts");
+            desktop = Optional.of(value == null || value.isBlank() || !"false".equalsIgnoreCase(value));
+        }
+        OptionalInt rateLimit = OptionalInt.empty();
+        if (params.containsKey("alert-rate-limit")) {
+            int value = parseRequiredInt(params.get("alert-rate-limit"), "--alert-rate-limit");
+            if (value < 1) {
+                throw new IllegalArgumentException("--alert-rate-limit must be >= 1");
+            }
+            rateLimit = OptionalInt.of(value);
+        }
+        return new CliAlertOverrides(webhook, desktop, rateLimit);
     }
 
     private static CliProfileOverrides parseProfileOverrides(Map<String, String> params) {
@@ -168,6 +194,9 @@ public final class PinguiApplication extends Application {
                   --max-hops N      Override max TTL hops for this session
                   --timeout SEC     Override probe timeout for this session
                   --probe MODE      Override probe: auto | process | raw
+                  --alert-webhook URL  POST route-change JSON (secrets not logged)
+                  --desktop-alerts     Linux desktop notifications (notify-send)
+                  --alert-rate-limit N Max alerts per host per hour (default: 10)
                   --geoip-hints PATH  CIDR→country YAML (default: config/geoip_hints.yaml)
                   --no-geoip        Disable country hints in hop labels
                   --verbose         Debug logging

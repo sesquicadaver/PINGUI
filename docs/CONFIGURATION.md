@@ -80,6 +80,31 @@ hosts:
 
 Секрети в URL не логуються; помилки webhook — лише WARNING, процес не падає.
 
+### Java edition (`./pingui-java.sh`)
+
+| Опція | Тип | За замовч. | Опис |
+|-------|-----|------------|------|
+| `--alert-webhook` | URL | — | POST JSON `RouteChangeEvent` при зміні маршруту |
+| `--desktop-alerts` | flag | off | Linux `notify-send` при зміні маршруту |
+| `--alert-rate-limit` | int | `10` | Макс. алертів на host / годину |
+
+CLI має пріоритет над YAML. У профілі v2:
+
+```yaml
+profiles:
+  noc:
+    hosts:
+      - "8.8.8.8"
+    alerts:
+      desktop: true
+      webhook: https://hooks.example.com/ping
+      rate_limit: 10
+    # legacy alias:
+    alert_webhook: https://hooks.example.com/ping
+```
+
+За замовчуванням alerts вимкнено (`NoOp` dispatcher).
+
 ### GeoIP і карта
 
 | Опція | Тип | За замовч. | Опис |

@@ -80,6 +80,31 @@ Flat legacy CLI (`--export-csv`, `--session-db` without subcommand) remains for 
 
 URL secrets are not logged; webhook failures are WARNING only (process continues).
 
+### Java edition (`./pingui-java.sh`)
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--alert-webhook` | URL | — | POST JSON `RouteChangeEvent` on route change |
+| `--desktop-alerts` | flag | off | Linux `notify-send` on route change |
+| `--alert-rate-limit` | int | `10` | Max alerts per host / hour |
+
+CLI overrides YAML. In v2 profiles:
+
+```yaml
+profiles:
+  noc:
+    hosts:
+      - "8.8.8.8"
+    alerts:
+      desktop: true
+      webhook: https://hooks.example.com/ping
+      rate_limit: 10
+    # legacy alias:
+    alert_webhook: https://hooks.example.com/ping
+```
+
+Alerts are disabled by default (`NoOp` dispatcher).
+
 ### GeoIP and map
 
 | Option | Type | Default | Description |

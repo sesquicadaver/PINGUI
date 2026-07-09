@@ -17,7 +17,7 @@ Module → unit test matrix. Update when adding features.
 | YAML profiles v2 + legacy | `ProfilesConfig`, `ProfileDocument` | `ProfilesConfigTest` (host flags, type errors, save max hosts), `ProfileDocumentTest` |
 | CLI profile override | `CliProfileOverrides`, `PinguiApplication` | `PinguiApplicationTest` |
 | Monitor polling | `MonitorService`, `RoutePoller`, `ExpertPingEnricher` | `MonitorServiceTest`, `ExpertPingEnricherTest` (stub ping) |
-| Route-change alerts | `RouteChangeEvent`, `AlertDispatcher` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange` |
+| Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
 | Raw ICMP packet | `IcmpPacket`, `IcmpV6Packet` | `IcmpPacketTest`, `IcmpV6PacketTest` |
 | Expert ping flags | `PingExpertValidator`, `ProcessExpertPing` | `PingExpertValidatorTest` (compatibility, value specs), `ProcessExpertPingTest` |

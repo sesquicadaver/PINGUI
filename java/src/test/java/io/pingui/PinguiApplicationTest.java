@@ -29,7 +29,8 @@ class PinguiApplicationTest {
 
     @Test
     void profileOverrides_mergePreservesYamlFields() {
-        TracingProfile yaml = new TracingProfile(30.0, 15, 1.0, ProbeMode.PROCESS, java.util.List.of());
+        TracingProfile yaml = new TracingProfile(
+                30.0, 15, 1.0, ProbeMode.PROCESS, java.util.List.of(), io.pingui.config.AlertConfig.disabled());
         TracingProfile merged = CliProfileOverrides.none().applyTo(yaml);
         assertEquals(30.0, merged.intervalSeconds());
         assertEquals(15, merged.maxHops());
@@ -73,5 +74,32 @@ class PinguiApplicationTest {
                 : options.profileOverrides().applyTo(yaml);
         assertEquals(30.0, effective.intervalSeconds());
         assertEquals(20, effective.maxHops());
+    }
+
+    @Test
+    void parseOptions_alertWebhookOverride() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of("alert-webhook", "https://hooks.example.com/x"));
+        assertEquals(
+                "https://hooks.example.com/x",
+                options.alertOverrides().webhookUrl().orElseThrow());
+    }
+
+    @Test
+    void parseOptions_desktopAlertsFlag() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of("desktop-alerts", "true"));
+        assertTrue(options.alertOverrides().desktopAlerts().orElseThrow());
+    }
+
+    @Test
+    void alertOverrides_mergePreservesYamlFields() {
+        io.pingui.config.AlertConfig yaml = new io.pingui.config.AlertConfig(true, "https://yaml.example/hook", 10);
+        CliAlertOverrides partial = new CliAlertOverrides(
+                java.util.Optional.of("https://cli.example/hook"),
+                java.util.Optional.empty(),
+                java.util.OptionalInt.of(3));
+        io.pingui.config.AlertConfig merged = partial.applyTo(yaml);
+        assertEquals("https://cli.example/hook", merged.normalizedWebhook());
+        assertTrue(merged.desktopAlerts());
+        assertEquals(3, merged.maxAlertsPerHour());
     }
 }

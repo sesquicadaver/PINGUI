@@ -9,7 +9,7 @@
 
 PINGUI detects hop IP sequence changes (`RouteChangeDetector` / `detect_route_change`) and already invokes an `onRouteChanged` callback in the monitor layer. NOC/SRE users need **channels beyond the GUI**: webhooks into runbooks and (optionally) desktop notifications on the operator workstation.
 
-Python `beta` ships a reference implementation (`alert_dispatcher.py`, `alert_rate_limiter.py`, `desktop_notifier.py`). Java `main`/`beta` does not yet have an alert pipeline (phase 10, P10-010…P10-050).
+Python `beta` ships a reference implementation (`alert_dispatcher.py`, `alert_rate_limiter.py`, `desktop_notifier.py`). Java `beta` ships the full alert pipeline (phase 10, P10-010…P10-050).
 
 Product constraint: PINGUI is a route-focused utility, not a full alert manager (see ROADMAP X-003).
 

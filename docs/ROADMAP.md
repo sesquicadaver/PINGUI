@@ -361,12 +361,12 @@ flowchart TD
 | **P10-001** | [x] ADR: політика alerts (channels, rate limit, payload) | `docs/ADR_ALERTS.md`, `docs/en/ADR_ALERTS.md` | Webhook + desktop; SNMP/email — out of scope v1 |
 | **P10-010** | [x] Модель `RouteChangeEvent` (host, old_ips, new_ips, ts, profile) | `monitor/RouteChangeEvent.java`, Python `models.py` | Unit-тест serialize/deserialize |
 | **P10-011** | [x] `AlertDispatcher` interface + no-op default | `monitor/AlertDispatcher.java`, `MonitorService` | Monitor викликає при `onRouteChanged` |
-| **P10-020** | [ ] Desktop notification (Linux notify-send / Windows toast / macOS) | `ui/RouteChangeNotifier.java` | Manual smoke: route change → notification |
-| **P10-021** | [ ] YAML/CLI: `alerts.desktop: true\|false` | `ProfilesConfig`, `PinguiApplication` | Default off; документовано в CONFIGURATION |
-| **P10-030** | [ ] Webhook POST JSON (Slack-compatible + generic) | `monitor/WebhookAlertDispatcher.java` | Contract test з mock HTTP server |
-| **P10-031** | [ ] CLI `--alert-webhook URL` + profile field `alert_webhook` | `CliProfileOverrides`, YAML schema | Secret не логувати; помилка мережі → log, не crash |
-| **P10-040** | [ ] Rate limit: max N alerts / host / годину | `AlertRateLimiter.java` | Unit-тест burst |
-| **P10-050** | [ ] LIVING_SPEC + CHECKLIST § alert smoke | `docs/LIVING_SPEC.md`, `docs/CHECKLIST.md` | Ручний прогін Linux |
+| **P10-020** | [x] Desktop notification (Linux notify-send / Windows toast / macOS) | `ui/RouteChangeNotifier.java` | Manual smoke: route change → notification |
+| **P10-021** | [x] YAML/CLI: `alerts.desktop: true\|false` | `ProfilesConfig`, `PinguiApplication` | Default off; документовано в CONFIGURATION |
+| **P10-030** | [x] Webhook POST JSON (Slack-compatible + generic) | `monitor/WebhookAlertDispatcher.java` | Contract test з mock HTTP server |
+| **P10-031** | [x] CLI `--alert-webhook URL` + profile field `alert_webhook` | `CliAlertOverrides`, YAML schema | Secret не логувати; помилка мережі → log, не crash |
+| **P10-040** | [x] Rate limit: max N alerts / host / годину | `AlertRateLimiter.java` | Unit-тест burst |
+| **P10-050** | [x] LIVING_SPEC + CHECKLIST § alert smoke | `docs/LIVING_SPEC.md`, `docs/CHECKLIST.md` | Ручний прогін Linux |
 
 **Орієнтовно:** 1–2 sprint.
 
@@ -701,5 +701,7 @@ flowchart LR
 **Alerts ADR (2026-07-09):** P10-001 — `ADR_ALERTS.md` (webhook + desktop v1, payload, rate limit); Java P10-010+.
 
 **Java alerts foundation (2026-07-09):** P10-010…P10-011 — `RouteChangeEvent` JSON + `AlertDispatcher` wired in `MonitorService`.
+
+**Java alerts pipeline (2026-07-09):** P10-020…P10-050 — webhook, desktop, YAML/CLI config, rate limit, tests + CHECKLIST.
 
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.

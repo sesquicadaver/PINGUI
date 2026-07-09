@@ -99,7 +99,42 @@ public final class ProfilesConfig {
             throw new ConfigError("Profile '" + name + "' must contain 'hosts' list");
         }
         List<HostEntry> hosts = parseHostEntries(hostsList, name);
-        return new TracingProfile(interval, maxHops, timeout, probe, hosts);
+        AlertConfig alerts = parseAlerts(map, name);
+        return new TracingProfile(interval, maxHops, timeout, probe, hosts, alerts);
+    }
+
+    private static AlertConfig parseAlerts(Map<?, ?> map, String profileName) {
+        boolean desktop = false;
+        String webhook = null;
+        int rateLimit = 10;
+        Object topWebhook = map.get("alert_webhook");
+        if (topWebhook instanceof String topStr && !topStr.isBlank()) {
+            webhook = topStr.strip();
+        }
+        Object alertsObj = map.get("alerts");
+        if (alertsObj instanceof Map<?, ?> alertsMap) {
+            desktop = readBoolean(alertsMap.get("desktop"), desktop);
+            Object webhookObj = alertsMap.get("webhook");
+            if (webhookObj instanceof String webhookStr && !webhookStr.isBlank()) {
+                webhook = webhookStr.strip();
+            }
+            rateLimit = readPositiveInt(alertsMap.get("rate_limit"), rateLimit, profileName, "alerts.rate_limit");
+        }
+        return new AlertConfig(desktop, webhook, rateLimit);
+    }
+
+    private static int readPositiveInt(Object value, int fallback, String profileName, String label) {
+        if (value == null) {
+            return fallback;
+        }
+        if (value instanceof Number number) {
+            int parsed = number.intValue();
+            if (parsed < 1) {
+                throw new ConfigError("Profile '" + profileName + "' " + label + " must be >= 1");
+            }
+            return parsed;
+        }
+        throw new ConfigError("Profile '" + profileName + "' " + label + " must be an integer");
     }
 
     private static List<HostEntry> parseHostEntries(List<?> hostsList, String profileName) {
@@ -162,6 +197,19 @@ public final class ProfilesConfig {
             hostsOut.add(hostEntryToMap(host));
         }
         map.put("hosts", hostsOut);
+        if (profile.alerts().isEnabled() || profile.alerts().maxAlertsPerHour() != 10) {
+            Map<String, Object> alertsOut = new LinkedHashMap<>();
+            if (profile.alerts().desktopAlerts()) {
+                alertsOut.put("desktop", true);
+            }
+            if (profile.alerts().normalizedWebhook() != null) {
+                alertsOut.put("webhook", profile.alerts().normalizedWebhook());
+            }
+            if (profile.alerts().maxAlertsPerHour() != 10) {
+                alertsOut.put("rate_limit", profile.alerts().maxAlertsPerHour());
+            }
+            map.put("alerts", alertsOut);
+        }
         return map;
     }
 

@@ -49,6 +49,46 @@ class ProfilesConfigTest {
     }
 
     @Test
+    void loadAlertsSection() throws Exception {
+        Path path = tempDir.resolve("alerts.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: noc
+                profiles:
+                  noc:
+                    hosts:
+                      - "8.8.8.8"
+                    alerts:
+                      desktop: true
+                      webhook: https://hooks.example.com/ping
+                      rate_limit: 5
+                """);
+        TracingProfile profile = ProfilesConfig.load(path).active();
+        assertTrue(profile.alerts().desktopAlerts());
+        assertEquals("https://hooks.example.com/ping", profile.alerts().normalizedWebhook());
+        assertEquals(5, profile.alerts().maxAlertsPerHour());
+    }
+
+    @Test
+    void loadLegacyAlertWebhookField() throws Exception {
+        Path path = tempDir.resolve("legacy-webhook.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    hosts:
+                      - "1.1.1.1"
+                    alert_webhook: https://legacy.example/hook
+                """);
+        assertEquals(
+                "https://legacy.example/hook",
+                ProfilesConfig.load(path).active().alerts().normalizedWebhook());
+    }
+
+    @Test
     void loadLegacyHostsList() throws Exception {
         Path path = tempDir.resolve("legacy.yaml");
         Files.writeString(

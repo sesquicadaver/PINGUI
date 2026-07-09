@@ -57,6 +57,14 @@ Python-редакція та тести — гілка **`beta`**.
 - [ ] `python -m pingui run --desktop-alerts` — GUI + notify-send при зміні маршруту (Linux)
 - [ ] `python -m pingui daemon --alert-webhook URL --session-db data/ping.db` — route change → POST JSON
 
+### Java alert smoke (beta, Linux)
+
+- [ ] `./gradlew test --tests io.pingui.monitor.WebhookAlertDispatcherTest` — contract POST JSON (CI)
+- [ ] `./gradlew test --tests io.pingui.monitor.AlertRateLimiterTest` — burst rate limit (CI)
+- [ ] `./pingui-java.sh --alert-webhook http://127.0.0.1:9/hook` — старт без crash (webhook недоступний → WARNING)
+- [ ] `./pingui-java.sh --desktop-alerts` — GUI + `notify-send` при зміні маршруту (потрібен `libnotify-bin`)
+- [ ] YAML `alerts.webhook` / `alert_webhook` у профілі — route change → POST без CLI override
+
 ---
 
 ## Linux (Ubuntu 22.04 / 24.04 / 26.04)

@@ -75,6 +75,9 @@ gradlew.bat run        # Windows
 | `--max-hops` | *(from YAML)* | Override max hop, **only if passed** |
 | `--timeout` | *(from YAML)* | Override probe timeout (s), **only if passed** |
 | `--probe` | *(from YAML)* | Override `auto`/`process`/`raw`, **only if passed** |
+| `--alert-webhook` | off | POST JSON `RouteChangeEvent` on route change |
+| `--desktop-alerts` | off | Linux `notify-send` on route change |
+| `--alert-rate-limit` | `10` | Max alerts per host / hour |
 | `--geoip-hints` | `config/geoip_hints.yaml` | Offline CIDR→country |
 | `--no-geoip` | off | Disable country in labels |
 | `--verbose` | off | Debug log |
@@ -98,7 +101,7 @@ io.pingui
 ├── model/           HopNode, RouteSnapshot
 ├── probe/           RouteProbeFactory, ProcessRouteProbe, TraceCommandBuilder,
                        UnixTraceOutputParser, WindowsTraceOutputParser, ProcessExpertPing
-├── monitor/         SessionStore, MonitorService, ExpertPingEnricher
+├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
 └── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,
                        MonitorLifecycle, ViewModeController, RouteGraphPresenter, GraphCanvas
 ```
