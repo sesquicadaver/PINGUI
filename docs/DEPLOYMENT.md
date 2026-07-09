@@ -137,6 +137,24 @@ Daemon з PID-файлом (PY-030…032):
 
 Приклад systemd: `systemd/pingui.service.example` (Type=simple, `ExecStart=... daemon`).
 
+## SQLite session persistence (Java / Python)
+
+| Що | Де |
+|----|-----|
+| Файл БД | `--session-db PATH`, YAML `persistence.session_db`, або GUI **Налаштування → База даних…** |
+| Метрики маршруту | Таблиця `host_session` (JSON: routes, `ping_history`, `hop_stats`) |
+| Події | Таблиця `persistence_event` (`route_change`, `probe_error`) |
+
+**Диск і retention (P11-050):**
+
+- Автоматичного TTL / ротації для `host_session` **немає** — файл росте з кількістю хостів і накопиченими `ping_history` / `hop_stats` (обмеження в RAM: до 50 RTT на hop у `hop_stats`, історія ping по IP).
+- Події `persistence_event` видаляються лише вручну: GUI **База даних…** → вимкнути тип події → **Видалити** (purge confirm).
+- Повне скидання: видалити файл `.db` або рядок хоста через видалення цілі в UI.
+- Звіт без GUI: `./pingui-java.sh -- --session-db data/ping.db --export-report report.csv`
+- Орієнтовний розмір: кілька–десятки KB на хост при типовому NOC-профілі; моніторити `du -h data/ping.db` на довгоживучих daemon.
+
+Деталі схеми: [SPIKE_PERSISTENCE.md](SPIKE_PERSISTENCE.md).
+
 ## Troubleshooting
 
 | Симптом | Рішення |

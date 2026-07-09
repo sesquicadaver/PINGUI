@@ -402,8 +402,8 @@ flowchart TD
 | **P11-020** | [x] UI: панель «Історія» — список route change за 24h/7d | `RouteHistoryPresenter`, `SessionDatabase.listEvents` | `SessionDatabaseTest.listRouteChangeEventsFiltersByHostAndTime` |
 | **P11-021** | [x] UI: replay snapshot на графі (read-only) | `RouteGraphPresenter`, `RouteHistoryPresenter` | Вибір події → граф; `RouteHistoryPresenterTest` |
 | **P11-030** | [x] Export CSV/HTML з БД (як Python `session_report`) | `export/SessionReportExporter.java` | CLI `--export-report` |
-| **P11-040** | [ ] Java parity: jitter/loss labels з історії | `HopStats`, `GraphCanvas` | Parity з J-06 / B-06 |
-| **P11-050** | [ ] LIVING_SPEC + DEPLOYMENT (disk, retention) | `docs/LIVING_SPEC.md`, `docs/DEPLOYMENT.md` | Retention policy documented |
+| **P11-040** | [x] Java parity: jitter/loss labels з історії | `HopStats`, `GraphCanvas`, `SessionStore` | `hop_stats` persist у SQLite; labels після reopen; `SessionStorePersistenceTest.hopStatsPersistAcrossReopen` |
+| **P11-050** | [x] LIVING_SPEC + DEPLOYMENT (disk, retention) | `docs/LIVING_SPEC.md`, `docs/DEPLOYMENT.md` | Retention policy documented |
 
 **Орієнтовно:** 2–3 sprint.
 
@@ -738,5 +738,7 @@ flowchart LR
 **Java session export (2026-07-09):** P11-030 — `SessionReportExporter` CSV/HTML; CLI `--export-report` (headless, no JavaFX).
 
 **Java GUI SQLite connection (2026-07-09):** P11-016 — file picker, YAML `session_db`, menu «База даних…» without CLI.
+
+**Java hop stats + retention (2026-07-09):** P11-040…050 — `hop_stats` SQLite persist for graph labels; DEPLOYMENT disk/retention policy.
 
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.

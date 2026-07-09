@@ -37,6 +37,29 @@ class SessionStorePersistenceTest {
     }
 
     @Test
+    void hopStatsPersistAcrossReopen() {
+        Path dbPath = tempDir.resolve("hop-stats.db");
+        try (SessionDatabase db = new SessionDatabase(dbPath)) {
+            SessionStore store = new SessionStore(List.of("8.8.8.8"), db);
+            RouteSnapshot snapshot = new RouteSnapshot(
+                    "8.8.8.8",
+                    "8.8.8.8",
+                    List.of(new HopNode(1, "10.0.0.1", 5.0, false), io.pingui.model.Models.timeout(2)));
+            store.appendPingSamples("8.8.8.8", snapshot);
+            assertEquals(0.0, store.hopStatsSummary("8.8.8.8", 1).lossPct());
+            assertEquals(100.0, store.hopStatsSummary("8.8.8.8", 2).lossPct());
+            store.close();
+        }
+
+        try (SessionDatabase db2 = new SessionDatabase(dbPath)) {
+            SessionStore restored = new SessionStore(List.of("8.8.8.8"), db2);
+            assertEquals(0.0, restored.hopStatsSummary("8.8.8.8", 1).lossPct());
+            assertEquals(100.0, restored.hopStatsSummary("8.8.8.8", 2).lossPct());
+            restored.close();
+        }
+    }
+
+    @Test
     void removeHostDeletesRow() {
         Path dbPath = tempDir.resolve("delete.db");
         try (SessionDatabase db = new SessionDatabase(dbPath)) {

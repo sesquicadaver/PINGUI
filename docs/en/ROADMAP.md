@@ -402,8 +402,8 @@ flowchart TD
 | **P11-020** | [x] UI: «History» panel — route changes 24h/7d | `RouteHistoryPresenter`, `SessionDatabase.listEvents` | `SessionDatabaseTest.listRouteChangeEventsFiltersByHostAndTime` |
 | **P11-021** | [x] UI: replay snapshot on graph (read-only) | `RouteGraphPresenter`, `RouteHistoryPresenter` | Event selection → graph; `RouteHistoryPresenterTest` |
 | **P11-030** | [x] Export CSV/HTML from DB (like Python `session_report`) | `export/SessionReportExporter.java` | CLI `--export-report` |
-| **P11-040** | [ ] Java parity: jitter/loss labels from history | `HopStats`, `GraphCanvas` | Parity with J-06 / B-06 |
-| **P11-050** | [ ] LIVING_SPEC + DEPLOYMENT (disk, retention) | `docs/LIVING_SPEC.md`, `docs/DEPLOYMENT.md` | Retention policy documented |
+| **P11-040** | [x] Java parity: jitter/loss labels from history | `HopStats`, `GraphCanvas`, `SessionStore` | `hop_stats` persist in SQLite; labels after reopen; `SessionStorePersistenceTest.hopStatsPersistAcrossReopen` |
+| **P11-050** | [x] LIVING_SPEC + DEPLOYMENT (disk, retention) | `docs/LIVING_SPEC.md`, `docs/DEPLOYMENT.md` | Retention policy documented |
 
 **Estimate:** 2–3 sprints.
 
@@ -738,5 +738,7 @@ Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 **Java session export (2026-07-09):** P11-030 — `SessionReportExporter` CSV/HTML; CLI `--export-report` (headless, no JavaFX).
 
 **Java GUI SQLite connection (2026-07-09):** P11-016 — file picker, YAML `session_db`, “Database…” menu without CLI.
+
+**Java hop stats + retention (2026-07-09):** P11-040…050 — `hop_stats` SQLite persist for graph labels; DEPLOYMENT disk/retention policy.
 
 Update this file when closing a task: `[x] M-001` + date in CHANGELOG.

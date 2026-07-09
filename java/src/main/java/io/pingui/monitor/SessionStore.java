@@ -246,11 +246,15 @@ public final class SessionStore implements AutoCloseable {
     }
 
     private void recordHopProbes(String host, RouteSnapshot snapshot) {
+        if (snapshot.nodes().isEmpty()) {
+            return;
+        }
         HostSessionData session = get(host);
         for (HopNode node : snapshot.nodes()) {
             HopProbeStats stats = session.getHopStats().computeIfAbsent(node.hop(), ignored -> new HopProbeStats());
             HopStats.recordProbe(stats, node);
         }
+        persist(host);
     }
 
     private HostSessionData loadOrCreate(String host) {

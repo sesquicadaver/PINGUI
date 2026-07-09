@@ -80,7 +80,10 @@ public final class PingColor {
         }
         StringBuilder builder = new StringBuilder("\n");
         if (summary.jitterMs() != null) {
-            builder.append("j:").append(summary.jitterMs().intValue()).append(' ');
+            builder.append("j:").append(summary.jitterMs().intValue());
+        }
+        if (summary.jitterMs() != null) {
+            builder.append(' ');
         }
         builder.append("loss:").append((int) summary.lossPct()).append('%');
         return builder.toString();

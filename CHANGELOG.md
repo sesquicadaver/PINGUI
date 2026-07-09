@@ -24,6 +24,8 @@
 - **Java route history UI (P11-020…021):** `RouteHistoryPresenter` — 24h/7d `route_change` list; graph replay from selected event.
 - **Java session export (P11-030):** `SessionReportExporter` — CSV/HTML from `--session-db`; headless CLI `--export-report PATH` (format by extension).
 - **Java GUI SQLite connection (P11-016):** `PersistenceConfig`, `SessionDbResolver` — file picker in «База даних…», YAML `persistence.session_db`, menu active without CLI.
+- **Java hop stats from history (P11-040):** `hop_stats` persist to SQLite on every probe; graph labels (`j:`/`loss:`) survive session reopen.
+- **SQLite disk/retention docs (P11-050):** `docs/DEPLOYMENT.md` — no auto-TTL on `host_session`, manual event purge, sizing notes.
 
 ## [0.2.0] - 2026-07-09
 
