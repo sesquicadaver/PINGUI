@@ -242,7 +242,8 @@ flowchart TB
 |-------|-----|
 | SPIKE amend (цей документ) | P11-001 ✅, політика — **P11-002** |
 | `PersistencePolicy` + gate | P11-013 |
-| GUI «База даних…» + purge rules | P11-014 |
+| GUI «База даних…» + purge rules | P11-014 (політика подій; потребує `--session-db`) |
+| GUI підключення SQLite (file picker, YAML `session_db`) | **P11-016** |
 | YAML `persistence.events` + CLI | P11-015 |
 | Schema v1 + `SessionDatabase` | P11-010 |
 | Wire save + event insert | P11-011 |

@@ -386,7 +386,7 @@ flowchart TD
 
 **Мета:** історія маршрутів між сесіями; replay «коли змінився hop N».
 
-**Контекст:** Python `beta` має `--session-db`, export, jitter/loss; Java `beta` — `--session-db` + wire `SessionStore`/`MonitorService` (policy GUI — P11-013+).
+**Контекст:** Python `beta` має `--session-db`, export, jitter/loss; Java `beta` — `--session-db` + wire `SessionStore`/`MonitorService` (policy GUI — P11-013+). Підключення БД з GUI без CLI — **P11-016**.
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
@@ -396,8 +396,9 @@ flowchart TD
 | **P11-011** | [x] Запис `host_session` + `persistence_event` | `SessionStore`, `PersistenceEventWriter`, `MonitorService` | `SessionStorePersistenceTest`, `PersistenceEventWriterTest`, `MonitorServiceTest` |
 | **P11-012** | [x] CLI `--session-db PATH` | `PinguiApplication`, `java/README.md` | Optional; без PATH — RAM-only |
 | **P11-013** | [x] `PersistencePolicy` + gate у writer | `PersistencePolicy`, `PersistencePolicyHolder`, `PersistenceEventWriter`, `MonitorService` | `PersistencePolicyTest`, `MonitorServiceTest.appliesPersistencePolicyAfterPollCycle` |
-| **P11-014** | [x] GUI «База даних…» + confirm purge | `PersistenceSettingsDialog`, `MainController` | Manual smoke; purge via `SessionDatabase.deleteEventsByType` |
+| **P11-014** | [x] GUI «База даних…» + confirm purge (політика подій; потребує `--session-db`) | `PersistenceSettingsDialog`, `MainController` | Manual smoke; purge via `SessionDatabase.deleteEventsByType` |
 | **P11-015** | [x] YAML `persistence.events` + CLI override | `PersistenceEventsConfig`, `CliPersistenceOverrides`, `ProfilesConfig` | `ProfilesConfigTest.loadPersistenceEventsSection`, `PinguiApplicationTest.parseOptions_noPersistRouteChange` |
+| **P11-016** | [ ] GUI підключення SQLite (file picker + YAML `session_db`) | `PersistenceSettingsDialog`, `MainController`, `ProfilesConfig`, `PersistenceConfig` | Меню «База даних…» активне без CLI `--session-db`; пріоритет CLI > YAML > GUI; reload `SessionStore` |
 | **P11-020** | [x] UI: панель «Історія» — список route change за 24h/7d | `RouteHistoryPresenter`, `SessionDatabase.listEvents` | `SessionDatabaseTest.listRouteChangeEventsFiltersByHostAndTime` |
 | **P11-021** | [x] UI: replay snapshot на графі (read-only) | `RouteGraphPresenter`, `RouteHistoryPresenter` | Вибір події → граф; `RouteHistoryPresenterTest` |
 | **P11-030** | [x] Export CSV/HTML з БД (як Python `session_report`) | `export/SessionReportExporter.java` | CLI `--export-report` |
