@@ -374,6 +374,8 @@ Menu **Settings → Database…** — event checkboxes, purge confirm on disable
 
 ### `PersistencePolicy` / `PersistencePolicyHolder` (P11-013)
 
+`PersistencePolicy` — which events to write (`route_change`, `probe_error`; default on). `PersistencePolicyHolder` — `active` vs `pending`; `MonitorService` calls `applyPendingAfterCycle()` after each poll cycle.
+
 ### `PersistenceEventWriter`
 
 Writes discrete events to `persistence_event` (P11-011). `writeRouteChange`, `writeProbeError`; checks `PersistencePolicyHolder.active()` (P11-013); YAML/GUI — P11-014…015.
