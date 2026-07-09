@@ -31,6 +31,7 @@ final class HostListPresenter {
     private final Consumer<String> appendLog;
     private final Runnable syncControls;
     private final Runnable redrawRoute;
+    private final Runnable clearHistoryReplay;
     private final Runnable startEasterEgg;
     private final Runnable fitWindow;
     private boolean updatingList;
@@ -45,6 +46,7 @@ final class HostListPresenter {
             Consumer<String> appendLog,
             Runnable syncControls,
             Runnable redrawRoute,
+            Runnable clearHistoryReplay,
             Runnable startEasterEgg,
             Runnable fitWindow) {
         this.hostItems = hostItems;
@@ -56,6 +58,7 @@ final class HostListPresenter {
         this.appendLog = appendLog;
         this.syncControls = syncControls;
         this.redrawRoute = redrawRoute;
+        this.clearHistoryReplay = clearHistoryReplay;
         this.startEasterEgg = startEasterEgg;
         this.fitWindow = fitWindow;
     }
@@ -203,6 +206,7 @@ final class HostListPresenter {
             item.enabledProperty().set(enabled);
             updatingList = false;
             syncMetrics(item);
+            clearHistoryReplay.run();
             redrawRoute.run();
         } catch (ConfigError ex) {
             appendLog.accept(ex.getMessage());
@@ -228,6 +232,7 @@ final class HostListPresenter {
             item.pingOnlyProperty().set(pingOnly);
             updatingList = false;
             hostList.refresh();
+            clearHistoryReplay.run();
             redrawRoute.run();
             appendLog.accept("Ping only [" + item.getHost() + "]: " + (pingOnly ? "увімкнено" : "вимкнено"));
         } catch (ConfigError ex) {

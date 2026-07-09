@@ -93,6 +93,7 @@ public final class MainController {
     private ViewModeController viewModeController;
     private RouteGraphPresenter routeGraphPresenter;
     private RouteHistoryPresenter routeHistoryPresenter;
+    private final HistoryHostSync historyHostSync = new HistoryHostSync();
 
     public MainController(AppOptions options, ProfileDocument document) {
         this.options = options;
@@ -228,7 +229,8 @@ public final class MainController {
                 expertMode,
                 this::appendLog,
                 () -> hostListPresenter.syncInputLimits(),
-                () -> routeGraphPresenter.redrawIfExtended(),
+                this::redrawRouteGraph,
+                this::clearHistoryReplay,
                 this::startEasterEgg,
                 () -> viewModeController.fitWindowToContent());
 
@@ -261,9 +263,15 @@ public final class MainController {
         hostItems.addListener(
                 (javafx.collections.ListChangeListener<? super HostItem>) change -> syncHistoryHostFilter());
         hostList.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, item) -> {
-            if (item != null && !item.getHost().equals(historyHostFilter.getValue())) {
-                historyHostFilter.setValue(item.getHost());
+            historyHostSync.syncFilterFromHostList(
+                    item != null ? item.getHost() : null, historyHostFilter.getValue(), historyHostFilter::setValue);
+        });
+        historyHostFilter.valueProperty().addListener((obs, oldHost, newHost) -> {
+            if (historyHostSync.isSyncing()) {
+                return;
             }
+            historyHostSync.syncHostListFromFilter(newHost, hostItems, hostList);
+            redrawRouteGraph();
         });
     }
 
@@ -293,6 +301,27 @@ public final class MainController {
         if (routeHistoryPresenter != null) {
             routeHistoryPresenter.reloadKeepingFilter();
         }
+    }
+
+    private void redrawRouteGraph() {
+        if (routeGraphPresenter != null) {
+            routeGraphPresenter.redrawIfExtended();
+        }
+    }
+
+    private void clearHistoryReplay() {
+        if (routeHistoryPresenter != null) {
+            routeHistoryPresenter.clearSelection();
+        }
+    }
+
+    private String viewHost() {
+        String filterHost = historyHostFilter.getValue();
+        if (filterHost != null && !filterHost.isBlank()) {
+            return filterHost;
+        }
+        HostItem selected = hostList.getSelectionModel().getSelectedItem();
+        return selected != null ? selected.getHost() : null;
     }
 
     private void updateHistoryPanelVisibility() {
@@ -495,10 +524,10 @@ public final class MainController {
             hostListPresenter.syncMetrics(item);
         }
         if (viewModeController.isExtended() && !easterEggActive) {
-            HostItem selected = hostList.getSelectionModel().getSelectedItem();
-            if (selected != null && host.equals(selected.getHost())) {
+            String activeHost = viewHost();
+            if (activeHost != null && host.equals(activeHost)) {
                 statusLabel.setText("Останнє оновлення [" + host + "]: " + TIME_FMT.format(snapshot.timestamp()));
-                routeGraphPresenter.redrawIfExtended();
+                redrawRouteGraph();
             }
         }
     }
@@ -513,14 +542,14 @@ public final class MainController {
                 appendLog("⚠ ЗМІНА МАРШРУТУ до " + host + "\nБуло: " + oldStr + "\nСтало: "
                         + String.join(" -> ", newIps));
             }
-            HostItem selected = hostList.getSelectionModel().getSelectedItem();
-            if (selected != null && host.equals(selected.getHost()) && !easterEggActive) {
+            routeHistoryPresenter.onRouteChanged(host);
+            String activeHost = viewHost();
+            if (activeHost != null && host.equals(activeHost)) {
                 routeGraphPresenter.clearReplay();
                 routeHistoryPresenter.clearSelection();
-                routeGraphPresenter.redrawIfExtended();
+                redrawRouteGraph();
             }
         }
-        refreshRouteHistory();
     }
 
     private void startEasterEgg() {

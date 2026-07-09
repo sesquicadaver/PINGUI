@@ -94,7 +94,7 @@ final class RouteHistoryPresenter {
             if (!previous.equals(hostFilter.getValue())) {
                 hostFilter.setValue(previous);
             } else {
-                resetAndRefresh();
+                refreshPreservingSelection();
             }
             return;
         }
@@ -104,6 +104,14 @@ final class RouteHistoryPresenter {
             hostFilter.setValue(null);
             clearHistoryContent();
         }
+    }
+
+    /** Refreshes timeline when a live route change affects the filtered host only. */
+    void onRouteChanged(String host) {
+        if (!HistoryHostSync.shouldRefreshHistoryForRouteChange(host, hostFilter.getValue())) {
+            return;
+        }
+        refreshPreservingSelection();
     }
 
     private void resetAndRefresh() {
@@ -118,7 +126,23 @@ final class RouteHistoryPresenter {
     }
 
     void reloadKeepingFilter() {
-        resetAndRefresh();
+        refreshPreservingSelection();
+    }
+
+    void refreshPreservingSelection() {
+        RouteHistoryItem selected = historyList.getSelectionModel().getSelectedItem();
+        long selectedId = selected != null ? selected.id() : -1L;
+        refresh();
+        if (selectedId < 0) {
+            return;
+        }
+        for (RouteHistoryItem item : historyList.getItems()) {
+            if (item.id() == selectedId) {
+                historyList.getSelectionModel().select(item);
+                return;
+            }
+        }
+        onClearReplay.run();
     }
 
     void refresh() {
