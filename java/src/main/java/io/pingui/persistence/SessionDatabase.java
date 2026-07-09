@@ -164,6 +164,20 @@ public final class SessionDatabase implements AutoCloseable {
         save(newHost, data);
     }
 
+    /** Returns all hosts with persisted session rows, sorted lexicographically. */
+    public synchronized List<String> listHosts() {
+        try (PreparedStatement ps = connection.prepareStatement("SELECT host FROM host_session ORDER BY host");
+                ResultSet rs = ps.executeQuery()) {
+            List<String> hosts = new ArrayList<>();
+            while (rs.next()) {
+                hosts.add(rs.getString(1));
+            }
+            return List.copyOf(hosts);
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to list hosts", ex);
+        }
+    }
+
     /**
      * Appends a discrete event row (P11-011+). Table is created by schema v3 migration.
      */

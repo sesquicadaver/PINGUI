@@ -400,7 +400,7 @@ flowchart TD
 | **P11-015** | [x] YAML `persistence.events` + CLI override | `PersistenceEventsConfig`, `CliPersistenceOverrides`, `ProfilesConfig` | `ProfilesConfigTest.loadPersistenceEventsSection`, `PinguiApplicationTest.parseOptions_noPersistRouteChange` |
 | **P11-020** | [x] UI: «History» panel — route changes 24h/7d | `RouteHistoryPresenter`, `SessionDatabase.listEvents` | `SessionDatabaseTest.listRouteChangeEventsFiltersByHostAndTime` |
 | **P11-021** | [x] UI: replay snapshot on graph (read-only) | `RouteGraphPresenter`, `RouteHistoryPresenter` | Event selection → graph; `RouteHistoryPresenterTest` |
-| **P11-030** | [ ] Export CSV/HTML from DB (like Python `session_report`) | `export/SessionReportExporter.java` | CLI `--export-report` |
+| **P11-030** | [x] Export CSV/HTML from DB (like Python `session_report`) | `export/SessionReportExporter.java` | CLI `--export-report` |
 | **P11-040** | [ ] Java parity: jitter/loss labels from history | `HopStats`, `GraphCanvas` | Parity with J-06 / B-06 |
 | **P11-050** | [ ] LIVING_SPEC + DEPLOYMENT (disk, retention) | `docs/LIVING_SPEC.md`, `docs/DEPLOYMENT.md` | Retention policy documented |
 
@@ -733,5 +733,7 @@ Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 **Java persistence GUI + YAML (2026-07-09):** P11-014…P11-015 — “Database…” dialog, purge confirm, `persistence.events` YAML, CLI `--no-persist-*`.
 
 **Java route history UI (2026-07-09):** P11-020…P11-021 — timeline list 24h/7d + read-only graph replay from `persistence_event`.
+
+**Java session export (2026-07-09):** P11-030 — `SessionReportExporter` CSV/HTML; CLI `--export-report` (headless, no JavaFX).
 
 Update this file when closing a task: `[x] M-001` + date in CHANGELOG.

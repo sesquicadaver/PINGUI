@@ -79,6 +79,7 @@ gradlew.bat run        # Windows
 | `--desktop-alerts` | off | Linux `notify-send` on route change |
 | `--alert-rate-limit` | `10` | Max alerts per host / hour |
 | `--session-db` | off | SQLite session metrics + events (`host_session`, `persistence_event`) |
+| `--export-report` | off | Export CSV/HTML from `--session-db` and exit (no GUI) |
 | `--no-persist-route-change` | off | Skip `route_change` events in SQLite |
 | `--no-persist-probe-error` | off | Skip `probe_error` events in SQLite |
 | `--geoip-hints` | `config/geoip_hints.yaml` | Offline CIDR→country |
@@ -106,6 +107,7 @@ io.pingui
                        UnixTraceOutputParser, WindowsTraceOutputParser, ProcessExpertPing
 ├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
 ├── persistence/     SessionDatabase, PersistenceEventWriter (P11-010…011)
+├── export/          SessionReportExporter (P11-030)
 └── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,
                        MonitorLifecycle, ViewModeController, RouteGraphPresenter, GraphCanvas
 ```

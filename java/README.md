@@ -81,6 +81,7 @@ gradlew.bat run        # Windows
 | `--desktop-alerts` | off | Linux `notify-send` при зміні маршруту |
 | `--alert-rate-limit` | `10` | Макс. алертів на host / годину |
 | `--session-db` | off | SQLite метрики сесії + події (`host_session`, `persistence_event`) |
+| `--export-report` | off | Експорт CSV/HTML з `--session-db` і вихід (без GUI) |
 | `--no-persist-route-change` | off | Не писати `route_change` у SQLite |
 | `--no-persist-probe-error` | off | Не писати `probe_error` у SQLite |
 | `--geoip-hints` | `config/geoip_hints.yaml` | Offline CIDR→країна |
@@ -108,6 +109,7 @@ io.pingui
                        UnixTraceOutputParser, WindowsTraceOutputParser, ProcessExpertPing
 ├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
 ├── persistence/     SessionDatabase, PersistenceEventWriter (P11-010…011)
+├── export/          SessionReportExporter (P11-030)
 └── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,
                        MonitorLifecycle, ViewModeController, RouteGraphPresenter, GraphCanvas
 ```

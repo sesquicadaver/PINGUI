@@ -354,6 +354,7 @@ SQLite JDBC для Java GUI (parity з Python `session_db.py`).
 | `load(host) -> HostSessionData \| null` | Відновити метрики цілі |
 | `save(host, data)` | Upsert `host_session` |
 | `delete(host)`, `rename(old, new)` | CRUD хоста |
+| `listHosts() -> List<String>` | Усі хости з `host_session` (P11-030 export) |
 | `insertEvent(type, host, profile, payload, at)` | Append `persistence_event` (P11-011+) |
 | `deleteEventsByType(type) -> int` | Purge для P11-014 |
 | `close()` | Закрити JDBC |
@@ -383,6 +384,22 @@ YAML `persistence.events` + CLI `--no-persist-route-change` / `--no-persist-prob
 ### `SessionStore` (persistence)
 
 Опційний `SessionDatabase`: `load`/`save`/`delete` на зміну маршруту, ping history, enabled; `close()` flush + close JDBC.
+
+---
+
+## Java (`io.pingui.export`) — P11-030
+
+### `SessionReportExporter`
+
+Headless CSV/HTML звіти з SQLite `host_session` (parity з Python `session_report.py`).
+
+| Метод | Опис |
+|-------|------|
+| `buildRouteRows(database)` | current / inactive / previous routes + jitter/loss |
+| `exportCsv(database, path)` | Flat CSV (`ROUTE_CSV_FIELDS`) |
+| `exportHtml(database, path)` | Standalone HTML з таблицями per host |
+
+CLI: `--session-db PATH --export-report PATH` (`.html`/`.htm` → HTML, інакше CSV). Без JavaFX.
 
 ---
 

@@ -12,7 +12,8 @@ public record AppOptions(
         boolean verbose,
         boolean geoipEnabled,
         Path geoipHintsPath,
-        Optional<Path> sessionDbPath) {
+        Optional<Path> sessionDbPath,
+        Optional<Path> exportReportPath) {
     public static AppOptions defaults() {
         return new AppOptions(
                 Path.of("config/hosts.example.yaml"),
@@ -22,6 +23,7 @@ public record AppOptions(
                 false,
                 true,
                 Path.of("config/geoip_hints.yaml"),
+                Optional.empty(),
                 Optional.empty());
     }
 }

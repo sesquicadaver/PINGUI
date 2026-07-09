@@ -155,6 +155,20 @@ class SessionDatabaseTest {
     }
 
     @Test
+    void listHostsReturnsSortedNames() {
+        Path dbPath = tempDir.resolve("list-hosts.db");
+        try (SessionDatabase db = new SessionDatabase(dbPath)) {
+            HostSessionData data = new HostSessionData();
+            data.setEnabled(true);
+            db.save("z.example", data);
+            db.save("a.example", data);
+            db.save("m.example", data);
+
+            assertEquals(List.of("a.example", "m.example", "z.example"), db.listHosts());
+        }
+    }
+
+    @Test
     void disabledHostRoundtrip() {
         Path dbPath = tempDir.resolve("disabled.db");
         try (SessionDatabase db = new SessionDatabase(dbPath)) {

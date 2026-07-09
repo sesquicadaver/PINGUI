@@ -354,6 +354,7 @@ SQLite JDBC for the Java GUI (parity with Python `session_db.py`).
 | `load(host) -> HostSessionData \| null` | Restore target metrics |
 | `save(host, data)` | Upsert `host_session` |
 | `delete(host)`, `rename(old, new)` | Host CRUD |
+| `listHosts() -> List<String>` | All hosts in `host_session` (P11-030 export) |
 | `insertEvent(type, host, profile, payload, at)` | Append `persistence_event` (P11-011+) |
 | `deleteEventsByType(type) -> int` | Purge for P11-014 |
 | `close()` | Close JDBC |
@@ -383,6 +384,22 @@ Writes discrete events to `persistence_event` (P11-011). `writeRouteChange`, `wr
 ### `SessionStore` (persistence)
 
 Optional `SessionDatabase`: `load`/`save`/`delete` on route, ping history, enabled changes; `close()` flush + close JDBC.
+
+---
+
+## Java (`io.pingui.export`) — P11-030
+
+### `SessionReportExporter`
+
+Headless CSV/HTML reports from SQLite `host_session` (parity with Python `session_report.py`).
+
+| Method | Description |
+|--------|-------------|
+| `buildRouteRows(database)` | current / inactive / previous routes + jitter/loss |
+| `exportCsv(database, path)` | Flat CSV (`ROUTE_CSV_FIELDS`) |
+| `exportHtml(database, path)` | Standalone HTML with per-host tables |
+
+CLI: `--session-db PATH --export-report PATH` (`.html`/`.htm` → HTML, otherwise CSV). No JavaFX.
 
 ---
 

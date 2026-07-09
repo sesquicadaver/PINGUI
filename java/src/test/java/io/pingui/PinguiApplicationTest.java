@@ -104,6 +104,15 @@ class PinguiApplicationTest {
     }
 
     @Test
+    void parseOptions_exportReportPath() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of(
+                "session-db", "data/ping.db",
+                "export-report", "reports/out.csv"));
+        assertEquals(Path.of("reports/out.csv"), options.exportReportPath().orElseThrow());
+        assertEquals(Path.of("data/ping.db"), options.sessionDbPath().orElseThrow());
+    }
+
+    @Test
     void parseOptions_noPersistRouteChange() {
         AppOptions options = PinguiApplication.parseOptions(Map.of("no-persist-route-change", "true"));
         assertEquals(false, options.persistenceOverrides().routeChange().orElseThrow());
