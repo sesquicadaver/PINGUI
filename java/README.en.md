@@ -5,7 +5,7 @@
 Cross-platform PINGUI built with **Java 21 + JavaFX**.
 
 Runs on **Linux, macOS, and Windows**: route tracing via system
-`traceroute` / `tracert`. Session data lives in RAM only.
+`traceroute` / `tracert`. Session data is RAM-only by default; optional SQLite via `--session-db` (P11-011…012).
 
 > **Recommendation:** **Linux** is the optimal platform (fast `traceroute -q 1`, Expert ping, raw ICMP). **Windows** is suitable for periodic checks: full trace is slow via `tracert`; in the GUI use **Ping only** or increase `interval` in YAML. [docs/DEPLOYMENT.md](../docs/en/DEPLOYMENT.md#os-recommendation)
 
@@ -78,6 +78,10 @@ gradlew.bat run        # Windows
 | `--alert-webhook` | off | POST JSON `RouteChangeEvent` on route change |
 | `--desktop-alerts` | off | Linux `notify-send` on route change |
 | `--alert-rate-limit` | `10` | Max alerts per host / hour |
+| `--session-db` | off | SQLite session metrics + events (`host_session`, `persistence_event`); alternative — YAML `persistence.session_db` or GUI **Database…** |
+| `--export-report` | off | Export CSV/HTML from `--session-db` and exit (no GUI) |
+| `--no-persist-route-change` | off | Skip `route_change` events in SQLite |
+| `--no-persist-probe-error` | off | Skip `probe_error` events in SQLite |
 | `--geoip-hints` | `config/geoip_hints.yaml` | Offline CIDR→country |
 | `--no-geoip` | off | Disable country in labels |
 | `--verbose` | off | Debug log |
@@ -102,6 +106,8 @@ io.pingui
 ├── probe/           RouteProbeFactory, ProcessRouteProbe, TraceCommandBuilder,
                        UnixTraceOutputParser, WindowsTraceOutputParser, ProcessExpertPing
 ├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
+├── persistence/     SessionDatabase, PersistenceEventWriter (P11-010…011)
+├── export/          SessionReportExporter (P11-030)
 └── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,
                        MonitorLifecycle, ViewModeController, RouteGraphPresenter, GraphCanvas
 ```

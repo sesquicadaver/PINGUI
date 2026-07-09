@@ -3,6 +3,8 @@ package io.pingui;
 import io.pingui.config.ConfigError;
 import io.pingui.config.ProfileDocument;
 import io.pingui.config.ProfilesConfig;
+import io.pingui.export.SessionReportExporter;
+import io.pingui.persistence.SessionDatabase;
 import io.pingui.probe.ProbeMode;
 import io.pingui.ui.AppMenuDialogs;
 import io.pingui.ui.MainController;
@@ -54,11 +56,49 @@ public final class PinguiApplication extends Application {
         Path config = params.containsKey("config") ? Path.of(params.get("config")) : defaults.configPath();
         CliProfileOverrides profileOverrides = parseProfileOverrides(params);
         CliAlertOverrides alertOverrides = parseAlertOverrides(params);
+        CliPersistenceOverrides persistenceOverrides = parsePersistenceOverrides(params);
         boolean verbose = params.containsKey("verbose");
         boolean geoipEnabled = !params.containsKey("no-geoip");
         Path geoipHints =
                 params.containsKey("geoip-hints") ? Path.of(params.get("geoip-hints")) : defaults.geoipHintsPath();
-        return new AppOptions(config, profileOverrides, alertOverrides, verbose, geoipEnabled, geoipHints);
+        Optional<Path> sessionDb = Optional.empty();
+        if (params.containsKey("session-db")) {
+            String value = params.get("session-db");
+            if (value == null || value.isBlank()) {
+                throw new IllegalArgumentException("Missing value for --session-db");
+            }
+            sessionDb = Optional.of(Path.of(value.strip()));
+        }
+        Optional<Path> exportReport = Optional.empty();
+        if (params.containsKey("export-report")) {
+            String value = params.get("export-report");
+            if (value == null || value.isBlank()) {
+                throw new IllegalArgumentException("Missing value for --export-report");
+            }
+            exportReport = Optional.of(Path.of(value.strip()));
+        }
+        return new AppOptions(
+                config,
+                profileOverrides,
+                alertOverrides,
+                persistenceOverrides,
+                verbose,
+                geoipEnabled,
+                geoipHints,
+                sessionDb,
+                exportReport);
+    }
+
+    private static CliPersistenceOverrides parsePersistenceOverrides(Map<String, String> params) {
+        Optional<Boolean> routeChange = Optional.empty();
+        if (params.containsKey("no-persist-route-change")) {
+            routeChange = Optional.of(false);
+        }
+        Optional<Boolean> probeError = Optional.empty();
+        if (params.containsKey("no-persist-probe-error")) {
+            probeError = Optional.of(false);
+        }
+        return new CliPersistenceOverrides(routeChange, probeError);
     }
 
     private static CliAlertOverrides parseAlertOverrides(Map<String, String> params) {
@@ -141,6 +181,13 @@ public final class PinguiApplication extends Application {
     }
 
     public static void main(String[] args) {
+        List<String> raw = List.of(args);
+        for (String arg : args) {
+            if ("--help".equals(arg) || "-h".equals(arg)) {
+                printHelp();
+                return;
+            }
+        }
         boolean verbose = false;
         for (String arg : args) {
             if ("--verbose".equals(arg)) {
@@ -149,30 +196,61 @@ public final class PinguiApplication extends Application {
             }
         }
         LoggingSetup.configure(verbose);
-        List<String> raw = new ArrayList<>(List.of(args));
+        Map<String, String> params = parseRawArgs(raw);
+        AppOptions options = parseOptions(params);
+        if (options.exportReportPath().isPresent()) {
+            runExportReport(options);
+            return;
+        }
         List<String> fxArgs = new ArrayList<>();
-        for (int i = 0; i < raw.size(); i++) {
-            String arg = raw.get(i);
-            if ("--help".equals(arg) || "-h".equals(arg)) {
-                printHelp();
-                return;
-            }
-            if (arg.startsWith("--")) {
-                String key = arg.substring(2);
-                if ("verbose".equals(key)) {
-                    fxArgs.add("--verbose=true");
-                    continue;
-                }
-                if (i + 1 < raw.size() && !raw.get(i + 1).startsWith("--")) {
-                    fxArgs.add("--" + key + "=" + raw.get(++i));
-                } else {
-                    fxArgs.add("--" + key + "=true");
-                }
-            } else {
-                fxArgs.add(arg);
-            }
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            fxArgs.add("--" + entry.getKey() + "=" + entry.getValue());
         }
         launch(fxArgs.toArray(String[]::new));
+    }
+
+    private static Map<String, String> parseRawArgs(List<String> raw) {
+        Map<String, String> params = new java.util.LinkedHashMap<>();
+        for (int i = 0; i < raw.size(); i++) {
+            String arg = raw.get(i);
+            if (!arg.startsWith("--")) {
+                continue;
+            }
+            String key = arg.substring(2);
+            if ("verbose".equals(key)) {
+                params.put(key, "true");
+                continue;
+            }
+            if (i + 1 < raw.size() && !raw.get(i + 1).startsWith("--")) {
+                params.put(key, raw.get(++i));
+            } else {
+                params.put(key, "true");
+            }
+        }
+        return params;
+    }
+
+    private static void runExportReport(AppOptions options) {
+        if (options.sessionDbPath().isEmpty()) {
+            failCli("--export-report requires --session-db PATH");
+        }
+        Path reportPath = options.exportReportPath().orElseThrow();
+        try (SessionDatabase database =
+                new SessionDatabase(options.sessionDbPath().orElseThrow())) {
+            if (isHtmlReport(reportPath)) {
+                SessionReportExporter.exportHtml(database, reportPath);
+            } else {
+                SessionReportExporter.exportCsv(database, reportPath);
+            }
+            System.out.println("Session report written: " + reportPath.toAbsolutePath());
+        } catch (IOException | RuntimeException ex) {
+            failCli("Export failed: " + ex.getMessage());
+        }
+    }
+
+    private static boolean isHtmlReport(Path path) {
+        String name = path.getFileName().toString().toLowerCase();
+        return name.endsWith(".html") || name.endsWith(".htm");
     }
 
     private static void failCli(String message) {
@@ -197,6 +275,10 @@ public final class PinguiApplication extends Application {
                   --alert-webhook URL  POST route-change JSON (secrets not logged)
                   --desktop-alerts     Linux desktop notifications (notify-send)
                   --alert-rate-limit N Max alerts per host per hour (default: 10)
+                  --session-db PATH  SQLite session metrics + events (optional)
+                  --export-report PATH  Export CSV/HTML from --session-db and exit (no GUI)
+                  --no-persist-route-change  Disable route_change events in session DB
+                  --no-persist-probe-error     Disable probe_error events in session DB
                   --geoip-hints PATH  CIDR→country YAML (default: config/geoip_hints.yaml)
                   --no-geoip        Disable country hints in hop labels
                   --verbose         Debug logging

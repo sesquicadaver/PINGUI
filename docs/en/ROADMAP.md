@@ -386,23 +386,24 @@ flowchart TD
 
 **Goal:** route history across sessions; replay «when hop N changed».
 
-**Context:** Python `beta` has `--session-db`, export, jitter/loss; Java `main` is RAM-only.
+**Context:** Python `beta` has `--session-db`, export, jitter/loss; Java `beta` has `--session-db` + wired `SessionStore`/`MonitorService` (policy GUI — P11-013+). GUI DB connection without CLI — **P11-016**.
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
 | **P11-001** | [x] SPIKE: SQLite schema for Java (routes, events, samples) | `docs/SPIKE_PERSISTENCE.md` | Parity with Python `session_db.py` |
 | **P11-002** | [x] SPIKE amend: event policy, menu, YAML, purge rules | `docs/SPIKE_PERSISTENCE.md` | Defaults: state+route_change+probe_error; poll-cycle |
-| **P11-010** | [ ] `SessionDatabase` — open/migrate/close | `persistence/SessionDatabase.java` | Flyway or manual schema v1 |
-| **P11-011** | [ ] Write `host_session` + `persistence_event` | `MonitorService`, `SessionDatabase` | Unit test insert/query |
-| **P11-012** | [ ] CLI `--session-db PATH` | `PinguiApplication`, `java/README.md` | Optional; without PATH — RAM-only |
-| **P11-013** | [ ] `PersistencePolicy` + writer gate | `persistence/PersistencePolicy.java` | Default events; poll-cycle swap |
-| **P11-014** | [ ] GUI “Database…” + confirm purge | `PersistenceSettingsDialog.java` | Checkboxes route_change / probe_error |
-| **P11-015** | [ ] YAML `persistence.events` + CLI override | `ProfilesConfig`, `CONFIGURATION.md` | Priority like ADR_ALERTS |
-| **P11-020** | [ ] UI: «History» panel — route changes 24h/7d | `RouteHistoryPresenter.java` | Manual smoke |
-| **P11-021** | [ ] UI: replay snapshot on graph (read-only) | `RouteGraphPresenter` | Select event → graph |
-| **P11-030** | [ ] Export CSV/HTML from DB (like Python `session_report`) | `export/SessionReportExporter.java` | CLI `--export-report` |
-| **P11-040** | [ ] Java parity: jitter/loss labels from history | `HopStats`, `GraphCanvas` | Parity with J-06 / B-06 |
-| **P11-050** | [ ] LIVING_SPEC + DEPLOYMENT (disk, retention) | `docs/LIVING_SPEC.md`, `docs/DEPLOYMENT.md` | Retention policy documented |
+| **P11-010** | [x] `SessionDatabase` — open/migrate/close | `persistence/SessionDatabase.java` | JDBC schema v3 (`host_session` + `persistence_event`) |
+| **P11-011** | [x] Write `host_session` + `persistence_event` | `SessionStore`, `PersistenceEventWriter`, `MonitorService` | `SessionStorePersistenceTest`, `PersistenceEventWriterTest`, `MonitorServiceTest` |
+| **P11-012** | [x] CLI `--session-db PATH` | `PinguiApplication`, `java/README.md` | Optional; without PATH — RAM-only |
+| **P11-013** | [x] `PersistencePolicy` + writer gate | `PersistencePolicy`, `PersistencePolicyHolder`, `PersistenceEventWriter`, `MonitorService` | `PersistencePolicyTest`, `MonitorServiceTest.appliesPersistencePolicyAfterPollCycle` |
+| **P11-014** | [x] GUI “Database…” + confirm purge (event policy; requires `--session-db`) | `PersistenceSettingsDialog`, `MainController` | Manual smoke; purge via `SessionDatabase.deleteEventsByType` |
+| **P11-015** | [x] YAML `persistence.events` + CLI override | `PersistenceEventsConfig`, `CliPersistenceOverrides`, `ProfilesConfig` | `ProfilesConfigTest.loadPersistenceEventsSection`, `PinguiApplicationTest.parseOptions_noPersistRouteChange` |
+| **P11-016** | [x] GUI SQLite connection (file picker + YAML `session_db`) | `PersistenceSettingsDialog`, `MainController`, `ProfilesConfig`, `PersistenceConfig` | “Database…” menu active without CLI `--session-db`; priority CLI > YAML > GUI; reload `SessionStore` |
+| **P11-020** | [x] UI: «History» panel — route changes 24h/7d | `RouteHistoryPresenter`, `SessionDatabase.listEvents` | `SessionDatabaseTest.listRouteChangeEventsFiltersByHostAndTime` |
+| **P11-021** | [x] UI: replay snapshot on graph (read-only) | `RouteGraphPresenter`, `RouteHistoryPresenter` | Event selection → graph; `RouteHistoryPresenterTest` |
+| **P11-030** | [x] Export CSV/HTML from DB (like Python `session_report`) | `export/SessionReportExporter.java` | CLI `--export-report` |
+| **P11-040** | [x] Java parity: jitter/loss labels from history | `HopStats`, `GraphCanvas`, `SessionStore` | `hop_stats` persist in SQLite; labels after reopen; `SessionStorePersistenceTest.hopStatsPersistAcrossReopen` |
+| **P11-050** | [x] LIVING_SPEC + DEPLOYMENT (disk, retention) | `docs/LIVING_SPEC.md`, `docs/DEPLOYMENT.md` | Retention policy documented |
 
 **Estimate:** 2–3 sprints.
 
@@ -725,5 +726,19 @@ Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 **Persistence SPIKE (2026-07-09):** P11-001 — `SPIKE_PERSISTENCE.md` (schema v1 Python parity, v2 `persistence_event`).
 
 **Persistence policy SPIKE (2026-07-09):** P11-002 — event menu, YAML `persistence.events`, purge confirm, poll-cycle policy swap; PY-P11 for Python parity.
+
+**Java persistence wire (2026-07-09):** P11-011…P11-012 — `SessionStore`/`PersistenceEventWriter`/`MonitorService` + CLI `--session-db`.
+
+**Java PersistencePolicy (2026-07-09):** P11-013 — active/pending policy gate; poll-cycle swap in `MonitorService`.
+
+**Java persistence GUI + YAML (2026-07-09):** P11-014…P11-015 — “Database…” dialog, purge confirm, `persistence.events` YAML, CLI `--no-persist-*`.
+
+**Java route history UI (2026-07-09):** P11-020…P11-021 — timeline list 24h/7d + read-only graph replay from `persistence_event`.
+
+**Java session export (2026-07-09):** P11-030 — `SessionReportExporter` CSV/HTML; CLI `--export-report` (headless, no JavaFX).
+
+**Java GUI SQLite connection (2026-07-09):** P11-016 — file picker, YAML `session_db`, “Database…” menu without CLI.
+
+**Java hop stats + retention (2026-07-09):** P11-040…050 — `hop_stats` SQLite persist for graph labels; DEPLOYMENT disk/retention policy.
 
 Update this file when closing a task: `[x] M-001` + date in CHANGELOG.

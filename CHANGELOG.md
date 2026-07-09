@@ -16,6 +16,20 @@
 - **Expert ping IPv6 resolve (V6-055):** hostname targets resolve to AAAA when expert ping uses `-6`.
 - **Persistence SPIKE (P11-001):** `docs/SPIKE_PERSISTENCE.md` — Java SQLite schema v1 parity + v2 route events.
 - **Persistence policy SPIKE (P11-002):** event menu, YAML `persistence.events`, defaults (state+route_change+probe_error), purge confirm, poll-cycle policy.
+- **Java SessionDatabase (P11-010):** `io.pingui.persistence.SessionDatabase` — SQLite open/migrate/close, Python-parity `host_session`, `persistence_event` schema v3, unit tests.
+- **Java persistence wire (P11-011):** `SessionStore` → `host_session`; `PersistenceEventWriter` + `MonitorService` → `route_change` / `probe_error` events (independent of alerts).
+- **Java CLI `--session-db` (P11-012):** `PinguiApplication`, `AppOptions`, `MainController` — optional SQLite path; RAM-only when omitted.
+- **Java PersistencePolicy (P11-013):** `PersistencePolicy`, `PersistencePolicyHolder` — gate in `PersistenceEventWriter`; pending policy applies after each poll cycle.
+- **Java persistence GUI + config (P11-014…015):** `PersistenceSettingsDialog` (purge confirm), YAML `persistence.events`, CLI `--no-persist-route-change` / `--no-persist-probe-error`.
+- **Java route history UI (P11-020…021):** `RouteHistoryPresenter` — 24h/7d `route_change` list; graph replay from selected event.
+- **Java session export (P11-030):** `SessionReportExporter` — CSV/HTML from `--session-db`; headless CLI `--export-report PATH` (format by extension).
+- **Java GUI SQLite connection (P11-016):** `PersistenceConfig`, `SessionDbResolver` — file picker in «База даних…», YAML `persistence.session_db`, menu active without CLI.
+- **Java hop stats from history (P11-040):** `hop_stats` persist to SQLite on every probe; graph labels (`j:`/`loss:`) survive session reopen.
+- **SQLite disk/retention docs (P11-050):** `docs/DEPLOYMENT.md` — no auto-TTL on `host_session`, manual event purge, sizing notes.
+
+### Fixed
+
+- **Java GUI SQLite reconnect (P11-016):** `reconnectPersistence` зберігає live enabled/ping-only з `SessionStore`, не скидає до YAML; `MonitorLifecycle` реєструє хости з поточного store — маршрут і `hop_stats` знову пишуться після **Налаштування → База даних…**.
 
 ## [0.2.0] - 2026-07-09
 

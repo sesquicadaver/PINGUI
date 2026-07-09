@@ -343,6 +343,70 @@ Root logger: ERROR (GUI) або DEBUG (`--verbose`).
 
 ---
 
+## Java (`io.pingui.persistence`) — P11-010
+
+### `SessionDatabase`
+
+SQLite JDBC для Java GUI (parity з Python `session_db.py`).
+
+| Метод | Опис |
+|-------|------|
+| `load(host) -> HostSessionData \| null` | Відновити метрики цілі |
+| `save(host, data)` | Upsert `host_session` |
+| `delete(host)`, `rename(old, new)` | CRUD хоста |
+| `listHosts() -> List<String>` | Усі хости з `host_session` (P11-030 export) |
+| `insertEvent(type, host, profile, payload, at)` | Append `persistence_event` (P11-011+) |
+| `deleteEventsByType(type) -> int` | Purge для P11-014 |
+| `close()` | Закрити JDBC |
+
+Schema v3: `host_session` (Python v2 parity) + `persistence_event`. Залежність: `sqlite-jdbc`. Wire у `SessionStore` + `PersistenceEventWriter` (P11-011); CLI `--session-db` (P11-012).
+
+### `PersistenceConfig` (P11-016)
+
+YAML `persistence.session_db` + `persistence.events`. Пріоритет шляху: CLI `--session-db` > YAML > GUI session override (`SessionDbResolver`).
+
+### `PersistenceEventsConfig` (P11-015)
+
+YAML `persistence.events` + CLI `--no-persist-route-change` / `--no-persist-probe-error`. Пріоритет: CLI > YAML > GUI session > default.
+
+### `RouteHistoryPresenter` (P11-020…021)
+
+Панель «Історія змін» у розширеному режимі: `listEvents(ROUTE_CHANGE, host, since)`; перемикач 24h/7d; вибір рядка → read-only replay на `GraphCanvas`.
+
+### `PersistenceSettingsDialog` (P11-014)
+
+Меню **Налаштування → База даних…** — чекбокси подій, confirm purge при вимкненні (`PersistencePolicySupport`).
+
+### `PersistencePolicy` / `PersistencePolicyHolder` (P11-013)
+
+`PersistencePolicy` — які події писати (`route_change`, `probe_error`; default on). `PersistencePolicyHolder` — `active` vs `pending`; `MonitorService` викликає `applyPendingAfterCycle()` після кожного poll-циклу.
+
+### `PersistenceEventWriter`
+
+Запис дискретних подій у `persistence_event` (P11-011). `writeRouteChange`, `writeProbeError`; перевіряє `PersistencePolicyHolder.active()` (P11-013); YAML/GUI — P11-014…015.
+
+### `SessionStore` (persistence)
+
+Опційний `SessionDatabase`: `load`/`save`/`delete` на зміну маршруту, ping history, enabled; `close()` flush + close JDBC.
+
+---
+
+## Java (`io.pingui.export`) — P11-030
+
+### `SessionReportExporter`
+
+Headless CSV/HTML звіти з SQLite `host_session` (parity з Python `session_report.py`).
+
+| Метод | Опис |
+|-------|------|
+| `buildRouteRows(database)` | current / inactive / previous routes + jitter/loss |
+| `exportCsv(database, path)` | Flat CSV (`ROUTE_CSV_FIELDS`) |
+| `exportHtml(database, path)` | Standalone HTML з таблицями per host |
+
+CLI: `--session-db PATH --export-report PATH` (`.html`/`.htm` → HTML, інакше CSV). Без JavaFX.
+
+---
+
 ## Скрипти (не importable)
 
 | Скрипт | Призначення |

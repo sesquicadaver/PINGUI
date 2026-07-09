@@ -137,10 +137,31 @@ Daemon with PID file (PY-030…032):
 
 systemd example: `systemd/pingui.service.example` (Type=simple, `ExecStart=... daemon`).
 
+## SQLite session persistence (Java / Python)
+
+| What | Where |
+|------|-------|
+| DB file | `--session-db PATH`, YAML `persistence.session_db`, or GUI **Settings → Database…** |
+| Route metrics | `host_session` table (JSON: routes, `ping_history`, `hop_stats`) |
+| Events | `persistence_event` table (`route_change`, `probe_error`) |
+
+**Writing to the DB:** after connecting SQLite, enable the target checkbox in the host list — legacy YAML defaults to `enabled: false`; without active monitoring, route and `hop_stats` are not updated. `host_session` rows appear on connect; `current_route_json` / `hop_stats` after the first successful poll.
+
+**Disk and retention (P11-050):**
+
+- No automatic TTL / rotation for `host_session` — the file grows with host count and accumulated `ping_history` / `hop_stats` (in-memory caps: up to 50 RTT samples per hop in `hop_stats`, ping history per IP).
+- `persistence_event` rows are removed only manually: GUI **Database…** → disable event type → **Delete** (purge confirm).
+- Full reset: delete the `.db` file or remove the host row via the UI.
+- Headless report: `./pingui-java.sh -- --session-db data/ping.db --export-report report.csv`
+- Typical size: a few–tens of KB per host on a NOC profile; monitor `du -h data/ping.db` on long-running daemons.
+
+Schema details: [SPIKE_PERSISTENCE.md](../SPIKE_PERSISTENCE.md).
+
 ## Troubleshooting
 
 | Symptom | Solution |
 |---------|----------|
+| SQLite empty / no route data | Connect DB (CLI/YAML/GUI), **enable host checkbox**, wait for a poll; check: `sqlite3 data/ping.db "SELECT host, enabled, length(current_route_json) FROM host_session;"` |
 | Trace on Windows “hangs” / very long | Normal for `tracert`; enable **Ping only** or increase `interval` |
 | Gradle “What went wrong: 25.0.3” | JDK 21: `export PINGUI_JAVA_HOME=.../java-21-openjdk-*` |
 | “No hops parsed” | Install `traceroute`; on macOS — `/usr/sbin/traceroute` |

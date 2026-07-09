@@ -30,6 +30,7 @@ public record CliProfileOverrides(
                 timeoutSeconds.orElse(profile.timeoutSeconds()),
                 probeMode.orElse(profile.probeMode()),
                 profile.hosts(),
-                profile.alerts());
+                profile.alerts(),
+                profile.persistence());
     }
 }

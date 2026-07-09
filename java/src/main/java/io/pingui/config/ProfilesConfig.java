@@ -100,7 +100,27 @@ public final class ProfilesConfig {
         }
         List<HostEntry> hosts = parseHostEntries(hostsList, name);
         AlertConfig alerts = parseAlerts(map, name);
-        return new TracingProfile(interval, maxHops, timeout, probe, hosts, alerts);
+        PersistenceConfig persistence = parsePersistence(map, name);
+        return new TracingProfile(interval, maxHops, timeout, probe, hosts, alerts, persistence);
+    }
+
+    private static PersistenceConfig parsePersistence(Map<?, ?> map, String profileName) {
+        java.util.Optional<java.nio.file.Path> sessionDb = java.util.Optional.empty();
+        boolean routeChange = true;
+        boolean probeError = true;
+        Object persistenceObj = map.get("persistence");
+        if (persistenceObj instanceof Map<?, ?> persistenceMap) {
+            Object sessionDbObj = persistenceMap.get("session_db");
+            if (sessionDbObj instanceof String sessionDbStr && !sessionDbStr.isBlank()) {
+                sessionDb = java.util.Optional.of(java.nio.file.Path.of(sessionDbStr.strip()));
+            }
+            Object eventsObj = persistenceMap.get("events");
+            if (eventsObj instanceof Map<?, ?> eventsMap) {
+                routeChange = readBoolean(eventsMap.get("route_change"), routeChange);
+                probeError = readBoolean(eventsMap.get("probe_error"), probeError);
+            }
+        }
+        return new PersistenceConfig(sessionDb, new PersistenceEventsConfig(routeChange, probeError));
     }
 
     private static AlertConfig parseAlerts(Map<?, ?> map, String profileName) {
@@ -209,6 +229,21 @@ public final class ProfilesConfig {
                 alertsOut.put("rate_limit", profile.alerts().maxAlertsPerHour());
             }
             map.put("alerts", alertsOut);
+        }
+        if (!profile.persistence().isDefault()) {
+            Map<String, Object> persistenceOut = new LinkedHashMap<>();
+            profile.persistence().sessionDb().ifPresent(path -> persistenceOut.put("session_db", path.toString()));
+            Map<String, Object> eventsOut = new LinkedHashMap<>();
+            if (!profile.persistence().routeChange()) {
+                eventsOut.put("route_change", false);
+            }
+            if (!profile.persistence().probeError()) {
+                eventsOut.put("probe_error", false);
+            }
+            if (!eventsOut.isEmpty()) {
+                persistenceOut.put("events", eventsOut);
+            }
+            map.put("persistence", persistenceOut);
         }
         return map;
     }

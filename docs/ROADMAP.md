@@ -386,23 +386,24 @@ flowchart TD
 
 **Мета:** історія маршрутів між сесіями; replay «коли змінився hop N».
 
-**Контекст:** Python `beta` має `--session-db`, export, jitter/loss; Java `main` — RAM-only.
+**Контекст:** Python `beta` має `--session-db`, export, jitter/loss; Java `beta` — `--session-db` + wire `SessionStore`/`MonitorService` (policy GUI — P11-013+). Підключення БД з GUI без CLI — **P11-016**.
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
 | **P11-001** | [x] SPIKE: схема SQLite для Java (routes, events, samples) | `docs/SPIKE_PERSISTENCE.md` | Parity з Python `session_db.py` |
 | **P11-002** | [x] SPIKE amend: політика подій, меню, YAML, purge rules | `docs/SPIKE_PERSISTENCE.md` | Defaults: state+route_change+probe_error; poll-cycle |
-| **P11-010** | [ ] `SessionDatabase` — open/migrate/close | `persistence/SessionDatabase.java` | Flyway або ручна schema v1 |
-| **P11-011** | [ ] Запис `host_session` + `persistence_event` | `MonitorService`, `SessionDatabase` | Unit-тест insert/query |
-| **P11-012** | [ ] CLI `--session-db PATH` | `PinguiApplication`, `java/README.md` | Optional; без PATH — RAM-only |
-| **P11-013** | [ ] `PersistencePolicy` + gate у writer | `persistence/PersistencePolicy.java` | Default events; poll-cycle swap |
-| **P11-014** | [ ] GUI «База даних…» + confirm purge | `PersistenceSettingsDialog.java` | Чекбокси route_change / probe_error |
-| **P11-015** | [ ] YAML `persistence.events` + CLI override | `ProfilesConfig`, `CONFIGURATION.md` | Пріоритет як ADR_ALERTS |
-| **P11-020** | [ ] UI: панель «Історія» — список route change за 24h/7d | `RouteHistoryPresenter.java` | Manual smoke |
-| **P11-021** | [ ] UI: replay snapshot на графі (read-only) | `RouteGraphPresenter` | Вибір події → граф |
-| **P11-030** | [ ] Export CSV/HTML з БД (як Python `session_report`) | `export/SessionReportExporter.java` | CLI `--export-report` |
-| **P11-040** | [ ] Java parity: jitter/loss labels з історії | `HopStats`, `GraphCanvas` | Parity з J-06 / B-06 |
-| **P11-050** | [ ] LIVING_SPEC + DEPLOYMENT (disk, retention) | `docs/LIVING_SPEC.md`, `docs/DEPLOYMENT.md` | Retention policy documented |
+| **P11-010** | [x] `SessionDatabase` — open/migrate/close | `persistence/SessionDatabase.java` | JDBC schema v3 (`host_session` + `persistence_event`) |
+| **P11-011** | [x] Запис `host_session` + `persistence_event` | `SessionStore`, `PersistenceEventWriter`, `MonitorService` | `SessionStorePersistenceTest`, `PersistenceEventWriterTest`, `MonitorServiceTest` |
+| **P11-012** | [x] CLI `--session-db PATH` | `PinguiApplication`, `java/README.md` | Optional; без PATH — RAM-only |
+| **P11-013** | [x] `PersistencePolicy` + gate у writer | `PersistencePolicy`, `PersistencePolicyHolder`, `PersistenceEventWriter`, `MonitorService` | `PersistencePolicyTest`, `MonitorServiceTest.appliesPersistencePolicyAfterPollCycle` |
+| **P11-014** | [x] GUI «База даних…» + confirm purge (політика подій; потребує `--session-db`) | `PersistenceSettingsDialog`, `MainController` | Manual smoke; purge via `SessionDatabase.deleteEventsByType` |
+| **P11-015** | [x] YAML `persistence.events` + CLI override | `PersistenceEventsConfig`, `CliPersistenceOverrides`, `ProfilesConfig` | `ProfilesConfigTest.loadPersistenceEventsSection`, `PinguiApplicationTest.parseOptions_noPersistRouteChange` |
+| **P11-016** | [x] GUI підключення SQLite (file picker + YAML `session_db`) | `PersistenceSettingsDialog`, `MainController`, `ProfilesConfig`, `PersistenceConfig` | Меню «База даних…» активне без CLI `--session-db`; пріоритет CLI > YAML > GUI; reload `SessionStore` |
+| **P11-020** | [x] UI: панель «Історія» — список route change за 24h/7d | `RouteHistoryPresenter`, `SessionDatabase.listEvents` | `SessionDatabaseTest.listRouteChangeEventsFiltersByHostAndTime` |
+| **P11-021** | [x] UI: replay snapshot на графі (read-only) | `RouteGraphPresenter`, `RouteHistoryPresenter` | Вибір події → граф; `RouteHistoryPresenterTest` |
+| **P11-030** | [x] Export CSV/HTML з БД (як Python `session_report`) | `export/SessionReportExporter.java` | CLI `--export-report` |
+| **P11-040** | [x] Java parity: jitter/loss labels з історії | `HopStats`, `GraphCanvas`, `SessionStore` | `hop_stats` persist у SQLite; labels після reopen; `SessionStorePersistenceTest.hopStatsPersistAcrossReopen` |
+| **P11-050** | [x] LIVING_SPEC + DEPLOYMENT (disk, retention) | `docs/LIVING_SPEC.md`, `docs/DEPLOYMENT.md` | Retention policy documented |
 
 **Орієнтовно:** 2–3 sprint.
 
@@ -725,5 +726,19 @@ flowchart LR
 **Persistence SPIKE (2026-07-09):** P11-001 — `SPIKE_PERSISTENCE.md` (schema v1 Python parity, v2 `persistence_event`).
 
 **Persistence policy SPIKE (2026-07-09):** P11-002 — event menu, YAML `persistence.events`, purge confirm, poll-cycle policy swap; PY-P11 for Python parity.
+
+**Java persistence wire (2026-07-09):** P11-011…P11-012 — `SessionStore`/`PersistenceEventWriter`/`MonitorService` + CLI `--session-db`.
+
+**Java PersistencePolicy (2026-07-09):** P11-013 — active/pending policy gate; poll-cycle swap in `MonitorService`.
+
+**Java persistence GUI + YAML (2026-07-09):** P11-014…P11-015 — «База даних…» dialog, purge confirm, `persistence.events` YAML, CLI `--no-persist-*`.
+
+**Java route history UI (2026-07-09):** P11-020…P11-021 — timeline list 24h/7d + read-only graph replay from `persistence_event`.
+
+**Java session export (2026-07-09):** P11-030 — `SessionReportExporter` CSV/HTML; CLI `--export-report` (headless, no JavaFX).
+
+**Java GUI SQLite connection (2026-07-09):** P11-016 — file picker, YAML `session_db`, menu «База даних…» without CLI.
+
+**Java hop stats + retention (2026-07-09):** P11-040…050 — `hop_stats` SQLite persist for graph labels; DEPLOYMENT disk/retention policy.
 
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.

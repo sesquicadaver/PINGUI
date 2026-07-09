@@ -343,6 +343,70 @@ Root logger: ERROR (GUI) or DEBUG (`--verbose`).
 
 ---
 
+## Java (`io.pingui.persistence`) — P11-010
+
+### `SessionDatabase`
+
+SQLite JDBC for the Java GUI (parity with Python `session_db.py`).
+
+| Method | Description |
+|--------|-------------|
+| `load(host) -> HostSessionData \| null` | Restore target metrics |
+| `save(host, data)` | Upsert `host_session` |
+| `delete(host)`, `rename(old, new)` | Host CRUD |
+| `listHosts() -> List<String>` | All hosts in `host_session` (P11-030 export) |
+| `insertEvent(type, host, profile, payload, at)` | Append `persistence_event` (P11-011+) |
+| `deleteEventsByType(type) -> int` | Purge for P11-014 |
+| `close()` | Close JDBC |
+
+Schema v3: `host_session` (Python v2 parity) + `persistence_event`. Dependency: `sqlite-jdbc`. Wire into `SessionStore` + `PersistenceEventWriter` (P11-011); CLI `--session-db` (P11-012).
+
+### `PersistenceConfig` (P11-016)
+
+YAML `persistence.session_db` + `persistence.events`. Path priority: CLI `--session-db` > YAML > GUI session override (`SessionDbResolver`).
+
+### `PersistenceEventsConfig` (P11-015)
+
+YAML `persistence.events` + CLI `--no-persist-route-change` / `--no-persist-probe-error`. Priority: CLI > YAML > GUI session > default.
+
+### `RouteHistoryPresenter` (P11-020…021)
+
+“History” panel in extended mode: `listEvents(ROUTE_CHANGE, host, since)`; 24h/7d toggle; row selection → read-only replay on `GraphCanvas`.
+
+### `PersistenceSettingsDialog` (P11-014)
+
+Menu **Settings → Database…** — event checkboxes, purge confirm on disable (`PersistencePolicySupport`).
+
+### `PersistencePolicy` / `PersistencePolicyHolder` (P11-013)
+
+`PersistencePolicy` — which events to write (`route_change`, `probe_error`; default on). `PersistencePolicyHolder` — `active` vs `pending`; `MonitorService` calls `applyPendingAfterCycle()` after each poll cycle.
+
+### `PersistenceEventWriter`
+
+Writes discrete events to `persistence_event` (P11-011). `writeRouteChange`, `writeProbeError`; checks `PersistencePolicyHolder.active()` (P11-013); YAML/GUI — P11-014…015.
+
+### `SessionStore` (persistence)
+
+Optional `SessionDatabase`: `load`/`save`/`delete` on route, ping history, enabled changes; `close()` flush + close JDBC.
+
+---
+
+## Java (`io.pingui.export`) — P11-030
+
+### `SessionReportExporter`
+
+Headless CSV/HTML reports from SQLite `host_session` (parity with Python `session_report.py`).
+
+| Method | Description |
+|--------|-------------|
+| `buildRouteRows(database)` | current / inactive / previous routes + jitter/loss |
+| `exportCsv(database, path)` | Flat CSV (`ROUTE_CSV_FIELDS`) |
+| `exportHtml(database, path)` | Standalone HTML with per-host tables |
+
+CLI: `--session-db PATH --export-report PATH` (`.html`/`.htm` → HTML, otherwise CSV). No JavaFX.
+
+---
+
 ## Scripts (not importable)
 
 | Script | Purpose |

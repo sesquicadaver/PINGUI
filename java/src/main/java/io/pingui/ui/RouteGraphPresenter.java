@@ -1,5 +1,6 @@
 package io.pingui.ui;
 
+import io.pingui.monitor.RouteChangeEvent;
 import io.pingui.monitor.SessionStore;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -12,6 +13,7 @@ final class RouteGraphPresenter {
     private final Supplier<SessionStore> store;
     private final BooleanSupplier extendedView;
     private final BooleanSupplier easterEggActive;
+    private RouteChangeEvent replayEvent;
 
     RouteGraphPresenter(
             GraphCanvas graphCanvas,
@@ -30,6 +32,14 @@ final class RouteGraphPresenter {
         if (!extendedView.getAsBoolean() || easterEggActive.getAsBoolean()) {
             return;
         }
+        if (replayEvent != null) {
+            graphCanvas.renderRoute(
+                    RouteHistoryPresenter.ipsToRoute(replayEvent.newIps()),
+                    ip -> null,
+                    RouteHistoryPresenter.ipsToRoute(replayEvent.oldIps()),
+                    hop -> null);
+            return;
+        }
         HostItem selected = hostList.getSelectionModel().getSelectedItem();
         if (selected == null) {
             graphCanvas.renderRoute(java.util.List.of(), ip -> null, java.util.List.of());
@@ -45,6 +55,17 @@ final class RouteGraphPresenter {
     }
 
     void showStaticMessage(String message) {
+        replayEvent = null;
         graphCanvas.renderStaticView(message);
+    }
+
+    void replayRouteChange(RouteChangeEvent event) {
+        replayEvent = event;
+        redrawIfExtended();
+    }
+
+    void clearReplay() {
+        replayEvent = null;
+        redrawIfExtended();
     }
 }

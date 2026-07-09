@@ -30,7 +30,13 @@ class PinguiApplicationTest {
     @Test
     void profileOverrides_mergePreservesYamlFields() {
         TracingProfile yaml = new TracingProfile(
-                30.0, 15, 1.0, ProbeMode.PROCESS, java.util.List.of(), io.pingui.config.AlertConfig.disabled());
+                30.0,
+                15,
+                1.0,
+                ProbeMode.PROCESS,
+                java.util.List.of(),
+                io.pingui.config.AlertConfig.disabled(),
+                io.pingui.config.PersistenceConfig.defaults());
         TracingProfile merged = CliProfileOverrides.none().applyTo(yaml);
         assertEquals(30.0, merged.intervalSeconds());
         assertEquals(15, merged.maxHops());
@@ -91,15 +97,36 @@ class PinguiApplicationTest {
     }
 
     @Test
-    void alertOverrides_mergePreservesYamlFields() {
-        io.pingui.config.AlertConfig yaml = new io.pingui.config.AlertConfig(true, "https://yaml.example/hook", 10);
-        CliAlertOverrides partial = new CliAlertOverrides(
-                java.util.Optional.of("https://cli.example/hook"),
-                java.util.Optional.empty(),
-                java.util.OptionalInt.of(3));
-        io.pingui.config.AlertConfig merged = partial.applyTo(yaml);
-        assertEquals("https://cli.example/hook", merged.normalizedWebhook());
-        assertTrue(merged.desktopAlerts());
-        assertEquals(3, merged.maxAlertsPerHour());
+    void parseOptions_sessionDbPath() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of("session-db", "data/ping.db"));
+        assertEquals(
+                java.nio.file.Path.of("data/ping.db"), options.sessionDbPath().orElseThrow());
+    }
+
+    @Test
+    void parseOptions_exportReportPath() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of(
+                "session-db", "data/ping.db",
+                "export-report", "reports/out.csv"));
+        assertEquals(Path.of("reports/out.csv"), options.exportReportPath().orElseThrow());
+        assertEquals(Path.of("data/ping.db"), options.sessionDbPath().orElseThrow());
+    }
+
+    @Test
+    void parseOptions_noPersistRouteChange() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of("no-persist-route-change", "true"));
+        assertEquals(false, options.persistenceOverrides().routeChange().orElseThrow());
+        assertTrue(options.persistenceOverrides().probeError().isEmpty());
+    }
+
+    @Test
+    void persistenceOverrides_mergePreservesYamlFields() {
+        io.pingui.config.PersistenceConfig yaml = io.pingui.config.PersistenceConfig.eventsOnly(
+                new io.pingui.config.PersistenceEventsConfig(false, true));
+        CliPersistenceOverrides partial =
+                new CliPersistenceOverrides(java.util.Optional.of(true), java.util.Optional.empty());
+        io.pingui.config.PersistenceConfig merged = partial.applyTo(yaml);
+        assertTrue(merged.routeChange());
+        assertTrue(merged.probeError());
     }
 }

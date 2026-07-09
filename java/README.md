@@ -7,7 +7,7 @@
 Крос-платформова версія PINGUI на **Java 21 + JavaFX**.
 
 Працює на **Linux, macOS та Windows**: трасування через системні
-`traceroute` / `tracert`. Дані сесії — лише в RAM.
+`traceroute` / `tracert`. Дані сесії — в RAM за замовчуванням; опційно SQLite через `--session-db` (P11-011…012).
 
 > **Рекомендація:** **Linux** — оптимальна платформа (швидкий `traceroute -q 1`, Expert ping, raw ICMP). **Windows** — для періодичних перевірок: повний trace повільний через `tracert`; у GUI використовуйте **Ping only** або збільште `interval` у YAML. [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md#рекомендація-щодо-ос)
 
@@ -80,6 +80,10 @@ gradlew.bat run        # Windows
 | `--alert-webhook` | off | POST JSON `RouteChangeEvent` при зміні маршруту |
 | `--desktop-alerts` | off | Linux `notify-send` при зміні маршруту |
 | `--alert-rate-limit` | `10` | Макс. алертів на host / годину |
+| `--session-db` | off | SQLite метрики сесії + події (`host_session`, `persistence_event`); альтернатива — YAML `persistence.session_db` або GUI «База даних…» |
+| `--export-report` | off | Експорт CSV/HTML з `--session-db` і вихід (без GUI) |
+| `--no-persist-route-change` | off | Не писати `route_change` у SQLite |
+| `--no-persist-probe-error` | off | Не писати `probe_error` у SQLite |
 | `--geoip-hints` | `config/geoip_hints.yaml` | Offline CIDR→країна |
 | `--no-geoip` | off | Вимкнути країну в підписах |
 | `--verbose` | off | Debug-лог |
@@ -104,6 +108,8 @@ io.pingui
 ├── probe/           RouteProbeFactory, ProcessRouteProbe, TraceCommandBuilder,
                        UnixTraceOutputParser, WindowsTraceOutputParser, ProcessExpertPing
 ├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
+├── persistence/     SessionDatabase, PersistenceEventWriter (P11-010…011)
+├── export/          SessionReportExporter (P11-030)
 └── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,
                        MonitorLifecycle, ViewModeController, RouteGraphPresenter, GraphCanvas
 ```

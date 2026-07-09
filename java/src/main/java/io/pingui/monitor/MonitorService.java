@@ -2,6 +2,9 @@ package io.pingui.monitor;
 
 import io.pingui.config.PingExpertEntry;
 import io.pingui.model.Models.RouteSnapshot;
+import io.pingui.persistence.PersistenceEventWriter;
+import io.pingui.persistence.PersistencePolicy;
+import io.pingui.persistence.PersistencePolicyHolder;
 import io.pingui.probe.ProbeMode;
 import io.pingui.probe.RouteProbe;
 import io.pingui.probe.RouteProbeFactory;
@@ -64,6 +67,8 @@ public final class MonitorService implements AutoCloseable {
     private volatile String alertProfileName = "default";
     private volatile PingExpertResolver expertResolver;
     private volatile PingOnlyResolver pingOnlyResolver;
+    private volatile PersistenceEventWriter persistenceEvents;
+    private final PersistencePolicyHolder persistencePolicy = new PersistencePolicyHolder();
 
     public MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds) {
         this(intervalSeconds, maxHops, timeoutSeconds, ProbeMode.AUTO);
@@ -113,6 +118,19 @@ public final class MonitorService implements AutoCloseable {
 
     public void setPingOnlyResolver(PingOnlyResolver pingOnlyResolver) {
         this.pingOnlyResolver = pingOnlyResolver;
+    }
+
+    public void setPersistenceEventWriter(PersistenceEventWriter persistenceEvents) {
+        this.persistenceEvents = persistenceEvents;
+    }
+
+    public PersistencePolicyHolder persistencePolicy() {
+        return persistencePolicy;
+    }
+
+    /** Sets policy effective from the next completed poll cycle (SPIKE P11-002). */
+    public void setPendingPersistencePolicy(PersistencePolicy policy) {
+        persistencePolicy.setPending(policy);
     }
 
     public List<String> hosts() {
@@ -216,6 +234,7 @@ public final class MonitorService implements AutoCloseable {
                     .toList();
         }
         if (active.isEmpty()) {
+            persistencePolicy.applyPendingAfterCycle();
             return;
         }
         try {
@@ -229,6 +248,8 @@ public final class MonitorService implements AutoCloseable {
             CompletableFuture.allOf(probes.toArray(CompletableFuture[]::new)).join();
         } catch (RuntimeException ex) {
             // Keep scheduler alive if a probe task fails unexpectedly.
+        } finally {
+            persistencePolicy.applyPendingAfterCycle();
         }
     }
 
@@ -268,6 +289,14 @@ public final class MonitorService implements AutoCloseable {
             return;
         }
         if (outcome.error() != null) {
+            PersistenceEventWriter events = persistenceEvents;
+            if (events != null) {
+                try {
+                    events.writeProbeError(host, outcome.error());
+                } catch (RuntimeException ex) {
+                    LOG.warn("Persistence probe_error failed for {}: {}", host, ex.getMessage());
+                }
+            }
             current.onProbeError(host, outcome.error());
             return;
         }
@@ -296,12 +325,20 @@ public final class MonitorService implements AutoCloseable {
     }
 
     private void dispatchRouteChangeAlert(String host, List<String> oldIps, List<String> newIps) {
+        RouteChangeEvent event =
+                RouteChangeEvent.fromRouteChange(host, oldIps, newIps, alertProfileName, Instant.now());
+        PersistenceEventWriter events = persistenceEvents;
+        if (events != null) {
+            try {
+                events.writeRouteChange(event);
+            } catch (RuntimeException ex) {
+                LOG.warn("Persistence route_change failed for {}: {}", host, ex.getMessage());
+            }
+        }
         AlertDispatcher dispatcher = alertDispatcher;
         if (dispatcher == null) {
             return;
         }
-        RouteChangeEvent event =
-                RouteChangeEvent.fromRouteChange(host, oldIps, newIps, alertProfileName, Instant.now());
         try {
             dispatcher.dispatch(event);
         } catch (RuntimeException ex) {

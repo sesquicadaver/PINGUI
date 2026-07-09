@@ -66,6 +66,15 @@ public final class Models {
             successes++;
             rttSamples.add(rttMs);
         }
+
+        /** Restores counters from SQLite JSON (P11-010 parity with Python). */
+        public static HopProbeStats fromSerialized(int probes, int successes, List<Double> rttSamples) {
+            HopProbeStats stats = new HopProbeStats();
+            stats.probes = probes;
+            stats.successes = successes;
+            stats.rttSamples.addAll(rttSamples);
+            return stats;
+        }
     }
 
     public record HopStatsSummary(Double jitterMs, double lossPct) {}

@@ -25,7 +25,7 @@ check_no_ui_imports() {
   fi
 }
 
-for layer in config monitor probe model geoip platform; do
+for layer in config monitor probe model geoip platform persistence; do
   check_no_ui_imports "$layer"
 done
 

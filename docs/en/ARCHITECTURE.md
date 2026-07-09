@@ -88,6 +88,6 @@ more reliable parsing of TTL-exceeded / echo reply on Linux. Requires `CAP_NET_R
 ## Out of MVP scope
 
 - No persistence between sessions by default (RAM-only MVP).
-- Optional: `--session-db PATH` (SQLite routes/ping/enabled) — see `persistence/session_db.py`.
+- Optional: `--session-db PATH` — Python `persistence/session_db.py`; Java `io.pingui.persistence` (P11-011…012 on `beta`).
 - No separate backend/API server.
 - IPv6 literals in YAML (RFC 5952); subprocess `traceroute -6` for v6 trace; raw ICMP remains v4-only.

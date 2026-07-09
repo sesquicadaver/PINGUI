@@ -4,14 +4,15 @@ import io.pingui.probe.ProbeMode;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Named tracing session: poll settings, host list, and alert channels. */
+/** Named tracing session: poll settings, host list, alert channels, and persistence. */
 public record TracingProfile(
         double intervalSeconds,
         int maxHops,
         double timeoutSeconds,
         ProbeMode probeMode,
         List<HostEntry> hosts,
-        AlertConfig alerts) {
+        AlertConfig alerts,
+        PersistenceConfig persistence) {
     public TracingProfile {
         if (intervalSeconds <= 0) {
             throw new IllegalArgumentException("intervalSeconds must be positive");
@@ -25,18 +26,24 @@ public record TracingProfile(
         probeMode = probeMode != null ? probeMode : ProbeMode.AUTO;
         hosts = List.copyOf(hosts != null ? hosts : List.of());
         alerts = alerts != null ? alerts : AlertConfig.disabled();
+        persistence = persistence != null ? persistence : PersistenceConfig.defaults();
     }
 
     public static TracingProfile defaults(List<HostEntry> hosts) {
-        return new TracingProfile(1.0, 20, 0.5, ProbeMode.AUTO, hosts, AlertConfig.disabled());
+        return new TracingProfile(
+                1.0, 20, 0.5, ProbeMode.AUTO, hosts, AlertConfig.disabled(), PersistenceConfig.defaults());
     }
 
     public TracingProfile withHosts(List<HostEntry> newHosts) {
-        return new TracingProfile(intervalSeconds, maxHops, timeoutSeconds, probeMode, newHosts, alerts);
+        return new TracingProfile(intervalSeconds, maxHops, timeoutSeconds, probeMode, newHosts, alerts, persistence);
     }
 
     public TracingProfile withAlerts(AlertConfig newAlerts) {
-        return new TracingProfile(intervalSeconds, maxHops, timeoutSeconds, probeMode, hosts, newAlerts);
+        return new TracingProfile(intervalSeconds, maxHops, timeoutSeconds, probeMode, hosts, newAlerts, persistence);
+    }
+
+    public TracingProfile withPersistence(PersistenceConfig newPersistence) {
+        return new TracingProfile(intervalSeconds, maxHops, timeoutSeconds, probeMode, hosts, alerts, newPersistence);
     }
 
     public List<String> hostAddresses() {

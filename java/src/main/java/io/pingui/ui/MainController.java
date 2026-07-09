@@ -4,18 +4,23 @@ import io.pingui.AppOptions;
 import io.pingui.CliProfileOverrides;
 import io.pingui.config.ConfigError;
 import io.pingui.config.HostEntry;
+import io.pingui.config.PersistenceConfig;
 import io.pingui.config.ProfileDocument;
 import io.pingui.config.ProfilesConfig;
+import io.pingui.config.SessionDbResolver;
 import io.pingui.config.TracingProfile;
 import io.pingui.geoip.GeoCountry;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
+import io.pingui.persistence.PersistencePolicy;
 import io.pingui.platform.PlatformCapabilities;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -61,6 +66,11 @@ public final class MainController {
     private final TextField hostInput = new TextField();
     private final TextArea logArea = new TextArea();
     private final GraphCanvas graphCanvas = new GraphCanvas();
+    private final ListView<RouteHistoryItem> historyList = new ListView<>();
+    private final RadioButton historyRange24h = new RadioButton("24 год");
+    private final RadioButton historyRange7d = new RadioButton("7 днів");
+    private final Label historyLabel = new Label("Історія змін");
+    private final HBox historyRangeBar = new HBox(8);
     private final Label statusLabel = new Label("Очікування даних…");
     private final VBox graphPanel = new VBox(8);
     private final VBox leftPanel = new VBox(8);
@@ -73,11 +83,14 @@ public final class MainController {
     private boolean easterEggActive;
     private PauseTransition easterEggTimer;
     private boolean switchingProfile;
+    private Optional<PersistencePolicy> sessionPersistenceOverride = Optional.empty();
+    private Optional<Path> sessionGuiDbOverride = Optional.empty();
 
     private ProfileUiCoordinator profileUi;
     private HostListPresenter hostListPresenter;
     private ViewModeController viewModeController;
     private RouteGraphPresenter routeGraphPresenter;
+    private RouteHistoryPresenter routeHistoryPresenter;
 
     public MainController(AppOptions options, ProfileDocument document) {
         this.options = options;
@@ -86,8 +99,8 @@ public final class MainController {
         GeoCountry.configure(options.geoipEnabled(), options.geoipHintsPath());
         TracingProfile active = profileDocument.active();
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(active.hosts());
-        this.store = SessionStore.fromEntries(sessionHosts);
-        this.monitor = createMonitor(active);
+        this.store = SessionStore.fromEntries(sessionHosts, openSessionDatabase());
+        this.monitor = createMonitor(active, sessionHosts);
         initCoordinators();
         hostListPresenter.rebuild(sessionHosts);
     }
@@ -155,9 +168,10 @@ public final class MainController {
         });
 
         graphPanel.getChildren().addAll(new Label("Граф маршруту"), graphCanvas);
+        configureHistoryPanel();
         VBox.setVgrow(graphCanvas, Priority.ALWAYS);
         graphPanel.setPadding(new Insets(8));
-        graphCanvas.setMinSize(400, 400);
+        graphCanvas.setMinSize(400, 280);
 
         root.setLeft(leftPanel);
         root.setTop(createMenuBar());
@@ -189,6 +203,7 @@ public final class MainController {
     public void shutdown() {
         dismissEasterEgg();
         monitor.close();
+        store.close();
     }
 
     private void initCoordinators() {
@@ -221,12 +236,52 @@ public final class MainController {
                 root,
                 logArea,
                 statusLabel,
-                () -> routeGraphPresenter.redrawIfExtended(),
+                () -> {
+                    routeGraphPresenter.redrawIfExtended();
+                    refreshRouteHistory();
+                },
                 this::showEasterEggCanvas,
                 () -> easterEggActive);
 
         routeGraphPresenter = new RouteGraphPresenter(
                 graphCanvas, hostList, () -> store, () -> viewModeController.isExtended(), () -> easterEggActive);
+
+        routeHistoryPresenter = new RouteHistoryPresenter(
+                () -> store,
+                hostList,
+                historyList,
+                historyRange24h,
+                historyRange7d,
+                () -> viewModeController.isExtended(),
+                routeGraphPresenter::replayRouteChange,
+                routeGraphPresenter::clearReplay);
+        routeHistoryPresenter.configure();
+    }
+
+    private void configureHistoryPanel() {
+        updateHistoryPanelVisibility();
+        historyList.setPrefHeight(120);
+        Button refreshHistory = new Button("Оновити");
+        refreshHistory.setOnAction(e -> refreshRouteHistory());
+        historyRangeBar.getChildren().addAll(historyRange24h, historyRange7d, refreshHistory);
+        graphPanel.getChildren().addAll(historyLabel, historyRangeBar, historyList);
+    }
+
+    private void refreshRouteHistory() {
+        if (routeHistoryPresenter != null) {
+            routeHistoryPresenter.refresh();
+        }
+    }
+
+    private void updateHistoryPanelVisibility() {
+        boolean persistence = store.hasPersistence();
+        historyLabel.setVisible(persistence);
+        historyLabel.setManaged(persistence);
+        historyRangeBar.setVisible(persistence);
+        historyRangeBar.setManaged(persistence);
+        historyList.setVisible(persistence);
+        historyList.setManaged(persistence);
+        refreshRouteHistory();
     }
 
     private MenuBar createMenuBar() {
@@ -241,7 +296,12 @@ public final class MainController {
         Menu helpMenu = new Menu("Довідка");
         helpMenu.getItems().add(helpItem);
 
-        MenuBar menuBar = new MenuBar(aboutMenu, helpMenu);
+        MenuItem databaseItem = new MenuItem("База даних…");
+        databaseItem.setOnAction(e -> onPersistenceSettings());
+        Menu settingsMenu = new Menu("Налаштування");
+        settingsMenu.getItems().add(databaseItem);
+
+        MenuBar menuBar = new MenuBar(aboutMenu, settingsMenu, helpMenu);
         menuBar.setUseSystemMenuBar(true);
         return menuBar;
     }
@@ -250,8 +310,8 @@ public final class MainController {
         return root.getScene() != null ? root.getScene().getWindow() : null;
     }
 
-    private MonitorService createMonitor(TracingProfile profile) {
-        return MonitorLifecycle.create(
+    private MonitorService createMonitor(TracingProfile profile, List<HostEntry> sessionHosts) {
+        MonitorService service = MonitorLifecycle.create(
                 profile,
                 profileDocument.activeProfile(),
                 store,
@@ -271,7 +331,87 @@ public final class MainController {
                         Platform.runLater(() -> appendLog("Помилка [" + host + "]: " + message));
                     }
                 },
-                options.alertOverrides().applyTo(profile.alerts()));
+                options.alertOverrides().applyTo(profile.alerts()),
+                store.database(),
+                sessionHosts);
+        applyPersistencePolicy(service, profile);
+        return service;
+    }
+
+    private void applyPersistencePolicy(MonitorService service, TracingProfile profile) {
+        PersistencePolicy baseline =
+                options.persistenceOverrides().applyTo(profile.persistence()).toPolicy();
+        PersistencePolicy effective = sessionPersistenceOverride.orElse(baseline);
+        service.setPendingPersistencePolicy(effective);
+        service.persistencePolicy().applyPendingAfterCycle();
+    }
+
+    private void onPersistenceSettings() {
+        PersistencePolicy active =
+                store.hasPersistence() ? monitor.persistencePolicy().active() : PersistencePolicy.defaults();
+        PersistencePolicy pending = store.hasPersistence()
+                ? monitor.persistencePolicy().pending()
+                : sessionPersistenceOverride.orElseGet(() -> options.persistenceOverrides()
+                        .applyTo(profileDocument.active().persistence())
+                        .toPolicy());
+        PersistenceSettingsDialog.show(
+                dialogOwner(),
+                resolveSessionDbPath(),
+                options.sessionDbPath(),
+                profileDocument.active().persistence().sessionDb(),
+                options.persistenceOverrides(),
+                active,
+                pending,
+                store.database(),
+                result -> handlePersistenceSettings(result));
+    }
+
+    private void handlePersistenceSettings(PersistenceSettingsDialog.Result result) {
+        if (result.sessionDbPath().isPresent()) {
+            sessionGuiDbOverride = result.sessionDbPath();
+            reconnectPersistence(Optional.of(result.policy()));
+            notifyPersistenceConnected(result.sessionDbPath().get());
+        } else {
+            sessionPersistenceOverride = Optional.of(result.policy());
+            monitor.setPendingPersistencePolicy(result.policy());
+        }
+        appendLog("Політика persistence оновлена (з наступного poll-циклу)");
+    }
+
+    private void notifyPersistenceConnected(Path dbPath) {
+        appendLog("SQLite підключено: " + dbPath.toAbsolutePath());
+        statusLabel.setText("SQLite: " + dbPath.toAbsolutePath());
+    }
+
+    private Optional<Path> resolveSessionDbPath() {
+        return SessionDbResolver.resolve(
+                options.sessionDbPath(), profileDocument.active().persistence().sessionDb(), sessionGuiDbOverride);
+    }
+
+    private io.pingui.persistence.SessionDatabase openSessionDatabase() {
+        return resolveSessionDbPath()
+                .map(io.pingui.persistence.SessionDatabase::new)
+                .orElse(null);
+    }
+
+    private void reconnectPersistence(Optional<PersistencePolicy> policyOverride) {
+        dismissEasterEgg();
+        List<HostEntry> liveEntries = HostViewRules.entriesForConfig(store.toHostEntries());
+        TracingProfile profile = profileDocument.active();
+        monitor.close();
+        store.close();
+        store = SessionStore.fromEntries(liveEntries, openSessionDatabase());
+        sessionPersistenceOverride = policyOverride != null ? policyOverride : Optional.empty();
+        monitor = createMonitor(profile, liveEntries);
+        updateHistoryPanelVisibility();
+        hostListPresenter.rebuild(liveEntries);
+        hostList.getSelectionModel().clearSelection();
+        if (!hostItems.isEmpty()) {
+            hostList.getSelectionModel().select(0);
+        }
+        hostListPresenter.syncInputLimits();
+        viewModeController.apply();
+        routeGraphPresenter.redrawIfExtended();
     }
 
     private void applyCliOverridesToActiveProfile() {
@@ -285,11 +425,15 @@ public final class MainController {
 
     private void reloadActiveProfile() {
         dismissEasterEgg();
+        sessionPersistenceOverride = Optional.empty();
+        sessionGuiDbOverride = Optional.empty();
         TracingProfile profile = profileDocument.active();
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(profile.hosts());
         monitor.close();
-        store = SessionStore.fromEntries(sessionHosts);
-        monitor = createMonitor(profile);
+        store.close();
+        store = SessionStore.fromEntries(sessionHosts, openSessionDatabase());
+        monitor = createMonitor(profile, sessionHosts);
+        updateHistoryPanelVisibility();
         hostListPresenter.rebuild(sessionHosts);
         hostList.getSelectionModel().clearSelection();
         if (!hostItems.isEmpty()) {
@@ -301,6 +445,11 @@ public final class MainController {
 
     private void onSaveConfig() {
         try {
+            if (sessionGuiDbOverride.isPresent() && options.sessionDbPath().isEmpty()) {
+                TracingProfile active = profileDocument.active();
+                PersistenceConfig updated = active.persistence().withSessionDb(sessionGuiDbOverride.get());
+                profileDocument.putProfile(profileDocument.activeProfile(), active.withPersistence(updated));
+            }
             profileUi.syncActiveProfileFromSession();
             ProfilesConfig.save(options.configPath(), profileDocument);
             appendLog("Конфіг збережено (усі профілі): " + options.configPath());
@@ -336,8 +485,11 @@ public final class MainController {
         appendLog("⚠ ЗМІНА МАРШРУТУ до " + host + "\nБуло: " + oldStr + "\nСтало: " + String.join(" -> ", newIps));
         HostItem selected = hostList.getSelectionModel().getSelectedItem();
         if (selected != null && host.equals(selected.getHost()) && !easterEggActive) {
+            routeGraphPresenter.clearReplay();
+            routeHistoryPresenter.clearSelection();
             routeGraphPresenter.redrawIfExtended();
         }
+        refreshRouteHistory();
     }
 
     private void startEasterEgg() {
