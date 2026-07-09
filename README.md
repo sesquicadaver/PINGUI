@@ -49,7 +49,7 @@ pingui-java.bat
 - **Expert ping** (Linux, iputils) — діалог **Exten.** на хост
 - Трасування через `traceroute` / `tracert` (без `CAP_NET_RAW` за замовч.)
 - Опційно на Linux: raw ICMP (`probe: auto|raw` + `cap_net_raw`)
-- **Dual-stack config:** IPv6 literal у YAML (RFC 5952); subprocess trace v6 — фаза 9 ([docs/DEPLOYMENT.md](docs/DEPLOYMENT.md))
+- **Dual-stack config:** IPv6 literal у YAML (RFC 5952); subprocess `traceroute -6` на Python `beta` (Linux/macOS); Java — фаза 9 ([docs/DEPLOYMENT.md](docs/DEPLOYMENT.md))
 
 ## CLI
 

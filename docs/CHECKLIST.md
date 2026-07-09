@@ -18,6 +18,13 @@ Python-редакція та тести — гілка **`beta`**.
 - [ ] `.venv/bin/python -m pingui status --pid-file /tmp/pingui.pid` → running
 - [ ] `.venv/bin/python -m pingui stop --pid-file /tmp/pingui.pid`
 
+### Python IPv6 smoke (beta, Linux/macOS)
+
+- [ ] `traceroute -6` встановлено (`which traceroute`)
+- [ ] YAML з `::1` або `2001:db8::1`: `load_hosts_config` без помилки
+- [ ] `.venv/bin/python -c "from pingui.icmp.tracer import trace_route; print(trace_route('::1', max_hops=3))"` — ≥1 hop
+- [ ] GeoIP v6: `country_code_for_ip('2001:4860:4860::8888')` → `US` (з `config/geoip_hints.yaml`)
+
 ### Python alert smoke (beta)
 
 - [ ] `python -m pingui monitor --alert-webhook http://127.0.0.1:9/hook` — старт без crash (webhook недоступний → log)

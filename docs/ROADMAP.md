@@ -127,7 +127,7 @@
 
 **Передумови:** `./gradlew check` green; B-064 JaCoCo gate ≥80%.
 
-**Поза scope фази 9 (окремі ticket):** Python IPv6 — **Фаза PY.4 (PY-050…PY-052)**; повний Windows expert-ping parity (див. backlog після V6-059).
+**Поза scope фази 9 (окремі ticket):** Python IPv6 — **Фаза PY.4 (PY-050…PY-052)** ✅ на `beta`; повний Windows expert-ping parity (див. backlog після V6-059).
 
 ### 9.0 — Design gate
 
@@ -681,5 +681,7 @@ flowchart LR
 **Roadmap Telemetry (2026-07-09):** фаза 16 — збір метрик мережі, локальне збереження (SQLite/JSONL), відправка на LOG-server (syslog/GELF/Loki).
 
 **Roadmap Python (2026-07-09):** фаза PY — атомарні ticket-и PY-010…PY-064: launcher, docs, MonitorLoop, daemon, alerts, IPv6, CI/packaging (`beta` only).
+
+**PY-S4 (2026-07-09):** PY-050…PY-052 — Python IPv6 dual-stack (`config.py`, `process_tracer.py`, `prefixes_v6`); commit `6a33133` на `beta`.
 
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.

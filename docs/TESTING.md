@@ -72,6 +72,7 @@ Integration-тести GUI створюють `QApplication` перед `MainWin
 | `test_graph_canvas.py` | layout, ping_color |
 | `test_ui_smoke.py` | MainWindow CRUD, logs, checkbox |
 | `test_tracer.py` (contract) | trace_route з mock transport |
+| `test_tracer_network.py` (integration) | live v4/v6 trace (`@pytest.mark.network`) |
 | `test_worker_store.py` (contract) | worker → store flow |
 | `test_session_db.py` | SQLite round-trip, schema v2 |
 | `test_session_export.py` | CSV/HTML row builder |

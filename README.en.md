@@ -49,7 +49,7 @@ Requirements: **JDK 21** ([Eclipse Temurin](https://adoptium.net/temurin/release
 - **Expert ping** (Linux, iputils) — **Exten.** dialog per host
 - Tracing via `traceroute` / `tracert` (no `CAP_NET_RAW` by default)
 - Optional on Linux: raw ICMP (`probe: auto|raw` + `cap_net_raw`)
-- **Dual-stack config:** IPv6 literals in YAML (RFC 5952); subprocess trace v6 — phase 9 ([docs/en/DEPLOYMENT.md](docs/en/DEPLOYMENT.md))
+- **Dual-stack config:** IPv6 literals in YAML (RFC 5952); subprocess `traceroute -6` on Python `beta` (Linux/macOS); Java — phase 9 ([docs/en/DEPLOYMENT.md](docs/en/DEPLOYMENT.md))
 
 ## CLI
 

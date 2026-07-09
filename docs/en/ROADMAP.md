@@ -127,7 +127,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 **Prerequisites:** `./gradlew check` green; B-064 JaCoCo gate ≥80%.
 
-**Out of phase 9 scope (separate ticket):** Python IPv6 — **Phase PY.4 (PY-050…PY-052)**; full Windows expert-ping parity (see backlog after V6-059).
+**Out of phase 9 scope (separate ticket):** Python IPv6 — **Phase PY.4 (PY-050…PY-052)** ✅ on `beta`; full Windows expert-ping parity (see backlog after V6-059).
 
 ### 9.0 — Design gate
 
