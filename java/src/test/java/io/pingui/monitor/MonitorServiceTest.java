@@ -227,6 +227,40 @@ class MonitorServiceTest {
     }
 
     @Test
+    void acceleratesPollingAfterRouteChange() throws Exception {
+        RouteSnapshot first = new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
+        RouteSnapshot second =
+                new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "192.168.1.1", 6.0, false)));
+        AtomicInteger polls = new AtomicInteger();
+        RouteProbe probe = (targetHost, maxHops, timeoutSeconds) -> {
+            polls.incrementAndGet();
+            return polls.get() < 4 ? first : second;
+        };
+        CountDownLatch routeChanged = new CountDownLatch(1);
+        MonitorService service = new MonitorService(2.0, 20, 0.5, probe);
+        service.setListener(new MonitorService.Listener() {
+            @Override
+            public void onDataReceived(String host, RouteSnapshot snap) {}
+
+            @Override
+            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {
+                if (!oldIps.isEmpty()) {
+                    routeChanged.countDown();
+                }
+            }
+
+            @Override
+            public void onProbeError(String host, String message) {}
+        });
+        service.addHost("8.8.8.8", true);
+        assertTrue(routeChanged.await(8, TimeUnit.SECONDS));
+        int pollsAtChange = polls.get();
+        Thread.sleep(1200);
+        assertTrue(polls.get() > pollsAtChange, "burst should allow another poll within ~1.2s");
+        service.close();
+    }
+
+    @Test
     void pollsHostsOnIndependentSchedules() throws Exception {
         AtomicInteger tracePolls = new AtomicInteger();
         AtomicInteger pingOnlyPolls = new AtomicInteger();

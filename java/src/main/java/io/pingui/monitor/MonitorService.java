@@ -90,6 +90,7 @@ public final class MonitorService implements AutoCloseable {
     private HostProbeMode profileProbeMode = HostProbeMode.TRACE;
     private volatile PersistenceEventWriter persistenceEvents;
     private final PersistencePolicyHolder persistencePolicy = new PersistencePolicyHolder();
+    private final BurstSchedulePolicy burstPolicy = new BurstSchedulePolicy();
 
     public MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds) {
         this(intervalSeconds, maxHops, timeoutSeconds, ProbeMode.AUTO);
@@ -226,6 +227,7 @@ public final class MonitorService implements AutoCloseable {
             lastRoutes.remove(host);
             lastPollAt.remove(host);
         }
+        burstPolicy.clearHost(host);
         pollsInFlight.remove(host);
     }
 
@@ -258,6 +260,7 @@ public final class MonitorService implements AutoCloseable {
                 pollsInFlight.put(newHost, inFlight);
             }
         }
+        burstPolicy.renameHost(oldHost, newHost);
     }
 
     public void setHostEnabled(String host, boolean hostEnabled) {
@@ -284,6 +287,7 @@ public final class MonitorService implements AutoCloseable {
             lastRoutes.put(host, List.of());
             lastPollAt.remove(host);
         }
+        burstPolicy.clearHost(host);
         poller.resetMtrHost(host);
     }
 
@@ -388,6 +392,9 @@ public final class MonitorService implements AutoCloseable {
             }
             current.onDataReceived(host, snapshot);
         }
+        if (outcome.routeChanged() && BurstSchedulePolicy.shouldArmBurst(outcome.oldIps(), outcome.newIps())) {
+            burstPolicy.onRouteChange(host, Instant.now());
+        }
         if (outcome.routeChanged()) {
             current.onRouteChanged(host, outcome.oldIps(), outcome.newIps());
             dispatchRouteChangeAlert(host, outcome.oldIps(), outcome.newIps());
@@ -476,7 +483,8 @@ public final class MonitorService implements AutoCloseable {
                 override = resolved;
             }
         }
-        return HostPollSchedule.effectiveInterval(mode, profileIntervalSeconds, override);
+        return burstPolicy.effectiveInterval(
+                host, HostPollSchedule.effectiveInterval(mode, profileIntervalSeconds, override), Instant.now());
     }
 
     @Override
