@@ -71,6 +71,44 @@ class ProfilesConfigTest {
     }
 
     @Test
+    void loadPersistenceEventsSection() throws Exception {
+        Path path = tempDir.resolve("persistence.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: noc
+                profiles:
+                  noc:
+                    hosts:
+                      - "8.8.8.8"
+                    persistence:
+                      events:
+                        route_change: false
+                        probe_error: true
+                """);
+        TracingProfile profile = ProfilesConfig.load(path).active();
+        assertEquals(false, profile.persistence().routeChange());
+        assertTrue(profile.persistence().probeError());
+    }
+
+    @Test
+    void savePersistenceEventsSection() throws Exception {
+        Path path = tempDir.resolve("persist-save.yaml");
+        TracingProfile profile = new TracingProfile(
+                1.0,
+                20,
+                0.5,
+                ProbeMode.AUTO,
+                List.of(HostEntry.basic("8.8.8.8", false)),
+                AlertConfig.disabled(),
+                new PersistenceEventsConfig(false, true));
+        ProfilesConfig.save(path, ProfileDocument.singleDefault(profile));
+        TracingProfile reloaded = ProfilesConfig.load(path).active();
+        assertEquals(false, reloaded.persistence().routeChange());
+        assertTrue(reloaded.persistence().probeError());
+    }
+
+    @Test
     void loadLegacyAlertWebhookField() throws Exception {
         Path path = tempDir.resolve("legacy-webhook.yaml");
         Files.writeString(

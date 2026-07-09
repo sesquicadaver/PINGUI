@@ -11,11 +11,13 @@ import io.pingui.geoip.GeoCountry;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
+import io.pingui.persistence.PersistencePolicy;
 import io.pingui.platform.PlatformCapabilities;
 import java.io.IOException;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -73,6 +75,7 @@ public final class MainController {
     private boolean easterEggActive;
     private PauseTransition easterEggTimer;
     private boolean switchingProfile;
+    private Optional<PersistencePolicy> sessionPersistenceOverride = Optional.empty();
 
     private ProfileUiCoordinator profileUi;
     private HostListPresenter hostListPresenter;
@@ -242,7 +245,13 @@ public final class MainController {
         Menu helpMenu = new Menu("Довідка");
         helpMenu.getItems().add(helpItem);
 
-        MenuBar menuBar = new MenuBar(aboutMenu, helpMenu);
+        MenuItem databaseItem = new MenuItem("База даних…");
+        databaseItem.setOnAction(e -> onPersistenceSettings());
+        databaseItem.setDisable(!store.hasPersistence());
+        Menu settingsMenu = new Menu("Налаштування");
+        settingsMenu.getItems().add(databaseItem);
+
+        MenuBar menuBar = new MenuBar(aboutMenu, settingsMenu, helpMenu);
         menuBar.setUseSystemMenuBar(true);
         return menuBar;
     }
@@ -252,7 +261,7 @@ public final class MainController {
     }
 
     private MonitorService createMonitor(TracingProfile profile) {
-        return MonitorLifecycle.create(
+        MonitorService service = MonitorLifecycle.create(
                 profile,
                 profileDocument.activeProfile(),
                 store,
@@ -274,6 +283,34 @@ public final class MainController {
                 },
                 options.alertOverrides().applyTo(profile.alerts()),
                 store.database());
+        applyPersistencePolicy(service, profile);
+        return service;
+    }
+
+    private void applyPersistencePolicy(MonitorService service, TracingProfile profile) {
+        PersistencePolicy baseline =
+                options.persistenceOverrides().applyTo(profile.persistence()).toPolicy();
+        PersistencePolicy effective = sessionPersistenceOverride.orElse(baseline);
+        service.setPendingPersistencePolicy(effective);
+        service.persistencePolicy().applyPendingAfterCycle();
+    }
+
+    private void onPersistenceSettings() {
+        if (!store.hasPersistence()) {
+            return;
+        }
+        PersistenceSettingsDialog.show(
+                dialogOwner(),
+                options.sessionDbPath(),
+                options.persistenceOverrides(),
+                monitor.persistencePolicy().active(),
+                monitor.persistencePolicy().pending(),
+                store.database(),
+                policy -> {
+                    sessionPersistenceOverride = Optional.of(policy);
+                    monitor.setPendingPersistencePolicy(policy);
+                    appendLog("Політика persistence оновлена (з наступного poll-циклу)");
+                });
     }
 
     private io.pingui.persistence.SessionDatabase openSessionDatabase() {
@@ -293,6 +330,7 @@ public final class MainController {
 
     private void reloadActiveProfile() {
         dismissEasterEgg();
+        sessionPersistenceOverride = Optional.empty();
         TracingProfile profile = profileDocument.active();
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(profile.hosts());
         monitor.close();

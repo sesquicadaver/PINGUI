@@ -396,8 +396,8 @@ flowchart TD
 | **P11-011** | [x] Запис `host_session` + `persistence_event` | `SessionStore`, `PersistenceEventWriter`, `MonitorService` | `SessionStorePersistenceTest`, `PersistenceEventWriterTest`, `MonitorServiceTest` |
 | **P11-012** | [x] CLI `--session-db PATH` | `PinguiApplication`, `java/README.md` | Optional; без PATH — RAM-only |
 | **P11-013** | [x] `PersistencePolicy` + gate у writer | `PersistencePolicy`, `PersistencePolicyHolder`, `PersistenceEventWriter`, `MonitorService` | `PersistencePolicyTest`, `MonitorServiceTest.appliesPersistencePolicyAfterPollCycle` |
-| **P11-014** | [ ] GUI «База даних…» + confirm purge | `PersistenceSettingsDialog.java` | Чекбокси route_change / probe_error |
-| **P11-015** | [ ] YAML `persistence.events` + CLI override | `ProfilesConfig`, `CONFIGURATION.md` | Пріоритет як ADR_ALERTS |
+| **P11-014** | [x] GUI «База даних…» + confirm purge | `PersistenceSettingsDialog`, `MainController` | Manual smoke; purge via `SessionDatabase.deleteEventsByType` |
+| **P11-015** | [x] YAML `persistence.events` + CLI override | `PersistenceEventsConfig`, `CliPersistenceOverrides`, `ProfilesConfig` | `ProfilesConfigTest.loadPersistenceEventsSection`, `PinguiApplicationTest.parseOptions_noPersistRouteChange` |
 | **P11-020** | [ ] UI: панель «Історія» — список route change за 24h/7d | `RouteHistoryPresenter.java` | Manual smoke |
 | **P11-021** | [ ] UI: replay snapshot на графі (read-only) | `RouteGraphPresenter` | Вибір події → граф |
 | **P11-030** | [ ] Export CSV/HTML з БД (як Python `session_report`) | `export/SessionReportExporter.java` | CLI `--export-report` |
@@ -729,5 +729,7 @@ flowchart LR
 **Java persistence wire (2026-07-09):** P11-011…P11-012 — `SessionStore`/`PersistenceEventWriter`/`MonitorService` + CLI `--session-db`.
 
 **Java PersistencePolicy (2026-07-09):** P11-013 — active/pending policy gate; poll-cycle swap in `MonitorService`.
+
+**Java persistence GUI + YAML (2026-07-09):** P11-014…P11-015 — «База даних…» dialog, purge confirm, `persistence.events` YAML, CLI `--no-persist-*`.
 
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.

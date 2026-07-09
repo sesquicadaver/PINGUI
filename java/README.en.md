@@ -79,6 +79,8 @@ gradlew.bat run        # Windows
 | `--desktop-alerts` | off | Linux `notify-send` on route change |
 | `--alert-rate-limit` | `10` | Max alerts per host / hour |
 | `--session-db` | off | SQLite session metrics + events (`host_session`, `persistence_event`) |
+| `--no-persist-route-change` | off | Skip `route_change` events in SQLite |
+| `--no-persist-probe-error` | off | Skip `probe_error` events in SQLite |
 | `--geoip-hints` | `config/geoip_hints.yaml` | Offline CIDR→country |
 | `--no-geoip` | off | Disable country in labels |
 | `--verbose` | off | Debug log |

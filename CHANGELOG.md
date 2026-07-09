@@ -20,6 +20,7 @@
 - **Java persistence wire (P11-011):** `SessionStore` → `host_session`; `PersistenceEventWriter` + `MonitorService` → `route_change` / `probe_error` events (independent of alerts).
 - **Java CLI `--session-db` (P11-012):** `PinguiApplication`, `AppOptions`, `MainController` — optional SQLite path; RAM-only when omitted.
 - **Java PersistencePolicy (P11-013):** `PersistencePolicy`, `PersistencePolicyHolder` — gate in `PersistenceEventWriter`; pending policy applies after each poll cycle.
+- **Java persistence GUI + config (P11-014…015):** `PersistenceSettingsDialog` (purge confirm), YAML `persistence.events`, CLI `--no-persist-route-change` / `--no-persist-probe-error`.
 
 ## [0.2.0] - 2026-07-09
 

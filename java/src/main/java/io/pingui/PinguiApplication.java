@@ -54,6 +54,7 @@ public final class PinguiApplication extends Application {
         Path config = params.containsKey("config") ? Path.of(params.get("config")) : defaults.configPath();
         CliProfileOverrides profileOverrides = parseProfileOverrides(params);
         CliAlertOverrides alertOverrides = parseAlertOverrides(params);
+        CliPersistenceOverrides persistenceOverrides = parsePersistenceOverrides(params);
         boolean verbose = params.containsKey("verbose");
         boolean geoipEnabled = !params.containsKey("no-geoip");
         Path geoipHints =
@@ -66,7 +67,27 @@ public final class PinguiApplication extends Application {
             }
             sessionDb = Optional.of(Path.of(value.strip()));
         }
-        return new AppOptions(config, profileOverrides, alertOverrides, verbose, geoipEnabled, geoipHints, sessionDb);
+        return new AppOptions(
+                config,
+                profileOverrides,
+                alertOverrides,
+                persistenceOverrides,
+                verbose,
+                geoipEnabled,
+                geoipHints,
+                sessionDb);
+    }
+
+    private static CliPersistenceOverrides parsePersistenceOverrides(Map<String, String> params) {
+        Optional<Boolean> routeChange = Optional.empty();
+        if (params.containsKey("no-persist-route-change")) {
+            routeChange = Optional.of(false);
+        }
+        Optional<Boolean> probeError = Optional.empty();
+        if (params.containsKey("no-persist-probe-error")) {
+            probeError = Optional.of(false);
+        }
+        return new CliPersistenceOverrides(routeChange, probeError);
     }
 
     private static CliAlertOverrides parseAlertOverrides(Map<String, String> params) {
@@ -206,6 +227,8 @@ public final class PinguiApplication extends Application {
                   --desktop-alerts     Linux desktop notifications (notify-send)
                   --alert-rate-limit N Max alerts per host per hour (default: 10)
                   --session-db PATH  SQLite session metrics + events (optional)
+                  --no-persist-route-change  Disable route_change events in session DB
+                  --no-persist-probe-error     Disable probe_error events in session DB
                   --geoip-hints PATH  CIDR→country YAML (default: config/geoip_hints.yaml)
                   --no-geoip        Disable country hints in hop labels
                   --verbose         Debug logging

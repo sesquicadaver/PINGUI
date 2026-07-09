@@ -396,8 +396,8 @@ flowchart TD
 | **P11-011** | [x] Write `host_session` + `persistence_event` | `SessionStore`, `PersistenceEventWriter`, `MonitorService` | `SessionStorePersistenceTest`, `PersistenceEventWriterTest`, `MonitorServiceTest` |
 | **P11-012** | [x] CLI `--session-db PATH` | `PinguiApplication`, `java/README.md` | Optional; without PATH — RAM-only |
 | **P11-013** | [x] `PersistencePolicy` + writer gate | `PersistencePolicy`, `PersistencePolicyHolder`, `PersistenceEventWriter`, `MonitorService` | `PersistencePolicyTest`, `MonitorServiceTest.appliesPersistencePolicyAfterPollCycle` |
-| **P11-014** | [ ] GUI “Database…” + confirm purge | `PersistenceSettingsDialog.java` | Checkboxes route_change / probe_error |
-| **P11-015** | [ ] YAML `persistence.events` + CLI override | `ProfilesConfig`, `CONFIGURATION.md` | Priority like ADR_ALERTS |
+| **P11-014** | [x] GUI “Database…” + confirm purge | `PersistenceSettingsDialog`, `MainController` | Manual smoke; purge via `SessionDatabase.deleteEventsByType` |
+| **P11-015** | [x] YAML `persistence.events` + CLI override | `PersistenceEventsConfig`, `CliPersistenceOverrides`, `ProfilesConfig` | `ProfilesConfigTest.loadPersistenceEventsSection`, `PinguiApplicationTest.parseOptions_noPersistRouteChange` |
 | **P11-020** | [ ] UI: «History» panel — route changes 24h/7d | `RouteHistoryPresenter.java` | Manual smoke |
 | **P11-021** | [ ] UI: replay snapshot on graph (read-only) | `RouteGraphPresenter` | Select event → graph |
 | **P11-030** | [ ] Export CSV/HTML from DB (like Python `session_report`) | `export/SessionReportExporter.java` | CLI `--export-report` |
@@ -729,5 +729,7 @@ Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 **Java persistence wire (2026-07-09):** P11-011…P11-012 — `SessionStore`/`PersistenceEventWriter`/`MonitorService` + CLI `--session-db`.
 
 **Java PersistencePolicy (2026-07-09):** P11-013 — active/pending policy gate; poll-cycle swap in `MonitorService`.
+
+**Java persistence GUI + YAML (2026-07-09):** P11-014…P11-015 — “Database…” dialog, purge confirm, `persistence.events` YAML, CLI `--no-persist-*`.
 
 Update this file when closing a task: `[x] M-001` + date in CHANGELOG.

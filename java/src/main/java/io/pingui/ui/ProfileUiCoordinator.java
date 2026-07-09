@@ -55,7 +55,8 @@ final class ProfileUiCoordinator {
                         current.timeoutSeconds(),
                         current.probeMode(),
                         hosts,
-                        current.alerts()));
+                        current.alerts(),
+                        current.persistence()));
     }
 
     void refreshCombo() {
