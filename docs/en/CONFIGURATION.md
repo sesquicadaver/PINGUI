@@ -17,7 +17,7 @@ hosts:
 | Parameter | Value |
 |-----------|-------|
 | Entry count | 0–10 |
-| Entry format | IPv4 or hostname (Latin letters, digits, `-`, `.`) |
+| Entry format | IPv4, IPv6 literal (RFC 5952, e.g. `2001:db8::1` or `[::1]`) or hostname |
 | Duplicates | Forbidden (case-insensitive) |
 | File encoding | UTF-8 |
 
@@ -84,7 +84,7 @@ URL secrets are not logged; webhook failures are WARNING only (process continues
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `--geoip-hints` | Path | `config/geoip_hints.yaml` | CIDR→country for hop labels |
+| `--geoip-hints` | Path | `config/geoip_hints.yaml` | CIDR→country for hop labels (`prefixes` v4, `prefixes_v6` v6) |
 | `--no-geoip` | flag | off | Disable country hints |
 | `--no-geo-map` | flag | off | Disable folium geo-map tab |
 
@@ -133,7 +133,7 @@ Export mode (`--export-csv` / `--export-html`) does not require raw ICMP and doe
 
 - file not found;
 - invalid YAML structure;
-- invalid hostname;
+- invalid hostname or IPv6 (zone ID `%iface` rejected);
 - duplicate or limit of 10 exceeded;
 - DNS error (`resolve_host_ipv4`).
 

@@ -68,3 +68,41 @@ def test_configure_custom_path(tmp_path: Path) -> None:
     hints.write_text("prefixes:\n  8.8.8.0/24: DE\n", encoding="utf-8")
     configure(enabled=True, hints_path=hints)
     assert country_code_for_ip("8.8.8.8") == "DE"
+
+
+def test_ipv6_private_returns_lan() -> None:
+    lookup = CountryLookup.load(Path("config/geoip_hints.yaml"))
+    assert lookup.lookup("::1") == "LAN"
+    assert lookup.lookup("fe80::1") == "LAN"
+
+
+def test_ipv6_public_prefix_match() -> None:
+    lookup = CountryLookup.load(Path("config/geoip_hints.yaml"))
+    assert lookup.lookup("2001:4860:4860::8888") == "US"
+    assert lookup.lookup("2001:db8::1") == "US"
+
+
+def test_ipv6_custom_hints_yaml(tmp_path: Path) -> None:
+    hints = tmp_path / "hints.yaml"
+    hints.write_text(
+        "prefixes:\n  8.8.8.0/24: US\n"
+        "prefixes_v6:\n  2001:db8:1::/64: PL\n",
+        encoding="utf-8",
+    )
+    lookup = CountryLookup.load(hints)
+    assert lookup.lookup("2001:db8:1::42") == "PL"
+
+
+def test_v6_only_hints_yaml(tmp_path: Path) -> None:
+    hints = tmp_path / "hints.yaml"
+    hints.write_text("prefixes_v6:\n  2001:db8:1::/64: PL\n", encoding="utf-8")
+    lookup = CountryLookup.load(hints)
+    assert lookup.lookup("2001:db8:1::42") == "PL"
+    assert lookup.lookup("8.8.8.8") is None
+
+
+def test_invalid_ipv6_hints_raises(tmp_path: Path) -> None:
+    bad = tmp_path / "bad.yaml"
+    bad.write_text("prefixes:\n  8.8.8.0/24: US\nprefixes_v6: []\n", encoding="utf-8")
+    with pytest.raises(GeoIpHintsError):
+        CountryLookup.load(bad)

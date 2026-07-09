@@ -13,7 +13,7 @@
 | Поле | Тип | Опис |
 |------|-----|------|
 | `hop` | int | Номер hop (TTL) |
-| `ip` | str | IPv4 або `"*"` при timeout |
+| `ip` | str | IPv4/IPv6 або `"*"` при timeout |
 | `ping_ms` | float \| None | RTT мілісекунди |
 | `is_timeout` | bool | True якщо probe не відповів |
 
@@ -24,7 +24,7 @@
 | Поле | Тип |
 |------|-----|
 | `target` | str — hostname/IP як у конфігу |
-| `target_ip` | str — resolved IPv4 |
+| `target_ip` | str — resolved IPv4 або canonical IPv6 |
 | `nodes` | list[HopNode] |
 | `timestamp` | datetime (UTC) |
 
@@ -54,7 +54,9 @@ In-memory стан однієї цілі: `current_route`, `previous_route`, `la
 
 | Функція | Опис |
 |---------|------|
-| `normalize_host_entry(entry: str) -> str` | Trim + validate |
+| `normalize_host_entry(entry: str) -> str` | Trim + validate (IPv4/IPv6 RFC 5952/hostname) |
+| `host_address_kind(normalized) -> HostAddressKind` | IPV4 / IPV6 / HOSTNAME |
+| `resolve_trace_target(host) -> str` | IPv4 A-record або canonical IPv6 |
 | `validate_session_host(host, existing) -> str` | Dedup + limit |
 | `load_hosts_config(path) -> list[str]` | Read YAML |
 | `save_hosts_config(path, hosts) -> None` | Write YAML |
@@ -79,7 +81,7 @@ def send_probe(target_ip: str, ttl: int, timeout: float) -> ProbeResult | None
 | Функція | Опис |
 |---------|------|
 | `check_raw_icmp_permission() -> None` | Raises `RawIcmpPermissionError` |
-| `resolve_target(host) -> str` | Alias resolve_host_ipv4 |
+| `resolve_target(host) -> str` | `resolve_trace_target` (v4/hostname→A, v6 literal) |
 | `send_probe(..., transport=None) -> ProbeResult \| None` | Default: ScapyProbeTransport |
 
 ### Клас
@@ -99,7 +101,7 @@ def trace_route(
 ) -> RouteSnapshot
 ```
 
-TTL 1..max_hops; зупинка при `is_target` або max_hops.
+TTL 1..max_hops (raw ICMP, v4/hostname); IPv6 literal → subprocess `traceroute -6` (`icmp/process_tracer.py`).
 
 ---
 
@@ -174,7 +176,7 @@ Schema v2: JSON для hops, routes, `hop_stats`.
 
 | Модуль | Опис |
 |--------|------|
-| `country.configure(enabled, hints_path)` | Offline CIDR→country з YAML |
+| `country.configure(enabled, hints_path)` | Offline CIDR→country з YAML (`prefixes`, `prefixes_v6`) |
 | `country.lookup_country(ip) -> str \| None` | Longest-prefix match |
 | `coordinates.centroid_for_ip(ip)` | Lat/lon для folium |
 | `map_builder.build_geo_map(hosts, store)` | HTML для WebEngine tab |

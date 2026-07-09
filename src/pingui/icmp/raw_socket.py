@@ -15,7 +15,7 @@ from typing import Protocol
 
 from scapy.all import ICMP, IP, sr1
 
-from pingui.config import resolve_host_ipv4
+from pingui.config import ConfigError, normalize_host_entry, resolve_trace_target
 
 logger = logging.getLogger(__name__)
 
@@ -60,8 +60,12 @@ def check_raw_icmp_permission() -> None:
 
 
 def resolve_target(host: str) -> str:
-    """Resolve target host to IPv4 address string."""
-    return resolve_host_ipv4(host)
+    """Resolve target for raw ICMP trace (IPv4 dotted quad or hostname→A)."""
+    normalized = normalize_host_entry(host)
+    if ":" in normalized:
+        msg = f"IPv6 literal requires process traceroute, not raw ICMP: {host!r}"
+        raise ConfigError(msg)
+    return resolve_trace_target(host)
 
 
 class ScapyProbeTransport:

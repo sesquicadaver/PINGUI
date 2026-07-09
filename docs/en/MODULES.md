@@ -13,7 +13,7 @@ Public APIs of the `pingui` package (version 0.1.0).
 | Field | Type | Description |
 |-------|------|-------------|
 | `hop` | int | Hop number (TTL) |
-| `ip` | str | IPv4 or `"*"` on timeout |
+| `ip` | str | IPv4/IPv6 or `"*"` on timeout |
 | `ping_ms` | float \| None | RTT in milliseconds |
 | `is_timeout` | bool | True if probe did not respond |
 
@@ -24,7 +24,7 @@ Public APIs of the `pingui` package (version 0.1.0).
 | Field | Type |
 |-------|------|
 | `target` | str — hostname/IP as in config |
-| `target_ip` | str — resolved IPv4 |
+| `target_ip` | str — resolved IPv4 or canonical IPv6 |
 | `nodes` | list[HopNode] |
 | `timestamp` | datetime (UTC) |
 
@@ -54,7 +54,9 @@ In-memory state for a single target: `current_route`, `previous_route`, `last_kn
 
 | Function | Description |
 |----------|-------------|
-| `normalize_host_entry(entry: str) -> str` | Trim + validate |
+| `normalize_host_entry(entry: str) -> str` | Trim + validate (IPv4/IPv6 RFC 5952/hostname) |
+| `host_address_kind(normalized) -> HostAddressKind` | IPV4 / IPV6 / HOSTNAME |
+| `resolve_trace_target(host) -> str` | IPv4 A-record or canonical IPv6 |
 | `validate_session_host(host, existing) -> str` | Dedup + limit |
 | `load_hosts_config(path) -> list[str]` | Read YAML |
 | `save_hosts_config(path, hosts) -> None` | Write YAML |
@@ -79,7 +81,7 @@ def send_probe(target_ip: str, ttl: int, timeout: float) -> ProbeResult | None
 | Function | Description |
 |----------|-------------|
 | `check_raw_icmp_permission() -> None` | Raises `RawIcmpPermissionError` |
-| `resolve_target(host) -> str` | Alias for resolve_host_ipv4 |
+| `resolve_target(host) -> str` | `resolve_trace_target` (v4/hostname→A, v6 literal) |
 | `send_probe(..., transport=None) -> ProbeResult \| None` | Default: ScapyProbeTransport |
 
 ### Class
@@ -99,7 +101,7 @@ def trace_route(
 ) -> RouteSnapshot
 ```
 
-TTL 1..max_hops; stops on `is_target` or max_hops.
+TTL 1..max_hops (raw ICMP, v4/hostname); IPv6 literal → subprocess `traceroute -6` (`icmp/process_tracer.py`).
 
 ---
 
@@ -174,7 +176,7 @@ Schema v2: JSON for hops, routes, `hop_stats`.
 
 | Module | Description |
 |--------|-------------|
-| `country.configure(enabled, hints_path)` | Offline CIDR→country from YAML |
+| `country.configure(enabled, hints_path)` | Offline CIDR→country from YAML (`prefixes`, `prefixes_v6`) |
 | `country.lookup_country(ip) -> str \| None` | Longest-prefix match |
 | `coordinates.centroid_for_ip(ip)` | Lat/lon for folium |
 | `map_builder.build_geo_map(hosts, store)` | HTML for WebEngine tab |

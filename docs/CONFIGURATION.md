@@ -17,7 +17,7 @@ hosts:
 | Параметр | Значення |
 |----------|----------|
 | Кількість записів | 0–10 |
-| Формат запису | IPv4 або hostname (латиниця, цифри, `-`, `.`) |
+| Формат запису | IPv4, IPv6 literal (RFC 5952, напр. `2001:db8::1` або `[::1]`) або hostname |
 | Дублікати | Заборонені (case-insensitive) |
 | Кодування файлу | UTF-8 |
 
@@ -84,7 +84,7 @@ hosts:
 
 | Опція | Тип | За замовч. | Опис |
 |-------|-----|------------|------|
-| `--geoip-hints` | Path | `config/geoip_hints.yaml` | CIDR→country для міток hop |
+| `--geoip-hints` | Path | `config/geoip_hints.yaml` | CIDR→country для міток hop (`prefixes` v4, `prefixes_v6` v6) |
 | `--no-geoip` | flag | off | Вимкнути country hints |
 | `--no-geo-map` | flag | off | Вимкнути вкладку folium geo-map |
 
@@ -133,7 +133,7 @@ hosts:
 
 - файл не знайдено;
 - некоректна структура YAML;
-- невалідний hostname;
+- невалідний hostname або IPv6 (zone ID `%iface` заборонено);
 - дублікат або перевищення ліміту 10;
 - помилка DNS (`resolve_host_ipv4`).
 

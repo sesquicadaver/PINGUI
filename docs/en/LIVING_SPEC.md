@@ -41,8 +41,8 @@ Module → test matrix for the Python edition. Update when adding features (PY-0
 
 | Module / Spec | Class / module | Tests |
 |---------------|----------------|-------|
-| YAML hosts | `config.py` | `test_config.py`, `test_config_resolve.py` |
-| ICMP probe | `icmp/raw_socket.py`, `icmp/tracer.py` | `test_raw_socket.py`, `contract/test_tracer.py`, `integration/test_tracer_network.py` |
+| YAML hosts (IPv4/IPv6) | `config.py` | `test_config.py`, `test_config_resolve.py` |
+| ICMP probe + v6 process trace | `icmp/raw_socket.py`, `icmp/tracer.py`, `icmp/process_tracer.py` | `test_raw_socket.py`, `test_process_tracer.py`, `contract/test_tracer.py`, `integration/test_tracer_network.py` |
 | Polling / route change | `monitor/polling.py`, `route_change.py` | `test_polling.py`, `test_route_change.py`, `test_route_history.py` |
 | Session store | `monitor/session_store.py` | `test_session_store.py`, `contract/test_worker_store.py` |
 | Monitor loop | `monitor/monitor_loop.py` | `test_monitor_loop.py` |
@@ -56,7 +56,7 @@ Module → test matrix for the Python edition. Update when adding features (PY-0
 | SQLite persistence | `persistence/session_db.py` | `test_session_db.py` |
 | Time-series | `persistence/timeseries/` | `test_timeseries.py` |
 | Export reports | `export/session_report.py` | `test_session_export.py`, `test_main_export.py` |
-| GeoIP | `geoip/country.py`, `map_builder.py` | `test_geoip_country.py`, `test_geo_map.py` |
+| GeoIP | `geoip/country.py`, `map_builder.py` | `test_geoip_country.py` (v4/v6/LAN), `test_geo_map.py` |
 | GUI | `ui/main_window.py`, `graph_canvas.py` | `test_graph_canvas.py`, `integration/test_ui_smoke.py` |
 | CLI entry | `__main__.py` | `test_main.py`, `test_main_cli_validation.py`, `test_main_export.py`, `test_main_subcommands.py`, `test_main_dispatch.py` |
 | Import graph | `scripts/check_imports.py` | `python scripts/check_imports.py` |

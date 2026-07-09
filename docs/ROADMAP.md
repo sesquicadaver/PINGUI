@@ -310,9 +310,9 @@ flowchart TD
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **PY-050** | [ ] IPv6 literal у `config.py` | `config.py`, `tests/unit/test_config.py` | RFC 5952 normalize; mixed v4+v6 profile |
-| **PY-051** | [ ] Dual-stack ICMP trace | `icmp/tracer.py`, `icmp/raw_socket.py` | v6 literal → trace hops; `@pytest.mark.network` optional |
-| **PY-052** | [ ] GeoIP `prefixes_v6` | `geoip/country.py`, `config/geoip_hints.yaml` | Parity з V6-036…V6-037 |
+| **PY-050** | [x] IPv6 literal у `config.py` | `config.py`, `tests/unit/test_config.py` | RFC 5952 normalize; mixed v4+v6 profile |
+| **PY-051** | [x] Dual-stack ICMP trace | `icmp/tracer.py`, `icmp/process_tracer.py` | v6 literal → `traceroute -6`; `@pytest.mark.network` optional |
+| **PY-052** | [x] GeoIP `prefixes_v6` | `geoip/country.py`, `config/geoip_hints.yaml` | Parity з V6-036…V6-037 |
 
 **Орієнтовно:** 2–3 sprint після V6-015. **Поза scope v1:** raw ICMPv6 (див. V6-040…V6-045).
 

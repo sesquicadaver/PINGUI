@@ -6,7 +6,16 @@ from pathlib import Path
 
 import pytest
 
-from pingui.config import ConfigError, load_hosts_config, save_hosts_config, validate_session_host
+from pingui.config import (
+    ConfigError,
+    HostAddressKind,
+    duplicate_key,
+    host_address_kind,
+    load_hosts_config,
+    normalize_host_entry,
+    save_hosts_config,
+    validate_session_host,
+)
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 
@@ -80,3 +89,41 @@ def test_save_hosts_config_rejects_too_many() -> None:
     hosts = [f"10.0.0.{i}" for i in range(11)]
     with pytest.raises(ConfigError, match="between 0 and 10"):
         save_hosts_config(Path("unused.yaml"), hosts)
+
+
+def test_normalize_ipv6_rfc5952() -> None:
+    assert normalize_host_entry("2001:0db8:0000:0000:0000:0000:0000:0001") == "2001:db8::1"
+    assert normalize_host_entry("[::1]") == "::1"
+    assert host_address_kind("2001:db8::1") == HostAddressKind.IPV6
+
+
+def test_reject_ipv6_zone_id() -> None:
+    with pytest.raises(ConfigError, match="zone identifiers"):
+        normalize_host_entry("fe80::1%eth0")
+
+
+def test_mixed_v4_v6_profile(tmp_path: Path) -> None:
+    cfg = tmp_path / "hosts.yaml"
+    cfg.write_text(
+        "hosts:\n"
+        "  - 8.8.8.8\n"
+        "  - 2001:0db8:0000:0000:0000:0000:0000:0001\n"
+        "  - example.com\n",
+        encoding="utf-8",
+    )
+    hosts = load_hosts_config(cfg)
+    assert hosts == ["8.8.8.8", "2001:db8::1", "example.com"]
+
+
+def test_reject_duplicate_ipv6_case_insensitive(tmp_path: Path) -> None:
+    cfg = tmp_path / "hosts.yaml"
+    cfg.write_text(
+        "hosts:\n  - 2001:DB8::1\n  - 2001:db8::1\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ConfigError, match="Duplicate"):
+        load_hosts_config(cfg)
+
+
+def test_duplicate_key_ipv6_lowercase() -> None:
+    assert duplicate_key("2001:DB8::1") == "2001:db8::1"

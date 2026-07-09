@@ -310,9 +310,9 @@ flowchart TD
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **PY-050** | [ ] IPv6 literal in `config.py` | `config.py`, `tests/unit/test_config.py` | RFC 5952 normalize; mixed v4+v6 profile |
-| **PY-051** | [ ] Dual-stack ICMP trace | `icmp/tracer.py`, `icmp/raw_socket.py` | v6 literal → trace hops; `@pytest.mark.network` optional |
-| **PY-052** | [ ] GeoIP `prefixes_v6` | `geoip/country.py`, `config/geoip_hints.yaml` | Parity with V6-036…V6-037 |
+| **PY-050** | [x] IPv6 literal in `config.py` | `config.py`, `tests/unit/test_config.py` | RFC 5952 normalize; mixed v4+v6 profile |
+| **PY-051** | [x] Dual-stack ICMP trace | `icmp/tracer.py`, `icmp/process_tracer.py` | v6 literal → `traceroute -6`; `@pytest.mark.network` optional |
+| **PY-052** | [x] GeoIP `prefixes_v6` | `geoip/country.py`, `config/geoip_hints.yaml` | Parity with V6-036…V6-037 |
 
 **Estimate:** 2–3 sprint after V6-015. **Out of scope v1:** raw ICMPv6 (see V6-040…V6-045).
 

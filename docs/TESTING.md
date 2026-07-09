@@ -63,7 +63,8 @@ Integration-тести GUI створюють `QApplication` перед `MainWin
 
 | Файл | Що перевіряє |
 |------|--------------|
-| `test_config.py` | YAML load/save, validation |
+| `test_config.py` | YAML load/save, validation, IPv6 RFC 5952 |
+| `test_process_tracer.py` | `traceroute -6` argv, v6 output parser |
 | `test_polling.py` | poll_host_route, route change |
 | `test_worker.py` | add/rename/remove, enabled |
 | `test_worker_run.py` | Qt signals від worker |
@@ -84,7 +85,7 @@ Integration-тести GUI створюють `QApplication` перед `MainWin
 | `test_desktop_notifier.py` | `notify-send` integration |
 | `test_alert_webhook.py` (contract) | Webhook POST JSON payload |
 | `test_timeseries.py` | influx/timescale factory, memory backend |
-| `test_geoip_country.py` | CIDR longest-prefix, LAN |
+| `test_geoip_country.py` | CIDR longest-prefix, LAN, `prefixes_v6` |
 | `test_geo_map.py` | folium map builder |
 | `test_hop_stats.py` | jitter/loss summary |
 | `test_doc_parity.py` | UK/EN banner parity |

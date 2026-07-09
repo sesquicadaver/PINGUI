@@ -90,4 +90,4 @@ more reliable parsing of TTL-exceeded / echo reply on Linux. Requires `CAP_NET_R
 - No persistence between sessions by default (RAM-only MVP).
 - Optional: `--session-db PATH` (SQLite routes/ping/enabled) — see `persistence/session_db.py`.
 - No separate backend/API server.
-- IPv6 not supported (IPv4 only).
+- IPv6 literals in YAML (RFC 5952); subprocess `traceroute -6` for v6 trace; raw ICMP remains v4-only.

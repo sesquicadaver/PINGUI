@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 
+from pingui.icmp.process_tracer import requires_process_trace, trace_route_process
 from pingui.icmp.raw_socket import ProbeTransport, resolve_target, send_probe
 from pingui.models import HopNode, RouteSnapshot
 
@@ -22,9 +23,13 @@ def trace_route(
     """
     Trace route to target using ICMP probes with TTL 1..max_hops.
 
+    IPv6 literals use subprocess ``traceroute -6`` (raw ICMP is v4-only).
     Timeout hops are recorded with ip='*' and ping_ms=None.
     Stops when target IP responds or max_hops is reached.
     """
+    if requires_process_trace(target_host):
+        return trace_route_process(target_host, max_hops, timeout)
+
     target_ip = resolve_target(target_host)
     nodes: list[HopNode] = []
 
