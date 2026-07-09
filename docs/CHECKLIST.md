@@ -44,6 +44,13 @@ Python-редакція та тести — гілка **`beta`**.
 - [ ] `tracert -6 ::1` завершується (повільно; Ping only рекомендовано для production)
 - [ ] `./gradlew test --tests io.pingui.probe.ProcessRouteProbeTest.parseWindowsIpv6*` — `win_v6_*` green
 
+### Java IPv6 raw ICMP smoke (Linux optional, V6-040…043)
+
+- [ ] `./gradlew test --tests io.pingui.probe.icmp.IcmpV6PacketTest` — packet build/parse (CI)
+- [ ] `./gradlew test --tests io.pingui.probe.icmp.LinuxCLibraryTest` — `sockaddr_in6` layout (Linux CI)
+- [ ] `./gradlew test --tests io.pingui.probe.RawIcmpRouteProbeTest.traceIpv6UsesHopLimitSequence` — hop-limit trace (CI)
+- [ ] YAML `probe: raw` + `cap_net_raw` + ціль `::1` — trace без crash (ручний)
+
 ### Python alert smoke (beta)
 
 - [ ] `python -m pingui monitor --alert-webhook http://127.0.0.1:9/hook` — старт без crash (webhook недоступний → log)

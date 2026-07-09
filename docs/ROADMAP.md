@@ -696,4 +696,6 @@ flowchart LR
 
 **Raw ICMPv6 Linux (2026-07-09):** V6-040…V6-043 — JNA `sockaddr_in6`, `IcmpV6Packet`, dual transport, v6 hop-limit trace (`probe: raw`).
 
+**IPv6 release 0.2.0 (2026-07-09):** semver bump, CHANGELOG `[0.2.0]`, SPIKE/CHECKLIST/DEPLOYMENT parity; phase 9 code-complete on `beta`.
+
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.

@@ -7,19 +7,27 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Fixed
-
-- **IPv6 literal:** `DualStackRouteProbe` — auto probe uses subprocess trace for v6 (raw ICMP remains v4-only).
-- **Expert/ping v6:** auto `-6` for IPv6 literal; `-4`/`-6` conflict with target type.
-- **Expert ping UI:** `-4`/`-6` — single address family choice; `-n`/`-H`, `-F`/IPv6, `-r`/`-I` — mutual exclusion in dialog.
+## [0.2.0] - 2026-07-09
 
 ### Added
 
-- **IPv6 trace (V6-S2):** `TraceTarget`, `-6` in traceroute/tracert, v6 parsers + fixtures `unix_v6_*`/`win_v6_*`.
-- **IPv6 config (V6-S1):** `HostAddressParser` — RFC 5952 normalize, mixed IPv4/IPv6 profiles in YAML.
-- **Bilingual documentation:** Ukrainian (`docs/`) and English (`docs/en/`, `README.en.md`, `java/README.en.md`).
+- **Dual-stack IPv6 (phase 9):** Java + Python — RFC 5952 literals, subprocess `traceroute -6`, GeoIP `prefixes_v6`, dual-stack UI.
+- **Java raw ICMPv6 (V6-040…043):** `IcmpV6Packet`, dual `LinuxJnaIcmpTransport`, `probe: raw` hop-limit trace.
+- **Expert ping v6 (V6-050…053):** auto `-6`, validator conflicts, `-F` flow-label UI gating.
+- **Docs:** bilingual UK/EN; DEPLOYMENT `cap_net_raw` matrix; CHECKLIST IPv6 smoke steps.
+
+### Fixed
+
+- **IPv6 literal:** `DualStackRouteProbe` — `probe: auto` uses subprocess trace for v6; raw v6 with `probe: raw`.
+- **Expert/ping v6:** auto `-6` for IPv6 literal; `-4`/`-6` conflict with target type.
 
 ### Changed
+
+- **Version:** Java `0.2.0-SNAPSHOT`, Python `0.2.0` on `beta`.
+
+## [0.1.0 development notes] *(historical)*
+
+### Fixed
 
 - **Tests:** B-064f — `PingExpertValidatorTest` (compatibility/value specs); `ExpertPingEnricherTest` with stub ping; removed JaCoCo exclusion for `ExpertPingEnricher`.
 - **Tests:** B-064e — `HostEntryTest`; extended `GeoCountryTest` (YAML validation, 0.0.0.0/0) and `ProfilesConfigTest` (type errors, save max hosts).
@@ -125,5 +133,6 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 - Coverage gate for `./pingui.sh --deploy` (~90% after test expansion).
 
-[Unreleased]: https://github.com/sesquicadaver/PINGUI/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/sesquicadaver/PINGUI/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/sesquicadaver/PINGUI/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/sesquicadaver/PINGUI/releases/tag/v0.1.0

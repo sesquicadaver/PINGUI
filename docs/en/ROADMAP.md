@@ -696,4 +696,6 @@ Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 
 **Raw ICMPv6 Linux (2026-07-09):** V6-040…V6-043 — JNA `sockaddr_in6`, `IcmpV6Packet`, dual transport, v6 hop-limit trace (`probe: raw`).
 
+**IPv6 release 0.2.0 (2026-07-09):** semver bump, CHANGELOG `[0.2.0]`, SPIKE/CHECKLIST/DEPLOYMENT parity; phase 9 code-complete on `beta`.
+
 Update this file when closing a task: `[x] M-001` + date in CHANGELOG.

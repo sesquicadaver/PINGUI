@@ -14,7 +14,7 @@ Step-by-step checklist: **[CHECKLIST.md](CHECKLIST.md)**.
 
 Expert ping (“Expert” mode) — **Linux only** (iputils `ping`).
 
-**Dual-stack (PY-S4, Python `beta`):** YAML and session accept IPv6 literals (RFC 5952, e.g. `2001:db8::1` or `[::1]`). IPv6 literal → subprocess `traceroute -6` (**Linux/macOS**); Windows Python trace for v6 literals is not supported yet. Raw ICMP probe remains v4-only (hostname → A-record).
+**Dual-stack (phase 9, `beta` / **0.2.0**):** YAML and session accept IPv6 literals (RFC 5952). IPv6 literal → subprocess `traceroute -6` with `probe: auto` (**Linux/macOS**); `probe: raw` + `cap_net_raw` — raw ICMPv6 on Linux. Windows Python trace for v6 literals is not supported yet.
 
 ## OS recommendation
 

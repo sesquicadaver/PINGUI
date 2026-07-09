@@ -7,8 +7,8 @@ import io.pingui.model.Models.RouteSnapshot;
 import java.io.IOException;
 
 /**
- * AUTO probe: raw ICMP for IPv4/hostname, subprocess traceroute for IPv6 literals.
- * Raw ICMP is IPv4-only ({@link io.pingui.probe.icmp.LinuxJnaIcmpTransport}).
+ * AUTO probe: raw ICMP for IPv4/hostname; subprocess traceroute for IPv6 literals (V6-044).
+ * Raw ICMP supports IPv6 literals when {@code probe: raw} ({@link io.pingui.probe.icmp.LinuxJnaIcmpTransport}).
  */
 public final class DualStackRouteProbe implements RouteProbe {
     private final RouteProbe rawProbe;

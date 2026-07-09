@@ -4,7 +4,7 @@
 
 **Date:** 2025-06-26  
 **Updated:** 2026-06-26  
-**Status:** **planned** — implementation in [ROADMAP.md](ROADMAP.md) **Phase 9 (V6-*)**  
+**Status:** **implemented** (phase 9 code-complete on `beta`, semver **0.2.0**)  
 **Previous status:** wontfix (MVP IPv4-only, B-053) — lifted per product request  
 **Branches:** `main` (Java GUI), `beta` (+ Python, tests)
 
@@ -30,7 +30,7 @@ Should IPv6 support be added for:
 | `ProcessRouteProbe` / parsers | Regex IPv4 | V6-024…V6-029: v6 tokens + fixtures |
 | Trace commands | without `-6` | V6-021…V6-023 |
 | `GeoCountry` | `Inet4Address` only | V6-035…V6-037 |
-| `RawIcmpRouteProbe` | `AF_INET` | V6-040…V6-045 (Linux P2) |
+| `RawIcmpRouteProbe` | `AF_INET` + `AF_INET6` (`probe: raw`) | V6-040…V6-045 ✅ |
 | Expert ping | iputils `-4`/`-6` catalog, v4 targets | V6-050…V6-053 |
 | Documentation | Dual-stack (V6-S4) | V6-074 |
 
@@ -66,7 +66,7 @@ Retained as **constraints until phase 9**: raw v6 remains P2; process trace — 
 - [x] Process trace v6 on Linux (macOS best-effort)
 - [x] Windows `tracert -6` parsed (fixtures)
 - [x] v4 regression green (`ProcessRouteProbeTest.v4FixturesRemainGreen`, `./gradlew check`)
-- [ ] CHECKLIST IPv6 smoke passed (manual Linux/Windows run)
+- [ ] CHECKLIST IPv6 smoke passed (manual Linux/Windows; CI tests — see CHECKLIST § raw/process)
 - [x] Docs: dual-stack, not «IPv4-only»
 
 ---

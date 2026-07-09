@@ -4,7 +4,7 @@
 
 **Дата:** 2025-06-26  
 **Оновлено:** 2026-06-26  
-**Статус:** **planned** — реалізація у [ROADMAP.md](ROADMAP.md) **Фаза 9 (V6-*)**  
+**Статус:** **implemented** (фаза 9 code-complete на `beta`, semver **0.2.0**)  
 **Попередній статус:** wontfix (MVP IPv4-only, B-053) — знято за product request  
 **Гілки:** `main` (Java GUI), `beta` (+ Python, тести)
 
@@ -30,7 +30,7 @@
 | `ProcessRouteProbe` / parsers | Regex IPv4 | V6-024…V6-029: v6 tokens + fixtures |
 | Trace commands | без `-6` | V6-021…V6-023 |
 | `GeoCountry` | `Inet4Address` only | V6-035…V6-037 |
-| `RawIcmpRouteProbe` | `AF_INET` | V6-040…V6-045 (Linux P2) |
+| `RawIcmpRouteProbe` | `AF_INET` + `AF_INET6` (`probe: raw`) | V6-040…V6-045 ✅ |
 | Expert ping | iputils `-4`/`-6` catalog, v4 targets | V6-050…V6-053 |
 | Документація | Dual-stack (V6-S4) | V6-074 |
 
@@ -67,7 +67,7 @@
 - [x] Windows `tracert -6` парситься (фікстури)
 - [x] v4 regression green (`./gradlew check`)
 - [x] v4 regression green (`ProcessRouteProbeTest.v4FixturesRemainGreen`, `./gradlew check`)
-- [ ] CHECKLIST IPv6 smoke пройдено (ручний прогін Linux/Windows)
+- [ ] CHECKLIST IPv6 smoke пройдено (ручний прогін Linux/Windows; CI-тести — див. CHECKLIST § raw/process)
 - [x] Docs: dual-stack, не «IPv4-only»
 
 ---

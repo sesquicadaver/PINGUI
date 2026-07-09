@@ -2,7 +2,7 @@
 
 # PINGUI Module Reference
 
-Public APIs of the `pingui` package (version 0.1.0).
+Public APIs of the `pingui` package (version 0.2.0).
 
 ---
 

@@ -14,7 +14,7 @@
 
 Expert ping (режим «Експерт») — **лише Linux** (iputils `ping`).
 
-**Dual-stack (PY-S4, Python `beta`):** YAML і session приймають IPv6 literal (RFC 5952, напр. `2001:db8::1` або `[::1]`). IPv6 literal → subprocess `traceroute -6` (**Linux/macOS**); на Windows Python trace для v6 literal поки не підтримується. Raw ICMP probe лишається v4-only (hostname → A-record).
+**Dual-stack (phase 9, `beta` / **0.2.0**):** YAML і session приймають IPv6 literal (RFC 5952). IPv6 literal → subprocess `traceroute -6` у `probe: auto` (**Linux/macOS**); `probe: raw` + `cap_net_raw` — raw ICMPv6 на Linux. Windows Python trace для v6 literal поки не підтримується.
 
 ## Рекомендація щодо ОС
 

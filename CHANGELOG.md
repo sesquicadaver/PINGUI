@@ -7,24 +7,28 @@
 
 ## [Unreleased]
 
-### Fixed
-
-- **IPv6 literal:** `DualStackRouteProbe` — auto probe використовує subprocess trace для v6 (raw ICMP лишається v4-only).
-- **Expert/ping v6:** auto `-6` для IPv6 literal; `-4`/`-6` конфлікт з типом цілі.
-- **Expert ping UI:** `-4`/`-6` — один вибір сімейства адрес; `-n`/`-H`, `-F`/IPv6, `-r`/`-I` — взаємовиключення в діалозі.
+## [0.2.0] - 2026-07-09
 
 ### Added
 
-- **Python IPv6 (PY-S4):** `config.py` — RFC 5952 IPv6 literals, mixed v4+v6 profiles; `icmp/process_tracer.py` — subprocess `traceroute -6`; `geoip/country.py` — `prefixes_v6` longest-prefix.
-- **Java GeoIP v6 (V6-S3):** `GeoCountry` — `prefixes_v6` longest-prefix, IPv6 LAN (loopback/link-local/ULA).
-- **Java dual-stack UI (V6-S4):** Help/About text, IPv6 bracket hop labels (`HopDisplay`), host input prompts.
-- **Expert ping UI (V6-053):** `-F` flow label disabled with tooltip unless IPv6 literal or `-6` selected.
-- **Deployment docs (V6-045):** `cap_net_raw` matrix — v4 raw vs IPv6 subprocess trace; future raw ICMPv6 note.
-- **Raw ICMPv6 Linux (V6-040…043):** `IcmpV6Packet`, dual `LinuxJnaIcmpTransport`, `RawIcmpRouteProbe` hop limit for v6 (`probe: raw`).
-- **IPv6 beta (phase 9, `beta` branch):** Java dual-stack YAML + subprocess trace v6 + GeoIP `prefixes_v6`; Python edition parity (PY-S4). Semver: next Java release **0.2.0** when merged to `main`.
-- **Docs:** bilingual documentation — Ukrainian (`docs/`) and English (`docs/en/`); `README.en.md`, `java/README.en.md`, `ROADMAP.en.md`.
-- **IPv6 trace (V6-S2):** `TraceTarget`, `-6` у traceroute/tracert, парсери v6 + фікстури `unix_v6_*`/`win_v6_*`.
-- **IPv6 config (V6-S1):** `HostAddressParser` — RFC 5952 normalize, mixed IPv4/IPv6 profiles у YAML.
+- **Dual-stack IPv6 (phase 9):** Java + Python — RFC 5952 literals, subprocess `traceroute -6`, GeoIP `prefixes_v6`, dual-stack UI.
+- **Python IPv6 (PY-S4):** `config.py`, `process_tracer.py`, `geoip/country.py` v6 longest-prefix.
+- **Java raw ICMPv6 (V6-040…043):** `IcmpV6Packet`, dual `LinuxJnaIcmpTransport`, `probe: raw` hop-limit trace.
+- **Expert ping v6 (V6-050…053):** auto `-6`, validator conflicts, `-F` flow-label UI gating.
+- **Docs:** bilingual UK/EN; DEPLOYMENT `cap_net_raw` matrix (V6-045); CHECKLIST IPv6 + raw ICMP smoke steps.
+
+### Fixed
+
+- **IPv6 literal:** `DualStackRouteProbe` — `probe: auto` uses subprocess trace for v6; raw v6 available with `probe: raw`.
+- **Expert/ping v6:** auto `-6` for IPv6 literal; `-4`/`-6` conflict with target type.
+- **Expert ping UI:** mutual exclusion for address family and dependent flags in dialog.
+
+### Changed
+
+- **Version:** Java `0.2.0-SNAPSHOT`, Python `0.2.0` on `beta` branch.
+- **Tests:** IPv6 fixtures (`unix_v6_*`, `win_v6_*`), `v4FixturesRemainGreen`, `IcmpV6PacketTest`, JaCoCo notes.
+
+## [0.1.0 development notes] *(historical, included in 0.1.0 tag)*
 
 ### Changed
 
@@ -131,5 +135,6 @@
 
 - Coverage gate для `./pingui.sh --deploy` (~90% після розширення тестів).
 
-[Unreleased]: https://github.com/sesquicadaver/PINGUI/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/sesquicadaver/PINGUI/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/sesquicadaver/PINGUI/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/sesquicadaver/PINGUI/releases/tag/v0.1.0
