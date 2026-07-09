@@ -361,6 +361,10 @@ SQLite JDBC для Java GUI (parity з Python `session_db.py`).
 
 Schema v3: `host_session` (Python v2 parity) + `persistence_event`. Залежність: `sqlite-jdbc`. Wire у `SessionStore` + `PersistenceEventWriter` (P11-011); CLI `--session-db` (P11-012).
 
+### `PersistenceConfig` (P11-016)
+
+YAML `persistence.session_db` + `persistence.events`. Пріоритет шляху: CLI `--session-db` > YAML > GUI session override (`SessionDbResolver`).
+
 ### `PersistenceEventsConfig` (P11-015)
 
 YAML `persistence.events` + CLI `--no-persist-route-change` / `--no-persist-probe-error`. Пріоритет: CLI > YAML > GUI session > default.

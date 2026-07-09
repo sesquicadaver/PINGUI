@@ -8,6 +8,7 @@ import io.pingui.probe.ProbeMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -101,11 +102,51 @@ class ProfilesConfigTest {
                 ProbeMode.AUTO,
                 List.of(HostEntry.basic("8.8.8.8", false)),
                 AlertConfig.disabled(),
-                new PersistenceEventsConfig(false, true));
+                PersistenceConfig.eventsOnly(new PersistenceEventsConfig(false, true)));
         ProfilesConfig.save(path, ProfileDocument.singleDefault(profile));
         TracingProfile reloaded = ProfilesConfig.load(path).active();
         assertEquals(false, reloaded.persistence().routeChange());
         assertTrue(reloaded.persistence().probeError());
+    }
+
+    @Test
+    void loadPersistenceSessionDbSection() throws Exception {
+        Path path = tempDir.resolve("session-db.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: noc
+                profiles:
+                  noc:
+                    hosts:
+                      - "8.8.8.8"
+                    persistence:
+                      session_db: data/ping.db
+                      events:
+                        route_change: true
+                        probe_error: false
+                """);
+        TracingProfile profile = ProfilesConfig.load(path).active();
+        assertEquals(Path.of("data/ping.db"), profile.persistence().sessionDb().orElseThrow());
+        assertTrue(profile.persistence().routeChange());
+        assertEquals(false, profile.persistence().probeError());
+    }
+
+    @Test
+    void savePersistenceSessionDbSection() throws Exception {
+        Path path = tempDir.resolve("session-db-save.yaml");
+        TracingProfile profile = new TracingProfile(
+                1.0,
+                20,
+                0.5,
+                ProbeMode.AUTO,
+                List.of(HostEntry.basic("8.8.8.8", false)),
+                AlertConfig.disabled(),
+                new PersistenceConfig(Optional.of(Path.of("data/session.db")), PersistenceEventsConfig.defaults()));
+        ProfilesConfig.save(path, ProfileDocument.singleDefault(profile));
+        TracingProfile reloaded = ProfilesConfig.load(path).active();
+        assertEquals(
+                Path.of("data/session.db"), reloaded.persistence().sessionDb().orElseThrow());
     }
 
     @Test

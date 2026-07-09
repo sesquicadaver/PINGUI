@@ -23,6 +23,7 @@
 - **Java persistence GUI + config (P11-014…015):** `PersistenceSettingsDialog` (purge confirm), YAML `persistence.events`, CLI `--no-persist-route-change` / `--no-persist-probe-error`.
 - **Java route history UI (P11-020…021):** `RouteHistoryPresenter` — 24h/7d `route_change` list; graph replay from selected event.
 - **Java session export (P11-030):** `SessionReportExporter` — CSV/HTML from `--session-db`; headless CLI `--export-report PATH` (format by extension).
+- **Java GUI SQLite connection (P11-016):** `PersistenceConfig`, `SessionDbResolver` — file picker in «База даних…», YAML `persistence.session_db`, menu active without CLI.
 
 ## [0.2.0] - 2026-07-09
 

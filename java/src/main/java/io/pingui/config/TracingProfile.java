@@ -4,7 +4,7 @@ import io.pingui.probe.ProbeMode;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Named tracing session: poll settings, host list, alert channels, and persistence events. */
+/** Named tracing session: poll settings, host list, alert channels, and persistence. */
 public record TracingProfile(
         double intervalSeconds,
         int maxHops,
@@ -12,7 +12,7 @@ public record TracingProfile(
         ProbeMode probeMode,
         List<HostEntry> hosts,
         AlertConfig alerts,
-        PersistenceEventsConfig persistence) {
+        PersistenceConfig persistence) {
     public TracingProfile {
         if (intervalSeconds <= 0) {
             throw new IllegalArgumentException("intervalSeconds must be positive");
@@ -26,12 +26,12 @@ public record TracingProfile(
         probeMode = probeMode != null ? probeMode : ProbeMode.AUTO;
         hosts = List.copyOf(hosts != null ? hosts : List.of());
         alerts = alerts != null ? alerts : AlertConfig.disabled();
-        persistence = persistence != null ? persistence : PersistenceEventsConfig.defaults();
+        persistence = persistence != null ? persistence : PersistenceConfig.defaults();
     }
 
     public static TracingProfile defaults(List<HostEntry> hosts) {
         return new TracingProfile(
-                1.0, 20, 0.5, ProbeMode.AUTO, hosts, AlertConfig.disabled(), PersistenceEventsConfig.defaults());
+                1.0, 20, 0.5, ProbeMode.AUTO, hosts, AlertConfig.disabled(), PersistenceConfig.defaults());
     }
 
     public TracingProfile withHosts(List<HostEntry> newHosts) {
@@ -42,7 +42,7 @@ public record TracingProfile(
         return new TracingProfile(intervalSeconds, maxHops, timeoutSeconds, probeMode, hosts, newAlerts, persistence);
     }
 
-    public TracingProfile withPersistence(PersistenceEventsConfig newPersistence) {
+    public TracingProfile withPersistence(PersistenceConfig newPersistence) {
         return new TracingProfile(intervalSeconds, maxHops, timeoutSeconds, probeMode, hosts, alerts, newPersistence);
     }
 

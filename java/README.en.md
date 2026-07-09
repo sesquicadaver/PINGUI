@@ -78,7 +78,7 @@ gradlew.bat run        # Windows
 | `--alert-webhook` | off | POST JSON `RouteChangeEvent` on route change |
 | `--desktop-alerts` | off | Linux `notify-send` on route change |
 | `--alert-rate-limit` | `10` | Max alerts per host / hour |
-| `--session-db` | off | SQLite session metrics + events (`host_session`, `persistence_event`) |
+| `--session-db` | off | SQLite session metrics + events (`host_session`, `persistence_event`); alternative — YAML `persistence.session_db` or GUI **Database…** |
 | `--export-report` | off | Export CSV/HTML from `--session-db` and exit (no GUI) |
 | `--no-persist-route-change` | off | Skip `route_change` events in SQLite |
 | `--no-persist-probe-error` | off | Skip `probe_error` events in SQLite |

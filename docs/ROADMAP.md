@@ -398,7 +398,7 @@ flowchart TD
 | **P11-013** | [x] `PersistencePolicy` + gate у writer | `PersistencePolicy`, `PersistencePolicyHolder`, `PersistenceEventWriter`, `MonitorService` | `PersistencePolicyTest`, `MonitorServiceTest.appliesPersistencePolicyAfterPollCycle` |
 | **P11-014** | [x] GUI «База даних…» + confirm purge (політика подій; потребує `--session-db`) | `PersistenceSettingsDialog`, `MainController` | Manual smoke; purge via `SessionDatabase.deleteEventsByType` |
 | **P11-015** | [x] YAML `persistence.events` + CLI override | `PersistenceEventsConfig`, `CliPersistenceOverrides`, `ProfilesConfig` | `ProfilesConfigTest.loadPersistenceEventsSection`, `PinguiApplicationTest.parseOptions_noPersistRouteChange` |
-| **P11-016** | [ ] GUI підключення SQLite (file picker + YAML `session_db`) | `PersistenceSettingsDialog`, `MainController`, `ProfilesConfig`, `PersistenceConfig` | Меню «База даних…» активне без CLI `--session-db`; пріоритет CLI > YAML > GUI; reload `SessionStore` |
+| **P11-016** | [x] GUI підключення SQLite (file picker + YAML `session_db`) | `PersistenceSettingsDialog`, `MainController`, `ProfilesConfig`, `PersistenceConfig` | Меню «База даних…» активне без CLI `--session-db`; пріоритет CLI > YAML > GUI; reload `SessionStore` |
 | **P11-020** | [x] UI: панель «Історія» — список route change за 24h/7d | `RouteHistoryPresenter`, `SessionDatabase.listEvents` | `SessionDatabaseTest.listRouteChangeEventsFiltersByHostAndTime` |
 | **P11-021** | [x] UI: replay snapshot на графі (read-only) | `RouteGraphPresenter`, `RouteHistoryPresenter` | Вибір події → граф; `RouteHistoryPresenterTest` |
 | **P11-030** | [x] Export CSV/HTML з БД (як Python `session_report`) | `export/SessionReportExporter.java` | CLI `--export-report` |
@@ -736,5 +736,7 @@ flowchart LR
 **Java route history UI (2026-07-09):** P11-020…P11-021 — timeline list 24h/7d + read-only graph replay from `persistence_event`.
 
 **Java session export (2026-07-09):** P11-030 — `SessionReportExporter` CSV/HTML; CLI `--export-report` (headless, no JavaFX).
+
+**Java GUI SQLite connection (2026-07-09):** P11-016 — file picker, YAML `session_db`, menu «База даних…» without CLI.
 
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.

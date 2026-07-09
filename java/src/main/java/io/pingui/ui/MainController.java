@@ -4,8 +4,10 @@ import io.pingui.AppOptions;
 import io.pingui.CliProfileOverrides;
 import io.pingui.config.ConfigError;
 import io.pingui.config.HostEntry;
+import io.pingui.config.PersistenceConfig;
 import io.pingui.config.ProfileDocument;
 import io.pingui.config.ProfilesConfig;
+import io.pingui.config.SessionDbResolver;
 import io.pingui.config.TracingProfile;
 import io.pingui.geoip.GeoCountry;
 import io.pingui.model.Models.RouteSnapshot;
@@ -14,6 +16,7 @@ import io.pingui.monitor.SessionStore;
 import io.pingui.persistence.PersistencePolicy;
 import io.pingui.platform.PlatformCapabilities;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -81,6 +84,7 @@ public final class MainController {
     private PauseTransition easterEggTimer;
     private boolean switchingProfile;
     private Optional<PersistencePolicy> sessionPersistenceOverride = Optional.empty();
+    private Optional<Path> sessionGuiDbOverride = Optional.empty();
 
     private ProfileUiCoordinator profileUi;
     private HostListPresenter hostListPresenter;
@@ -294,7 +298,6 @@ public final class MainController {
 
         MenuItem databaseItem = new MenuItem("База даних…");
         databaseItem.setOnAction(e -> onPersistenceSettings());
-        databaseItem.setDisable(!store.hasPersistence());
         Menu settingsMenu = new Menu("Налаштування");
         settingsMenu.getItems().add(databaseItem);
 
@@ -343,27 +346,67 @@ public final class MainController {
     }
 
     private void onPersistenceSettings() {
-        if (!store.hasPersistence()) {
-            return;
-        }
+        PersistencePolicy active =
+                store.hasPersistence() ? monitor.persistencePolicy().active() : PersistencePolicy.defaults();
+        PersistencePolicy pending = store.hasPersistence()
+                ? monitor.persistencePolicy().pending()
+                : sessionPersistenceOverride.orElseGet(() -> options.persistenceOverrides()
+                        .applyTo(profileDocument.active().persistence())
+                        .toPolicy());
         PersistenceSettingsDialog.show(
                 dialogOwner(),
+                resolveSessionDbPath(),
                 options.sessionDbPath(),
+                profileDocument.active().persistence().sessionDb(),
                 options.persistenceOverrides(),
-                monitor.persistencePolicy().active(),
-                monitor.persistencePolicy().pending(),
+                active,
+                pending,
                 store.database(),
-                policy -> {
-                    sessionPersistenceOverride = Optional.of(policy);
-                    monitor.setPendingPersistencePolicy(policy);
-                    appendLog("Політика persistence оновлена (з наступного poll-циклу)");
-                });
+                result -> handlePersistenceSettings(result));
+    }
+
+    private void handlePersistenceSettings(PersistenceSettingsDialog.Result result) {
+        if (result.sessionDbPath().isPresent()) {
+            sessionGuiDbOverride = result.sessionDbPath();
+            sessionPersistenceOverride = Optional.of(result.policy());
+            reconnectPersistence();
+            appendLog("SQLite підключено: " + result.sessionDbPath().get().toAbsolutePath());
+        } else {
+            sessionPersistenceOverride = Optional.of(result.policy());
+            monitor.setPendingPersistencePolicy(result.policy());
+        }
+        appendLog("Політика persistence оновлена (з наступного poll-циклу)");
+    }
+
+    private Optional<Path> resolveSessionDbPath() {
+        return SessionDbResolver.resolve(
+                options.sessionDbPath(), profileDocument.active().persistence().sessionDb(), sessionGuiDbOverride);
     }
 
     private io.pingui.persistence.SessionDatabase openSessionDatabase() {
-        return options.sessionDbPath()
+        return resolveSessionDbPath()
                 .map(io.pingui.persistence.SessionDatabase::new)
                 .orElse(null);
+    }
+
+    private void reconnectPersistence() {
+        dismissEasterEgg();
+        sessionPersistenceOverride = Optional.empty();
+        TracingProfile profile = profileDocument.active();
+        List<HostEntry> sessionHosts = HostViewRules.sessionEntries(profile.hosts());
+        monitor.close();
+        store.close();
+        store = SessionStore.fromEntries(sessionHosts, openSessionDatabase());
+        monitor = createMonitor(profile);
+        updateHistoryPanelVisibility();
+        hostListPresenter.rebuild(sessionHosts);
+        hostList.getSelectionModel().clearSelection();
+        if (!hostItems.isEmpty()) {
+            hostList.getSelectionModel().select(0);
+        }
+        hostListPresenter.syncInputLimits();
+        viewModeController.apply();
+        routeGraphPresenter.redrawIfExtended();
     }
 
     private void applyCliOverridesToActiveProfile() {
@@ -378,6 +421,7 @@ public final class MainController {
     private void reloadActiveProfile() {
         dismissEasterEgg();
         sessionPersistenceOverride = Optional.empty();
+        sessionGuiDbOverride = Optional.empty();
         TracingProfile profile = profileDocument.active();
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(profile.hosts());
         monitor.close();
@@ -396,6 +440,11 @@ public final class MainController {
 
     private void onSaveConfig() {
         try {
+            if (sessionGuiDbOverride.isPresent() && options.sessionDbPath().isEmpty()) {
+                TracingProfile active = profileDocument.active();
+                PersistenceConfig updated = active.persistence().withSessionDb(sessionGuiDbOverride.get());
+                profileDocument.putProfile(profileDocument.activeProfile(), active.withPersistence(updated));
+            }
             profileUi.syncActiveProfileFromSession();
             ProfilesConfig.save(options.configPath(), profileDocument);
             appendLog("Конфіг збережено (усі профілі): " + options.configPath());

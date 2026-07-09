@@ -36,7 +36,7 @@ class PinguiApplicationTest {
                 ProbeMode.PROCESS,
                 java.util.List.of(),
                 io.pingui.config.AlertConfig.disabled(),
-                io.pingui.config.PersistenceEventsConfig.defaults());
+                io.pingui.config.PersistenceConfig.defaults());
         TracingProfile merged = CliProfileOverrides.none().applyTo(yaml);
         assertEquals(30.0, merged.intervalSeconds());
         assertEquals(15, merged.maxHops());
@@ -121,10 +121,11 @@ class PinguiApplicationTest {
 
     @Test
     void persistenceOverrides_mergePreservesYamlFields() {
-        io.pingui.config.PersistenceEventsConfig yaml = new io.pingui.config.PersistenceEventsConfig(false, true);
+        io.pingui.config.PersistenceConfig yaml = io.pingui.config.PersistenceConfig.eventsOnly(
+                new io.pingui.config.PersistenceEventsConfig(false, true));
         CliPersistenceOverrides partial =
                 new CliPersistenceOverrides(java.util.Optional.of(true), java.util.Optional.empty());
-        io.pingui.config.PersistenceEventsConfig merged = partial.applyTo(yaml);
+        io.pingui.config.PersistenceConfig merged = partial.applyTo(yaml);
         assertTrue(merged.routeChange());
         assertTrue(merged.probeError());
     }

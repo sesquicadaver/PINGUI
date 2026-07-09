@@ -398,7 +398,7 @@ flowchart TD
 | **P11-013** | [x] `PersistencePolicy` + writer gate | `PersistencePolicy`, `PersistencePolicyHolder`, `PersistenceEventWriter`, `MonitorService` | `PersistencePolicyTest`, `MonitorServiceTest.appliesPersistencePolicyAfterPollCycle` |
 | **P11-014** | [x] GUI “Database…” + confirm purge (event policy; requires `--session-db`) | `PersistenceSettingsDialog`, `MainController` | Manual smoke; purge via `SessionDatabase.deleteEventsByType` |
 | **P11-015** | [x] YAML `persistence.events` + CLI override | `PersistenceEventsConfig`, `CliPersistenceOverrides`, `ProfilesConfig` | `ProfilesConfigTest.loadPersistenceEventsSection`, `PinguiApplicationTest.parseOptions_noPersistRouteChange` |
-| **P11-016** | [ ] GUI SQLite connection (file picker + YAML `session_db`) | `PersistenceSettingsDialog`, `MainController`, `ProfilesConfig`, `PersistenceConfig` | “Database…” menu active without CLI `--session-db`; priority CLI > YAML > GUI; reload `SessionStore` |
+| **P11-016** | [x] GUI SQLite connection (file picker + YAML `session_db`) | `PersistenceSettingsDialog`, `MainController`, `ProfilesConfig`, `PersistenceConfig` | “Database…” menu active without CLI `--session-db`; priority CLI > YAML > GUI; reload `SessionStore` |
 | **P11-020** | [x] UI: «History» panel — route changes 24h/7d | `RouteHistoryPresenter`, `SessionDatabase.listEvents` | `SessionDatabaseTest.listRouteChangeEventsFiltersByHostAndTime` |
 | **P11-021** | [x] UI: replay snapshot on graph (read-only) | `RouteGraphPresenter`, `RouteHistoryPresenter` | Event selection → graph; `RouteHistoryPresenterTest` |
 | **P11-030** | [x] Export CSV/HTML from DB (like Python `session_report`) | `export/SessionReportExporter.java` | CLI `--export-report` |
@@ -736,5 +736,7 @@ Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 **Java route history UI (2026-07-09):** P11-020…P11-021 — timeline list 24h/7d + read-only graph replay from `persistence_event`.
 
 **Java session export (2026-07-09):** P11-030 — `SessionReportExporter` CSV/HTML; CLI `--export-report` (headless, no JavaFX).
+
+**Java GUI SQLite connection (2026-07-09):** P11-016 — file picker, YAML `session_db`, “Database…” menu without CLI.
 
 Update this file when closing a task: `[x] M-001` + date in CHANGELOG.

@@ -10,6 +10,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 ### Added
 
 - **Java session export (P11-030):** `SessionReportExporter` — CSV/HTML from `--session-db`; headless CLI `--export-report PATH` (format by extension).
+- **Java GUI SQLite connection (P11-016):** file picker in Database settings, YAML `persistence.session_db`, active menu without CLI `--session-db`.
 
 ## [0.2.0] - 2026-07-09
 
