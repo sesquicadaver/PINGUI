@@ -30,4 +30,11 @@ class ProcessExpertPingTest {
         assertTrue(cmd.contains("-6"));
         assertEquals("2001:db8::1", cmd.get(cmd.size() - 1));
     }
+
+    @Test
+    void buildCommandAutoAddsIpv4ForHostname() {
+        List<String> cmd = ProcessExpertPing.buildCommand("example.com", PingExpertEntry.empty(), 0.5);
+        assertTrue(cmd.contains("-4"));
+        assertEquals("example.com", cmd.get(cmd.size() - 1));
+    }
 }

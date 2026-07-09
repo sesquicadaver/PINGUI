@@ -39,7 +39,12 @@ class ExpertPingArgsTest {
     }
 
     @Test
-    void noAutoFlagForHostname() {
-        assertEquals(List.of(), ExpertPingArgs.forTarget("example.com", PingExpertEntry.empty()));
+    void autoAddsIpv4FlagForHostname() {
+        assertEquals(List.of("-4"), ExpertPingArgs.forTarget("example.com", PingExpertEntry.empty()));
+    }
+
+    @Test
+    void autoAddsIpv4FlagForIpv4Literal() {
+        assertEquals(List.of("-4"), ExpertPingArgs.forTarget("8.8.8.8", PingExpertEntry.empty()));
     }
 }

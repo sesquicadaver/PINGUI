@@ -13,6 +13,7 @@ public final class ExpertPingUiRules {
 
     /**
      * IPv6 flow label (-F) is allowed only for IPv6 literals or when the user selects IPv6 (-6).
+     * Default address family is IPv4 (-4).
      */
     public static boolean flowLabelAllowed(String host, String addressFamilyChoice) {
         if (AF_IPV6.equals(addressFamilyChoice)) {

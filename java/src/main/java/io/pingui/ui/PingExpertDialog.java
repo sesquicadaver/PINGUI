@@ -85,9 +85,9 @@ public final class PingExpertDialog {
         grid.add(new Label("Значення"), 2, row);
         row++;
 
-        ComboBox<String> addressFamily = new ComboBox<>(FXCollections.observableArrayList(UNSET, AF_IPV4, AF_IPV6));
+        ComboBox<String> addressFamily = new ComboBox<>(FXCollections.observableArrayList(AF_IPV4, AF_IPV6));
         addressFamily.setMaxWidth(Double.MAX_VALUE);
-        addressFamily.setTooltip(new Tooltip("Взаємовиключні -4 та -6; за замовчуванням — вибір ОС"));
+        addressFamily.setTooltip(new Tooltip("Взаємовиключні -4 та -6; за замовчуванням — IPv4"));
         applyAddressFamilySelection(currentArgs, addressFamily);
         grid.add(new Label("AF"), 0, row);
         grid.add(wrapDescription("Сімейство адрес (лише одне)"), 1, row);
@@ -234,14 +234,10 @@ public final class PingExpertDialog {
     }
 
     private static void applyAddressFamilySelection(List<String> args, ComboBox<String> choice) {
-        boolean ipv4 = args.contains("-4");
-        boolean ipv6 = args.contains("-6");
-        if (ipv6 && !ipv4) {
+        if (args.contains("-6") && !args.contains("-4")) {
             choice.getSelectionModel().select(AF_IPV6);
-        } else if (ipv4) {
-            choice.getSelectionModel().select(AF_IPV4);
         } else {
-            choice.getSelectionModel().select(UNSET);
+            choice.getSelectionModel().select(AF_IPV4);
         }
     }
 

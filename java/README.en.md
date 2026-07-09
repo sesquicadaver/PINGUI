@@ -90,7 +90,7 @@ The CLI **does not overwrite** profile defaults (1.0 / 20 / 0.5 / auto) unless t
 - **Trace profiles**: multiple named profiles in YAML, switchable in the UI
 - List of up to **10 targets**, checkbox = active tracing; **Ping only** = ping without trace
 - **Add / Edit / Delete / Save** → YAML
-- **Expert** (Linux): **Exten.** → `ping(8)` iputils parameters; disabled on Win/mac
+- **Expert** (Linux): **Exten.** → `ping(8)` iputils parameters; single AF (`-4` or `-6`, default IPv4); disabled on Win/mac
 - **Simple** / **Advanced**: RTT metrics, loss %, route graph, change log
 
 ## Architecture

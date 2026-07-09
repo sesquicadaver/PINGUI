@@ -7,7 +7,7 @@ import io.pingui.config.PingExpertEntry;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Merges expert ping flags with target address family (auto {@code -6} for v6 literals). */
+/** Merges expert ping flags with target address family (default {@code -4}; auto {@code -6} for v6 literals). */
 final class ExpertPingArgs {
 
     private ExpertPingArgs() {}
@@ -21,8 +21,12 @@ final class ExpertPingArgs {
         if (kind != null) {
             validateFamily(kind, target, args);
         }
-        if (kind == HostAddressKind.IPV6 && !args.contains("-4") && !args.contains("-6")) {
-            args.add("-6");
+        if (!args.contains("-4") && !args.contains("-6")) {
+            if (kind == HostAddressKind.IPV6) {
+                args.add("-6");
+            } else {
+                args.add("-4");
+            }
         }
         return List.copyOf(args);
     }
