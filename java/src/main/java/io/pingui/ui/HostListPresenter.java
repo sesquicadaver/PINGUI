@@ -32,6 +32,7 @@ final class HostListPresenter {
     private final Runnable syncControls;
     private final Runnable redrawRoute;
     private final Runnable clearHistoryReplay;
+    private final java.util.function.BiConsumer<String, String> onHostRenamed;
     private final Runnable startEasterEgg;
     private final Runnable fitWindow;
     private boolean updatingList;
@@ -47,6 +48,7 @@ final class HostListPresenter {
             Runnable syncControls,
             Runnable redrawRoute,
             Runnable clearHistoryReplay,
+            java.util.function.BiConsumer<String, String> onHostRenamed,
             Runnable startEasterEgg,
             Runnable fitWindow) {
         this.hostItems = hostItems;
@@ -59,6 +61,7 @@ final class HostListPresenter {
         this.syncControls = syncControls;
         this.redrawRoute = redrawRoute;
         this.clearHistoryReplay = clearHistoryReplay;
+        this.onHostRenamed = onHostRenamed;
         this.startEasterEgg = startEasterEgg;
         this.fitWindow = fitWindow;
     }
@@ -152,7 +155,9 @@ final class HostListPresenter {
             session.renameHost(oldHost, renamed);
             selected.hostProperty().set(renamed);
             hostInput.setText(renamed);
+            onHostRenamed.accept(oldHost, renamed);
             appendLog.accept("Змінено ціль: " + oldHost + " → " + renamed);
+            clearHistoryReplay.run();
             redrawRoute.run();
         } catch (ConfigError ex) {
             appendLog.accept("Не вдалося змінити ціль: " + ex.getMessage());

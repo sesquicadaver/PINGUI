@@ -231,6 +231,7 @@ public final class MainController {
                 () -> hostListPresenter.syncInputLimits(),
                 this::redrawRouteGraph,
                 this::clearHistoryReplay,
+                this::onHostRenamed,
                 this::startEasterEgg,
                 () -> viewModeController.fitWindowToContent());
 
@@ -313,6 +314,20 @@ public final class MainController {
         if (routeHistoryPresenter != null) {
             routeHistoryPresenter.clearSelection();
         }
+    }
+
+    private void resetReplayState() {
+        clearHistoryReplay();
+        if (routeGraphPresenter != null) {
+            routeGraphPresenter.clearReplay();
+        }
+    }
+
+    private void onHostRenamed(String oldHost, String newHost) {
+        if (oldHost.equals(historyHostFilter.getValue())) {
+            historyHostSync.runWhileSyncing(() -> historyHostFilter.setValue(newHost));
+        }
+        syncHistoryHostFilter();
     }
 
     private String viewHost() {
@@ -465,7 +480,8 @@ public final class MainController {
         }
         hostListPresenter.syncInputLimits();
         viewModeController.apply();
-        routeGraphPresenter.redrawIfExtended();
+        resetReplayState();
+        redrawRouteGraph();
     }
 
     private void applyCliOverridesToActiveProfile() {
@@ -496,6 +512,8 @@ public final class MainController {
         }
         hostListPresenter.syncInputLimits();
         viewModeController.apply();
+        resetReplayState();
+        redrawRouteGraph();
     }
 
     private void onSaveConfig() {
