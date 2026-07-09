@@ -2,137 +2,99 @@
 
 > **Language:** English · [Українська](ROADMAP.md)
 
+**Official work plan index.** Detailed atomic plan: **[docs/en/ROADMAP.md](docs/en/ROADMAP.md)** (EN) · **[docs/ROADMAP.md](docs/ROADMAP.md)** (UK).
+
 **MVP status:** ✅ implemented (2026-06-26)
 
-- Launch: `./pingui.sh` / `./pingui.sh --deploy`
-- CI: ruff + mypy + pytest, coverage ≥ 80%
-- Documentation: `README.md`, `docs/MVP_SPEC.md`, `docs/LIVING_SPEC.md`
+**Target audience for upcoming phases:** NOC/SRE, network engineers, WAN/MPLS admins.
+
+- Launch: `./pingui.sh` / `./pingui.sh --deploy` (beta) · `java/pingui-java.sh` (main)
+- CI: ruff + mypy + pytest (beta) · `./gradlew check` (Java)
+- Documentation: bilingual `docs/` + `docs/en/`
 
 ---
 
-## MVP goal
-
-Linux desktop app: monitor up to 10 targets in a list, ICMP traceroute, RTT per hop, route change detection, topological map in GUI, data in RAM for the session only, edit target list in GUI.
-
----
-
-## Repository layout (current)
-
-```
-PINGUI/
-├── pingui.sh
-├── java/                     # cross-platform Java edition
-│   ├── pingui-java.sh
-│   ├── build.gradle.kts
-│   └── src/main/java/io/pingui/
-├── pyproject.toml
-├── README.md
-├── ROADMAP.md
-├── docs/
-│   ├── README.md           # documentation index
-│   ├── en/                 # English documentation
-│   ├── USER_GUIDE.md
-│   ├── ARCHITECTURE.md
-│   ├── DEPLOYMENT.md
-│   ├── DEVELOPMENT.md
-│   ├── TESTING.md
-│   ├── MODULES.md
-│   ├── CONFIGURATION.md
-│   ├── CONTRIBUTING.md
-│   ├── MVP_SPEC.md
-│   └── LIVING_SPEC.md
-├── config/
-│   └── hosts.example.yaml
-├── src/pingui/
-│   ├── __init__.py
-│   ├── __main__.py
-│   ├── config.py
-│   ├── models.py
-│   ├── logging_setup.py
-│   ├── icmp/
-│   │   ├── raw_socket.py
-│   │   └── tracer.py
-│   ├── monitor/
-│   │   ├── session_store.py
-│   │   ├── route_history.py
-│   │   ├── route_change.py
-│   │   ├── polling.py
-│   │   └── worker.py
-│   └── ui/
-│       ├── app.py
-│       ├── main_window.py
-│       └── graph_canvas.py
-├── tests/
-│   ├── conftest.py
-│   ├── unit/
-│   ├── contract/
-│   └── integration/
-├── scripts/
-│   ├── ci_venv.sh
-│   ├── check_caps.sh
-│   ├── check_imports.py
-│   ├── check_doc_parity.py
-│   └── setup_caps.sh
-└── systemd/
-    └── pingui-dev.service.example
-```
-
----
-
-## Phases (status)
+## Project phases (status)
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| P0 | Project init, venv, CI | ✅ |
-| P1 | Models and config | ✅ |
-| P2 | ICMP / traceroute | ✅ |
-| P3 | In-memory session store | ✅ |
-| P4 | Background worker (QThread) | ✅ |
-| P5 | GUI (PyQt6 + graph) | ✅ |
-| P6 | Integration, CLI, logging | ✅ |
-| P7 | CI, anti-stub, coverage ≥ 80% | ✅ |
-| P8 | Linux deployment helpers | ✅ |
-| **P9** | **Java cross-platform edition** | **✅ MVP** |
+| P0–P8 | Python MVP: venv, ICMP, GUI, CI | ✅ |
+| **P9** | Java cross-platform edition | ✅ |
+| **9** | IPv6 dual-stack (V6-*) | 🔄 in progress |
+| **10** | Route change alerts (webhook, desktop) | 📋 planned |
+| **11** | Persistence and timeline (Java parity with Python) | 📋 planned |
+| **12** | Headless / daemon + systemd (Linux NOC) | 📋 planned |
+| **13** | Probe efficiency (MTR, smart interval, burst) | 📋 planned |
+| **14** | Pro GUI (diff, tags, ASN/rDNS, presets) | 📋 planned |
+| **15** | Integrations (Prometheus, REST API, export) | 📋 planned |
+| **16** | Telemetry: network metrics + LOG-server (SQLite/JSONL, syslog/GELF) | 📋 planned |
 
 ---
 
-## Phase P9 — Java (cross-platform)
+## MVP goal (achieved)
+
+Linux desktop app: monitor up to 10 targets, ICMP traceroute, RTT per hop, route change detection, topological map in GUI, RAM-only session, GUI CRUD. Java edition — cross-platform parity.
+
+---
+
+## Backlog (completed)
 
 | ID | Task | Status |
 |----|------|--------|
-| J-P9-01 | Gradle + JavaFX scaffold (`java/`) | done |
-| J-P9-02 | Models, config, monitor port | done |
-| J-P9-03 | ProcessRouteProbe (traceroute/tracert) | done |
-| J-P9-04 | JavaFX GUI + pingui-java.sh | done |
-| J-P9-05 | JUnit tests + java-ci.yml | done |
-| J-P9-06 | JavaFX graph parity | done |
+| B-01…B-06 | SQLite, export, GeoIP, geo-map, timeseries, jitter/loss (Python) | ✅ |
+| J-01…J-06 | Java graph, jpackage, raw ICMP, CI, hop stats | ✅ |
+| M-001…M-023 | CLI override, Spotless, Checkstyle | ✅ |
+| B-001…B-064 | JUnit, CI, UI split, probe refactor, coverage | ✅ |
 
-## Backlog (post-MVP)
+---
 
-| ID | Task |
-|----|--------|
-| B-01 | SQLite persistence between sessions | ✅ Python `--session-db` |
-| B-02 | CSV/HTML report export | ✅ |
-| B-03 | GeoIP (rough country) in node labels | ✅ |
-| B-04 | Folium geo-map in separate view | ✅ |
-| B-05 | TimescaleDB/InfluxDB backend | ✅ |
-| B-06 | Jitter/loss statistics per hop | ✅ |
-| **J-01** | **Java: JavaFX topological graph** | ✅ |
-| **J-02** | **Java: jpackage installers** | ✅ Linux .deb |
-| **J-04** | **Java: launcher `pingui-java.sh` / `pingui-java.bat`** | ✅ |
-| **J-03** | **Java: optional raw ICMP (JNA)** | ✅ Linux |
-| **J-05** | **Java: CI matrix + jpackage msi/dmg** | ✅ |
-| **J-06** | **Java: hop jitter/loss in graph labels** | ✅ |
+## Recommended order (2026 Q3–Q4)
+
+1. **Close phase 9** — IPv6 QA gate (V6-035…074)
+2. **Phase 10** — alerts (highest ROI for NOC)
+3. **Phase 11** — SQLite + history in Java
+4. **Phase 12** — daemon for 24/7 monitoring
+5. **Phases 13–15** — MTR, pro GUI, Prometheus/API
+6. **Phase 16** — telemetry: local storage + LOG-server
+
+```mermaid
+flowchart LR
+  F9[Phase 9 IPv6] --> F10[Phase 10 Alerts]
+  F10 --> F11[Phase 11 Persistence]
+  F11 --> F12[Phase 12 Daemon]
+  F12 --> F13[Phase 13 MTR]
+  F13 --> F14[Phase 14 Pro GUI]
+  F14 --> F15[Phase 15 Integrations]
+  F15 --> F16[Phase 16 Telemetry]
+```
+
+---
+
+## Repository structure (current)
+
+```
+PINGUI/
+├── pingui.sh                 # Python launcher (beta)
+├── java/                     # Java edition (main + beta)
+├── src/pingui/               # Python (beta)
+├── tests/                    # pytest (beta)
+├── docs/
+│   ├── ROADMAP.md            # ← detailed plan (UK)
+│   └── en/ROADMAP.md         # ← detailed plan (EN)
+├── config/
+├── scripts/
+└── systemd/
+```
 
 ---
 
 ## Definition of Done (per feature)
 
-1. Code in `src/pingui/`, no stubs in production paths.
+1. No stubs in production paths.
 2. Unit/contract/integration tests where logic exists.
-3. `./pingui.sh --deploy` passes in venv.
-4. Row updated in `docs/LIVING_SPEC.md`.
-5. If launch changes — update `README.md` or service file.
+3. `./pingui.sh --deploy` or `./gradlew check` green.
+4. Row in `docs/LIVING_SPEC.md`.
+5. README / DEPLOYMENT / CHANGELOG — if launch or UX changed.
 
 ---
 
@@ -141,3 +103,5 @@ PINGUI/
 ```
 pingui.sh → config/models → icmp/tracer → session_store → worker → main_window/graph → CI
 ```
+
+Task details P10-001…P16-080: [docs/en/ROADMAP.md](docs/en/ROADMAP.md).
