@@ -11,7 +11,7 @@ On **`beta`** — full package (Java + Python). On **`main`** — Java docs for 
 | [CHECKLIST.md](CHECKLIST.md) | Admin / DevOps | Checklist Linux / Windows / macOS |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Admin / DevOps | JDK 21, venv, cap_net_raw, systemd |
 | [JAVA.md](JAVA.md) | Developer | Probe, monitor, UI, YAML |
-| [ROADMAP.md](ROADMAP.md) | Developer | Fix plan (closed) |
+| [ROADMAP.md](ROADMAP.md) | Developer | Official plan: phases 0–16 (Pro/NOC + telemetry) |
 | [LIVING_SPEC.md](LIVING_SPEC.md) | Developer | Module → tests matrix |
 | [ADR_IPV6.md](ADR_IPV6.md) | Developer | Dual-stack config ADR (V6-002) |
 | [SPIKE_IPV6.md](SPIKE_IPV6.md) | Developer | IPv6 scope (**planned**, phase 9 V6-*) |

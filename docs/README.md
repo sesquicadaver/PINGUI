@@ -11,7 +11,7 @@
 | [CHECKLIST.md](CHECKLIST.md) | Адмін / DevOps | Checklist Linux / Windows / macOS |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Адмін / DevOps | JDK 21, venv, cap_net_raw, systemd |
 | [JAVA.md](JAVA.md) | Розробник | Probe, monitor, UI, YAML |
-| [ROADMAP.md](ROADMAP.md) | Розробник | План виправлень |
+| [ROADMAP.md](ROADMAP.md) | Розробник | Офіційний план: фази 0–16 (Pro/NOC + telemetry) |
 | [LIVING_SPEC.md](LIVING_SPEC.md) | Розробник | Матриця модуль → тести |
 | [ADR_IPV6.md](ADR_IPV6.md) | Розробник | Dual-stack config ADR (V6-002) |
 | [SPIKE_IPV6.md](SPIKE_IPV6.md) | Розробник | IPv6 scope (**planned**, фаза 9 V6-*) |

@@ -2,7 +2,9 @@
 
 # ROADMAP — PINGUI Java (`main` / `beta`)
 
-План виправлень після аудиту `main` (MVP desktop utility, production readiness: низька–середня).
+**Офіційний документ планів роботи над проектом.** Оновлюй при закритті задачі: `[x]` + дата в `CHANGELOG.md`.
+
+План розвитку після MVP (2026-06-26) для **профільних користувачів** (NOC/SRE, мережеві інженери, адміни WAN/MPLS).
 
 **Легенда**
 
@@ -178,16 +180,16 @@
 | **V6-041** | [ ] ICMPv6 echo request/reply parse | `IcmpPacket.java` або `IcmpV6Packet.java` | Unit-тест без cap (build packet) |
 | **V6-042** | [ ] `LinuxJnaIcmpTransport` dual: v4/v6 socket | `LinuxJnaIcmpTransport.java` | Integration test optional; mock-friendly unit |
 | **V6-043** | [ ] `RawIcmpRouteProbe`: hop limit для v6 | `RawIcmpRouteProbe.java` | v6 target → trace hops |
-| **V6-044** | [ ] `RouteProbeFactory`: v6 + non-Linux → process fallback | `RouteProbeFactory.java` | Test: AUTO on macOS → process |
+| **V6-044** | [x] `RouteProbeFactory`: v6 literal → process fallback при AUTO+raw | `DualStackRouteProbe.java` | Test: v6 → process, v4 → raw |
 | **V6-045** | [ ] DEPLOYMENT: cap note для ICMPv6 | `docs/DEPLOYMENT.md` | Linux-only raw v6 documented |
 
 ### 9.5 — Expert ping v6 (P1)
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **V6-050** | [ ] Auto `-6` у `ProcessExpertPing.buildCommand` для v6 target | `ProcessExpertPing.java` | Test: v6 target → `-6` in argv |
-| **V6-051** | [ ] `ProcessHostPing`: expert args + v6 на Linux/macOS | `ProcessHostPing.java` | Test: args appended |
-| **V6-052** | [ ] Validator: `-4` + v6 target → `ConfigError` (profile save) | `PingExpertValidator` або host-level check | Unit-тест |
+| **V6-050** | [x] Auto `-6` у `ProcessExpertPing.buildCommand` для v6 target | `ExpertPingArgs.java` | Test: v6 target → `-6` in argv |
+| **V6-051** | [x] `ProcessHostPing`: expert args + auto v6 на Linux/macOS | `ProcessHostPing.java` | Test: args appended |
+| **V6-052** | [x] Validator: `-4` + v6 target → `ConfigError` | `ExpertPingArgs.java` | Unit-тест |
 | **V6-053** | [ ] `-F` flow label — лише з v6 target (UI hint) | `PingExpertDialog.java` | Tooltip / disable when target v4 |
 
 ### 9.6 — UI / docs (P1)
@@ -242,6 +244,243 @@ flowchart TD
 
 ---
 
+## Фаза 10 — Оповіщення про зміну маршруту (`beta` → `main`, P0)
+
+**Мета:** профільний користувач дізнається про route change без відкритого GUI.
+
+**Цільова аудиторія:** NOC, чергова зміна, SRE runbook.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P10-001** | [ ] ADR: політика alerts (channels, rate limit, payload) | `docs/ADR_ALERTS.md` | Webhook + desktop; опційно SNMP/email — out of scope v1 |
+| **P10-010** | [ ] Модель `RouteChangeEvent` (host, old_ips, new_ips, ts, profile) | `monitor/RouteChangeEvent.java`, Python `models.py` | Unit-тест serialize/deserialize |
+| **P10-011** | [ ] `AlertDispatcher` interface + no-op default | `monitor/AlertDispatcher.java` | Monitor викликає при `onRouteChanged` |
+| **P10-020** | [ ] Desktop notification (Linux notify-send / Windows toast / macOS) | `ui/RouteChangeNotifier.java` | Manual smoke: route change → notification |
+| **P10-021** | [ ] YAML/CLI: `alerts.desktop: true\|false` | `ProfilesConfig`, `PinguiApplication` | Default off; документовано в CONFIGURATION |
+| **P10-030** | [ ] Webhook POST JSON (Slack-compatible + generic) | `monitor/WebhookAlertDispatcher.java` | Contract test з mock HTTP server |
+| **P10-031** | [ ] CLI `--alert-webhook URL` + profile field `alert_webhook` | `CliProfileOverrides`, YAML schema | Secret не логувати; помилка мережі → log, не crash |
+| **P10-040** | [ ] Rate limit: max N alerts / host / годину | `AlertRateLimiter.java` | Unit-тест burst |
+| **P10-050** | [ ] LIVING_SPEC + CHECKLIST § alert smoke | `docs/LIVING_SPEC.md`, `docs/CHECKLIST.md` | Ручний прогін Linux |
+
+**Орієнтовно:** 1–2 sprint.
+
+---
+
+## Фаза 11 — Персистентність і таймлайн (Java parity з Python, P0)
+
+**Мета:** історія маршрутів між сесіями; replay «коли змінився hop N».
+
+**Контекст:** Python `beta` має `--session-db`, export, jitter/loss; Java `main` — RAM-only.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P11-001** | [ ] SPIKE: схема SQLite для Java (routes, events, samples) | `docs/SPIKE_PERSISTENCE.md` | Parity з Python `session_db.py` |
+| **P11-010** | [ ] `SessionDatabase` — open/migrate/close | `persistence/SessionDatabase.java` | Flyway або ручна schema v1 |
+| **P11-011** | [ ] Запис route snapshot + route_change event | `MonitorService`, `SessionDatabase` | Unit-тест insert/query |
+| **P11-012** | [ ] CLI `--session-db PATH` | `PinguiApplication`, `java/README.md` | Optional; без PATH — RAM-only |
+| **P11-020** | [ ] UI: панель «Історія» — список route change за 24h/7d | `RouteHistoryPresenter.java` | Manual smoke |
+| **P11-021** | [ ] UI: replay snapshot на графі (read-only) | `RouteGraphPresenter` | Вибір події → граф |
+| **P11-030** | [ ] Export CSV/HTML з БД (як Python `session_report`) | `export/SessionReportExporter.java` | CLI `--export-report` |
+| **P11-040** | [ ] Java parity: jitter/loss labels з історії | `HopStats`, `GraphCanvas` | Parity з J-06 / B-06 |
+| **P11-050** | [ ] LIVING_SPEC + DEPLOYMENT (disk, retention) | `docs/LIVING_SPEC.md`, `docs/DEPLOYMENT.md` | Retention policy documented |
+
+**Орієнтовно:** 2–3 sprint.
+
+---
+
+## Фаза 12 — Headless / daemon mode (Linux, P1)
+
+**Мета:** моніторинг на NOC-сервері без GUI; `systemd` unit.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P12-001** | [ ] ADR: daemon lifecycle (signals, single instance, logging) | `docs/ADR_DAEMON.md` | SIGHUP reload config |
+| **P12-010** | [ ] `--daemon` mode: без JavaFX, лише MonitorService loop | `PinguiApplication`, `DaemonRunner.java` | `./pingui-java.sh --daemon` exits 0, process stays |
+| **P12-011** | [ ] PID file + `--stop` / `--status` | `DaemonPidFile.java` | Contract test start/stop |
+| **P12-020** | [ ] `systemd/pingui.service.example` | `systemd/` | `Type=simple`, `Restart=on-failure` |
+| **P12-021** | [ ] DEPLOYMENT § NOC headless | `docs/DEPLOYMENT.md` | cap_net_raw, webhook, session-db |
+| **P12-030** | [ ] Інтеграція з P10 alerts у daemon | `DaemonRunner` | Route change → webhook без GUI |
+| **P12-040** | [ ] CHECKLIST § daemon smoke | `docs/CHECKLIST.md` | start → change route → webhook log |
+
+**Орієнтовно:** 1–2 sprint. **Поза scope:** Windows service (окремий ticket).
+
+---
+
+## Фаза 13 — Ефективність probe (MTR, інтервали, P1)
+
+**Мета:** менше навантаження, швидша реакція; особливо на Windows.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P13-001** | [ ] ADR: `probe_mode: trace \| mtr \| ping_only` | `docs/ADR_PROBE_MODES.md` | MTR = continuous per-hop, не full trace кожен цикл |
+| **P13-010** | [ ] `MtrProbe` / per-hop poll state machine | `probe/MtrProbe.java` | Unit-тест state transitions |
+| **P13-011** | [ ] YAML `probe_mode` на профіль + override на host | `ProfilesConfig`, `HostEntry` | Backward compat: default `trace` |
+| **P13-020** | [ ] Smart interval: `ping_only` 1–2s, `trace` 30–300s per host | `MonitorService`, `HostPollSchedule` | Profile default + per-host override |
+| **P13-021** | [ ] Burst on change: після route change — interval ×0.25 на 5 хв | `BurstSchedulePolicy.java` | Unit-тест timer |
+| **P13-030** | [ ] Parallel poll: `max_concurrent_traces` (default 3) | `MonitorService` | Не більше N subprocess одночасно |
+| **P13-040** | [ ] Windows profile preset: auto `ping_only` + `interval: 60` | `config/hosts.windows.example.yaml` | CHECKLIST Windows |
+| **P13-050** | [ ] LIVING_SPEC + JAVA.md known limitations | `docs/JAVA.md` | MTR vs traceroute doc |
+
+**Орієнтовно:** 2–3 sprint.
+
+---
+
+## Фаза 14 — GUI для профі (`beta`, P1)
+
+**Мета:** швидше читати зміни маршруту; організація цілей.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P14-010** | [ ] Route diff panel: hop-by-hop «було → стало», Δ RTT | `RouteDiffPresenter.java`, `GraphCanvas` | Manual smoke route change |
+| **P14-020** | [ ] Теги цілей: `tags: [dc, vpn, customer-x]` у YAML | `HostEntry`, `ProfilesConfig` | Filter у ListView |
+| **P14-021** | [ ] UI: фільтр за тегом + quick filter chips | `HostListPresenter` | Збереження в YAML |
+| **P14-030** | [ ] ASN + короткий descr у label hop (offline cache) | `geoip/AsnLookup.java` або lazy whois | Configurable; timeout 2s |
+| **P14-031** | [ ] rDNS у label (async, не блокує UI) | `DnsResolver.java`, `GraphCanvas` | Cache TTL 5 хв |
+| **P14-040** | [ ] Expert ping presets: MTU probe, DF, DSCP, burst | `PingExpertDialog`, `ping_presets.yaml` | 4 preset кнопки |
+| **P14-050** | [ ] USER_GUIDE § pro workflow | `docs/USER_GUIDE.md` | NOC сценарій |
+
+**Орієнтовно:** 2 sprint.
+
+---
+
+## Фаза 15 — Інтеграції для команд (P1–P2)
+
+**Мета:** Grafana, runbook API, звіти по розкладу.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P15-001** | [ ] ADR: observability boundaries (metrics vs TS backend) | `docs/ADR_OBSERVABILITY.md` | Prometheus read; write → Influx optional |
+| **P15-010** | [ ] Prometheus `/metrics` endpoint (daemon mode) | `observability/PrometheusExporter.java` | `pingui_rtt_ms`, `pingui_route_change_total` |
+| **P15-011** | [ ] CLI `--metrics-port 9090` | `DaemonRunner` | localhost bind default |
+| **P15-020** | [ ] Java parity: InfluxDB/Timescale writer (як Python B-05) | `persistence/timeseries/` | Config parity з Python |
+| **P15-030** | [ ] Scheduled CSV/HTML export (cron-friendly CLI) | `export/ScheduledExport.java` | `--export-schedule daily` one-shot |
+| **P15-040** | [ ] REST read-only API: `GET /hosts`, `GET /routes/{host}` | `api/ReadOnlyApiServer.java` | OpenAPI stub; auth out of scope v1 |
+| **P15-041** | [ ] DEPLOYMENT § reverse proxy + TLS | `docs/DEPLOYMENT.md` | nginx example |
+| **P15-050** | [ ] LIVING_SPEC + contract tests API | `docs/LIVING_SPEC.md` | Mock HTTP tests |
+
+**Орієнтовно:** 2–3 sprint. **Поза scope:** повна заміна Zabbix/NMS.
+
+**Звʼязок:** фаза 16 — уніфікований шар збору метрик і відправки на LOG-server; Prometheus (P15-010) і Influx (P15-020) — remote sink-и цього шару.
+
+---
+
+## Фаза 16 — Телеметрія: метрики мережі + LOG-server (`beta` → `main`, P0–P1)
+
+**Мета:** збір RTT/loss/jitter/route-change подій з **локальним збереженням** та/або **відправкою на LOG-server**; єдиний контракт для GUI, daemon і Python/Java.
+
+**Передумови:** P11 (SQLite), P12 (daemon) — рекомендовано; P10 (alerts) — окремий канал, але події дублюються в telemetry.
+
+**Принцип:** *events* → LOG-server (syslog/GELF); *time-series samples* → SQLite / Influx / Prometheus; не слати hop-RTT кожну секунду в syslog.
+
+### 16.0 — Design gate
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P16-001** | [ ] ADR: telemetry (events vs samples vs aggregates, sinks) | `docs/ADR_TELEMETRY.md` | Діаграма bus → local/remote; межі з P10/P15 |
+| **P16-002** | [ ] SPIKE: порівняння LOG-server протоколів (syslog, GELF, Loki) | `docs/SPIKE_LOG_SINKS.md` | Рекомендація v1: syslog TCP + GELF |
+
+### 16.1 — Модель і шина (P0)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P16-010** | [ ] `MetricSample` + `TelemetryEvent` (host, hop, labels) | `telemetry/MetricSample.java`, `models.py` | Unit-тест serialize |
+| **P16-011** | [ ] `TelemetrySink` interface + `SinkRegistry` | `telemetry/TelemetrySink.java` | register/unregister; no-op default |
+| **P16-012** | [ ] `TelemetryBus` — async queue, batch flush, backpressure | `telemetry/TelemetryBus.java` | Queue max size; drop policy documented |
+| **P16-013** | [ ] Wire MonitorService → bus (RTT, loss, route_change, probe_error) | `MonitorService`, `worker.py` | Не блокує poll loop |
+| **P16-014** | [ ] Метрики: `trace_duration_ms`, `target_reachable` | `telemetry/MetricNames.java` | Labels: profile, probe_mode, edition |
+
+### 16.2 — Локальне збереження (P0)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P16-020** | [ ] `SqliteTelemetrySink` — samples + events (розширення P11 schema) | `persistence/SqliteTelemetrySink.java` | Migration v2; unit insert/query |
+| **P16-021** | [ ] `JsonlRotateSink` — JSONL з ротацією за розміром/днем | `telemetry/JsonlRotateSink.java` | `telemetry.jsonl.%Y-%m-%d` |
+| **P16-022** | [ ] `retention_days` — purge старих samples/events | `TelemetryRetentionJob.java` | CLI `--telemetry-retention 30` |
+| **P16-023** | [ ] Export з local store: `--telemetry-dump` (CSV/JSON) | `export/TelemetryDump.java` | Cron-friendly one-shot |
+
+### 16.3 — Відправка на LOG-server (P1)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P16-030** | [ ] `SyslogSink` — RFC 5424 TCP/TLS, structured data | `telemetry/SyslogSink.java` | Contract test з mock server |
+| **P16-031** | [ ] `GelfSink` — Graylog UDP/TCP | `telemetry/GelfSink.java` | route_change + probe_error events |
+| **P16-032** | [ ] `LokiPushSink` — HTTP push (опційно P2) | `telemetry/LokiPushSink.java` | labels: job=pingui, site |
+| **P16-033** | [ ] `events_only` mode для LOG-sink (без high-freq RTT) | `SinkConfig.java` | Default true для syslog |
+| **P16-034** | [ ] 5m aggregates (avg/max RTT per hop) → LOG опційно | `AggregateTelemetryJob.java` | YAML `log_aggregates: true` |
+
+### 16.4 — Конфігурація (P0)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P16-040** | [ ] YAML секція `telemetry:` (local + remote sinks) | `ProfilesConfig`, `config.py` | Приклад у `hosts.example.yaml` |
+| **P16-041** | [ ] CLI: `--telemetry-syslog HOST:PORT`, `--telemetry-jsonl DIR` | `PinguiApplication`, `__main__.py` | Override profile |
+| **P16-042** | [ ] Секрети (URL, token) — не логувати; mask у debug | `TelemetryConfig.java` | Unit-тест redaction |
+| **P16-043** | [ ] Windows preset: `events_only` + без jsonl high-freq | `config/hosts.windows.example.yaml` | CHECKLIST |
+
+### 16.5 — Інтеграція з P10/P15 (P1)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P16-050** | [ ] P10 webhook — реалізація як `TelemetrySink` (не дубль коду) | `WebhookAlertDispatcher` → `telemetry/` | Один шлях emit |
+| **P16-051** | [ ] P15 Prometheus — `PrometheusTelemetrySink` implements sink | `observability/PrometheusExporter.java` | Scrape з daemon |
+| **P16-052** | [ ] Python B-05 Influx — `InfluxTelemetrySink` wrapper | `persistence/timeseries/influx.py` | Config parity |
+
+### 16.6 — Docs / QA (P0)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P16-060** | [ ] CONFIGURATION § telemetry | `docs/CONFIGURATION.md`, `docs/en/CONFIGURATION.md` | Повна таблиця полів |
+| **P16-061** | [ ] DEPLOYMENT § LOG-server, rsyslog, Graylog, retention | `docs/DEPLOYMENT.md` | nginx/TLS optional |
+| **P16-070** | [ ] LIVING_SPEC: telemetry bus + sinks | `docs/LIVING_SPEC.md` | Матриця модуль → тест |
+| **P16-071** | [ ] CHECKLIST § telemetry smoke | `docs/CHECKLIST.md` | local sqlite + syslog event |
+| **P16-072** | [ ] Contract tests: mock syslog/gelf | `src/test/java/.../SyslogSinkTest.java` | CI green |
+
+**Орієнтовно:** 2–3 sprint. **Поза scope v1:** OpenTelemetry OTLP export (P2 ticket P16-080).
+
+| ID | Задача | Пріоритет |
+|----|--------|-----------|
+| **P16-080** | [ ] OTLP logs/metrics export | P2 |
+
+---
+
+## Поза scope (не плануємо)
+
+| ID | Ідея | Чому ні |
+|----|------|---------|
+| **X-001** | BGP looking glass | Інший клас продукту |
+| **X-002** | >10 цілей без redesign worker | MVP-обмеження свідоме |
+| **X-003** | Повноцінний NMS/alert manager | PINGUI — route-focused utility |
+
+---
+
+## Рекомендований порядок (2026 Q3–Q4)
+
+```mermaid
+flowchart TD
+  V6070[V6-070 IPv6 QA gate] --> P10010[P10 alerts]
+  P10010 --> P11010[P11 SQLite Java]
+  P11010 --> P12010[P12 daemon]
+  P12010 --> P13010[P13 MTR / smart interval]
+  P13010 --> P14010[P14 route diff / tags]
+  P14010 --> P15010[P15 Prometheus / API]
+  P15010 --> P16010[P16 telemetry / LOG-server]
+```
+
+| Пріоритет | Sprint (пропоз.) | Фаза | Задачі |
+|-----------|------------------|------|--------|
+| **P0** | Pro-S1 | 9 (закриття) | V6-035…V6-037, V6-060…V6-074 |
+| **P0** | Pro-S2 | 10 | P10-001…P10-050 |
+| **P0** | Pro-S3–S4 | 11 | P11-001…P11-050 |
+| **P1** | Pro-S5 | 12 | P12-001…P12-040 |
+| **P1** | Pro-S6–S7 | 13 | P13-001…P13-050 |
+| **P1** | Pro-S8 | 14 | P14-010…P14-050 |
+| **P1–P2** | Pro-S9–S10 | 15 | P15-001…P15-050 |
+| **P0–P1** | Pro-S11–S12 | 16 | P16-001…P16-072 |
+| **P2** | opt. | 9.4 | V6-040…V6-045 raw ICMP v6 |
+| **P2** | opt. | 16.7 | P16-080 OTLP |
+
+---
+
 ## Фаза 8 — Production polish (`beta`, P2)
 
 | ID | Задача | DoD |
@@ -271,7 +510,9 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog:** M/B roadmap закрито; B-064 coverage ongoing; **IPv6 — Фаза 9 (V6-*)**.
+**Backlog:** M/B roadmap закрито; B-064 coverage ongoing; **IPv6 — Фаза 9 (V6-*)**; **Pro — Фази 10–16 (P10–P16)**.
+
+Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 
 ---
 
@@ -319,5 +560,9 @@ flowchart LR
 **Sprint 20 (2025-06-26):** B-064f — `PingExpertValidator` + `ExpertPingEnricher` stub tests; −exclusion `ExpertPingEnricher`.
 
 **IPv6-S1 (2026-06-26):** V6-001…V6-015 — `HostAddressParser`, RFC 5952, mixed v4/v6 YAML.
+
+**Roadmap Pro (2026-07-09):** додано фази 10–15 (alerts, persistence, daemon, MTR, GUI pro, integrations) — офіційний план для NOC/SRE.
+
+**Roadmap Telemetry (2026-07-09):** фаза 16 — збір метрик мережі, локальне збереження (SQLite/JSONL), відправка на LOG-server (syslog/GELF/Loki).
 
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.
