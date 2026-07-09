@@ -30,6 +30,7 @@
 ### Fixed
 
 - **Java GUI SQLite reconnect (P11-016):** `reconnectPersistence` зберігає live enabled/ping-only з `SessionStore`, не скидає до YAML; `MonitorLifecycle` реєструє хости з поточного store — маршрут і `hop_stats` знову пишуться після **Налаштування → База даних…**.
+- **Java default target ping + baseline history:** `DefaultTargetPingEnricher` — RTT цілі через `ping` коли Expert ping вимкнено; перший trace пише baseline `route_change` (без alert); «Історія змін» показує «Початковий маршрут».
 
 ## [0.2.0] - 2026-07-09
 

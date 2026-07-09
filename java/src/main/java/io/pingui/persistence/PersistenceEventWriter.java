@@ -31,6 +31,14 @@ public final class PersistenceEventWriter {
                 PersistenceEventType.ROUTE_CHANGE, event.host(), event.profile(), event.toJson(), event.timestamp());
     }
 
+    public boolean hasRouteChangeEvents(String host) {
+        if (host == null || host.isBlank()) {
+            return false;
+        }
+        return !database.listEvents(PersistenceEventType.ROUTE_CHANGE, host, Instant.EPOCH, 1)
+                .isEmpty();
+    }
+
     public void writeProbeError(String host, String message) {
         if (host == null || host.isBlank() || !policyHolder.active().allows(PersistenceEventType.PROBE_ERROR)) {
             return;
