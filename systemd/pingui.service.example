@@ -1,0 +1,27 @@
+# PINGUI Python headless daemon (beta) — NOC / server
+# Install: sudo cp systemd/pingui.service.example /etc/systemd/system/pingui.service
+# Edit User, WorkingDirectory, paths; then: sudo systemctl daemon-reload && sudo systemctl enable --now pingui
+
+[Unit]
+Description=PINGUI route monitor (Python headless)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pingui
+Group=pingui
+WorkingDirectory=/opt/pingui
+Environment=PATH=/opt/pingui/.venv/bin:/usr/bin
+ExecStart=/opt/pingui/.venv/bin/python -m pingui daemon \
+  --config /opt/pingui/config/hosts.yaml \
+  --session-db /var/lib/pingui/ping.db \
+  --pid-file /run/pingui/pingui.pid
+ExecStop=/opt/pingui/.venv/bin/python -m pingui stop --pid-file /run/pingui/pingui.pid
+Restart=on-failure
+RestartSec=5
+RuntimeDirectory=pingui
+RuntimeDirectoryMode=0755
+
+[Install]
+WantedBy=multi-user.target

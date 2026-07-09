@@ -1,0 +1,78 @@
+# ISSUES — PINGUI
+
+## [ВИРІШЕНО] Windows: «Java не знайдено» / mojibake in pingui-java.bat
+
+**Симптом**
+
+```bat
+C:\...\PINGUI\java> pingui-java.bat --build
+[pingui-java] ПОМИЛКА: Java не знайдено. Потрібен JDK 21.
+```
+
+**Причина:** пробіли в `C:\Program Files\Eclipse Adoptium\...` всередині `( )` блоків `.bat` — `Files\Eclipse was unexpected at this time`.
+
+**Рішення:** `git pull` — v5 зберігає аргументи до `goto` (`PINGUI_EXTRA`). Або `gradlew.bat build` / `gradlew.bat run`.
+
+---
+
+## [ВИРІШЕНО] Windows: pingui-java.bat --build → Unknown command-line option '--build'
+
+**Симптом:** `gradlew.bat build --build` / `Unknown command-line option '--build'`.
+
+**Причина:** у cmd `%*` **ніколи** не змінюється після `shift` (v5 помилково робив `set PINGUI_EXTRA=%*`).
+
+**Рішення:** `git pull` (launcher **v6**, цикл `shift`/`%~1`). Або `gradlew.bat build` напряму.
+
+---
+
+Gradle 8.10 не запускається під Java 25. Потрібен JDK 21 (`PINGUI_JAVA_HOME` / `JAVA_HOME`).
+
+---
+
+## [ВИРІШЕНО] Windows: traceroute timed out for 8.8.8.8
+
+**Симптом:** `[Помилка [8.8.8.8]: traceroute timed out for 8.8.8.8]` одразу після старту.
+
+**Причина:** (1) stdout `tracert` не читався до `waitFor` — deadlock на pipe; (2) ліміт очікування ~16 с при `timeout: 0.5` і 20 hop (tracert потребує хвилини); (3) `tracert -w 500` замість типових 4000 ms.
+
+**Рішення:** `git pull`, перезбірка. Або `gradlew.bat build` && `gradlew.bat run`.
+
+---
+
+## [ВИРІШЕНО] Windows: No hops parsed / tracert не розбирається
+
+**Симптом:** `No hops parsed for 8.8.8.8` або граф порожній, хоча `tracert 8.8.8.8` у cmd працює.
+
+**Причина:** парсер не розпізнавав типовий вивід Windows: `<1 ms`, рядки `hostname [IP]`, локалізовані timeout; `tracert` не знаходився без System32 у PATH GUI-процесу.
+
+**Рішення:** `git pull`, `gradlew.bat build`, `gradlew.bat run`. Launcher v4: `pingui-java.bat` (без `:find_jdk21`).
+
+---
+
+## [ВИРІШЕНО] Windows: FINDSTR Cannot open ^>nul — хибна відмова JDK 21
+
+**Симптом:** Temurin 21.0.x встановлено, але `[pingui-java] ERROR: JDK 21 required` і `JAVA_HOME=` порожній.
+
+**Причина:** `findstr ... >nul` у pipe у `.bat` — FINDSTR сприймає `>nul` як ім’я файлу.
+
+**Рішення:** оновити `pingui-java.bat` (`git pull`); перевірка версії через `for /f` + `findstr /B 21.`
+
+---
+
+## [ВИРІШЕНО] Windows: JavaFX plugin not found (Gradle)
+
+**Симптом:** `Plugin org.openjfx.javafxplugin version 0.1.0 was not found`.
+
+**Причина:** у `settings.gradle.kts` не було `pluginManagement { gradlePluginPortal() }`.
+
+**Рішення:** `git pull`; потрібен доступ до https://plugins.gradle.org (проксі/firewall).
+
+---
+
+## [ВИРІШЕНО] Linux: чорний фрейм після створення/видалення профілю
+
+**Симптом:** велике чорне вікно, UI — маленька панель у куті.
+
+**Причина:** `sizeToScene()` не зменшує Stage після «Розширений»; `reloadActiveProfile()` без `applyViewMode()`; Scene без fill; цикл layout у `GraphCanvas.requestLayout()`.
+
+**Рішення:** `git pull`, перезапуск.

@@ -152,7 +152,7 @@ final class HostListPresenter {
             appendLog.accept("Змінено ціль: " + oldHost + " → " + renamed);
             redrawRoute.run();
         } catch (ConfigError ex) {
-            appendLog.accept(ex.getMessage());
+            appendLog.accept("Не вдалося змінити ціль: " + ex.getMessage());
         }
     }
 
@@ -181,7 +181,7 @@ final class HostListPresenter {
         if (!canAdd) {
             hostInput.setPromptText("Досягнуто ліміт 10 цілей у списку");
         } else {
-            hostInput.setPromptText("IP або hostname…");
+            hostInput.setPromptText("IPv4, IPv6 literal або hostname…");
         }
     }
 

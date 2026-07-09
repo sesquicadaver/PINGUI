@@ -16,10 +16,11 @@ public final class RouteProbeFactory {
     }
 
     private static RouteProbe createAuto() {
+        RouteProbe process = new ProcessRouteProbe();
         if (LinuxJnaIcmpTransport.isLinux() && RawIcmpPermission.isAvailable()) {
-            return new RawIcmpRouteProbe();
+            return new DualStackRouteProbe(new RawIcmpRouteProbe(), process);
         }
-        return new ProcessRouteProbe();
+        return process;
     }
 
     /** Human-readable label for logs and status lines. */
@@ -27,8 +28,11 @@ public final class RouteProbeFactory {
         if (mode == ProbeMode.RAW) {
             return "raw-icmp";
         }
+        if (mode == ProbeMode.PROCESS) {
+            return "process";
+        }
         if (mode == ProbeMode.AUTO && LinuxJnaIcmpTransport.isLinux() && RawIcmpPermission.isAvailable()) {
-            return "raw-icmp";
+            return "auto (v4 raw, v6 process)";
         }
         return "process";
     }

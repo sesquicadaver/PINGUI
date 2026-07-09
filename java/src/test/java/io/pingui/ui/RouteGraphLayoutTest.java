@@ -70,4 +70,15 @@ class RouteGraphLayoutTest {
         double expected = RouteGraphLayout.columnLayouts(false).active().width();
         assertTrue(RouteGraphLayout.chainUsesUniformWidth(active, expected));
     }
+
+    @Test
+    void ipv6HopLabelsUseBracketDisplay() {
+        List<HopNode> route = List.of(new HopNode(1, "2001:4860:4860::8888", 5.0, false));
+        GraphScene scene = RouteGraphLayout.buildScene(route, List.of(), ip -> 5.0);
+        GraphNode hop = scene.nodes().stream()
+                .filter(node -> node.id().contains("_hop_"))
+                .findFirst()
+                .orElseThrow();
+        assertTrue(hop.label().contains("[2001:4860:4860::8888]"));
+    }
 }

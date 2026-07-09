@@ -14,7 +14,9 @@
 | [ROADMAP.md](ROADMAP.md) | Розробник | Офіційний план: фази 0–16 (Pro/NOC + telemetry) |
 | [LIVING_SPEC.md](LIVING_SPEC.md) | Розробник | Матриця модуль → тести |
 | [ADR_IPV6.md](ADR_IPV6.md) | Розробник | Dual-stack config ADR (V6-002) |
+| [ADR_ALERTS.md](ADR_ALERTS.md) | Розробник | Route-change alerts ADR (P10-001) |
 | [SPIKE_IPV6.md](SPIKE_IPV6.md) | Розробник | IPv6 scope (**planned**, фаза 9 V6-*) |
+| [SPIKE_PERSISTENCE.md](SPIKE_PERSISTENCE.md) | Розробник | SQLite session schema (фаза 11 P11-*) |
 | [CONFIGURATION.md](CONFIGURATION.md) | Розробник | YAML, CLI (Python) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Розробник | Шари Python |
 | [MODULES.md](MODULES.md) | Розробник | Довідник модулів |

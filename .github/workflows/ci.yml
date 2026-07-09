@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, beta]
   pull_request:
 
 jobs:
@@ -21,3 +21,5 @@ jobs:
         run: bash scripts/ci_venv.sh
       - name: Check import graph
         run: .venv/bin/python scripts/check_imports.py
+      - name: Check documentation parity (UK/EN)
+        run: .venv/bin/python scripts/check_doc_parity.py

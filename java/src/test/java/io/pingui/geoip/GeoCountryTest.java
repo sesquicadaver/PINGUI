@@ -101,8 +101,59 @@ class GeoCountryTest {
     }
 
     @Test
-    void ipv6AddressReturnsNull() {
-        assertNull(GeoCountry.lookup("2001:db8::1"));
+    void ipv6LoopbackAndLinkLocalReturnLan() {
+        assertEquals("LAN", GeoCountry.lookup("::1"));
+        assertEquals("LAN", GeoCountry.lookup("fe80::1"));
+    }
+
+    @Test
+    void ipv6PublicPrefixMatch() {
+        assertEquals("US", GeoCountry.lookup("2001:4860:4860::8888"));
+        assertEquals("US", GeoCountry.lookup("2001:db8::1"));
+    }
+
+    @Test
+    void ipv6CustomHintsFile(@TempDir Path tempDir) throws Exception {
+        Path hints = tempDir.resolve("hints.yaml");
+        java.nio.file.Files.writeString(
+                hints,
+                """
+                prefixes:
+                  8.8.8.0/24: US
+                prefixes_v6:
+                  2001:db8:1::/64: PL
+                """,
+                java.nio.charset.StandardCharsets.UTF_8);
+        GeoCountry.configure(true, hints);
+        assertEquals("PL", GeoCountry.lookup("2001:db8:1::42"));
+    }
+
+    @Test
+    void v6OnlyHintsFile(@TempDir Path tempDir) throws Exception {
+        Path hints = tempDir.resolve("hints.yaml");
+        java.nio.file.Files.writeString(
+                hints, "prefixes_v6:\n  2001:db8:1::/64: PL\n", java.nio.charset.StandardCharsets.UTF_8);
+        GeoCountry.configure(true, hints);
+        assertEquals("PL", GeoCountry.lookup("2001:db8:1::42"));
+        assertNull(GeoCountry.lookup("8.8.8.8"));
+    }
+
+    @Test
+    void invalidIpv6HintsMappingRejected(@TempDir Path tempDir) throws Exception {
+        Path hints = tempDir.resolve("bad.yaml");
+        java.nio.file.Files.writeString(
+                hints, "prefixes:\n  8.8.8.0/24: US\nprefixes_v6: []\n", java.nio.charset.StandardCharsets.UTF_8);
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class, () -> GeoCountry.configure(true, hints));
+    }
+
+    @Test
+    void invalidIpv6CidrRejected(@TempDir Path tempDir) throws Exception {
+        Path hints = tempDir.resolve("bad.yaml");
+        java.nio.file.Files.writeString(
+                hints, "prefixes_v6:\n  8.8.8.0/24: US\n", java.nio.charset.StandardCharsets.UTF_8);
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class, () -> GeoCountry.configure(true, hints));
     }
 
     @Test

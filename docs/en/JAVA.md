@@ -1,8 +1,8 @@
-> **Language:** [Ukrainian](../JAVA.md) · English
+> **Language:** English · [Українська](../JAVA.md)
 
-# PINGUI Java — architecture and deployment
+# PINGUI Java — Architecture and Deployment
 
-Cross-platform implementation in the [`java/`](../java/) directory.
+Cross-platform implementation in the [`java/`](../../java/) directory.
 
 ## Goal
 
@@ -19,8 +19,8 @@ Enable route monitoring **independently of OS** without Python/PyQt6 and without
 
 ## Limitations
 
-- **IPv4-only** for targets and raw ICMP (`HostsConfig` validator, `RawIcmpRouteProbe` / `AF_INET`).
-- IPv6 — out of scope for `main`; see [ROADMAP.md](ROADMAP.md) phase 7.
+- **Raw ICMP** — Linux only (`AF_INET` / `AF_INET6`); `probe: auto` keeps IPv6 literals on subprocess trace (V6-044); `probe: raw` uses raw v6 with `cap_net_raw`.
+- **Hostname AAAA** — trace: OS resolve; expert ping `-6`: AAAA via `HostAddressResolver` (V6-055).
 
 ## CLI vs YAML profile
 
@@ -40,12 +40,12 @@ Python uses scapy + raw ICMP. Java supports two backends:
 | Backend | Class | OS | Requirements |
 |---------|-------|-----|--------------|
 | **process** (default) | `ProcessRouteProbe` | Linux, macOS, Windows | `traceroute` / `tracert` in PATH |
-| **raw-icmp** (Linux) | `RawIcmpRouteProbe` | Linux | JNA + `CAP_NET_RAW` or root |
-| **auto** | `RouteProbeFactory` | All | Linux + cap → raw, else process |
+| **raw-icmp** (Linux) | `RawIcmpRouteProbe` | Linux | JNA + `CAP_NET_RAW`; v4 and v6 literal with `probe: raw` |
+| **auto** | `RouteProbeFactory` | Linux + cap → raw for v4/hostname, process for v6 literal |
 
 CLI: `--probe auto|process|raw` (default: `auto`).
 
-> **Performance:** on **Windows** subprocess trace via `tracert` is orders of magnitude slower than Linux `traceroute` (`-q 1`). For production monitoring **Linux** is recommended; on Windows — **Ping only** or large `interval`. See [DEPLOYMENT.md#os-recommendation](DEPLOYMENT.md#os-recommendation).
+> **Performance:** on **Windows** subprocess trace via `tracert` is orders of magnitude slower than Linux `traceroute` (`-q 1`). For production monitoring **Linux** is recommended; on Windows use **Ping only** or a large `interval`. See [DEPLOYMENT.md](DEPLOYMENT.md#os-recommendation).
 
 ### ProcessRouteProbe (subprocess)
 
@@ -63,16 +63,16 @@ Parsers: `UnixTraceOutputParser`, `WindowsTraceOutputParser`. Factory: `TraceCom
 |------|----------|
 | **IPv6 trace output** | Literal v6: `-6` in traceroute/tracert + v6 parsers (fixtures `unix_v6_*`, `win_v6_*`). Hostname AAAA — OS resolve, not PINGUI |
 | **ASN / IGP labels** | Not parsed; hop IP taken from first IPv4 token or `[IP]` |
-| **Unix hostname hops** | Token after hop number stored as «IP» (may be hostname) |
+| **Unix hostname hops** | Token after hop number stored as “IP” (may be hostname) |
 | **Windows localization** | Timeout: `timed out`, `timeout`, `перевищ…`; RTT: `ms` / `мс`, `<1 ms` → 0.5 |
 | **GNU inetutils** | Flavor without `-n`; `-n` gives exit 64 — detection via `traceroute --version` |
 | **Mixed trace formats** | Classic vertical traceroute/tracert only; MTR/JSON — out of scope |
 
 ### RawIcmpRouteProbe (JNA, Linux)
 
-Incremental TTL 1..N via raw ICMP socket (parity with Python `trace_route`).
+Incremental TTL/hop limit 1..N via raw ICMP socket (IPv4 `IP_TTL`, IPv6 `IPV6_UNICAST_HOPS`).
 
-Requires: `sudo setcap cap_net_raw+ep` on JDK binary or run as root.
+Requires: `sudo setcap cap_net_raw+ep` on JDK binary or run as root. IPv6 literal with `probe: raw`; with `probe: auto` — subprocess `traceroute -6`.
 
 ## Monitor layer
 
@@ -80,7 +80,7 @@ Requires: `sudo setcap cap_net_raw+ep` on JDK binary or run as root.
 
 1. Collects enabled hosts.
 2. `RoutePoller.pollHostRoute()` → `RouteProbe.trace()`.
-3. If expert ping configured for host — `ExpertPingEnricher` runs `ping -c 1` with extra flags.
+3. If expert ping is configured for a host — `ExpertPingEnricher` runs `ping -c 1` with extra flags.
 4. Callbacks: `onDataReceived`, `onRouteChanged`, `onProbeError`.
 
 Store/history/change detection logic — port from Python (`SessionStore`, `RouteHistory`, `RouteChangeDetector`).
@@ -90,8 +90,8 @@ Store/history/change detection logic — port from Python (`SessionStore`, `Rout
 `MainController` (JavaFX):
 
 - **About** / **Help** (F1) menu — `AppMenuDialogs`
-- **Tracing profile** selection (ComboBox + new/delete); all profiles in one YAML
-- **Expert** checkbox → **Exten.** button on host row → `PingExpertDialog` (catalog from `pingMan.txt`, without `-c/-w/-W/-i` etc.)
+- **Trace profile** selection (ComboBox + new/delete); all profiles in one YAML
+- **“Expert”** checkbox → **Exten.** button on host row → `PingExpertDialog` (catalog from `pingMan.txt`, without `-c/-w/-W/-i` etc.)
 - `ListView<HostItem>` + CheckBox in cell
 - **GraphCanvas** — vertical graph, inactive/active columns
 - Log `TextArea`
@@ -126,7 +126,7 @@ hosts:
   - "google.com"
 ```
 
-Legacy auto-migrates to `default` profile. Save from Java UI writes v2.
+Legacy auto-migrates to profile `default`. Save from Java UI writes v2.
 
 Default file: `java/config/hosts.example.yaml` (working directory — `java/`).
 
@@ -147,7 +147,7 @@ gradlew.bat build
 pingui-java.bat --package    REM .msi
 ```
 
-Tests and CI — **`beta`** branch.
+Tests and CI — branch **`beta`**.
 
 ## MVP parity matrix
 
@@ -166,4 +166,4 @@ Tests and CI — **`beta`** branch.
 
 ## Future
 
-See backlog on **`beta`** branch.
+See backlog on branch **`beta`**.

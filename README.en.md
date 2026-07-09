@@ -1,8 +1,9 @@
-> **Language:** [Ukrainian](README.md) · English
-
 # PINGUI
 
+> **Language:** English · [Українська](README.md)
+
 ![Java CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/java.yml/badge.svg)
+![Python CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/ci.yml/badge.svg)
 
 Cross-platform route and RTT monitor for up to 10 targets simultaneously (Java 21 + JavaFX).
 Data is stored **in RAM only** for the session.
@@ -48,7 +49,7 @@ Requirements: **JDK 21** ([Eclipse Temurin](https://adoptium.net/temurin/release
 - **Expert ping** (Linux, iputils) — **Exten.** dialog per host
 - Tracing via `traceroute` / `tracert` (no `CAP_NET_RAW` by default)
 - Optional on Linux: raw ICMP (`probe: auto|raw` + `cap_net_raw`)
-- **Dual-stack config:** IPv6 literals in YAML (RFC 5952); subprocess trace v6 — phase 9 ([docs/en/DEPLOYMENT.md](docs/en/DEPLOYMENT.md))
+- **Dual-stack config:** IPv6 literals in YAML (RFC 5952); subprocess `traceroute -6` on Python `beta` (Linux/macOS); Java — phase 9 ([docs/en/DEPLOYMENT.md](docs/en/DEPLOYMENT.md))
 
 ## CLI
 
@@ -81,7 +82,7 @@ PINGUI/
 ├── tests/                # pytest (beta)
 ├── docs/
 │   ├── en/               # English documentation
-│   └── …                 # Ukrainian documentation
+│   └── *.md              # Ukrainian documentation
 └── CHANGELOG.md
 ```
 
@@ -89,14 +90,15 @@ PINGUI/
 
 | File | Purpose |
 |------|---------|
-| [java/README.en.md](java/README.en.md) | Launch, Gradle, GUI, YAML |
 | [docs/en/README.md](docs/en/README.md) | Documentation index (EN) |
 | [docs/README.md](docs/README.md) | Індекс документації (UA) |
+| [java/README.en.md](java/README.en.md) | Launch, Gradle, GUI, YAML (EN) |
+| [java/README.md](java/README.md) | Запуск, Gradle, GUI, YAML (UA) |
 | [docs/en/CHECKLIST.md](docs/en/CHECKLIST.md) | Checklist Linux / Windows / macOS |
 | [docs/en/DEPLOYMENT.md](docs/en/DEPLOYMENT.md) | Deployment |
 | [docs/en/JAVA.md](docs/en/JAVA.md) | Java edition architecture |
 | [docs/en/ROADMAP.md](docs/en/ROADMAP.md) | Fix plan |
-| [CHANGELOG.en.md](CHANGELOG.en.md) | Change history |
+| [CHANGELOG.md](CHANGELOG.md) | Change history |
 
 Python: `./pingui.sh` on branch **`beta`** (venv). Java: `cd java && ./gradlew check`.
 

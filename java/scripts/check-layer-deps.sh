@@ -12,9 +12,15 @@ check_no_ui_imports() {
   if [[ ! -d "$dir" ]]; then
     return
   fi
-  if rg -q 'import io\.pingui\.ui\.' "$dir" 2>/dev/null; then
+  local matches
+  if command -v rg >/dev/null 2>&1; then
+    matches="$(rg -l 'import io\.pingui\.ui\.' "$dir" 2>/dev/null || true)"
+  else
+    matches="$(grep -R -l --include='*.java' 'import io\.pingui\.ui\.' "$dir" 2>/dev/null || true)"
+  fi
+  if [[ -n "$matches" ]]; then
     echo "ERROR: io.pingui.$layer must not import io.pingui.ui"
-    rg 'import io\.pingui\.ui\.' "$dir" || true
+    echo "$matches"
     VIOLATIONS=$((VIOLATIONS + 1))
   fi
 }

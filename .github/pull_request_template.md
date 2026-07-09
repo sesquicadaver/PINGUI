@@ -6,6 +6,7 @@
 
 - [ ] Updated `docs/LIVING_SPEC.md` if behavior/modules changed
 - [ ] Updated `docs/en/LIVING_SPEC.md` (English) if applicable
+- [ ] If docs changed: `python3 scripts/check_doc_parity.py` passes (UK/EN parity)
 
 ## Anti-stub review
 

@@ -14,8 +14,13 @@ class RouteProbeFactoryTest {
     }
 
     @Test
-    void autoModeFallsBackToProcessWhenRawUnavailable() {
+    void autoModeUsesDualStackWhenRawAvailable() {
         RouteProbe probe = RouteProbeFactory.create(ProbeMode.AUTO);
-        assertInstanceOf(RouteProbe.class, probe);
+        if (io.pingui.probe.icmp.LinuxJnaIcmpTransport.isLinux()
+                && io.pingui.probe.icmp.RawIcmpPermission.isAvailable()) {
+            assertInstanceOf(DualStackRouteProbe.class, probe);
+        } else {
+            assertInstanceOf(ProcessRouteProbe.class, probe);
+        }
     }
 }

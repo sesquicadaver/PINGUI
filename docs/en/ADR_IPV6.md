@@ -1,4 +1,4 @@
-> **Language:** [Ukrainian](../ADR_IPV6.md) · English
+> **Language:** English · [Українська](../ADR_IPV6.md)
 
 # ADR: Dual-stack host addresses (V6-002)
 
@@ -12,16 +12,16 @@ PINGUI accepted only IPv4 literals and hostnames. Incremental IPv6 support is ne
 ## Decision
 
 1. **`HostAddressParser`** — single normalizer for YAML and UI session.
-2. **IPv6 literal** — RFC 5952 canonical (`2001:db8::1`); brackets `[...]` stripped; zone ID (`%eth0`) — reject.
+2. **IPv6 literal** — RFC 5952 canonical (`2001:db8::1`); brackets `[...]` are stripped; zone ID (`%eth0`) — reject.
 3. **Duplicate key** — canonical v6 lowercase; hostname case-insensitive; IPv4 as-is.
 4. **Mixed profiles** — IPv4 + IPv6 hosts in one `TracingProfile`.
 5. **Probe/trace** — separate tasks V6-020+; config may contain v6 before trace is ready.
 
 ## Consequences
 
-- `HostsConfig.normalizeHostEntry` delegates to parser.
+- `HostsConfig.normalizeHostEntry` delegates to the parser.
 - `ProfilesConfig` duplicate detection via `HostAddressParser.duplicateKey`.
-- Documentation: dual-stack config; trace/raw ICMP — per ROADMAP phase 9.2+.
+- Documentation: config dual-stack; trace/raw ICMP — per [ROADMAP](ROADMAP.md) phase 9.2+.
 
 ## References
 

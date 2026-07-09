@@ -1,8 +1,9 @@
-> **Мова:** Українська · [English](README.en.md)
-
 # PINGUI
 
+> **Мова:** Українська · [English](README.en.md)
+
 ![Java CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/java.yml/badge.svg)
+![Python CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/ci.yml/badge.svg)
 
 Крос-платформний монітор маршрутів і RTT до 10 цілей одночасно (Java 21 + JavaFX).
 Дані зберігаються **лише в RAM** протягом сесії.
@@ -48,7 +49,7 @@ pingui-java.bat
 - **Expert ping** (Linux, iputils) — діалог **Exten.** на хост
 - Трасування через `traceroute` / `tracert` (без `CAP_NET_RAW` за замовч.)
 - Опційно на Linux: raw ICMP (`probe: auto|raw` + `cap_net_raw`)
-- **Dual-stack config:** IPv6 literal у YAML (RFC 5952); subprocess trace v6 — фаза 9 ([docs/DEPLOYMENT.md](docs/DEPLOYMENT.md))
+- **Dual-stack config:** IPv6 literal у YAML (RFC 5952); subprocess `traceroute -6` на Python `beta` (Linux/macOS); Java — фаза 9 ([docs/DEPLOYMENT.md](docs/DEPLOYMENT.md))
 
 ## CLI
 
@@ -81,7 +82,7 @@ PINGUI/
 ├── tests/                # pytest (beta)
 ├── docs/
 │   ├── en/               # English documentation
-│   └── …                 # Українська документація
+│   └── *.md              # Ukrainian documentation
 └── CHANGELOG.md
 ```
 
@@ -89,9 +90,10 @@ PINGUI/
 
 | Файл | Призначення |
 |------|-------------|
-| [java/README.md](java/README.md) | Запуск, Gradle, GUI, YAML |
-| [docs/README.md](docs/README.md) | Індекс документації (UA) |
+| [docs/README.md](docs/README.md) | Індекс документації (UK) |
 | [docs/en/README.md](docs/en/README.md) | Documentation index (EN) |
+| [java/README.md](java/README.md) | Запуск, Gradle, GUI, YAML (UK) |
+| [java/README.en.md](java/README.en.md) | Launch, Gradle, GUI, YAML (EN) |
 | [docs/CHECKLIST.md](docs/CHECKLIST.md) | Checklist Linux / Windows / macOS |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Розгортання |
 | [docs/JAVA.md](docs/JAVA.md) | Архітектура Java-редакції |

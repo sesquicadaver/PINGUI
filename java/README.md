@@ -2,6 +2,8 @@
 
 # PINGUI Java
 
+> **Мова:** Українська · [English](README.en.md)
+
 Крос-платформова версія PINGUI на **Java 21 + JavaFX**.
 
 Працює на **Linux, macOS та Windows**: трасування через системні
@@ -75,6 +77,9 @@ gradlew.bat run        # Windows
 | `--max-hops` | *(з YAML)* | Перезапис max hop, **лише якщо передано** |
 | `--timeout` | *(з YAML)* | Перезапис probe timeout (с), **лише якщо передано** |
 | `--probe` | *(з YAML)* | Перезапис `auto`/`process`/`raw`, **лише якщо передано** |
+| `--alert-webhook` | off | POST JSON `RouteChangeEvent` при зміні маршруту |
+| `--desktop-alerts` | off | Linux `notify-send` при зміні маршруту |
+| `--alert-rate-limit` | `10` | Макс. алертів на host / годину |
 | `--geoip-hints` | `config/geoip_hints.yaml` | Offline CIDR→країна |
 | `--no-geoip` | off | Вимкнути країну в підписах |
 | `--verbose` | off | Debug-лог |
@@ -83,11 +88,11 @@ CLI **не затирає** поля профілю defaults (1.0 / 20 / 0.5 / a
 
 ## GUI
 
-- **Про** / **Довідка** — меню з діалогами «Про PINGUI…» та «Довідка…» (F1)
+- **Про** / **Довідка** — меню з діалогами «Про PINGUI…» та «Довідка…» (F1); dual-stack IPv4/IPv6 literal
 - **Профілі трасування**: кілька named-профілів у YAML, перемикання в UI
 - Список до **10 цілей**, чекбокс = активне трасування; **Ping only** = лише ping без trace
 - **Додати / Змінити / Видалити / Зберегти** → YAML
-- **Експерт** (Linux): **Exten.** → параметри `ping(8)` iputils; на Win/mac disabled
+- **Експерт** (Linux): **Exten.** → параметри `ping(8)` iputils; один AF (`-4` або `-6`, default IPv4); на Win/mac disabled
 - **Простий** / **Розширений**: метрики RTT, loss %, граф маршруту, лог змін
 
 ## Архітектура
@@ -98,7 +103,7 @@ io.pingui
 ├── model/           HopNode, RouteSnapshot
 ├── probe/           RouteProbeFactory, ProcessRouteProbe, TraceCommandBuilder,
                        UnixTraceOutputParser, WindowsTraceOutputParser, ProcessExpertPing
-├── monitor/         SessionStore, MonitorService, ExpertPingEnricher
+├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
 └── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,
                        MonitorLifecycle, ViewModeController, RouteGraphPresenter, GraphCanvas
 ```

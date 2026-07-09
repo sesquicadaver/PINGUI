@@ -1,11 +1,11 @@
-> **Language:** [Ukrainian](../ARCHITECTURE.md) · English
+> **Language:** English · [Українська](../ARCHITECTURE.md)
 
-# PINGUI architecture
+# PINGUI Architecture
 
 ## Overview
 
-PINGUI is a single-process desktop app: **PyQt6 GUI** + **background QThread worker** + **in-memory SessionStore**.
-Network operations (ICMP) are isolated in the `icmp/` layer; polling business logic is in `monitor/polling.py` without Qt dependency.
+PINGUI is a single-process desktop application: **PyQt6 GUI** + **background QThread worker** + **in-memory SessionStore**.
+Network operations (ICMP) are isolated in the `icmp/` layer; polling business logic lives in `monitor/polling.py` without Qt dependencies.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -50,15 +50,15 @@ Network operations (ICMP) are isolated in the `icmp/` layer; polling business lo
 
 Per host:
 
-- `current_route` — last trace;
+- `current_route` — latest trace;
 - `previous_route` — previous chain on IP sequence change;
-- `last_known_by_hop` — last known IP at each hop (for gray chain);
+- `last_known_by_hop` — last known IP per hop (for gray chain);
 - `ping_history[ip]` — up to 50 RTT samples per IP;
 - `enabled` — active tracing flag.
 
 ## GraphCanvas
 
-- Vertical layout: «Your PC» → hop 1 → … → target.
+- Vertical layout: “Your PC” → hop 1 → … → target.
 - Two columns: **left** — `inactive_route()` (gray), **right** — `current_route`.
 - Node color by average RTT (`ping_color`: green / yellow / red / gray).
 
@@ -78,7 +78,7 @@ ui ← config, models, monitor
 __main__ ← config, icmp, ui, logging_setup
 ```
 
-Cyclic imports forbidden; check: `scripts/check_imports.py`.
+Circular imports forbidden; check: `scripts/check_imports.py`.
 
 ## ADR: Scapy for ICMP
 
@@ -90,4 +90,4 @@ more reliable parsing of TTL-exceeded / echo reply on Linux. Requires `CAP_NET_R
 - No persistence between sessions by default (RAM-only MVP).
 - Optional: `--session-db PATH` (SQLite routes/ping/enabled) — see `persistence/session_db.py`.
 - No separate backend/API server.
-- IPv6 not supported (IPv4 only).
+- IPv6 literals in YAML (RFC 5952); subprocess `traceroute -6` for v6 trace; raw ICMP remains v4-only.

@@ -1,7 +1,9 @@
 package io.pingui.ui;
 
+import io.pingui.config.AlertConfig;
 import io.pingui.config.HostEntry;
 import io.pingui.config.TracingProfile;
+import io.pingui.monitor.AlertDispatchers;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
 
@@ -10,9 +12,16 @@ final class MonitorLifecycle {
 
     private MonitorLifecycle() {}
 
-    static MonitorService create(TracingProfile profile, SessionStore store, MonitorService.Listener listener) {
+    static MonitorService create(
+            TracingProfile profile,
+            String profileName,
+            SessionStore store,
+            MonitorService.Listener listener,
+            AlertConfig alerts) {
         MonitorService service = new MonitorService(
                 profile.intervalSeconds(), profile.maxHops(), profile.timeoutSeconds(), profile.probeMode());
+        service.setAlertProfileName(profileName);
+        service.setAlertDispatcher(AlertDispatchers.build(alerts));
         service.setExpertResolver(store::getPingExpert);
         service.setPingOnlyResolver(store::isPingOnly);
         service.setListener(listener);

@@ -1,15 +1,15 @@
-> **Language:** [Ukrainian](../CONTRIBUTING.md) · English
+> **Language:** English · [Українська](../CONTRIBUTING.md)
 
 # Contributing to PINGUI
 
-Thank you for your interest in the project. This document describes the change process in the repository.
+Thank you for your interest in the project. This document describes the process for making changes to the repository.
 
-## Before PR
+## Before Opening a PR
 
-1. `./pingui.sh --deploy` in venv — all gates green.
-2. Update [LIVING_SPEC.md](LIVING_SPEC.md) when behavior or modules change.
-3. Add/update tests for new logic.
-4. Documentation: README or the relevant file in `docs/` (see [README.md](README.md)).
+1. Run `./pingui.sh --deploy` in venv — all gates must pass.
+2. Update [LIVING_SPEC.md](../LIVING_SPEC.md) when behavior or modules change.
+3. Add or update tests for new logic.
+4. Documentation: README or the relevant file in `docs/` and `docs/en/` (see [README.md](README.md)). When behavior changes, update **both** language versions.
 
 ## Branches
 
@@ -20,23 +20,23 @@ Thank you for your interest in the project. This document describes the change p
 
 Template: `.github/pull_request_template.md`
 
-### Required checklist
+### Required Checklist
 
 - [ ] `./pingui.sh --deploy` or `./scripts/ci_venv.sh` passes
-- [ ] [LIVING_SPEC.md](LIVING_SPEC.md) updated
+- [ ] [LIVING_SPEC.md](../LIVING_SPEC.md) updated
 - [ ] Anti-stub: no unjustified stubs in `src/pingui/`
 - [ ] Manual QA (if UI or network changed) — checklist in README
 
-### Anti-stub review
+### Anti-stub Review
 
 Separate review item:
 
-- No `pass` / `return None` / `Mock` in production unless temporary with `TODO(#issue)`.
+- No `pass` / `return None` / `Mock` in production unless temporarily marked with `TODO(#issue)`.
 - Worker, tracer, store — real logic, not no-op.
 
-## Commit style
+## Commit Style
 
-Short imperative subject, in English (as in repo history):
+Short imperative subject in English (consistent with repo history):
 
 ```
 Add host rename validation in session store
@@ -44,7 +44,7 @@ Add host rename validation in session store
 Fix probe timeout handling when TTL exceeds max hops.
 ```
 
-## Code review
+## Code Review
 
 Expectations:
 
@@ -53,7 +53,7 @@ Expectations:
 - Thread-safety for worker API.
 - Injectable transport for testable ICMP.
 
-## Bug reports
+## Bug Reports
 
 Include:
 

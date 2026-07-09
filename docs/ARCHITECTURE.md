@@ -4,7 +4,7 @@
 
 ## Огляд
 
-PINGUI — desktop-додаток в одному процесі: **PyQt6 GUI** + **фоновий worker у QThread** + **in-memory SessionStore**.
+PINGUI — однопроцесний desktop-додаток: **PyQt6 GUI** + **фоновий QThread worker** + **in-memory SessionStore**.
 Мережеві операції (ICMP) ізольовані в шарі `icmp/`; бізнес-логіка опитування — у `monitor/polling.py` без залежності від Qt.
 
 ```
@@ -35,11 +35,11 @@ PINGUI — desktop-додаток в одному процесі: **PyQt6 GUI** 
 
 ## Потік даних (один цикл worker)
 
-1. Worker збирає **увімкнені** цілі (`set_host_enabled`).
+1. Worker збирає список **enabled** цілей (`set_host_enabled`).
 2. Для кожної цілі: `poll_host_route(host, previous_ips)`.
 3. `trace_route` надсилає ICMP з TTL=1..max_hops через `ScapyProbeTransport`.
-4. Timeout hop → `HopNode.timeout()` (`ip="*"`).
-5. `detect_route_change` порівнює ланцюжок IP з попереднім.
+4. Timeout-hop → `HopNode.timeout()` (`ip="*"`).
+5. `detect_route_change` порівнює IP-ланцюг з попереднім.
 6. Сигнали:
    - `data_received(host, RouteSnapshot)` — завжди при успіху;
    - `route_changed(host, old_ips, new_ips)` — лише при зміні;
@@ -48,27 +48,27 @@ PINGUI — desktop-додаток в одному процесі: **PyQt6 GUI** 
 
 ## SessionStore
 
-На хост:
+На хост зберігається:
 
 - `current_route` — останній trace;
-- `previous_route` — попередній ланцюжок при зміні послідовності IP;
-- `last_known_by_hop` — останній відомий IP на кожному hop (для сірого ланцюжка);
-- `ping_history[ip]` — до 50 зразків RTT на IP;
-- `enabled` — прапор активного трасування.
+- `previous_route` — попередній ланцюг при зміні IP-послідовності;
+- `last_known_by_hop` — останній відомий IP на кожному hop (для сірого ланцюга);
+- `ping_history[ip]` — до 50 RTT-зразків на IP;
+- `enabled` — прапорець активного трасування.
 
 ## GraphCanvas
 
-- Вертикальний layout: «Your PC» → hop 1 → … → ціль.
+- Вертикальний layout: «Ваш ПК» → hop 1 → … → ціль.
 - Дві колонки: **ліворуч** — `inactive_route()` (сірий), **праворуч** — `current_route`.
-- Колір вузла за середнім RTT (`ping_color`: green / yellow / red / gray).
+- Колір вузла за середнім RTT (`ping_color`: зелений / жовтий / червоний / сірий).
 
-## Thread safety
+## Потокобезпека
 
-- `LightweightMonitorWorker` — mutex (`threading.Lock`) на списках хостів, enabled, last_routes.
-- `SessionStore` — лише GUI thread (оновлення через Qt signals/slots).
+- `LightweightMonitorWorker` — mutex (`threading.Lock`) на списки хостів, enabled, last_routes.
+- `SessionStore` — лише в GUI-потоці (оновлення через Qt signals/slots).
 - Coverage: `concurrency = ["thread"]` у pytest-cov.
 
-## Залежності пакетів
+## Залежності між пакетами
 
 ```
 config ← models
@@ -85,9 +85,9 @@ __main__ ← config, icmp, ui, logging_setup
 `icmp/raw_socket.py` використовує **scapy** замість ручної збірки IP/ICMP заголовків:
 надійніший парсинг TTL-exceeded / echo reply на Linux. Потрібен `CAP_NET_RAW` або root.
 
-## Поза scope MVP
+## Що поза scope MVP
 
-- За замовч. немає persistence між сесіями (RAM-only MVP).
+- Немає персистентності між сесіями за замовчуванням (RAM-only MVP).
 - Опційно: `--session-db PATH` (SQLite routes/ping/enabled) — див. `persistence/session_db.py`.
-- Окремий backend/API server відсутній.
-- IPv6 не підтримується (лише IPv4).
+- Немає окремого backend/API-сервера.
+- IPv6 literal у YAML (RFC 5952); subprocess `traceroute -6` для v6 trace; raw ICMP лишається v4-only.

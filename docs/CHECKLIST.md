@@ -10,6 +10,61 @@ Python-редакція та тести — гілка **`beta`**.
 
 Деталі: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 
+### Python daemon smoke (beta)
+
+- [ ] `./pingui.sh --deploy` — venv + doc parity
+- [ ] `.venv/bin/python -m pingui monitor --config config/hosts.example.yaml` — foreground headless (Ctrl+C)
+- [ ] `.venv/bin/python -m pingui daemon --session-db data/ping.db --pid-file /tmp/pingui.pid`
+- [ ] `.venv/bin/python -m pingui status --pid-file /tmp/pingui.pid` → running
+- [ ] `.venv/bin/python -m pingui stop --pid-file /tmp/pingui.pid`
+
+### Python IPv6 smoke (beta, Linux/macOS)
+
+- [ ] `traceroute -6` встановлено (`which traceroute`)
+- [ ] YAML з `::1` або `2001:db8::1`: `load_hosts_config` без помилки
+- [ ] `.venv/bin/python -c "from pingui.icmp.tracer import trace_route; print(trace_route('::1', max_hops=3))"` — ≥1 hop
+- [ ] GeoIP v6: `country_code_for_ip('2001:4860:4860::8888')` → `US` (з `config/geoip_hints.yaml`)
+
+### Java IPv6 UI smoke (beta)
+
+- [ ] Довідка (F1) згадує IPv4/IPv6 literal
+- [ ] Додати ціль `2001:db8::1` — нормалізується в лог; невалідна `not:valid:ipv6` → помилка в журналі
+- [ ] Граф hop з v6 показує IP у дужках `[2001:4860:4860::8888]`
+
+### Java IPv6 process trace smoke (Linux, V6-070)
+
+- [ ] `traceroute -6 ::1` — ≥1 hop (потрібен `traceroute` у PATH)
+- [ ] Профіль YAML з `2001:db8::1` — trace без «No hops parsed»
+- [ ] `./gradlew test --tests io.pingui.probe.ProcessRouteProbeTest` — `unix_v6_*` green
+- [ ] Ping-only на v6 literal — RTT оновлюється без crash
+- [ ] `./gradlew test --tests io.pingui.probe.ProcessRouteProbeTest.v4FixturesRemainGreen` — v4 regression (CI)
+
+### Java IPv6 smoke (Windows, optional — V6-071)
+
+- [ ] `tracert -6 ::1` завершується (повільно; Ping only рекомендовано для production)
+- [ ] `./gradlew test --tests io.pingui.probe.ProcessRouteProbeTest.parseWindowsIpv6*` — `win_v6_*` green
+
+### Java IPv6 raw ICMP smoke (Linux optional, V6-040…043)
+
+- [ ] `./gradlew test --tests io.pingui.probe.icmp.IcmpV6PacketTest` — packet build/parse (CI)
+- [ ] `./gradlew test --tests io.pingui.probe.icmp.LinuxCLibraryTest` — `sockaddr_in6` layout (Linux CI)
+- [ ] `./gradlew test --tests io.pingui.probe.RawIcmpRouteProbeTest.traceIpv6UsesHopLimitSequence` — hop-limit trace (CI)
+- [ ] YAML `probe: raw` + `cap_net_raw` + ціль `::1` — trace без crash (ручний)
+
+### Python alert smoke (beta)
+
+- [ ] `python -m pingui monitor --alert-webhook http://127.0.0.1:9/hook` — старт без crash (webhook недоступний → log)
+- [ ] `python -m pingui run --desktop-alerts` — GUI + notify-send при зміні маршруту (Linux)
+- [ ] `python -m pingui daemon --alert-webhook URL --session-db data/ping.db` — route change → POST JSON
+
+### Java alert smoke (beta, Linux)
+
+- [ ] `./gradlew test --tests io.pingui.monitor.WebhookAlertDispatcherTest` — contract POST JSON (CI)
+- [ ] `./gradlew test --tests io.pingui.monitor.AlertRateLimiterTest` — burst rate limit (CI)
+- [ ] `./pingui-java.sh --alert-webhook http://127.0.0.1:9/hook` — старт без crash (webhook недоступний → WARNING)
+- [ ] `./pingui-java.sh --desktop-alerts` — GUI + `notify-send` при зміні маршруту (потрібен `libnotify-bin`)
+- [ ] YAML `alerts.webhook` / `alert_webhook` у профілі — route change → POST без CLI override
+
 ---
 
 ## Linux (Ubuntu 22.04 / 24.04 / 26.04)
@@ -219,8 +274,12 @@ chmod +x pingui-java.sh gradlew
 Перевірка відповідності README ↔ фактичний CLI:
 
 - [ ] `java/README.md` — прапорці `--config`, `--interval`, `--probe`, `--geoip-hints` збігаються з `./pingui-java.sh --help`
+- [ ] `java/README.en.md` — той самий CLI parity (EN)
 - [ ] `docs/JAVA.md` — таблиця CLI vs YAML актуальна
-- [ ] `docs/DEPLOYMENT.md` — JDK 21, Windows warning, IPv4-only
+- [ ] `docs/en/JAVA.md` — EN parity з UK
+- [ ] `docs/DEPLOYMENT.md` — JDK 21, Windows warning, dual-stack
+- [ ] `docs/en/` — перемикачі мов і відповідність з `docs/` (bilingual smoke)
+- [ ] `python3 scripts/check_doc_parity.py` — green (CI gate)
 - [ ] `docs/ROADMAP.md` — закриті задачі позначені `[x]`
 - [ ] Badge CI у `README.md` — відображає останній push
 

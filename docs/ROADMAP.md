@@ -127,7 +127,7 @@
 
 **Передумови:** `./gradlew check` green; B-064 JaCoCo gate ≥80%.
 
-**Поза scope фази 9 (окремі ticket):** Python-шар на `beta`; повний Windows expert-ping parity (див. backlog після V6-059).
+**Поза scope фази 9 (окремі ticket):** Python IPv6 — **Фаза PY.4 (PY-050…PY-052)** ✅ на `beta`; повний Windows expert-ping parity (див. backlog після V6-059).
 
 ### 9.0 — Design gate
 
@@ -168,20 +168,20 @@
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **V6-035** | [ ] `GeoCountry`: `Inet6Address` — loopback/link-local/ULA → `LAN` | `GeoCountry.java` | `GeoCountryTest` |
-| **V6-036** | [ ] `GeoCountry`: longest-prefix для IPv6 CIDR | `GeoCountry.java`, `geoip_hints.yaml` | Test: `2001:db8::/32` |
-| **V6-037** | [ ] Схема YAML: optional `prefixes_v6` (або unified map) | `GeoCountry.java`, docs | Backward compat v4 hints |
+| **V6-035** | [x] `GeoCountry`: `Inet6Address` — loopback/link-local/ULA → `LAN` | `GeoCountry.java` | `GeoCountryTest` |
+| **V6-036** | [x] `GeoCountry`: longest-prefix для IPv6 CIDR | `GeoCountry.java`, `geoip_hints.yaml` | Test: `2001:db8::/32` |
+| **V6-037** | [x] Схема YAML: optional `prefixes_v6` (або unified map) | `GeoCountry.java`, docs | Backward compat v4 hints |
 
 ### 9.4 — Raw ICMP v6 (Linux only, P2)
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **V6-040** | [ ] JNA: `AF_INET6`, `sockaddr_in6` | `LinuxSocketConstants`, `LinuxCLibrary` | Compile + struct layout test |
-| **V6-041** | [ ] ICMPv6 echo request/reply parse | `IcmpPacket.java` або `IcmpV6Packet.java` | Unit-тест без cap (build packet) |
-| **V6-042** | [ ] `LinuxJnaIcmpTransport` dual: v4/v6 socket | `LinuxJnaIcmpTransport.java` | Integration test optional; mock-friendly unit |
-| **V6-043** | [ ] `RawIcmpRouteProbe`: hop limit для v6 | `RawIcmpRouteProbe.java` | v6 target → trace hops |
+| **V6-040** | [x] JNA: `AF_INET6`, `sockaddr_in6` | `LinuxSocketConstants`, `LinuxCLibrary` | Compile + struct layout test |
+| **V6-041** | [x] ICMPv6 echo request/reply parse | `IcmpV6Packet.java` | Unit-тест без cap (build packet) |
+| **V6-042** | [x] `LinuxJnaIcmpTransport` dual: v4/v6 socket | `LinuxJnaIcmpTransport.java` | Integration test optional; mock-friendly unit |
+| **V6-043** | [x] `RawIcmpRouteProbe`: hop limit для v6 | `RawIcmpRouteProbe.java` | v6 target → trace hops |
 | **V6-044** | [x] `RouteProbeFactory`: v6 literal → process fallback при AUTO+raw | `DualStackRouteProbe.java` | Test: v6 → process, v4 → raw |
-| **V6-045** | [ ] DEPLOYMENT: cap note для ICMPv6 | `docs/DEPLOYMENT.md` | Linux-only raw v6 documented |
+| **V6-045** | [x] DEPLOYMENT: cap note для ICMPv6 | `docs/DEPLOYMENT.md`, `docs/en/DEPLOYMENT.md` | Linux-only raw v6 documented |
 
 ### 9.5 — Expert ping v6 (P1)
 
@@ -190,26 +190,28 @@
 | **V6-050** | [x] Auto `-6` у `ProcessExpertPing.buildCommand` для v6 target | `ExpertPingArgs.java` | Test: v6 target → `-6` in argv |
 | **V6-051** | [x] `ProcessHostPing`: expert args + auto v6 на Linux/macOS | `ProcessHostPing.java` | Test: args appended |
 | **V6-052** | [x] Validator: `-4` + v6 target → `ConfigError` | `ExpertPingArgs.java` | Unit-тест |
-| **V6-053** | [ ] `-F` flow label — лише з v6 target (UI hint) | `PingExpertDialog.java` | Tooltip / disable when target v4 |
+| **V6-053** | [x] `-F` flow label — лише з v6 target (UI hint) | `PingExpertDialog.java`, `ExpertPingUiRules.java` | Tooltip / disable when target v4 |
+| **V6-054** | [x] Expert ping: один AF (-4 або -6), default IPv4 | `ExpertPingArgs.java`, `PingExpertDialog.java` | Без dual-stack ping; hostname/v4 → `-4` |
+| **V6-055** | [x] Expert ping `-6`: hostname → AAAA resolve перед ping | `HostAddressResolver.java`, `PingTargetResolver.java` | Unit-тест literals + localhost |
 
 ### 9.6 — UI / docs (P1)
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **V6-060** | [ ] Help/About: dual-stack замість «IPv4-only» | `AppMenuDialogs.java`, `README.md` | Текст оновлено |
-| **V6-061** | [ ] `GraphCanvas` / labels: bracket display для довгих v6 | `GraphCanvas.java`, `RouteGraphLayout` | Manual smoke note in CHECKLIST |
-| **V6-062** | [ ] Input validation у Add Host dialog для v6 | `HostListPresenter` / dialog | Invalid v6 → log error |
-| **V6-063** | [ ] CHANGELOG + ROADMAP `[x]` при закритті підфаз | `CHANGELOG.md` | Per-sprint notes |
+| **V6-060** | [x] Help/About: dual-stack замість «IPv4-only» | `AppMenuDialogs.java`, `README.md` | Текст оновлено |
+| **V6-061** | [x] `GraphCanvas` / labels: bracket display для довгих v6 | `HopDisplay.java`, `PingColor.java` | Manual smoke note in CHECKLIST |
+| **V6-062** | [x] Input validation у Add Host dialog для v6 | `HostListPresenter` | Invalid v6 → log error |
+| **V6-063** | [x] CHANGELOG + ROADMAP `[x]` при закритті підфаз | `CHANGELOG.md` | Per-sprint notes |
 
 ### 9.7 — QA / release gate (P0)
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **V6-070** | [ ] CHECKLIST § IPv6 smoke (Linux process trace) | `docs/CHECKLIST.md` | literal v6 + ping-only |
-| **V6-071** | [ ] CHECKLIST § IPv6 smoke (Windows tracert -6) | `docs/CHECKLIST.md` | optional OS job |
-| **V6-072** | [ ] Regression: усі v4 fixtures лишаються green | CI | `./gradlew check` |
-| **V6-073** | [ ] JaCoCo: нові модулі в bundle або documented exclusion | `build.gradle.kts` | Gate ≥80% |
-| **V6-074** | [ ] Release note: «IPv6 beta» / feature flag якщо потрібно | `CHANGELOG.md` | Semver minor bump note |
+| **V6-070** | [x] CHECKLIST § IPv6 smoke (Linux process trace) | `docs/CHECKLIST.md` | literal v6 + ping-only |
+| **V6-071** | [x] CHECKLIST § IPv6 smoke (Windows tracert -6) | `docs/CHECKLIST.md` | optional OS job |
+| **V6-072** | [x] Regression: усі v4 fixtures лишаються green | `ProcessRouteProbeTest`, CI | `./gradlew check` |
+| **V6-073** | [x] JaCoCo: нові модулі в bundle або documented exclusion | `build.gradle.kts` | Gate ≥80% |
+| **V6-074** | [x] Release note: «IPv6 beta» / feature flag якщо потрібно | `CHANGELOG.md` | Semver minor bump note |
 
 ### Рекомендований порядок (фаза 9)
 
@@ -244,6 +246,120 @@ flowchart TD
 
 ---
 
+## Фаза PY — Python CLI/NOC hardening (`beta`, P0–P1)
+
+**Мета:** перетворити post-MVP Python-шар на повноцінний NOC-інструмент: launcher, документація, headless monitor, daemon; узгодження з фазами P10–P12.
+
+**Контекст:** B-01…B-06 ✅ (`--session-db`, export, GeoIP, geo-map, timeseries, jitter/loss). Фази 10–16 описані переважно Java-файлами; Python **випереджає** в P11/P15, але **відстає** в launcher, docs, daemon, alerts.
+
+**Гілка:** лише `beta` (Python-дерево на `main` не додається).
+
+**Звʼязок:** PY-S1 — перед Pro-S2; PY-S2 — передумова Python-частини P12; PY-S3 — Python parity P10.
+
+### PY.0 — CLI launcher і документація (P0)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **PY-010** | [x] `pingui.sh`: прокидання CLI-прапорців у `python -m pingui` | `pingui.sh` | `./pingui.sh --export-csv out.csv` або `./pingui.sh -- --session-db db.sqlite` працює; `--deploy`/`--help` без змін |
+| **PY-011** | [x] `CONFIGURATION.md`: повний довідник CLI + env | `docs/CONFIGURATION.md`, `docs/en/CONFIGURATION.md` | Усі прапорці з `__main__.py`; `INFLUXDB_*`, `PINGUI_TIMESCALE_DSN` |
+| **PY-012** | [x] `MODULES.md`: post-MVP Python-модулі | `docs/MODULES.md`, `docs/en/MODULES.md` | `session_db`, `export`, `geoip`, `timeseries`, `hop_stats` |
+| **PY-013** | [x] Python Living Spec: матриця модуль → тест | `docs/LIVING_SPEC.md`, `docs/en/LIVING_SPEC.md` | Секція «Python (`beta`)»; закриває прогалину B-023 для Python |
+| **PY-014** | [x] Unit: CLI `--export-html` без GUI | `tests/unit/test_main_export.py` | `main([...,"--export-html", path])` → файл існує |
+| **PY-015** | [x] Deploy gate = CI gate | `pingui.sh`, `scripts/ci_venv.sh` | `./pingui.sh --deploy` запускає `check_doc_parity.py` |
+| **PY-016** | [x] `TESTING.md`: таблиця post-MVP тестів | `docs/TESTING.md`, `docs/en/TESTING.md` | `test_session_db`, `test_timeseries`, `test_geo_*`, `test_main_export` |
+
+**Орієнтовно:** 1 sprint (≤ 1 день на ticket).
+
+### PY.1 — Monitor loop без Qt (P1)
+
+**Проблема:** `LightweightMonitorWorker` = `QThread`; headless/daemon неможливий без PyQt.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **PY-020** | [x] `MonitorLoop` на stdlib `threading` | `monitor/monitor_loop.py` | Цикл enabled hosts → `poll_host_route()`; callbacks замість Qt signals |
+| **PY-021** | [x] `LightweightMonitorWorker` — тонка обгортка | `monitor/worker.py` | Worker делегує в `MonitorLoop`; існуючі Qt-тести green |
+| **PY-022** | [x] Єдиний `enabled` state | `session_store.py`, `worker.py`, `ui/main_window.py` | Прибрати дубль `worker._enabled` vs `HostSessionData.enabled` |
+| **PY-023** | [x] CLI subcommands: `run` \| `export` \| `monitor` \| `daemon` \| `stop` \| `status` | `src/pingui/__main__.py` | `argparse` subparsers; backward compat: без subcommand = `run` |
+
+**Орієнтовно:** 1–2 sprint. **Передумова** для PY-030…034 і Python P12.
+
+### PY.2 — Headless daemon (P1) — Python parity з P12
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **PY-030** | [x] `daemon`: без PyQt, лише `MonitorLoop` | `__main__.py`, `monitor/daemon_runner.py` | `python -m pingui daemon --session-db PATH` — процес не завершується |
+| **PY-031** | [x] PID file + `stop` / `status` | `monitor/daemon_runner.py` | Contract test start/stop |
+| **PY-032** | [x] `systemd/pingui.service.example` | `systemd/` | `Type=simple`, `Restart=on-failure`, `User=` |
+| **PY-033** | [x] DEPLOYMENT § Python NOC headless | `docs/DEPLOYMENT.md` | `--session-db`, daemon flags |
+| **PY-034** | [x] CHECKLIST § Python daemon smoke | `docs/CHECKLIST.md` | start → status → stop |
+
+**Орієнтовно:** 1–2 sprint. **Паралельно** з P12-001…P12-040 (Java).
+
+### PY.3 — Alerts Python (P0) — parity з P10
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **PY-040** | [x] `RouteChangeEvent` у `models.py` | `models.py`, `tests/unit/test_route_change_event.py` | Serialize/deserialize JSON; спільний контракт з P10-010 |
+| **PY-041** | [x] `AlertDispatcher` + `WebhookAlertDispatcher` | `monitor/alert_dispatcher.py` | POST JSON; contract test з mock HTTP |
+| **PY-042** | [x] CLI `--alert-webhook URL` | `__main__.py` | Secret не в логах; помилка мережі → log, не crash |
+| **PY-043** | [x] Desktop notify (`notify-send`) | `monitor/desktop_notifier.py` | Linux smoke: route change → notification |
+| **PY-044** | [x] Rate limit alerts | `monitor/alert_rate_limiter.py` | Unit-тест burst per host |
+| **PY-045** | [x] Daemon + alerts | `daemon_runner.py` | Route change → webhook без GUI (Python P12-030) |
+
+**Орієнтовно:** 1–2 sprint. **Може йти паралельно** з Pro-S2 (P10).
+
+### PY.4 — IPv6 Python (P2) — parity з V6
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **PY-050** | [x] IPv6 literal у `config.py` | `config.py`, `tests/unit/test_config.py` | RFC 5952 normalize; mixed v4+v6 profile |
+| **PY-051** | [x] Dual-stack ICMP trace | `icmp/tracer.py`, `icmp/process_tracer.py` | v6 literal → `traceroute -6`; `@pytest.mark.network` optional |
+| **PY-052** | [x] GeoIP `prefixes_v6` | `geoip/country.py`, `config/geoip_hints.yaml` | Parity з V6-036…V6-037 |
+
+**Орієнтовно:** 2–3 sprint після V6-015. **Поза scope v1:** raw ICMPv6 (див. V6-040…V6-045).
+
+### PY.4b — Persistence events Python (P1) — parity з P11-002
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **PY-P11** | [ ] YAML `persistence.events` + запис у SQLite | `config.py`, `session_db.py`, `session_store.py` | Спільний YAML з SPIKE; `route_change` + `probe_error` у `persistence_event` |
+
+**Орієнтовно:** 1 sprint після Java P11-013. **Не блокує** Java P11-010.
+
+### PY.5 — Packaging і CI hygiene (P1–P2)
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **PY-060** | [x] `optional-dependencies.gui` | `pyproject.toml` | Base: `scapy`, `PyYAML`, `networkx`; extra: PyQt6, WebEngine, folium, matplotlib |
+| **PY-061** | [x] CI push на `beta` | `.github/workflows/ci.yml` | `branches: [main, master, beta]` |
+| **PY-062** | [x] Python CI badge у README | `README.md`, `README.en.md` | Badge поруч з Java CI |
+| **PY-063** | [x] mypy `python_version` узгоджено з CI runtime | `pyproject.toml` | CI `setup-python` 3.11; mypy 3.12 (numpy stubs); numpy `ignore_errors` |
+| **PY-064** | [x] Coverage: `__main__.py` у gate | `pyproject.toml`, `tests/unit/test_main_dispatch.py` | omit знято; ≥80% total gate |
+
+**Орієнтовно:** 1 sprint; PY-060…064 можна cherry-pick у PY-S1.
+
+### Рекомендований порядок (фаза PY)
+
+```mermaid
+flowchart TD
+  PY010[PY-010 pingui.sh CLI] --> PY011[PY-011 CONFIGURATION]
+  PY011 --> PY013[PY-013 Living Spec]
+  PY013 --> PY020[PY-020 MonitorLoop]
+  PY020 --> PY030[PY-030 --daemon]
+  PY030 --> PY040[PY-040 RouteChangeEvent]
+  PY040 --> PY045[PY-045 daemon alerts]
+  PY020 --> PY050[PY-050 IPv6 config]
+```
+
+| Sprint (пропоз.) | Задачі | Пріоритет |
+|------------------|--------|-----------|
+| **PY-S1** | PY-010…PY-016, PY-060…PY-064 (частково) | P0 |
+| **PY-S2** | PY-020…PY-023, PY-030…PY-034 | P1 |
+| **PY-S3** | PY-040…PY-045 | P0 |
+| **PY-S4 (opt.)** | PY-050…PY-052 | P2 |
+
+---
+
 ## Фаза 10 — Оповіщення про зміну маршруту (`beta` → `main`, P0)
 
 **Мета:** профільний користувач дізнається про route change без відкритого GUI.
@@ -252,15 +368,15 @@ flowchart TD
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **P10-001** | [ ] ADR: політика alerts (channels, rate limit, payload) | `docs/ADR_ALERTS.md` | Webhook + desktop; опційно SNMP/email — out of scope v1 |
-| **P10-010** | [ ] Модель `RouteChangeEvent` (host, old_ips, new_ips, ts, profile) | `monitor/RouteChangeEvent.java`, Python `models.py` | Unit-тест serialize/deserialize |
-| **P10-011** | [ ] `AlertDispatcher` interface + no-op default | `monitor/AlertDispatcher.java` | Monitor викликає при `onRouteChanged` |
-| **P10-020** | [ ] Desktop notification (Linux notify-send / Windows toast / macOS) | `ui/RouteChangeNotifier.java` | Manual smoke: route change → notification |
-| **P10-021** | [ ] YAML/CLI: `alerts.desktop: true\|false` | `ProfilesConfig`, `PinguiApplication` | Default off; документовано в CONFIGURATION |
-| **P10-030** | [ ] Webhook POST JSON (Slack-compatible + generic) | `monitor/WebhookAlertDispatcher.java` | Contract test з mock HTTP server |
-| **P10-031** | [ ] CLI `--alert-webhook URL` + profile field `alert_webhook` | `CliProfileOverrides`, YAML schema | Secret не логувати; помилка мережі → log, не crash |
-| **P10-040** | [ ] Rate limit: max N alerts / host / годину | `AlertRateLimiter.java` | Unit-тест burst |
-| **P10-050** | [ ] LIVING_SPEC + CHECKLIST § alert smoke | `docs/LIVING_SPEC.md`, `docs/CHECKLIST.md` | Ручний прогін Linux |
+| **P10-001** | [x] ADR: політика alerts (channels, rate limit, payload) | `docs/ADR_ALERTS.md`, `docs/en/ADR_ALERTS.md` | Webhook + desktop; SNMP/email — out of scope v1 |
+| **P10-010** | [x] Модель `RouteChangeEvent` (host, old_ips, new_ips, ts, profile) | `monitor/RouteChangeEvent.java`, Python `models.py` | Unit-тест serialize/deserialize |
+| **P10-011** | [x] `AlertDispatcher` interface + no-op default | `monitor/AlertDispatcher.java`, `MonitorService` | Monitor викликає при `onRouteChanged` |
+| **P10-020** | [x] Desktop notification (Linux notify-send / Windows toast / macOS) | `ui/RouteChangeNotifier.java` | Manual smoke: route change → notification |
+| **P10-021** | [x] YAML/CLI: `alerts.desktop: true\|false` | `ProfilesConfig`, `PinguiApplication` | Default off; документовано в CONFIGURATION |
+| **P10-030** | [x] Webhook POST JSON (Slack-compatible + generic) | `monitor/WebhookAlertDispatcher.java` | Contract test з mock HTTP server |
+| **P10-031** | [x] CLI `--alert-webhook URL` + profile field `alert_webhook` | `CliAlertOverrides`, YAML schema | Secret не логувати; помилка мережі → log, не crash |
+| **P10-040** | [x] Rate limit: max N alerts / host / годину | `AlertRateLimiter.java` | Unit-тест burst |
+| **P10-050** | [x] LIVING_SPEC + CHECKLIST § alert smoke | `docs/LIVING_SPEC.md`, `docs/CHECKLIST.md` | Ручний прогін Linux |
 
 **Орієнтовно:** 1–2 sprint.
 
@@ -274,10 +390,14 @@ flowchart TD
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **P11-001** | [ ] SPIKE: схема SQLite для Java (routes, events, samples) | `docs/SPIKE_PERSISTENCE.md` | Parity з Python `session_db.py` |
+| **P11-001** | [x] SPIKE: схема SQLite для Java (routes, events, samples) | `docs/SPIKE_PERSISTENCE.md` | Parity з Python `session_db.py` |
+| **P11-002** | [x] SPIKE amend: політика подій, меню, YAML, purge rules | `docs/SPIKE_PERSISTENCE.md` | Defaults: state+route_change+probe_error; poll-cycle |
 | **P11-010** | [ ] `SessionDatabase` — open/migrate/close | `persistence/SessionDatabase.java` | Flyway або ручна schema v1 |
-| **P11-011** | [ ] Запис route snapshot + route_change event | `MonitorService`, `SessionDatabase` | Unit-тест insert/query |
+| **P11-011** | [ ] Запис `host_session` + `persistence_event` | `MonitorService`, `SessionDatabase` | Unit-тест insert/query |
 | **P11-012** | [ ] CLI `--session-db PATH` | `PinguiApplication`, `java/README.md` | Optional; без PATH — RAM-only |
+| **P11-013** | [ ] `PersistencePolicy` + gate у writer | `persistence/PersistencePolicy.java` | Default events; poll-cycle swap |
+| **P11-014** | [ ] GUI «База даних…» + confirm purge | `PersistenceSettingsDialog.java` | Чекбокси route_change / probe_error |
+| **P11-015** | [ ] YAML `persistence.events` + CLI override | `ProfilesConfig`, `CONFIGURATION.md` | Пріоритет як ADR_ALERTS |
 | **P11-020** | [ ] UI: панель «Історія» — список route change за 24h/7d | `RouteHistoryPresenter.java` | Manual smoke |
 | **P11-021** | [ ] UI: replay snapshot на графі (read-only) | `RouteGraphPresenter` | Вибір події → граф |
 | **P11-030** | [ ] Export CSV/HTML з БД (як Python `session_report`) | `export/SessionReportExporter.java` | CLI `--export-report` |
@@ -457,19 +577,28 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  V6070[V6-070 IPv6 QA gate] --> P10010[P10 alerts]
+  V6070[V6-070 IPv6 QA gate] --> PYS1[PY-S1 launcher docs]
+  PYS1 --> PYS2[PY-S2 MonitorLoop daemon]
+  PYS1 --> P10010[P10 alerts]
+  P10010 --> PYS3[PY-S3 Python alerts]
   P10010 --> P11010[P11 SQLite Java]
-  P11010 --> P12010[P12 daemon]
+  P11010 --> PYS2
+  PYS2 --> P12010[P12 daemon Java]
   P12010 --> P13010[P13 MTR / smart interval]
   P13010 --> P14010[P14 route diff / tags]
   P14010 --> P15010[P15 Prometheus / API]
   P15010 --> P16010[P16 telemetry / LOG-server]
+  V6070 --> PY50[PY-S4 IPv6 Python opt]
 ```
 
 | Пріоритет | Sprint (пропоз.) | Фаза | Задачі |
 |-----------|------------------|------|--------|
+| **P0** | PY-S1 | PY.0 + PY.5 | PY-010…PY-016, PY-060…PY-064 |
+| **P1** | PY-S2 | PY.1 + PY.2 | PY-020…PY-034 |
+| **P0** | PY-S3 | PY.3 | PY-040…PY-045 |
+| **P2** | PY-S4 (opt.) | PY.4 | PY-050…PY-052 |
 | **P0** | Pro-S1 | 9 (закриття) | V6-035…V6-037, V6-060…V6-074 |
-| **P0** | Pro-S2 | 10 | P10-001…P10-050 |
+| **P0** | Pro-S2 | 10 | P10-001…P10-050 (+ PY-S3 Python) |
 | **P0** | Pro-S3–S4 | 11 | P11-001…P11-050 |
 | **P1** | Pro-S5 | 12 | P12-001…P12-040 |
 | **P1** | Pro-S6–S7 | 13 | P13-001…P13-050 |
@@ -510,7 +639,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog:** M/B roadmap закрито; B-064 coverage ongoing; **IPv6 — Фаза 9 (V6-*)**; **Pro — Фази 10–16 (P10–P16)**.
+**Backlog:** M/B roadmap закрито; B-064 coverage ongoing; **IPv6 — Фаза 9 (V6-*)**; **Python NOC — Фаза PY (PY-*)**; **Pro — Фази 10–16 (P10–P16)**.
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 
@@ -564,5 +693,37 @@ flowchart LR
 **Roadmap Pro (2026-07-09):** додано фази 10–15 (alerts, persistence, daemon, MTR, GUI pro, integrations) — офіційний план для NOC/SRE.
 
 **Roadmap Telemetry (2026-07-09):** фаза 16 — збір метрик мережі, локальне збереження (SQLite/JSONL), відправка на LOG-server (syslog/GELF/Loki).
+
+**Roadmap Python (2026-07-09):** фаза PY — атомарні ticket-и PY-010…PY-064: launcher, docs, MonitorLoop, daemon, alerts, IPv6, CI/packaging (`beta` only).
+
+**PY-S4 (2026-07-09):** PY-050…PY-052 — Python IPv6 dual-stack (`config.py`, `process_tracer.py`, `prefixes_v6`); commit `6a33133` на `beta`.
+
+**IPv6-S3 (2026-07-09):** V6-035…V6-037 — `GeoCountry` IPv6 longest-prefix + `prefixes_v6` YAML.
+
+**IPv6-S4 (2026-07-09):** V6-060…V6-063 — dual-stack Help/About, IPv6 graph labels, host input validation.
+
+**IPv6-S4 QA (2026-07-09):** V6-070…V6-074 — CHECKLIST smoke, v4 fixture regression test, JaCoCo notes, IPv6 beta release note.
+
+**IPv6 expert UI (2026-07-09):** V6-053 — `-F` flow label gated by IPv6 target / `-6` AF.
+
+**IPv6 expert AF default (2026-07-09):** V6-054 — single address family for expert ping; default `-4` (no OS-delegation / no dual AF).
+
+**IPv6 expert hostname resolve (2026-07-09):** V6-055 — expert ping `-6` resolves hostname to AAAA before argv.
+
+**IPv6 deployment docs (2026-07-09):** V6-045 — `cap_net_raw` matrix for dual-stack (v4 raw vs v6 process trace).
+
+**Raw ICMPv6 Linux (2026-07-09):** V6-040…V6-043 — JNA `sockaddr_in6`, `IcmpV6Packet`, dual transport, v6 hop-limit trace (`probe: raw`).
+
+**IPv6 release 0.2.0 (2026-07-09):** semver bump, CHANGELOG `[0.2.0]`, SPIKE/CHECKLIST/DEPLOYMENT parity; phase 9 code-complete on `beta`.
+
+**Alerts ADR (2026-07-09):** P10-001 — `ADR_ALERTS.md` (webhook + desktop v1, payload, rate limit); Java P10-010+.
+
+**Java alerts foundation (2026-07-09):** P10-010…P10-011 — `RouteChangeEvent` JSON + `AlertDispatcher` wired in `MonitorService`.
+
+**Java alerts pipeline (2026-07-09):** P10-020…P10-050 — webhook, desktop, YAML/CLI config, rate limit, tests + CHECKLIST.
+
+**Persistence SPIKE (2026-07-09):** P11-001 — `SPIKE_PERSISTENCE.md` (schema v1 Python parity, v2 `persistence_event`).
+
+**Persistence policy SPIKE (2026-07-09):** P11-002 — event menu, YAML `persistence.events`, purge confirm, poll-cycle policy swap; PY-P11 for Python parity.
 
 Оновлюй цей файл при закритті задачі: `[x] M-001` + дата в CHANGELOG.

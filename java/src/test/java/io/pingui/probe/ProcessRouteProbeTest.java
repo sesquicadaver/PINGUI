@@ -1,6 +1,7 @@
 package io.pingui.probe;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -10,8 +11,27 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class ProcessRouteProbeTest {
+
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                "unix_ok.txt",
+                "unix_timeout.txt",
+                "unix_hostname.txt",
+                "win_ok.txt",
+                "win_timeout.txt",
+                "win_hostname.txt",
+            })
+    void v4FixturesRemainGreen(String fixture) throws IOException {
+        List<HopNode> hops = fixture.startsWith("unix")
+                ? ProcessRouteProbe.parseUnix(loadLines(fixture))
+                : ProcessRouteProbe.parseWindows(loadLines(fixture));
+        assertFalse(hops.isEmpty(), "fixture must parse hops: " + fixture);
+    }
 
     @Test
     void parseUnix_okFixture() throws IOException {

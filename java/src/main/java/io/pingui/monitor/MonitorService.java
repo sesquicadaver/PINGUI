@@ -5,6 +5,7 @@ import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.probe.ProbeMode;
 import io.pingui.probe.RouteProbe;
 import io.pingui.probe.RouteProbeFactory;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,9 +17,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Background polling of enabled hosts (cross-platform, no Qt). */
 public final class MonitorService implements AutoCloseable {
+    private static final Logger LOG = LoggerFactory.getLogger(MonitorService.class);
     private static final int MAX_PARALLEL_PROBES = 4;
 
     public interface Listener {
@@ -56,6 +60,8 @@ public final class MonitorService implements AutoCloseable {
     private final int maxHops;
     private final double timeoutSeconds;
     private Listener listener;
+    private volatile AlertDispatcher alertDispatcher = AlertDispatcher.noop();
+    private volatile String alertProfileName = "default";
     private volatile PingExpertResolver expertResolver;
     private volatile PingOnlyResolver pingOnlyResolver;
 
@@ -87,6 +93,18 @@ public final class MonitorService implements AutoCloseable {
 
     public void setListener(Listener listener) {
         this.listener = listener;
+    }
+
+    public void setAlertDispatcher(AlertDispatcher alertDispatcher) {
+        this.alertDispatcher = alertDispatcher != null ? alertDispatcher : AlertDispatcher.noop();
+    }
+
+    public void setAlertProfileName(String alertProfileName) {
+        if (alertProfileName == null || alertProfileName.isBlank()) {
+            this.alertProfileName = "default";
+        } else {
+            this.alertProfileName = alertProfileName;
+        }
     }
 
     public void setExpertResolver(PingExpertResolver expertResolver) {
@@ -273,6 +291,21 @@ public final class MonitorService implements AutoCloseable {
         }
         if (outcome.routeChanged()) {
             current.onRouteChanged(host, outcome.oldIps(), outcome.newIps());
+            dispatchRouteChangeAlert(host, outcome.oldIps(), outcome.newIps());
+        }
+    }
+
+    private void dispatchRouteChangeAlert(String host, List<String> oldIps, List<String> newIps) {
+        AlertDispatcher dispatcher = alertDispatcher;
+        if (dispatcher == null) {
+            return;
+        }
+        RouteChangeEvent event =
+                RouteChangeEvent.fromRouteChange(host, oldIps, newIps, alertProfileName, Instant.now());
+        try {
+            dispatcher.dispatch(event);
+        } catch (RuntimeException ex) {
+            LOG.warn("Alert dispatch failed for {}: {}", host, ex.getMessage());
         }
     }
 

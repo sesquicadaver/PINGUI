@@ -251,22 +251,27 @@ public final class MainController {
     }
 
     private MonitorService createMonitor(TracingProfile profile) {
-        return MonitorLifecycle.create(profile, store, new MonitorService.Listener() {
-            @Override
-            public void onDataReceived(String host, RouteSnapshot snapshot) {
-                Platform.runLater(() -> handleData(host, snapshot));
-            }
+        return MonitorLifecycle.create(
+                profile,
+                profileDocument.activeProfile(),
+                store,
+                new MonitorService.Listener() {
+                    @Override
+                    public void onDataReceived(String host, RouteSnapshot snapshot) {
+                        Platform.runLater(() -> handleData(host, snapshot));
+                    }
 
-            @Override
-            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {
-                Platform.runLater(() -> handleRouteChanged(host, oldIps, newIps));
-            }
+                    @Override
+                    public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {
+                        Platform.runLater(() -> handleRouteChanged(host, oldIps, newIps));
+                    }
 
-            @Override
-            public void onProbeError(String host, String message) {
-                Platform.runLater(() -> appendLog("Помилка [" + host + "]: " + message));
-            }
-        });
+                    @Override
+                    public void onProbeError(String host, String message) {
+                        Platform.runLater(() -> appendLog("Помилка [" + host + "]: " + message));
+                    }
+                },
+                options.alertOverrides().applyTo(profile.alerts()));
     }
 
     private void applyCliOverridesToActiveProfile() {

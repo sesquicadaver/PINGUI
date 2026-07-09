@@ -1,14 +1,69 @@
-> **Language:** [Ukrainian](../CHECKLIST.md) · English
+> **Language:** English · [Українська](../CHECKLIST.md)
 
-# PINGUI deployment checklist (Java)
+# PINGUI Deployment Checklist (Java)
 
 Checklist for the Java edition on **Linux / Windows / macOS**.
 
-**Expert ping** (Expert mode, **Exten.** button) — **Linux only + iputils-ping**.
+**Expert ping** (“Expert” mode, **Exten.** button) — **Linux + iputils-ping only**.
 
-Python edition and tests — **`beta`** branch.
+Python edition and tests — branch **`beta`**.
 
 Details: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
+
+### Python daemon smoke (beta)
+
+- [ ] `./pingui.sh --deploy` — venv + doc parity
+- [ ] `.venv/bin/python -m pingui monitor --config config/hosts.example.yaml` — foreground headless (Ctrl+C)
+- [ ] `.venv/bin/python -m pingui daemon --session-db data/ping.db --pid-file /tmp/pingui.pid`
+- [ ] `.venv/bin/python -m pingui status --pid-file /tmp/pingui.pid` → running
+- [ ] `.venv/bin/python -m pingui stop --pid-file /tmp/pingui.pid`
+
+### Python IPv6 smoke (beta, Linux/macOS)
+
+- [ ] `traceroute -6` installed (`which traceroute`)
+- [ ] YAML with `::1` or `2001:db8::1`: `load_hosts_config` succeeds
+- [ ] `.venv/bin/python -c "from pingui.icmp.tracer import trace_route; print(trace_route('::1', max_hops=3))"` — ≥1 hop
+- [ ] GeoIP v6: `country_code_for_ip('2001:4860:4860::8888')` → `US` (from `config/geoip_hints.yaml`)
+
+### Java IPv6 UI smoke (beta)
+
+- [ ] Help (F1) mentions IPv4/IPv6 literals
+- [ ] Add target `2001:db8::1` — normalized in log; invalid `not:valid:ipv6` → error in journal
+- [ ] Route graph hop with v6 shows bracketed IP `[2001:4860:4860::8888]`
+
+### Java IPv6 process trace smoke (Linux, V6-070)
+
+- [ ] `traceroute -6 ::1` — ≥1 hop (`traceroute` in PATH)
+- [ ] YAML profile with `2001:db8::1` — trace without «No hops parsed»
+- [ ] `./gradlew test --tests io.pingui.probe.ProcessRouteProbeTest` — `unix_v6_*` green
+- [ ] Ping-only on v6 literal — RTT updates without crash
+- [ ] `./gradlew test --tests io.pingui.probe.ProcessRouteProbeTest.v4FixturesRemainGreen` — v4 regression (CI)
+
+### Java IPv6 smoke (Windows, optional — V6-071)
+
+- [ ] `tracert -6 ::1` completes (slow; Ping only recommended for production)
+- [ ] `./gradlew test --tests io.pingui.probe.ProcessRouteProbeTest.parseWindowsIpv6*` — `win_v6_*` green
+
+### Java IPv6 raw ICMP smoke (Linux optional, V6-040…043)
+
+- [ ] `./gradlew test --tests io.pingui.probe.icmp.IcmpV6PacketTest` — packet build/parse (CI)
+- [ ] `./gradlew test --tests io.pingui.probe.icmp.LinuxCLibraryTest` — `sockaddr_in6` layout (Linux CI)
+- [ ] `./gradlew test --tests io.pingui.probe.RawIcmpRouteProbeTest.traceIpv6UsesHopLimitSequence` — hop-limit trace (CI)
+- [ ] YAML `probe: raw` + `cap_net_raw` + target `::1` — trace without crash (manual)
+
+### Python alert smoke (beta)
+
+- [ ] `python -m pingui monitor --alert-webhook http://127.0.0.1:9/hook` — starts without crash (unreachable webhook → log)
+- [ ] `python -m pingui run --desktop-alerts` — GUI + notify-send on route change (Linux)
+- [ ] `python -m pingui daemon --alert-webhook URL --session-db data/ping.db` — route change → POST JSON
+
+### Java alert smoke (beta, Linux)
+
+- [ ] `./gradlew test --tests io.pingui.monitor.WebhookAlertDispatcherTest` — contract POST JSON (CI)
+- [ ] `./gradlew test --tests io.pingui.monitor.AlertRateLimiterTest` — burst rate limit (CI)
+- [ ] `./pingui-java.sh --alert-webhook http://127.0.0.1:9/hook` — starts without crash (unreachable webhook → WARNING)
+- [ ] `./pingui-java.sh --desktop-alerts` — GUI + `notify-send` on route change (requires `libnotify-bin`)
+- [ ] YAML `alerts.webhook` / `alert_webhook` in profile — route change → POST without CLI override
 
 ---
 
@@ -18,8 +73,8 @@ Details: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 
 - [ ] x86_64 or arm64
 - [ ] GUI: X11 or Wayland
-- [ ] Network access to monitoring targets
-- [ ] JDK **21** (not Java 25 as Gradle launcher)
+- [ ] Network reachability to monitoring targets
+- [ ] JDK **21** (not Java 25 as the Gradle launcher)
 
 ### System packages
 
@@ -42,7 +97,7 @@ export PINGUI_JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64   # if needed
 ./pingui-java.sh
 ```
 
-- [ ] `./pingui-java.sh --build` — no «What went wrong: 25.0.3»
+- [ ] `./pingui-java.sh --build` — no “What went wrong: 25.0.3”
 - [ ] `./gradlew build` — SUCCESS
 - [ ] GUI opens
 
@@ -65,8 +120,8 @@ ls build/dist/*.deb
 
 | Symptom | Action |
 |---------|--------|
-| Gradle «25.0.3» | `export PINGUI_JAVA_HOME=.../java-21-openjdk-*` |
-| «No hops parsed» | `sudo apt install traceroute` |
+| Gradle “25.0.3” | `export PINGUI_JAVA_HOME=.../java-21-openjdk-*` |
+| “No hops parsed” | `sudo apt install traceroute` |
 | Expert ping without RTT | check `ping -V` (iputils) |
 | Raw ICMP denied | `sudo setcap cap_net_raw+ep` on JDK binary |
 
@@ -74,7 +129,7 @@ ls build/dist/*.deb
 
 ## Windows 11+
 
-> ⚠ **Warning:** Windows is **not recommended** for intensive route monitoring. `tracert` runs 3 probes per hop with long timeouts; one trace to 20 hops can take **1–4+ minutes**. Expert ping unavailable. For practical use: **Ping only** in GUI or `ping_only: true` / `interval: 30` in YAML. Recommended platform — **Linux**. [DEPLOYMENT.md#os-recommendation](DEPLOYMENT.md#os-recommendation)
+> ⚠ **Warning:** Windows is **not recommended** for intensive route monitoring. `tracert` runs 3 probes per hop with long timeouts; one trace to 20 hops can take **1–4+ minutes**. Expert ping unavailable. For practical use: **Ping only** in the GUI or `ping_only: true` / `interval: 30` in YAML. Recommended platform — **Linux**. [DEPLOYMENT.md#os-recommendation](DEPLOYMENT.md#os-recommendation)
 
 ### Preflight
 
@@ -103,7 +158,7 @@ cd C:\path\to\PINGUI\java
 pingui-java.bat --build
 ```
 
-`pingui-java.bat` only passes `JAVA_HOME`/`PINGUI_JAVA_HOME` to `gradlew.bat` (no JDK search in cmd — old search broke on paths with spaces).
+`pingui-java.bat` only passes `JAVA_HOME`/`PINGUI_JAVA_HOME` to `gradlew.bat` (no JDK search in cmd — the old search broke on paths with spaces).
 
 ### Building PINGUI
 
@@ -120,11 +175,11 @@ pingui-java.bat
 ### Smoke test
 
 - [ ] Target `8.8.8.8`, checkbox enabled
-- [ ] **Ping only** ON → RTT within seconds (no full trace wait)
+- [ ] **Ping only** ON → RTT within a few seconds (no wait for full trace)
 - [ ] Or trace OFF + ping only OFF: first trace — **up to 4 min** (normal for `tracert`)
 - [ ] Simple / Extended — metrics and graph
 - [ ] YAML save/load
-- [ ] Expert mode **disabled**
+- [ ] “Expert” **disabled**
 
 ### jpackage (.msi)
 
@@ -160,7 +215,7 @@ chmod +x pingui-java.sh gradlew
 
 - [ ] Trace in GUI — ≥ 1 hop
 - [ ] Simple / Extended, YAML save/load
-- [ ] Expert mode **disabled**
+- [ ] “Expert” **disabled**
 
 ---
 
@@ -175,14 +230,14 @@ chmod +x pingui-java.sh gradlew
 
 ---
 
-## § GUI smoke (B-035, after UI split)
+## § GUI smoke (B-035, after UI-split)
 
-Run on **Linux** (regression for «black frame» after profile CRUD):
+Run on **Linux** (regression for “black frame” after profile CRUD):
 
-- [ ] **About** (menu) — version dialog opens without hang
+- [ ] **About** (menu) — version dialog opens without hanging
 - [ ] **F1 / Help** — help dialog opens
 - [ ] **New profile** → name `test` → host list empty, window without black bars
-- [ ] **Delete profile** (return to default) → Simple mode, window shrinks correctly (no oversized frame)
+- [ ] **Delete profile** (return to default) → Simple mode, window shrinks correctly (no oversized frame left)
 - [ ] **Extended** → graph + log; **Simple** → compact layout again
 - [ ] Add `8.8.8.8` → **Save** → restart `./pingui-java.sh` → target and profile persist
 - [ ] Profile switching in ComboBox — hosts update
@@ -191,11 +246,11 @@ Run on **Linux** (regression for «black frame» after profile CRUD):
 
 ## § CLI interval (M-014)
 
-Verify YAML `interval` is not overwritten without CLI:
+Verify that YAML `interval` is not overwritten without CLI:
 
 1. In active profile YAML: `interval: 30.0`
 2. Launch **without** `--interval`: `./pingui-java.sh --config /path/to/hosts.yaml`
-3. Expected: polling ~30 s between cycles (not ~1 s)
+3. Expect polling ~30 s between cycles (not ~1 s)
 
 Automated contract: `PinguiApplicationTest.m014_yamlInterval30_noCliOverride_preservesInterval`.
 
@@ -216,11 +271,15 @@ After version bump or before release tag:
 
 ## § Docs smoke (B-062, weekly / before release)
 
-Verify README ↔ actual CLI:
+Verify README ↔ actual CLI alignment:
 
-- [ ] `java/README.md` — flags `--config`, `--interval`, `--probe`, `--geoip-hints` match `./pingui-java.sh --help`
-- [ ] `docs/JAVA.md` — CLI vs YAML table current
-- [ ] `docs/DEPLOYMENT.md` — JDK 21, Windows warning, IPv4-only
+- [ ] `java/README.en.md` — flags `--config`, `--interval`, `--probe`, `--geoip-hints` match `./pingui-java.sh --help`
+- [ ] `java/README.md` — same CLI parity (UK)
+- [ ] `docs/en/JAVA.md` — CLI vs YAML table is current
+- [ ] `docs/JAVA.md` — UK parity with EN
+- [ ] `docs/en/DEPLOYMENT.md` — JDK 21, Windows warning, dual-stack
+- [ ] `docs/` ↔ `docs/en/` — language switchers and content parity (bilingual smoke)
+- [ ] `python3 scripts/check_doc_parity.py` — green (CI gate)
 - [ ] `docs/ROADMAP.md` — closed tasks marked `[x]`
 - [ ] CI badge in `README.md` — shows latest push
 
@@ -234,4 +293,4 @@ Verify README ↔ actual CLI:
 | Expert ping | ✅ | ❌ | ❌ |
 | Raw ICMP (`probe: raw`) | ✅ | ❌ | ❌ |
 
-Unit tests: `cd java && ./gradlew check` (JUnit 5 on `main`; Python tests — **`beta`** branch).
+Unit tests: `cd java && ./gradlew check` (JUnit 5 on `main`; Python tests — branch **`beta`**).

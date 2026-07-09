@@ -1,8 +1,8 @@
-> **Language:** [Ukrainian](../MODULES.md) · English
+> **Language:** English · [Українська](../MODULES.md)
 
-# PINGUI module reference
+# PINGUI Module Reference
 
-Public APIs of the `pingui` package (version 0.1.0).
+Public APIs of the `pingui` package (version 0.2.0).
 
 ---
 
@@ -13,8 +13,8 @@ Public APIs of the `pingui` package (version 0.1.0).
 | Field | Type | Description |
 |-------|------|-------------|
 | `hop` | int | Hop number (TTL) |
-| `ip` | str | IPv4 or `"*"` on timeout |
-| `ping_ms` | float \| None | RTT milliseconds |
+| `ip` | str | IPv4/IPv6 or `"*"` on timeout |
+| `ping_ms` | float \| None | RTT in milliseconds |
 | `is_timeout` | bool | True if probe did not respond |
 
 **Class method:** `HopNode.timeout(hop: int) -> HopNode`
@@ -24,15 +24,15 @@ Public APIs of the `pingui` package (version 0.1.0).
 | Field | Type |
 |-------|------|
 | `target` | str — hostname/IP as in config |
-| `target_ip` | str — resolved IPv4 |
+| `target_ip` | str — resolved IPv4 or canonical IPv6 |
 | `nodes` | list[HopNode] |
 | `timestamp` | datetime (UTC) |
 
-**Method:** `route_ips() -> list[str]` — IPs without timeout.
+**Method:** `route_ips() -> list[str]` — IPs excluding timeouts.
 
 ### `HostSessionData`
 
-In-memory state for one target: `current_route`, `previous_route`, `last_known_by_hop`, `ping_history`, `enabled`.
+In-memory state for a single target: `current_route`, `previous_route`, `last_known_by_hop`, `ping_history`, `enabled`.
 
 ### Constant
 
@@ -54,7 +54,9 @@ In-memory state for one target: `current_route`, `previous_route`, `last_known_b
 
 | Function | Description |
 |----------|-------------|
-| `normalize_host_entry(entry: str) -> str` | Trim + validate |
+| `normalize_host_entry(entry: str) -> str` | Trim + validate (IPv4/IPv6 RFC 5952/hostname) |
+| `host_address_kind(normalized) -> HostAddressKind` | IPV4 / IPV6 / HOSTNAME |
+| `resolve_trace_target(host) -> str` | IPv4 A-record or canonical IPv6 |
 | `validate_session_host(host, existing) -> str` | Dedup + limit |
 | `load_hosts_config(path) -> list[str]` | Read YAML |
 | `save_hosts_config(path, hosts) -> None` | Write YAML |
@@ -79,7 +81,7 @@ def send_probe(target_ip: str, ttl: int, timeout: float) -> ProbeResult | None
 | Function | Description |
 |----------|-------------|
 | `check_raw_icmp_permission() -> None` | Raises `RawIcmpPermissionError` |
-| `resolve_target(host) -> str` | Alias resolve_host_ipv4 |
+| `resolve_target(host) -> str` | `resolve_trace_target` (v4/hostname→A, v6 literal) |
 | `send_probe(..., transport=None) -> ProbeResult \| None` | Default: ScapyProbeTransport |
 
 ### Class
@@ -99,7 +101,7 @@ def trace_route(
 ) -> RouteSnapshot
 ```
 
-TTL 1..max_hops; stop on `is_target` or max_hops.
+TTL 1..max_hops (raw ICMP, v4/hostname); IPv6 literal → subprocess `traceroute -6` (`icmp/process_tracer.py`).
 
 ---
 
@@ -144,6 +146,63 @@ First observation (`previous_ips` empty) — `changed=False`.
 
 ---
 
+## pingui.persistence.session_db
+
+### `SessionDatabase`
+
+SQLite persistence for `SessionStore` (optional `--session-db`).
+
+| Method | Description |
+|--------|-------------|
+| `load(host) -> HostSessionData \| None` | Restore host state |
+| `save(host, data)` | Write snapshot + ping history |
+| `close()` | Flush and close connection |
+
+Schema v2: JSON for hops, routes, `hop_stats`.
+
+---
+
+## pingui.export.session_report
+
+| Function | Description |
+|----------|-------------|
+| `export_session_csv(store, path)` | Flat CSV (`ROUTE_CSV_FIELDS`) |
+| `export_session_html(store, path)` | Standalone HTML with per-host tables |
+| `build_route_rows(store)` | current / inactive / previous routes + stats |
+
+---
+
+## pingui.geoip
+
+| Module | Description |
+|--------|-------------|
+| `country.configure(enabled, hints_path)` | Offline CIDR→country from YAML (`prefixes`, `prefixes_v6`) |
+| `country.lookup_country(ip) -> str \| None` | Longest-prefix match |
+| `coordinates.centroid_for_ip(ip)` | Lat/lon for folium |
+| `map_builder.build_geo_map(hosts, store)` | HTML for WebEngine tab |
+
+---
+
+## pingui.persistence.timeseries
+
+| Module | Description |
+|--------|-------------|
+| `factory.create_timeseries_backend(...)` | `influx` / `timescale` / `None` |
+| `base.TimeSeriesBackend` | Protocol: `record_rtt`, `record_route` |
+| `memory.MemoryTimeSeriesBackend` | In-memory (tests) |
+
+Optional deps: `pip install -e ".[timeseries]"`.
+
+---
+
+## pingui.monitor.hop_stats
+
+| Function | Description |
+|----------|-------------|
+| `hop_stats_summary(samples) -> HopStatsSummary` | avg RTT, jitter, loss % |
+
+---
+
 ## pingui.monitor.session_store
 
 ### `SessionStore`
@@ -167,9 +226,66 @@ First observation (`previous_ips` empty) — `changed=False`.
 
 ---
 
+## pingui.monitor.monitor_loop
+
+### `MonitorLoop`
+
+Headless monitoring loop on `threading` (no Qt). Callbacks instead of signals.
+
+| Method | Description |
+|--------|-------------|
+| `hosts()`, `enabled_hosts()` | From `SessionStore` or internal list |
+| `add_host()`, `remove_host()`, `rename_host()`, `set_host_enabled()` | Delegates to store when set |
+| `start()`, `stop()`, `join()`, `is_running()` | Thread lifecycle |
+
+`MonitorCallbacks` — `on_data_received`, `on_route_changed`, `on_probe_error`.
+
+---
+
+## pingui.monitor.daemon_runner
+
+### `run_headless_monitor(...) -> int`
+
+Foreground/daemon monitoring until SIGINT/SIGTERM; optional PID file.
+
+### `PidFile`
+
+| Method | Description |
+|--------|-------------|
+| `acquire()` / `release()` | Write/remove PID |
+| `stop(path)` / `status(path)` | CLI `stop` / `status` |
+
+With `alert_dispatcher`, route changes trigger webhook/desktop alerts (PY-045).
+
+---
+
+## pingui.monitor.alert_dispatcher
+
+### `build_alert_dispatcher(...)`
+
+Builds webhook + desktop channels with rate limiting.
+
+### `WebhookAlertDispatcher`
+
+POST JSON `RouteChangeEvent`; URLs logged without secrets.
+
+### `AlertRateLimiter`
+
+Max N alerts per host / hour (PY-044).
+
+---
+
+## pingui.monitor.desktop_notifier
+
+`notify_route_change(event)` — Linux `notify-send` (PY-043).
+
+---
+
 ## pingui.monitor.worker
 
 ### `LightweightMonitorWorker(QThread)`
+
+Thin Qt wrapper over `MonitorLoop`; delegates host CRUD and enabled state.
 
 **Signals:**
 
@@ -184,7 +300,7 @@ First observation (`previous_ips` empty) — `changed=False`.
 | `hosts()`, `enabled_hosts()` | Thread-safe lists |
 | `can_add_host()`, `add_host()`, `remove_host()`, `rename_host()` | |
 | `set_host_enabled(host, enabled)` | Max 10 enabled |
-| `stop()` | End loop |
+| `stop()` | Stop loop |
 | `run()` | Background loop |
 
 ---
@@ -213,7 +329,7 @@ Constructor: `hosts`, `config_path`, `interval_seconds`, `max_hops`, `timeout`.
 def main(argv: list[str] | None = None) -> int
 ```
 
-Entry point for `python -m pingui` and console script `pingui`.
+Entry point for `python -m pingui` and the console script `pingui`.
 
 ---
 
@@ -231,8 +347,9 @@ Root logger: ERROR (GUI) or DEBUG (`--verbose`).
 
 | Script | Purpose |
 |--------|---------|
-| `pingui.sh` | Deploy / GUI / destroy |
+| `pingui.sh` | Deploy / GUI / destroy; forwards CLI flags |
 | `scripts/ci_venv.sh` | CI pipeline |
 | `scripts/check_caps.sh` | ICMP permission smoke |
 | `scripts/setup_caps.sh` | Manual setcap |
 | `scripts/check_imports.py` | Cycle detection |
+| `scripts/check_doc_parity.py` | UK/EN docs parity |

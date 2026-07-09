@@ -1,4 +1,4 @@
-> **Language:** [Ukrainian](../ROADMAP.md) · English
+> **Language:** English · [Українська](../ROADMAP.md)
 
 # ROADMAP — PINGUI Java (`main` / `beta`)
 
@@ -127,7 +127,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 **Prerequisites:** `./gradlew check` green; B-064 JaCoCo gate ≥80%.
 
-**Out of phase 9 scope (separate ticket):** Python layer on `beta`; full Windows expert-ping parity (see backlog after V6-059).
+**Out of phase 9 scope (separate ticket):** Python IPv6 — **Phase PY.4 (PY-050…PY-052)** ✅ on `beta`; full Windows expert-ping parity (see backlog after V6-059).
 
 ### 9.0 — Design gate
 
@@ -168,20 +168,20 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **V6-035** | [ ] `GeoCountry`: `Inet6Address` — loopback/link-local/ULA → `LAN` | `GeoCountry.java` | `GeoCountryTest` |
-| **V6-036** | [ ] `GeoCountry`: longest-prefix for IPv6 CIDR | `GeoCountry.java`, `geoip_hints.yaml` | Test: `2001:db8::/32` |
-| **V6-037** | [ ] YAML schema: optional `prefixes_v6` (or unified map) | `GeoCountry.java`, docs | Backward compat v4 hints |
+| **V6-035** | [x] `GeoCountry`: `Inet6Address` — loopback/link-local/ULA → `LAN` | `GeoCountry.java` | `GeoCountryTest` |
+| **V6-036** | [x] `GeoCountry`: longest-prefix for IPv6 CIDR | `GeoCountry.java`, `geoip_hints.yaml` | Test: `2001:db8::/32` |
+| **V6-037** | [x] YAML schema: optional `prefixes_v6` (or unified map) | `GeoCountry.java`, docs | Backward compat v4 hints |
 
 ### 9.4 — Raw ICMP v6 (Linux only, P2)
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **V6-040** | [ ] JNA: `AF_INET6`, `sockaddr_in6` | `LinuxSocketConstants`, `LinuxCLibrary` | Compile + struct layout test |
-| **V6-041** | [ ] ICMPv6 echo request/reply parse | `IcmpPacket.java` or `IcmpV6Packet.java` | Unit test without cap (build packet) |
-| **V6-042** | [ ] `LinuxJnaIcmpTransport` dual: v4/v6 socket | `LinuxJnaIcmpTransport.java` | Integration test optional; mock-friendly unit |
-| **V6-043** | [ ] `RawIcmpRouteProbe`: hop limit for v6 | `RawIcmpRouteProbe.java` | v6 target → trace hops |
+| **V6-040** | [x] JNA: `AF_INET6`, `sockaddr_in6` | `LinuxSocketConstants`, `LinuxCLibrary` | Compile + struct layout test |
+| **V6-041** | [x] ICMPv6 echo request/reply parse | `IcmpV6Packet.java` | Unit test without cap (build packet) |
+| **V6-042** | [x] `LinuxJnaIcmpTransport` dual: v4/v6 socket | `LinuxJnaIcmpTransport.java` | Integration test optional; mock-friendly unit |
+| **V6-043** | [x] `RawIcmpRouteProbe`: hop limit for v6 | `RawIcmpRouteProbe.java` | v6 target → trace hops |
 | **V6-044** | [ ] `RouteProbeFactory`: v6 + non-Linux → process fallback | `RouteProbeFactory.java` | Test: AUTO on macOS → process |
-| **V6-045** | [ ] DEPLOYMENT: cap note for ICMPv6 | `docs/DEPLOYMENT.md` | Linux-only raw v6 documented |
+| **V6-045** | [x] DEPLOYMENT: cap note for ICMPv6 | `docs/DEPLOYMENT.md`, `docs/en/DEPLOYMENT.md` | Linux-only raw v6 documented |
 
 ### 9.5 — Expert ping v6 (P1)
 
@@ -190,26 +190,28 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | **V6-050** | [ ] Auto `-6` in `ProcessExpertPing.buildCommand` for v6 target | `ProcessExpertPing.java` | Test: v6 target → `-6` in argv |
 | **V6-051** | [ ] `ProcessHostPing`: expert args + v6 on Linux/macOS | `ProcessHostPing.java` | Test: args appended |
 | **V6-052** | [ ] Validator: `-4` + v6 target → `ConfigError` (profile save) | `PingExpertValidator` or host-level check | Unit test |
-| **V6-053** | [ ] `-F` flow label — only with v6 target (UI hint) | `PingExpertDialog.java` | Tooltip / disable when target v4 |
+| **V6-053** | [x] `-F` flow label — only with v6 target (UI hint) | `PingExpertDialog.java`, `ExpertPingUiRules.java` | Tooltip / disable when target v4 |
+| **V6-054** | [x] Expert ping: single AF (-4 or -6), default IPv4 | `ExpertPingArgs.java`, `PingExpertDialog.java` | No dual-stack ping; hostname/v4 → `-4` |
+| **V6-055** | [x] Expert ping `-6`: hostname → AAAA resolve before ping | `HostAddressResolver.java`, `PingTargetResolver.java` | Unit test literals + localhost |
 
 ### 9.6 — UI / docs (P1)
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **V6-060** | [ ] Help/About: dual-stack instead of «IPv4-only» | `AppMenuDialogs.java`, `README.md` | Text updated |
-| **V6-061** | [ ] `GraphCanvas` / labels: bracket display for long v6 | `GraphCanvas.java`, `RouteGraphLayout` | Manual smoke note in CHECKLIST |
-| **V6-062** | [ ] Input validation in Add Host dialog for v6 | `HostListPresenter` / dialog | Invalid v6 → log error |
-| **V6-063** | [ ] CHANGELOG + ROADMAP `[x]` on subphase closure | `CHANGELOG.md` | Per-sprint notes |
+| **V6-060** | [x] Help/About: dual-stack instead of «IPv4-only» | `AppMenuDialogs.java`, `README.md` | Text updated |
+| **V6-061** | [x] `GraphCanvas` / labels: bracket display for long v6 | `HopDisplay.java`, `PingColor.java` | Manual smoke note in CHECKLIST |
+| **V6-062** | [x] Input validation in Add Host dialog for v6 | `HostListPresenter` | Invalid v6 → log error |
+| **V6-063** | [x] CHANGELOG + ROADMAP `[x]` on subphase closure | `CHANGELOG.md` | Per-sprint notes |
 
 ### 9.7 — QA / release gate (P0)
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **V6-070** | [ ] CHECKLIST § IPv6 smoke (Linux process trace) | `docs/CHECKLIST.md` | literal v6 + ping-only |
-| **V6-071** | [ ] CHECKLIST § IPv6 smoke (Windows tracert -6) | `docs/CHECKLIST.md` | optional OS job |
-| **V6-072** | [ ] Regression: all v4 fixtures remain green | CI | `./gradlew check` |
-| **V6-073** | [ ] JaCoCo: new modules in bundle or documented exclusion | `build.gradle.kts` | Gate ≥80% |
-| **V6-074** | [ ] Release note: «IPv6 beta» / feature flag if needed | `CHANGELOG.md` | Semver minor bump note |
+| **V6-070** | [x] CHECKLIST § IPv6 smoke (Linux process trace) | `docs/CHECKLIST.md` | literal v6 + ping-only |
+| **V6-071** | [x] CHECKLIST § IPv6 smoke (Windows tracert -6) | `docs/CHECKLIST.md` | optional OS job |
+| **V6-072** | [x] Regression: all v4 fixtures remain green | `ProcessRouteProbeTest`, CI | `./gradlew check` |
+| **V6-073** | [x] JaCoCo: new modules in bundle or documented exclusion | `build.gradle.kts` | Gate ≥80% |
+| **V6-074** | [x] Release note: «IPv6 beta» / feature flag if needed | `CHANGELOG.md` | Semver minor bump note |
 
 ### Recommended order (phase 9)
 
@@ -244,6 +246,120 @@ flowchart TD
 
 ---
 
+## Phase PY — Python CLI/NOC hardening (`beta`, P0–P1)
+
+**Goal:** turn the post-MVP Python stack into a full NOC tool: launcher, documentation, headless monitor, daemon; aligned with phases P10–P12.
+
+**Context:** B-01…B-06 ✅ (`--session-db`, export, GeoIP, geo-map, timeseries, jitter/loss). Phases 10–16 are mostly Java-oriented; Python **leads** on P11/P15 but **lags** on launcher, docs, daemon, alerts.
+
+**Branch:** `beta` only (Python tree is not added to `main`).
+
+**Links:** PY-S1 — before Pro-S2; PY-S2 — Python prerequisite for P12; PY-S3 — Python parity for P10.
+
+### PY.0 — CLI launcher and documentation (P0)
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **PY-010** | [x] `pingui.sh`: forward CLI flags to `python -m pingui` | `pingui.sh` | `./pingui.sh --export-csv out.csv` or `./pingui.sh -- --session-db db.sqlite` works; `--deploy`/`--help` unchanged |
+| **PY-011** | [x] `CONFIGURATION.md`: full CLI reference + env | `docs/CONFIGURATION.md`, `docs/en/CONFIGURATION.md` | All flags from `__main__.py`; `INFLUXDB_*`, `PINGUI_TIMESCALE_DSN` |
+| **PY-012** | [x] `MODULES.md`: post-MVP Python modules | `docs/MODULES.md`, `docs/en/MODULES.md` | `session_db`, `export`, `geoip`, `timeseries`, `hop_stats` |
+| **PY-013** | [x] Python Living Spec: module → test matrix | `docs/LIVING_SPEC.md`, `docs/en/LIVING_SPEC.md` | Section «Python (`beta`)»; closes B-023 gap for Python |
+| **PY-014** | [x] Unit: CLI `--export-html` without GUI | `tests/unit/test_main_export.py` | `main([...,"--export-html", path])` → file exists |
+| **PY-015** | [x] Deploy gate = CI gate | `pingui.sh`, `scripts/ci_venv.sh` | `./pingui.sh --deploy` runs `check_doc_parity.py` |
+| **PY-016** | [x] `TESTING.md`: post-MVP test table | `docs/TESTING.md`, `docs/en/TESTING.md` | `test_session_db`, `test_timeseries`, `test_geo_*`, `test_main_export` |
+
+**Estimate:** 1 sprint (≤ 1 day per ticket).
+
+### PY.1 — Monitor loop without Qt (P1)
+
+**Problem:** `LightweightMonitorWorker` is a `QThread`; headless/daemon is impossible without PyQt.
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **PY-020** | [x] `MonitorLoop` on stdlib `threading` | `monitor/monitor_loop.py` | Loop enabled hosts → `poll_host_route()`; callbacks instead of Qt signals |
+| **PY-021** | [x] `LightweightMonitorWorker` — thin wrapper | `monitor/worker.py` | Worker delegates to `MonitorLoop`; existing Qt tests green |
+| **PY-022** | [x] Single `enabled` state | `session_store.py`, `worker.py`, `ui/main_window.py` | Remove duplicate `worker._enabled` vs `HostSessionData.enabled` |
+| **PY-023** | [x] CLI subcommands: `run` \| `export` \| `monitor` \| `daemon` \| `stop` \| `status` | `src/pingui/__main__.py` | `argparse` subparsers; backward compat: no subcommand = `run` |
+
+**Estimate:** 1–2 sprint. **Prerequisite** for PY-030…034 and Python P12.
+
+### PY.2 — Headless daemon (P1) — Python parity with P12
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **PY-030** | [x] `daemon`: no PyQt, `MonitorLoop` only | `__main__.py`, `monitor/daemon_runner.py` | `python -m pingui daemon --session-db PATH` — process stays running |
+| **PY-031** | [x] PID file + `stop` / `status` | `monitor/daemon_runner.py` | Contract test start/stop |
+| **PY-032** | [x] `systemd/pingui.service.example` | `systemd/` | `Type=simple`, `Restart=on-failure`, `User=` |
+| **PY-033** | [x] DEPLOYMENT § Python NOC headless | `docs/DEPLOYMENT.md` | `--session-db`, daemon flags |
+| **PY-034** | [x] CHECKLIST § Python daemon smoke | `docs/CHECKLIST.md` | start → status → stop |
+
+**Estimate:** 1–2 sprint. **Parallel** with P12-001…P12-040 (Java).
+
+### PY.3 — Python alerts (P0) — parity with P10
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **PY-040** | [x] `RouteChangeEvent` in `models.py` | `models.py`, `tests/unit/test_route_change_event.py` | JSON serialize/deserialize; shared contract with P10-010 |
+| **PY-041** | [x] `AlertDispatcher` + `WebhookAlertDispatcher` | `monitor/alert_dispatcher.py` | POST JSON; contract test with mock HTTP |
+| **PY-042** | [x] CLI `--alert-webhook URL` | `__main__.py` | Secret not logged; network error → log, no crash |
+| **PY-043** | [x] Desktop notify (`notify-send`) | `monitor/desktop_notifier.py` | Linux smoke: route change → notification |
+| **PY-044** | [x] Alert rate limit | `monitor/alert_rate_limiter.py` | Unit test burst per host |
+| **PY-045** | [x] Daemon + alerts | `daemon_runner.py` | Route change → webhook without GUI (Python P12-030) |
+
+**Estimate:** 1–2 sprint. **Can run in parallel** with Pro-S2 (P10).
+
+### PY.4 — Python IPv6 (P2) — parity with V6
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **PY-050** | [x] IPv6 literal in `config.py` | `config.py`, `tests/unit/test_config.py` | RFC 5952 normalize; mixed v4+v6 profile |
+| **PY-051** | [x] Dual-stack ICMP trace | `icmp/tracer.py`, `icmp/process_tracer.py` | v6 literal → `traceroute -6`; `@pytest.mark.network` optional |
+| **PY-052** | [x] GeoIP `prefixes_v6` | `geoip/country.py`, `config/geoip_hints.yaml` | Parity with V6-036…V6-037 |
+
+**Estimate:** 2–3 sprint after V6-015. **Out of scope v1:** raw ICMPv6 (see V6-040…V6-045).
+
+### PY.4b — Persistence events Python (P1) — parity with P11-002
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **PY-P11** | [ ] YAML `persistence.events` + SQLite writes | `config.py`, `session_db.py`, `session_store.py` | Shared YAML with SPIKE; `route_change` + `probe_error` in `persistence_event` |
+
+**Estimate:** 1 sprint after Java P11-013. **Does not block** Java P11-010.
+
+### PY.5 — Packaging and CI hygiene (P1–P2)
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **PY-060** | [x] `optional-dependencies.gui` | `pyproject.toml` | Base: `scapy`, `PyYAML`, `networkx`; extra: PyQt6, WebEngine, folium, matplotlib |
+| **PY-061** | [x] CI push on `beta` | `.github/workflows/ci.yml` | `branches: [main, master, beta]` |
+| **PY-062** | [x] Python CI badge in README | `README.md`, `README.en.md` | Badge next to Java CI |
+| **PY-063** | [x] mypy `python_version` aligned with CI runtime | `pyproject.toml` | CI `setup-python` 3.11; mypy 3.12 (numpy stubs); numpy `ignore_errors` |
+| **PY-064** | [x] Coverage: `__main__.py` in gate | `pyproject.toml`, `tests/unit/test_main_dispatch.py` | omit removed; ≥80% total gate |
+
+**Estimate:** 1 sprint; PY-060…064 can be cherry-picked into PY-S1.
+
+### Recommended order (phase PY)
+
+```mermaid
+flowchart TD
+  PY010[PY-010 pingui.sh CLI] --> PY011[PY-011 CONFIGURATION]
+  PY011 --> PY013[PY-013 Living Spec]
+  PY013 --> PY020[PY-020 MonitorLoop]
+  PY020 --> PY030[PY-030 --daemon]
+  PY030 --> PY040[PY-040 RouteChangeEvent]
+  PY040 --> PY045[PY-045 daemon alerts]
+  PY020 --> PY050[PY-050 IPv6 config]
+```
+
+| Sprint (proposed) | Tasks | Priority |
+|-------------------|-------|----------|
+| **PY-S1** | PY-010…PY-016, PY-060…PY-064 (partial) | P0 |
+| **PY-S2** | PY-020…PY-023, PY-030…PY-034 | P1 |
+| **PY-S3** | PY-040…PY-045 | P0 |
+| **PY-S4 (opt.)** | PY-050…PY-052 | P2 |
+
+---
+
 ## Phase 10 — Route change alerts (`beta` → `main`, P0)
 
 **Goal:** professional users learn about route changes without an open GUI.
@@ -252,15 +368,15 @@ flowchart TD
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **P10-001** | [ ] ADR: alert policy (channels, rate limit, payload) | `docs/ADR_ALERTS.md` | Webhook + desktop; SNMP/email optional — out of scope v1 |
-| **P10-010** | [ ] Model `RouteChangeEvent` (host, old_ips, new_ips, ts, profile) | `monitor/RouteChangeEvent.java`, Python `models.py` | Unit test serialize/deserialize |
-| **P10-011** | [ ] `AlertDispatcher` interface + no-op default | `monitor/AlertDispatcher.java` | Monitor calls on `onRouteChanged` |
-| **P10-020** | [ ] Desktop notification (Linux notify-send / Windows toast / macOS) | `ui/RouteChangeNotifier.java` | Manual smoke: route change → notification |
-| **P10-021** | [ ] YAML/CLI: `alerts.desktop: true\|false` | `ProfilesConfig`, `PinguiApplication` | Default off; documented in CONFIGURATION |
-| **P10-030** | [ ] Webhook POST JSON (Slack-compatible + generic) | `monitor/WebhookAlertDispatcher.java` | Contract test with mock HTTP server |
-| **P10-031** | [ ] CLI `--alert-webhook URL` + profile field `alert_webhook` | `CliProfileOverrides`, YAML schema | Do not log secrets; network error → log, no crash |
-| **P10-040** | [ ] Rate limit: max N alerts / host / hour | `AlertRateLimiter.java` | Unit test burst |
-| **P10-050** | [ ] LIVING_SPEC + CHECKLIST § alert smoke | `docs/LIVING_SPEC.md`, `docs/CHECKLIST.md` | Manual Linux run |
+| **P10-001** | [x] ADR: alert policy (channels, rate limit, payload) | `docs/ADR_ALERTS.md`, `docs/en/ADR_ALERTS.md` | Webhook + desktop; SNMP/email — out of scope v1 |
+| **P10-010** | [x] Model `RouteChangeEvent` (host, old_ips, new_ips, ts, profile) | `monitor/RouteChangeEvent.java`, Python `models.py` | Unit test serialize/deserialize |
+| **P10-011** | [x] `AlertDispatcher` interface + no-op default | `monitor/AlertDispatcher.java`, `MonitorService` | Monitor calls on `onRouteChanged` |
+| **P10-020** | [x] Desktop notification (Linux notify-send / Windows toast / macOS) | `ui/RouteChangeNotifier.java` | Manual smoke: route change → notification |
+| **P10-021** | [x] YAML/CLI: `alerts.desktop: true\|false` | `ProfilesConfig`, `PinguiApplication` | Default off; documented in CONFIGURATION |
+| **P10-030** | [x] Webhook POST JSON (Slack-compatible + generic) | `monitor/WebhookAlertDispatcher.java` | Contract test with mock HTTP server |
+| **P10-031** | [x] CLI `--alert-webhook URL` + profile field `alert_webhook` | `CliAlertOverrides`, YAML schema | Do not log secrets; network error → log, no crash |
+| **P10-040** | [x] Rate limit: max N alerts / host / hour | `AlertRateLimiter.java` | Unit test burst |
+| **P10-050** | [x] LIVING_SPEC + CHECKLIST § alert smoke | `docs/LIVING_SPEC.md`, `docs/CHECKLIST.md` | Manual Linux run |
 
 **Estimate:** 1–2 sprints.
 
@@ -274,10 +390,14 @@ flowchart TD
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **P11-001** | [ ] SPIKE: SQLite schema for Java (routes, events, samples) | `docs/SPIKE_PERSISTENCE.md` | Parity with Python `session_db.py` |
+| **P11-001** | [x] SPIKE: SQLite schema for Java (routes, events, samples) | `docs/SPIKE_PERSISTENCE.md` | Parity with Python `session_db.py` |
+| **P11-002** | [x] SPIKE amend: event policy, menu, YAML, purge rules | `docs/SPIKE_PERSISTENCE.md` | Defaults: state+route_change+probe_error; poll-cycle |
 | **P11-010** | [ ] `SessionDatabase` — open/migrate/close | `persistence/SessionDatabase.java` | Flyway or manual schema v1 |
-| **P11-011** | [ ] Persist route snapshot + route_change event | `MonitorService`, `SessionDatabase` | Unit test insert/query |
+| **P11-011** | [ ] Write `host_session` + `persistence_event` | `MonitorService`, `SessionDatabase` | Unit test insert/query |
 | **P11-012** | [ ] CLI `--session-db PATH` | `PinguiApplication`, `java/README.md` | Optional; without PATH — RAM-only |
+| **P11-013** | [ ] `PersistencePolicy` + writer gate | `persistence/PersistencePolicy.java` | Default events; poll-cycle swap |
+| **P11-014** | [ ] GUI “Database…” + confirm purge | `PersistenceSettingsDialog.java` | Checkboxes route_change / probe_error |
+| **P11-015** | [ ] YAML `persistence.events` + CLI override | `ProfilesConfig`, `CONFIGURATION.md` | Priority like ADR_ALERTS |
 | **P11-020** | [ ] UI: «History» panel — route changes 24h/7d | `RouteHistoryPresenter.java` | Manual smoke |
 | **P11-021** | [ ] UI: replay snapshot on graph (read-only) | `RouteGraphPresenter` | Select event → graph |
 | **P11-030** | [ ] Export CSV/HTML from DB (like Python `session_report`) | `export/SessionReportExporter.java` | CLI `--export-report` |
@@ -457,19 +577,28 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  V6070[V6-070 IPv6 QA gate] --> P10010[P10 alerts]
+  V6070[V6-070 IPv6 QA gate] --> PYS1[PY-S1 launcher docs]
+  PYS1 --> PYS2[PY-S2 MonitorLoop daemon]
+  PYS1 --> P10010[P10 alerts]
+  P10010 --> PYS3[PY-S3 Python alerts]
   P10010 --> P11010[P11 SQLite Java]
-  P11010 --> P12010[P12 daemon]
+  P11010 --> PYS2
+  PYS2 --> P12010[P12 daemon Java]
   P12010 --> P13010[P13 MTR / smart interval]
   P13010 --> P14010[P14 route diff / tags]
   P14010 --> P15010[P15 Prometheus / API]
   P15010 --> P16010[P16 telemetry / LOG-server]
+  V6070 --> PY50[PY-S4 IPv6 Python opt]
 ```
 
 | Priority | Sprint (prop.) | Phase | Tasks |
 |----------|----------------|-------|-------|
+| **P0** | PY-S1 | PY.0 + PY.5 | PY-010…PY-016, PY-060…PY-064 |
+| **P1** | PY-S2 | PY.1 + PY.2 | PY-020…PY-034 |
+| **P0** | PY-S3 | PY.3 | PY-040…PY-045 |
+| **P2** | PY-S4 (opt.) | PY.4 | PY-050…PY-052 |
 | **P0** | Pro-S1 | 9 (close) | V6-035…V6-037, V6-060…V6-074 |
-| **P0** | Pro-S2 | 10 | P10-001…P10-050 |
+| **P0** | Pro-S2 | 10 | P10-001…P10-050 (+ PY-S3 Python) |
 | **P0** | Pro-S3–S4 | 11 | P11-001…P11-050 |
 | **P1** | Pro-S5 | 12 | P12-001…P12-040 |
 | **P1** | Pro-S6–S7 | 13 | P13-001…P13-050 |
@@ -510,7 +639,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog:** M/B roadmap closed; B-064 coverage ongoing; **IPv6 — Phase 9 (V6-*)**; **Pro — Phases 10–16 (P10–P16)**.
+**Backlog:** M/B roadmap closed; B-064 coverage ongoing; **IPv6 — Phase 9 (V6-*)**; **Python NOC — Phase PY (PY-*)**; **Pro — Phases 10–16 (P10–P16)**.
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 
@@ -564,5 +693,37 @@ Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 **Roadmap Pro (2026-07-09):** added phases 10–15 (alerts, persistence, daemon, MTR, pro GUI, integrations) — official NOC/SRE plan.
 
 **Roadmap Telemetry (2026-07-09):** phase 16 — network metrics collection, local storage (SQLite/JSONL), LOG-server export (syslog/GELF/Loki).
+
+**Roadmap Python (2026-07-09):** phase PY — atomic tickets PY-010…PY-064: launcher, docs, MonitorLoop, daemon, alerts, IPv6, CI/packaging (`beta` only).
+
+**PY-S4 (2026-07-09):** PY-050…PY-052 — Python IPv6 dual-stack on `beta`.
+
+**IPv6-S3 (2026-07-09):** V6-035…V6-037 — `GeoCountry` IPv6 longest-prefix + `prefixes_v6` YAML.
+
+**IPv6-S4 (2026-07-09):** V6-060…V6-063 — dual-stack Help/About, IPv6 graph labels, host input validation.
+
+**IPv6-S4 QA (2026-07-09):** V6-070…V6-074 — CHECKLIST smoke, v4 fixture regression test, JaCoCo notes, IPv6 beta release note.
+
+**IPv6 expert UI (2026-07-09):** V6-053 — `-F` flow label gated by IPv6 target / `-6` AF.
+
+**IPv6 expert AF default (2026-07-09):** V6-054 — single address family for expert ping; default `-4` (no OS delegation / no dual AF).
+
+**IPv6 expert hostname resolve (2026-07-09):** V6-055 — expert ping `-6` resolves hostname to AAAA before argv.
+
+**IPv6 deployment docs (2026-07-09):** V6-045 — `cap_net_raw` matrix for dual-stack (v4 raw vs v6 process trace).
+
+**Raw ICMPv6 Linux (2026-07-09):** V6-040…V6-043 — JNA `sockaddr_in6`, `IcmpV6Packet`, dual transport, v6 hop-limit trace (`probe: raw`).
+
+**IPv6 release 0.2.0 (2026-07-09):** semver bump, CHANGELOG `[0.2.0]`, SPIKE/CHECKLIST/DEPLOYMENT parity; phase 9 code-complete on `beta`.
+
+**Alerts ADR (2026-07-09):** P10-001 — `ADR_ALERTS.md` (webhook + desktop v1, payload, rate limit); Java P10-010+.
+
+**Java alerts foundation (2026-07-09):** P10-010…P10-011 — `RouteChangeEvent` JSON + `AlertDispatcher` wired in `MonitorService`.
+
+**Java alerts pipeline (2026-07-09):** P10-020…P10-050 — webhook, desktop, YAML/CLI config, rate limit, tests + CHECKLIST.
+
+**Persistence SPIKE (2026-07-09):** P11-001 — `SPIKE_PERSISTENCE.md` (schema v1 Python parity, v2 `persistence_event`).
+
+**Persistence policy SPIKE (2026-07-09):** P11-002 — event menu, YAML `persistence.events`, purge confirm, poll-cycle policy swap; PY-P11 for Python parity.
 
 Update this file when closing a task: `[x] M-001` + date in CHANGELOG.

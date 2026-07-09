@@ -1,23 +1,44 @@
-> **Мова:** Українська · [English](CHANGELOG.en.md)
-
 # Changelog
+
+> **Мова:** Українська · [English](docs/en/README.md#documentation) *(English docs index)*
 
 Формат базується на [Keep a Changelog](https://keepachangelog.com/uk/1.1.0/).
 Версіонування: [Semantic Versioning](https://semver.org/lang/uk/).
 
 ## [Unreleased]
 
-### Fixed
+### Added
 
-- **IPv6 literal:** `DualStackRouteProbe` — auto probe використовує subprocess trace для v6 (raw ICMP лишається v4-only).
-- **Expert/ping v6:** auto `-6` для IPv6 literal; `-4`/`-6` конфлікт з типом цілі.
-- **Expert ping UI:** `-4`/`-6` — один вибір сімейства адрес; `-n`/`-H`, `-F`/IPv6, `-r`/`-I` — взаємовиключення в діалозі.
+- **Alerts ADR (P10-001):** `docs/ADR_ALERTS.md` — channels (webhook, desktop), `RouteChangeEvent` JSON, rate limit, failure policy.
+- **Java alerts foundation (P10-010…011):** `RouteChangeEvent`, `AlertDispatcher`, dispatch from `MonitorService` on route change.
+- **Java alerts pipeline (P10-020…050):** webhook POST, desktop `notify-send`, YAML `alerts:` + CLI overrides, per-host rate limit, `RouteChangeNotifier`, tests and CHECKLIST smoke.
+- **Expert ping default IPv4 (V6-054):** single AF mode (`-4` or `-6`); default `-4` for hostname/IPv4; no dual-stack expert ping.
+- **Expert ping IPv6 resolve (V6-055):** hostname targets resolve to AAAA when expert ping uses `-6`.
+- **Persistence SPIKE (P11-001):** `docs/SPIKE_PERSISTENCE.md` — Java SQLite schema v1 parity + v2 route events.
+- **Persistence policy SPIKE (P11-002):** event menu, YAML `persistence.events`, defaults (state+route_change+probe_error), purge confirm, poll-cycle policy.
+
+## [0.2.0] - 2026-07-09
 
 ### Added
 
-- **IPv6 trace (V6-S2):** `TraceTarget`, `-6` у traceroute/tracert, парсери v6 + фікстури `unix_v6_*`/`win_v6_*`.
-- **IPv6 config (V6-S1):** `HostAddressParser` — RFC 5952 normalize, mixed IPv4/IPv6 profiles у YAML.
-- **Двомовна документація:** українська (`docs/`) та англійська (`docs/en/`, `README.en.md`, `java/README.en.md`).
+- **Dual-stack IPv6 (phase 9):** Java + Python — RFC 5952 literals, subprocess `traceroute -6`, GeoIP `prefixes_v6`, dual-stack UI.
+- **Python IPv6 (PY-S4):** `config.py`, `process_tracer.py`, `geoip/country.py` v6 longest-prefix.
+- **Java raw ICMPv6 (V6-040…043):** `IcmpV6Packet`, dual `LinuxJnaIcmpTransport`, `probe: raw` hop-limit trace.
+- **Expert ping v6 (V6-050…053):** auto `-6`, validator conflicts, `-F` flow-label UI gating.
+- **Docs:** bilingual UK/EN; DEPLOYMENT `cap_net_raw` matrix (V6-045); CHECKLIST IPv6 + raw ICMP smoke steps.
+
+### Fixed
+
+- **IPv6 literal:** `DualStackRouteProbe` — `probe: auto` uses subprocess trace for v6; raw v6 available with `probe: raw`.
+- **Expert/ping v6:** auto `-6` for IPv6 literal; `-4`/`-6` conflict with target type.
+- **Expert ping UI:** mutual exclusion for address family and dependent flags in dialog.
+
+### Changed
+
+- **Version:** Java `0.2.0-SNAPSHOT`, Python `0.2.0` on `beta` branch.
+- **Tests:** IPv6 fixtures (`unix_v6_*`, `win_v6_*`), `v4FixturesRemainGreen`, `IcmpV6PacketTest`, JaCoCo notes.
+
+## [0.1.0 development notes] *(historical, included in 0.1.0 tag)*
 
 ### Changed
 
@@ -124,5 +145,6 @@
 
 - Coverage gate для `./pingui.sh --deploy` (~90% після розширення тестів).
 
-[Unreleased]: https://github.com/sesquicadaver/PINGUI/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/sesquicadaver/PINGUI/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/sesquicadaver/PINGUI/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/sesquicadaver/PINGUI/releases/tag/v0.1.0

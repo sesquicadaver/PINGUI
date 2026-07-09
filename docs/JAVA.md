@@ -19,8 +19,8 @@
 
 ## Обмеження
 
-- **IPv4-only** для цілей і raw ICMP (`HostsConfig` validator, `RawIcmpRouteProbe` / `AF_INET`).
-- IPv6 — поза scope `main`; див. [ROADMAP.md](ROADMAP.md) фаза 7.
+- **Raw ICMP** — Linux only (`AF_INET` / `AF_INET6`); `probe: auto` лишає IPv6 literal на subprocess trace (V6-044); `probe: raw` — raw v6 з `cap_net_raw`.
+- **Hostname AAAA** — trace: резолв ОС; expert ping `-6`: AAAA через `HostAddressResolver` (V6-055).
 
 ## CLI vs YAML профіль
 
@@ -40,8 +40,8 @@ Python використовує scapy + raw ICMP. Java підтримує два
 | Backend | Клас | ОС | Вимоги |
 |---------|------|-----|--------|
 | **process** (за замовч.) | `ProcessRouteProbe` | Linux, macOS, Windows | `traceroute` / `tracert` у PATH |
-| **raw-icmp** (Linux) | `RawIcmpRouteProbe` | Linux | JNA + `CAP_NET_RAW` або root |
-| **auto** | `RouteProbeFactory` | Усі | Linux + cap → raw, інакше process |
+| **raw-icmp** (Linux) | `RawIcmpRouteProbe` | Linux | JNA + `CAP_NET_RAW`; v4 і v6 literal при `probe: raw` |
+| **auto** | `RouteProbeFactory` | Linux + cap → raw для v4/hostname, process для v6 literal |
 
 CLI: `--probe auto|process|raw` (default: `auto`).
 
@@ -70,9 +70,9 @@ CLI: `--probe auto|process|raw` (default: `auto`).
 
 ### RawIcmpRouteProbe (JNA, Linux)
 
-Інкрементальний TTL 1..N через raw ICMP socket (parity з Python `trace_route`).
+Інкрементальний TTL/hop limit 1..N через raw ICMP socket (IPv4 `IP_TTL`, IPv6 `IPV6_UNICAST_HOPS`).
 
-Потрібно: `sudo setcap cap_net_raw+ep` на JDK binary або запуск від root.
+Потрібно: `sudo setcap cap_net_raw+ep` на JDK binary або запуск від root. IPv6 literal у режимі `probe: raw`; у `probe: auto` — subprocess `traceroute -6`.
 
 ## Monitor-шар
 

@@ -4,23 +4,31 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pingui"
-version = "0.1.0"
+version = "0.2.0"
 description = "Linux desktop route and ping monitor with topological visualization"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "PINGUI Team" }]
 dependencies = [
+    "scapy>=2.5",
+    "PyYAML>=6.0",
+    "networkx>=3.2",
+]
+
+[project.urls]
+Documentation = "https://github.com/sesquicadaver/PINGUI/blob/main/docs/README.md"
+Documentation-EN = "https://github.com/sesquicadaver/PINGUI/blob/main/docs/en/README.md"
+Repository = "https://github.com/sesquicadaver/PINGUI"
+Changelog = "https://github.com/sesquicadaver/PINGUI/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+gui = [
     "PyQt6>=6.6",
     "PyQt6-WebEngine>=6.6",
     "folium>=0.15",
     "matplotlib>=3.8",
-    "networkx>=3.2",
-    "scapy>=2.5",
-    "PyYAML>=6.0",
 ]
-
-[project.optional-dependencies]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=4.1",
@@ -43,7 +51,6 @@ where = ["src"]
 source = ["pingui"]
 concurrency = ["thread"]
 omit = [
-    "*/pingui/__main__.py",
     "*/pingui/ui/app.py",
     "*/pingui/ui/map_view.py",
     "*/pingui/logging_setup.py",
@@ -78,8 +85,6 @@ module = [
     "matplotlib.*",
     "matplotlib",
     "networkx.*",
-    "numpy.*",
-    "numpy",
     "folium.*",
     "folium",
     "PyQt6.QtWebEngineWidgets",
@@ -90,3 +95,9 @@ module = [
 ]
 ignore_missing_imports = true
 follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = ["numpy", "numpy.*"]
+ignore_errors = true
+follow_imports = "skip"
+ignore_missing_imports = true

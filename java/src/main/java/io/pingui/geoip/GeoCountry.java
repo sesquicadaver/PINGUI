@@ -3,6 +3,7 @@ package io.pingui.geoip;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
@@ -56,12 +57,39 @@ public final class GeoCountry {
         }
     }
 
-    static final class CountryLookup {
-        private final List<PrefixEntry> prefixes;
+    static final class PrefixEntry6 {
+        final int prefixBits;
+        final byte[] network;
+        final String code;
 
-        CountryLookup(List<PrefixEntry> prefixes) {
-            this.prefixes = prefixes.stream()
+        PrefixEntry6(int prefixBits, byte[] network, String code) {
+            this.prefixBits = prefixBits;
+            this.network = network;
+            this.code = code;
+        }
+    }
+
+    static final class PrefixTables {
+        final List<PrefixEntry> v4;
+        final List<PrefixEntry6> v6;
+
+        PrefixTables(List<PrefixEntry> v4, List<PrefixEntry6> v6) {
+            this.v4 = v4;
+            this.v6 = v6;
+        }
+    }
+
+    static final class CountryLookup {
+        private final List<PrefixEntry> v4Prefixes;
+        private final List<PrefixEntry6> v6Prefixes;
+
+        CountryLookup(PrefixTables tables) {
+            this.v4Prefixes = tables.v4.stream()
                     .sorted(Comparator.comparingInt((PrefixEntry e) -> e.prefixBits)
+                            .reversed())
+                    .toList();
+            this.v6Prefixes = tables.v6.stream()
+                    .sorted(Comparator.comparingInt((PrefixEntry6 e) -> e.prefixBits)
                             .reversed())
                     .toList();
         }
@@ -88,16 +116,22 @@ public final class GeoCountry {
         }
 
         String resolve(String ip) {
-            Inet4Address addr;
+            InetAddress parsed;
             try {
-                InetAddress parsed = InetAddress.getByName(ip);
-                if (!(parsed instanceof Inet4Address ipv4)) {
-                    return null;
-                }
-                addr = ipv4;
+                parsed = InetAddress.getByName(ip);
             } catch (UnknownHostException exc) {
                 return null;
             }
+            if (parsed instanceof Inet4Address ipv4) {
+                return resolveV4(ipv4);
+            }
+            if (parsed instanceof Inet6Address ipv6) {
+                return resolveV6(ipv6);
+            }
+            return null;
+        }
+
+        private String resolveV4(Inet4Address addr) {
             if (addr.isLoopbackAddress() || addr.isLinkLocalAddress() || addr.isSiteLocalAddress()) {
                 return LAN_TAG;
             }
@@ -105,20 +139,60 @@ public final class GeoCountry {
                 return null;
             }
             int value = ipv4ToInt(addr);
-            for (PrefixEntry entry : prefixes) {
-                if (matches(value, entry)) {
+            for (PrefixEntry entry : v4Prefixes) {
+                if (matchesV4(value, entry)) {
                     return entry.code;
                 }
             }
             return null;
         }
 
-        private static boolean matches(int ip, PrefixEntry entry) {
+        private String resolveV6(Inet6Address addr) {
+            if (isIpv6Lan(addr)) {
+                return LAN_TAG;
+            }
+            if (addr.isMulticastAddress()) {
+                return null;
+            }
+            byte[] value = addr.getAddress();
+            for (PrefixEntry6 entry : v6Prefixes) {
+                if (matchesV6(value, entry)) {
+                    return entry.code;
+                }
+            }
+            return null;
+        }
+
+        private static boolean isIpv6Lan(Inet6Address addr) {
+            if (addr.isLoopbackAddress() || addr.isLinkLocalAddress()) {
+                return true;
+            }
+            byte[] octets = addr.getAddress();
+            return (octets[0] & (byte) 0xfe) == (byte) 0xfc;
+        }
+
+        private static boolean matchesV4(int ip, PrefixEntry entry) {
             if (entry.prefixBits == 0) {
                 return true;
             }
             int mask = prefixMask(entry.prefixBits);
             return (ip & mask) == (entry.networkInt & mask);
+        }
+
+        private static boolean matchesV6(byte[] ip, PrefixEntry6 entry) {
+            if (entry.prefixBits == 0) {
+                return true;
+            }
+            for (int bit = 0; bit < entry.prefixBits; bit++) {
+                int byteIndex = bit / 8;
+                int bitInByte = 7 - (bit % 8);
+                int ipBit = (ip[byteIndex] >> bitInByte) & 1;
+                int netBit = (entry.network[byteIndex] >> bitInByte) & 1;
+                if (ipBit != netBit) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private static int prefixMask(int bits) {
@@ -140,32 +214,57 @@ public final class GeoCountry {
         }
 
         @SuppressWarnings("unchecked")
-        private static List<PrefixEntry> parseYaml(String payload) {
+        private static PrefixTables parseYaml(String payload) {
             Yaml yaml = new Yaml();
             Object raw = yaml.load(payload);
             if (!(raw instanceof Map<?, ?> root)) {
                 throw new IllegalArgumentException("GeoIP hints YAML root must be a mapping");
             }
-            Object prefixesRaw = root.get("prefixes");
-            if (prefixesRaw == null) {
+            Object v4Raw = root.get("prefixes");
+            Object v6Raw = root.get("prefixes_v6");
+            if (v4Raw == null && v6Raw == null) {
                 return embeddedDefaults();
             }
+            List<PrefixEntry> v4 = v4Raw == null ? List.of() : parseV4Mapping(v4Raw);
+            List<PrefixEntry6> v6 = v6Raw == null ? List.of() : parseV6Mapping(v6Raw);
+            return new PrefixTables(v4, v6);
+        }
+
+        private static List<PrefixEntry> parseV4Mapping(Object prefixesRaw) {
             if (!(prefixesRaw instanceof Map<?, ?> prefixes)) {
                 throw new IllegalArgumentException("GeoIP hints 'prefixes' must be a mapping");
             }
             List<PrefixEntry> entries = new ArrayList<>();
             for (Map.Entry<?, ?> item : prefixes.entrySet()) {
                 String cidr = String.valueOf(item.getKey()).trim();
-                String code = String.valueOf(item.getValue()).trim().toUpperCase();
-                if (code.length() != 2 || !code.chars().allMatch(Character::isLetter)) {
-                    throw new IllegalArgumentException("Invalid country code: " + code);
-                }
-                entries.add(parseCidr(cidr, code));
+                String code = normalizeCountryCode(String.valueOf(item.getValue()));
+                entries.add(parseV4Cidr(cidr, code));
             }
             return entries;
         }
 
-        private static PrefixEntry parseCidr(String cidr, String code) {
+        private static List<PrefixEntry6> parseV6Mapping(Object prefixesRaw) {
+            if (!(prefixesRaw instanceof Map<?, ?> prefixes)) {
+                throw new IllegalArgumentException("GeoIP hints 'prefixes_v6' must be a mapping");
+            }
+            List<PrefixEntry6> entries = new ArrayList<>();
+            for (Map.Entry<?, ?> item : prefixes.entrySet()) {
+                String cidr = String.valueOf(item.getKey()).trim();
+                String code = normalizeCountryCode(String.valueOf(item.getValue()));
+                entries.add(parseV6Cidr(cidr, code));
+            }
+            return entries;
+        }
+
+        private static String normalizeCountryCode(String code) {
+            String normalized = code.trim().toUpperCase();
+            if (normalized.length() != 2 || !normalized.chars().allMatch(Character::isLetter)) {
+                throw new IllegalArgumentException("Invalid country code: " + code);
+            }
+            return normalized;
+        }
+
+        private static PrefixEntry parseV4Cidr(String cidr, String code) {
             String[] parts = cidr.split("/", 2);
             if (parts.length != 2) {
                 throw new IllegalArgumentException("Invalid CIDR: " + cidr);
@@ -175,19 +274,44 @@ public final class GeoCountry {
                 throw new IllegalArgumentException("Invalid prefix length in: " + cidr);
             }
             try {
-                Inet4Address network = (Inet4Address) InetAddress.getByName(parts[0].trim());
-                return new PrefixEntry(prefixBits, ipv4ToInt(network), code);
+                InetAddress network = InetAddress.getByName(parts[0].trim());
+                if (!(network instanceof Inet4Address ipv4Network)) {
+                    throw new IllegalArgumentException("Invalid IPv4 CIDR: " + cidr);
+                }
+                return new PrefixEntry(prefixBits, ipv4ToInt(ipv4Network), code);
             } catch (UnknownHostException exc) {
                 throw new IllegalArgumentException("Invalid network in CIDR: " + cidr, exc);
             }
         }
 
-        private static List<PrefixEntry> embeddedDefaults() {
-            return List.of(
-                    parseCidr("8.8.8.0/24", "US"),
-                    parseCidr("8.8.4.0/24", "US"),
-                    parseCidr("1.1.1.0/24", "AU"),
-                    parseCidr("1.0.0.0/24", "AU"));
+        private static PrefixEntry6 parseV6Cidr(String cidr, String code) {
+            String[] parts = cidr.split("/", 2);
+            if (parts.length != 2) {
+                throw new IllegalArgumentException("Invalid IPv6 CIDR: " + cidr);
+            }
+            int prefixBits = Integer.parseInt(parts[1].trim());
+            if (prefixBits < 0 || prefixBits > 128) {
+                throw new IllegalArgumentException("Invalid IPv6 prefix length in: " + cidr);
+            }
+            try {
+                InetAddress network = InetAddress.getByName(parts[0].trim());
+                if (!(network instanceof Inet6Address ipv6Network)) {
+                    throw new IllegalArgumentException("Invalid IPv6 CIDR: " + cidr);
+                }
+                return new PrefixEntry6(prefixBits, ipv6Network.getAddress(), code);
+            } catch (UnknownHostException exc) {
+                throw new IllegalArgumentException("Invalid IPv6 network in CIDR: " + cidr, exc);
+            }
+        }
+
+        private static PrefixTables embeddedDefaults() {
+            return new PrefixTables(
+                    List.of(
+                            parseV4Cidr("8.8.8.0/24", "US"),
+                            parseV4Cidr("8.8.4.0/24", "US"),
+                            parseV4Cidr("1.1.1.0/24", "AU"),
+                            parseV4Cidr("1.0.0.0/24", "AU")),
+                    List.of(parseV6Cidr("2001:db8::/32", "US")));
         }
     }
 }

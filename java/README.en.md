@@ -1,19 +1,19 @@
-> **Language:** [Ukrainian](../README.md) · English
+> **Language:** English · [Українська](README.md)
 
 # PINGUI Java
 
-Cross-platform PINGUI on **Java 21 + JavaFX**.
+Cross-platform PINGUI built with **Java 21 + JavaFX**.
 
-Runs on **Linux, macOS, and Windows**: tracing via system
-`traceroute` / `tracert`. Session data — RAM only.
+Runs on **Linux, macOS, and Windows**: route tracing via system
+`traceroute` / `tracert`. Session data lives in RAM only.
 
-> **Recommendation:** **Linux** — optimal platform (fast `traceroute -q 1`, Expert ping, raw ICMP). **Windows** — for periodic checks: full trace is slow via `tracert`; in GUI use **Ping only** or increase `interval` in YAML. [docs/en/DEPLOYMENT.md](../docs/en/DEPLOYMENT.md#os-recommendation)
+> **Recommendation:** **Linux** is the optimal platform (fast `traceroute -q 1`, Expert ping, raw ICMP). **Windows** is suitable for periodic checks: full trace is slow via `tracert`; in the GUI use **Ping only** or increase `interval` in YAML. [docs/DEPLOYMENT.md](../docs/en/DEPLOYMENT.md#os-recommendation)
 
 ## Requirements
 
 | Component | Version |
 |-----------|---------|
-| JDK | **21** (Java 25 as Gradle launcher is not supported) |
+| JDK | **21** (Java 25 is not supported as the Gradle launcher) |
 | traceroute | Linux/macOS |
 | tracert | Windows (built-in) |
 
@@ -36,7 +36,7 @@ chmod +x pingui-java.sh gradlew
 
 Requires **JDK 21** ([Eclipse Temurin](https://adoptium.net/temurin/releases/?version=21); Add to PATH + JAVA_HOME).
 
-`pingui-java.bat` wraps `gradlew.bat`. If `gradlew.bat build` succeeds — launcher works the same.
+`pingui-java.bat` wraps `gradlew.bat`. If `gradlew.bat build` succeeds, the launcher works the same way.
 
 ```bat
 cd java
@@ -47,7 +47,7 @@ pingui-java.bat --build
 pingui-java.bat
 ```
 
-If `java` is not in PATH:
+If `java` is not on PATH:
 
 ```bat
 set "PINGUI_JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.x-hotspot"
@@ -75,20 +75,23 @@ gradlew.bat run        # Windows
 | `--max-hops` | *(from YAML)* | Override max hop, **only if passed** |
 | `--timeout` | *(from YAML)* | Override probe timeout (s), **only if passed** |
 | `--probe` | *(from YAML)* | Override `auto`/`process`/`raw`, **only if passed** |
+| `--alert-webhook` | off | POST JSON `RouteChangeEvent` on route change |
+| `--desktop-alerts` | off | Linux `notify-send` on route change |
+| `--alert-rate-limit` | `10` | Max alerts per host / hour |
 | `--geoip-hints` | `config/geoip_hints.yaml` | Offline CIDR→country |
 | `--no-geoip` | off | Disable country in labels |
 | `--verbose` | off | Debug log |
 
-CLI **does not overwrite** profile defaults (1.0 / 20 / 0.5 / auto) unless the corresponding flag is passed.
+The CLI **does not overwrite** profile defaults (1.0 / 20 / 0.5 / auto) unless the corresponding flag is provided.
 
 ## GUI
 
-- **About** / **Help** — menu with «About PINGUI…» and «Help…» (F1)
-- **Tracing profiles**: multiple named profiles in YAML, switch in UI
-- List up to **10 targets**, checkbox = active tracing; **Ping only** = ping without trace
+- **About** / **Help** — menu with “About PINGUI…” and “Help…” dialogs (F1); dual-stack IPv4/IPv6 literals
+- **Trace profiles**: multiple named profiles in YAML, switchable in the UI
+- List of up to **10 targets**, checkbox = active tracing; **Ping only** = ping without trace
 - **Add / Edit / Delete / Save** → YAML
-- **Expert** (Linux): **Exten.** → `ping(8)` iputils params; disabled on Win/mac
-- **Simple** / **Extended**: RTT metrics, loss %, route graph, change log
+- **Expert** (Linux): **Exten.** → `ping(8)` iputils parameters; single AF (`-4` or `-6`, default IPv4); disabled on Win/mac
+- **Simple** / **Advanced**: RTT metrics, loss %, route graph, change log
 
 ## Architecture
 
@@ -98,12 +101,12 @@ io.pingui
 ├── model/           HopNode, RouteSnapshot
 ├── probe/           RouteProbeFactory, ProcessRouteProbe, TraceCommandBuilder,
                        UnixTraceOutputParser, WindowsTraceOutputParser, ProcessExpertPing
-├── monitor/         SessionStore, MonitorService, ExpertPingEnricher
+├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
 └── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,
                        MonitorLifecycle, ViewModeController, RouteGraphPresenter, GraphCanvas
 ```
 
-Details: [docs/en/JAVA.md](../docs/en/JAVA.md).
+Details: [docs/JAVA.md](../docs/en/JAVA.md).
 
 ### Profile format (v2)
 
@@ -133,13 +136,13 @@ profiles:
 cd java
 ./gradlew check          # compile + Spotless + Checkstyle + layerCheck + JaCoCo + tests
 ./gradlew test           # JUnit 5 only
-./gradlew spotlessApply  # autoformat Java / Gradle Kotlin DSL
+./gradlew spotlessApply  # auto-format Java / Gradle Kotlin DSL
 ./gradlew build
 ./gradlew run
 ./gradlew jpackageDeb   # Linux .deb → build/dist/
 ```
 
-Unit tests (21+) — `src/test/java`; matrix: [docs/en/LIVING_SPEC.md](../docs/en/LIVING_SPEC.md). CI: ![Java CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/java.yml/badge.svg)
+Unit tests (21) — `src/test/java`; matrix: [docs/LIVING_SPEC.md](../docs/en/LIVING_SPEC.md). CI: ![Java CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/java.yml/badge.svg)
 
 ## Packaging (jpackage)
 

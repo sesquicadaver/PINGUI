@@ -1,10 +1,10 @@
-> **Language:** [Ukrainian](../SPIKE_IPV6.md) · English
+> **Language:** English · [Українська](../SPIKE_IPV6.md)
 
 # SPIKE: IPv6 trace + ping (B-050)
 
 **Date:** 2025-06-26  
 **Updated:** 2026-06-26  
-**Status:** **planned** — implementation in [ROADMAP.md](ROADMAP.md) **Phase 9 (V6-*)**  
+**Status:** **implemented** (phase 9 code-complete on `beta`, semver **0.2.0**)  
 **Previous status:** wontfix (MVP IPv4-only, B-053) — lifted per product request  
 **Branches:** `main` (Java GUI), `beta` (+ Python, tests)
 
@@ -27,22 +27,22 @@ Should IPv6 support be added for:
 | Layer | IPv4 today | Phase 9 target |
 |-------|------------|----------------|
 | `HostsConfig` | Literal v4 + hostname; v6 literal RFC 5952 (V6-S1) | V6-020+ trace for v6 |
-| `ProcessRouteProbe` / parsers | IPv4 regex | V6-024…V6-029: v6 tokens + fixtures |
-| Trace commands | no `-6` | V6-021…V6-023 |
+| `ProcessRouteProbe` / parsers | Regex IPv4 | V6-024…V6-029: v6 tokens + fixtures |
+| Trace commands | without `-6` | V6-021…V6-023 |
 | `GeoCountry` | `Inet4Address` only | V6-035…V6-037 |
-| `RawIcmpRouteProbe` | `AF_INET` | V6-040…V6-045 (Linux P2) |
+| `RawIcmpRouteProbe` | `AF_INET` + `AF_INET6` (`probe: raw`) | V6-040…V6-045 ✅ |
 | Expert ping | iputils `-4`/`-6` catalog, v4 targets | V6-050…V6-053 |
-| Documentation | IPv4-only | V6-060, V6-063, V6-074 |
+| Documentation | Dual-stack (V6-S4) | V6-074 |
 
 ---
 
 ## Historical MVP decision (B-050 wontfix)
 
 1. Desktop utility for IPv4 LAN/corp scenarios.
-2. Complexity of v6 trace output across OS/locale.
+2. Complexity of trace output v6 across OS/locale.
 3. Raw ICMP v6 — Linux only.
 
-Preserved as **limitation until phase 9**: raw v6 remains P2; process trace — P0.
+Retained as **constraints until phase 9**: raw v6 remains P2; process trace — P0.
 
 ---
 
@@ -65,9 +65,9 @@ Preserved as **limitation until phase 9**: raw v6 remains P2; process trace — 
 - [x] Literal IPv6 in YAML (session validator)
 - [x] Process trace v6 on Linux (macOS best-effort)
 - [x] Windows `tracert -6` parsed (fixtures)
-- [x] v4 regression green (`./gradlew check`)
-- [ ] CHECKLIST IPv6 smoke passed
-- [ ] Docs: dual-stack, not «IPv4-only»
+- [x] v4 regression green (`ProcessRouteProbeTest.v4FixturesRemainGreen`, `./gradlew check`)
+- [ ] CHECKLIST IPv6 smoke passed (manual Linux/Windows; CI tests — see CHECKLIST § raw/process)
+- [x] Docs: dual-stack, not «IPv4-only»
 
 ---
 
@@ -75,4 +75,4 @@ Preserved as **limitation until phase 9**: raw v6 remains P2; process trace — 
 
 - [ROADMAP.md](ROADMAP.md) — Phase 9  
 - [JAVA.md](JAVA.md) — probe limitations  
-- [LIVING_SPEC.md](LIVING_SPEC.md) — update at V6-015
+- [LIVING_SPEC.md](LIVING_SPEC.md) — update on V6-015

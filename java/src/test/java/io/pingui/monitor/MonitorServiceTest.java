@@ -187,6 +187,41 @@ class MonitorServiceTest {
     }
 
     @Test
+    void dispatchesAlertOnRouteChange() throws Exception {
+        RouteSnapshot first = new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
+        RouteSnapshot second =
+                new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "192.168.1.1", 6.0, false)));
+        AtomicInteger probeCalls = new AtomicInteger();
+        RouteProbe probe = (targetHost, maxHops, timeoutSeconds) -> probeCalls.getAndIncrement() == 0 ? first : second;
+        RecordingAlertDispatcher alerts = new RecordingAlertDispatcher();
+        MonitorService service = new MonitorService(0.05, 20, 0.5, probe);
+        service.setAlertDispatcher(alerts);
+        service.setAlertProfileName("noc");
+        service.setListener(new MonitorService.Listener() {
+            @Override
+            public void onDataReceived(String host, RouteSnapshot snap) {}
+
+            @Override
+            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
+
+            @Override
+            public void onProbeError(String host, String message) {}
+        });
+        service.addHost("8.8.8.8", true);
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        while (alerts.events().isEmpty() && System.nanoTime() < deadline) {
+            Thread.sleep(50);
+        }
+        assertEquals(1, alerts.events().size());
+        RouteChangeEvent event = alerts.events().get(0);
+        assertEquals("8.8.8.8", event.host());
+        assertEquals(List.of("10.0.0.1"), event.oldIps());
+        assertEquals(List.of("192.168.1.1"), event.newIps());
+        assertEquals("noc", event.profile());
+        service.close();
+    }
+
+    @Test
     void duplicateHostRejected() {
         MonitorService service = new MonitorService(
                 1.0,
