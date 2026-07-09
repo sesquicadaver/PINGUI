@@ -65,9 +65,8 @@ Retained as **constraints until phase 9**: raw v6 remains P2; process trace — 
 - [x] Literal IPv6 in YAML (session validator)
 - [x] Process trace v6 on Linux (macOS best-effort)
 - [x] Windows `tracert -6` parsed (fixtures)
-- [x] v4 regression green (`./gradlew check`)
-- [ ] CHECKLIST IPv6 smoke passed
-- [ ] CHECKLIST IPv6 smoke passed
+- [x] v4 regression green (`ProcessRouteProbeTest.v4FixturesRemainGreen`, `./gradlew check`)
+- [ ] CHECKLIST IPv6 smoke passed (manual Linux/Windows run)
 - [x] Docs: dual-stack, not «IPv4-only»
 
 ---

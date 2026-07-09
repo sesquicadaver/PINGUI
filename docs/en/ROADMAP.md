@@ -205,11 +205,11 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **V6-070** | [ ] CHECKLIST § IPv6 smoke (Linux process trace) | `docs/CHECKLIST.md` | literal v6 + ping-only |
-| **V6-071** | [ ] CHECKLIST § IPv6 smoke (Windows tracert -6) | `docs/CHECKLIST.md` | optional OS job |
-| **V6-072** | [ ] Regression: all v4 fixtures remain green | CI | `./gradlew check` |
-| **V6-073** | [ ] JaCoCo: new modules in bundle or documented exclusion | `build.gradle.kts` | Gate ≥80% |
-| **V6-074** | [ ] Release note: «IPv6 beta» / feature flag if needed | `CHANGELOG.md` | Semver minor bump note |
+| **V6-070** | [x] CHECKLIST § IPv6 smoke (Linux process trace) | `docs/CHECKLIST.md` | literal v6 + ping-only |
+| **V6-071** | [x] CHECKLIST § IPv6 smoke (Windows tracert -6) | `docs/CHECKLIST.md` | optional OS job |
+| **V6-072** | [x] Regression: all v4 fixtures remain green | `ProcessRouteProbeTest`, CI | `./gradlew check` |
+| **V6-073** | [x] JaCoCo: new modules in bundle or documented exclusion | `build.gradle.kts` | Gate ≥80% |
+| **V6-074** | [x] Release note: «IPv6 beta» / feature flag if needed | `CHANGELOG.md` | Semver minor bump note |
 
 ### Recommended order (phase 9)
 
@@ -687,5 +687,7 @@ Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 **IPv6-S3 (2026-07-09):** V6-035…V6-037 — `GeoCountry` IPv6 longest-prefix + `prefixes_v6` YAML.
 
 **IPv6-S4 (2026-07-09):** V6-060…V6-063 — dual-stack Help/About, IPv6 graph labels, host input validation.
+
+**IPv6-S4 QA (2026-07-09):** V6-070…V6-074 — CHECKLIST smoke, v4 fixture regression test, JaCoCo notes, IPv6 beta release note.
 
 Update this file when closing a task: `[x] M-001` + date in CHANGELOG.

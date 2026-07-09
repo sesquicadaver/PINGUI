@@ -31,6 +31,19 @@ Python-редакція та тести — гілка **`beta`**.
 - [ ] Додати ціль `2001:db8::1` — нормалізується в лог; невалідна `not:valid:ipv6` → помилка в журналі
 - [ ] Граф hop з v6 показує IP у дужках `[2001:4860:4860::8888]`
 
+### Java IPv6 process trace smoke (Linux, V6-070)
+
+- [ ] `traceroute -6 ::1` — ≥1 hop (потрібен `traceroute` у PATH)
+- [ ] Профіль YAML з `2001:db8::1` — trace без «No hops parsed»
+- [ ] `./gradlew test --tests io.pingui.probe.ProcessRouteProbeTest` — `unix_v6_*` green
+- [ ] Ping-only на v6 literal — RTT оновлюється без crash
+- [ ] `./gradlew test --tests io.pingui.probe.ProcessRouteProbeTest.v4FixturesRemainGreen` — v4 regression (CI)
+
+### Java IPv6 smoke (Windows, optional — V6-071)
+
+- [ ] `tracert -6 ::1` завершується (повільно; Ping only рекомендовано для production)
+- [ ] `./gradlew test --tests io.pingui.probe.ProcessRouteProbeTest.parseWindowsIpv6*` — `win_v6_*` green
+
 ### Python alert smoke (beta)
 
 - [ ] `python -m pingui monitor --alert-webhook http://127.0.0.1:9/hook` — старт без crash (webhook недоступний → log)

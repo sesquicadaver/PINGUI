@@ -48,6 +48,8 @@ tasks.jacocoTestReport {
 
 tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.jacocoTestReport)
+    // Bundle includes IPv6 config/geoip/probe label helpers (HopDisplay, DualStackRouteProbe, GeoCountry).
+    // JavaFX canvas/dialogs and subprocess runners stay excluded — parser/unit tests + CHECKLIST smoke.
     violationRules {
         rule {
             element = "BUNDLE"

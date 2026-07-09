@@ -31,6 +31,19 @@ Details: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 - [ ] Add target `2001:db8::1` — normalized in log; invalid `not:valid:ipv6` → error in journal
 - [ ] Route graph hop with v6 shows bracketed IP `[2001:4860:4860::8888]`
 
+### Java IPv6 process trace smoke (Linux, V6-070)
+
+- [ ] `traceroute -6 ::1` — ≥1 hop (`traceroute` in PATH)
+- [ ] YAML profile with `2001:db8::1` — trace without «No hops parsed»
+- [ ] `./gradlew test --tests io.pingui.probe.ProcessRouteProbeTest` — `unix_v6_*` green
+- [ ] Ping-only on v6 literal — RTT updates without crash
+- [ ] `./gradlew test --tests io.pingui.probe.ProcessRouteProbeTest.v4FixturesRemainGreen` — v4 regression (CI)
+
+### Java IPv6 smoke (Windows, optional — V6-071)
+
+- [ ] `tracert -6 ::1` completes (slow; Ping only recommended for production)
+- [ ] `./gradlew test --tests io.pingui.probe.ProcessRouteProbeTest.parseWindowsIpv6*` — `win_v6_*` green
+
 ### Python alert smoke (beta)
 
 - [ ] `python -m pingui monitor --alert-webhook http://127.0.0.1:9/hook` — starts without crash (unreachable webhook → log)

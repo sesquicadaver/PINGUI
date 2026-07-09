@@ -99,7 +99,9 @@ cd java && ./gradlew test jacocoTestReport jacocoTestCoverageVerification
 cd java && ./pingui-java.sh --package   # Linux .deb (local)
 ```
 
-JaCoCo gate ≥80% instruction coverage (JavaFX UI and `ProcessRouteProbe.trace` excluded — tested via parser/unit separately).
+JaCoCo gate ≥80% instruction coverage (JavaFX UI and `ProcessRouteProbe.trace` excluded — tested via parser/unit separately; IPv6 `HopDisplay`/`GeoCountry` in bundle).
+
+Trace fixtures: `java/src/test/resources/trace/` — v4 regression: `ProcessRouteProbeTest.v4FixturesRemainGreen`.
 
 CI: `.github/workflows/java-ci.yml`.
 

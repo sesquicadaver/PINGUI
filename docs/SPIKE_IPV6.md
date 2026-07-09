@@ -66,7 +66,8 @@
 - [x] Process trace v6 на Linux (macOS best-effort)
 - [x] Windows `tracert -6` парситься (фікстури)
 - [x] v4 regression green (`./gradlew check`)
-- [ ] CHECKLIST IPv6 smoke пройдено
+- [x] v4 regression green (`ProcessRouteProbeTest.v4FixturesRemainGreen`, `./gradlew check`)
+- [ ] CHECKLIST IPv6 smoke пройдено (ручний прогін Linux/Windows)
 - [x] Docs: dual-stack, не «IPv4-only»
 
 ---
