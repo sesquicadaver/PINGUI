@@ -10,7 +10,7 @@
 
 | Поле | Значення |
 |------|----------|
-| **Гілка** | `main` — Java + docs; `beta` — + Python, тести, CI |
+| **Гілка** | `main` — стабільний Java GUI (RAM); `beta` — розробка: Java P9–P12 (SQLite, alerts, daemon) + Python + повний CI |
 | **Пріоритет** | P0 критично · P1 важливо · P2 бажано |
 | **DoD** | Definition of Done — умова закриття задачі |
 

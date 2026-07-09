@@ -7,6 +7,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **CI:** GitHub Actions оновлено на Node.js 24 (`checkout@v6`, `setup-java@v5`, `setup-python@v6`) — прибирає deprecation Node 20.
+- **Java persistence:** `appendPingSamples` no longer crashes after SQLite reopen when ping history lists were loaded as immutable (`UnsupportedOperationException` on GUI poll).
+
 ### Added
 
 - **Alerts ADR (P10-001):** `docs/ADR_ALERTS.md` — channels (webhook, desktop), `RouteChangeEvent` JSON, rate limit, failure policy.

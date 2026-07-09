@@ -10,7 +10,7 @@ Post-MVP roadmap (2026-06-26) for **professional users** (NOC/SRE, network engin
 
 | Field | Value |
 |-------|-------|
-| **Branch** | `main` — Java + docs; `beta` — + Python, tests, CI |
+| **Branch** | `main` — stable Java GUI (RAM); `beta` — development: Java P9–P12 (SQLite, alerts, daemon) + Python + full CI |
 | **Priority** | P0 critical · P1 important · P2 nice-to-have |
 | **DoD** | Definition of Done — task closure condition |
 

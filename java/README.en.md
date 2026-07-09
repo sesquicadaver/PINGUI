@@ -96,6 +96,7 @@ The CLI **does not overwrite** profile defaults (1.0 / 20 / 0.5 / auto) unless t
 - **Add / Edit / Delete / Save** → YAML
 - **Expert** (Linux): **Exten.** → `ping(8)` iputils parameters; single AF (`-4` or `-6`, default IPv4); disabled on Win/mac
 - **Simple** / **Advanced**: RTT metrics, loss %, route graph, change log
+- **Database…** (menu): connect SQLite without CLI; **Route history** — `route_change` timeline + graph replay (advanced mode)
 
 ## Architecture
 

@@ -2,7 +2,7 @@
 
 # Документація PINGUI
 
-На **`beta`** — повний пакет (Java + Python). На **`main`** — Java docs для запуску.
+На **`beta`** — повний пакет (Java фази 9–12 + Python). На **`main`** — стабільний Java GUI без P10–P12; див. розділ «Гілки» у [README.md](../README.md).
 
 ## Навігація
 

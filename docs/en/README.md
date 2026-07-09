@@ -2,7 +2,7 @@
 
 # PINGUI documentation
 
-On **`beta`** — full package (Java + Python). On **`main`** — Java docs for launch.
+On **`beta`** — full package (Java phases 9–12 + Python). On **`main`** — stable Java GUI without P10–P12; see the Branches section in [README.en.md](../README.en.md).
 
 ## Navigation
 

@@ -6,14 +6,32 @@
 ![Python CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/ci.yml/badge.svg)
 
 Крос-платформний монітор маршрутів і RTT до 10 цілей одночасно (Java 21 + JavaFX).
-Дані зберігаються **лише в RAM** протягом сесії.
+За замовчуванням дані сесії — **в RAM**; на гілці **`beta`** Java також підтримує опційний **SQLite** (`--session-db`, GUI «База даних…») і headless **daemon**.
 
 > **Рекомендація щодо ОС:** для щоденної роботи обирайте **Linux** — найшвидше трасування та повний набір функцій (Expert ping, raw ICMP). **Windows** підтримується, але через повільний `tracert` (3 probe на hop, секунди очікування на кожен) один повний trace до 20 hop може тривати **хвилини**; для Windows краще режим **Ping only** або `interval` ≥ 30 с. Деталі: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#рекомендація-щодо-ос).
 
-| Гілка | Зміст |
-|-------|--------|
-| **`main`** | Java-редакція + документація + unit-тести + JaCoCo + CI |
-| **`beta`** | Python + Java, pytest, JaCoCo, повний CI, специфікації |
+## Гілки `main` і `beta`
+
+| | **`main`** | **`beta`** |
+|---|------------|------------|
+| **Роль** | Стабільна лінія для щоденного Java GUI | Розробка: нові фази ROADMAP, Python-редакція |
+| **Java desktop** | ✅ GUI, профілі, trace/tracert, Expert ping (Linux) | ✅ Усе з `main` **+** фази 9–12 (див. нижче) |
+| **Сесія** | Лише RAM | RAM або **SQLite** (метрики + `route_change` / `probe_error`) |
+| **Оповіщення** | — | Webhook + desktop alerts при зміні маршруту (P10) |
+| **Історія маршруту** | — | Панель «Історія змін» + replay на графі (P11) |
+| **Headless NOC** | — | `--daemon`, `--stop`, `--status`, systemd example (P12) |
+| **Dual-stack IPv6** | Обмежено / без фази 9 | ✅ Java + Python (фаза 9) |
+| **Python PyQt6** | Код у репо, **без** повного parity з `beta` | ✅ `./pingui.sh`, pytest, timeseries/export |
+| **CI** | Java `gradlew check` | Java + Python pytest |
+| **Документація** | UK + EN індекс | Повний пакет + ADR/SPIKE (P10–P13) |
+
+**Що обрати:** для production GUI на стабільній базі — `main`; для SQLite, алертів, історії, daemon, IPv6 і Python — **`beta`**. Детальний план: [docs/ROADMAP.md](docs/ROADMAP.md).
+
+```bash
+git clone https://github.com/sesquicadaver/PINGUI.git
+cd PINGUI
+git checkout beta    # або main
+```
 
 ## Швидкий старт
 
@@ -43,13 +61,12 @@ pingui-java.bat
 
 ## Можливості
 
-- До **10 цілей**, чекбокс = активне трасування
+- До **10 цілей**, чекбокс = активне трасування; **Ping only** = RTT до цілі без trace
 - **Профілі трасування** в одному YAML (`active_profile` + `profiles`)
-- **Простий** / **Розширений** режим UI; loss %, min/avg/max RTT
+- **Простий** / **Розширений** режим UI; loss %, min/avg/max RTT; граф маршруту
 - **Expert ping** (Linux, iputils) — діалог **Exten.** на хост
-- Трасування через `traceroute` / `tracert` (без `CAP_NET_RAW` за замовч.)
-- Опційно на Linux: raw ICMP (`probe: auto|raw` + `cap_net_raw`)
-- **Dual-stack config:** IPv6 literal у YAML (RFC 5952); subprocess `traceroute -6` на Python `beta` (Linux/macOS); Java — фаза 9 ([docs/DEPLOYMENT.md](docs/DEPLOYMENT.md))
+- Трасування через `traceroute` / `tracert`; опційно raw ICMP на Linux (`probe: auto|raw`)
+- **`beta`:** dual-stack IPv6, алерти зміни маршруту, SQLite + «Історія змін», headless daemon, CSV/HTML export — див. [java/README.md](java/README.md)
 
 ## CLI
 
@@ -65,21 +82,25 @@ cd java
 | `--max-hops` | Перезаписати `max_hops` активного профілю **лише якщо передано** |
 | `--timeout` | Перезаписати `timeout` активного профілю **лише якщо передано** |
 | `--probe` | Перезаписати `probe` активного профілю **лише якщо передано** |
+| `--session-db` | *(beta)* SQLite метрики + події сесії |
+| `--export-report` | *(beta)* CSV/HTML з `--session-db` без GUI |
+| `--daemon` / `--stop` / `--status` | *(beta)* headless монітор (NOC) |
+| `--alert-webhook` / `--desktop-alerts` | *(beta)* оповіщення про зміну маршруту |
 | `--geoip-hints` | Offline CIDR→країна |
 | `--no-geoip` | Вимкнути країну в підписах |
 | `--verbose` | Debug-лог |
 
-Без `--interval` / `--max-hops` / `--timeout` / `--probe` значення беруться з YAML профілю.
+Без `--interval` / `--max-hops` / `--timeout` / `--probe` значення беруться з YAML профілю. Повний список CLI (включно з persistence): [java/README.md](java/README.md#cli).
 
 ## Структура репозиторію
 
-**`main`:** Java + docs. **`beta`:** + `src/pingui/` (Python), `tests/`, `pyproject.toml`, `pingui.sh`.
-
 ```
 PINGUI/
-├── java/                 # Java edition (JavaFX)
-├── src/pingui/           # Python edition (beta)
+├── java/                 # Java edition (JavaFX + опційно daemon на beta)
+├── src/pingui/           # Python edition (повний цикл на beta)
 ├── tests/                # pytest (beta)
+├── config/               # Приклади YAML, GeoIP hints
+├── systemd/              # pingui-java.service.example (beta)
 ├── docs/
 │   ├── en/               # English documentation
 │   └── *.md              # Ukrainian documentation
@@ -97,10 +118,10 @@ PINGUI/
 | [docs/CHECKLIST.md](docs/CHECKLIST.md) | Checklist Linux / Windows / macOS |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Розгортання |
 | [docs/JAVA.md](docs/JAVA.md) | Архітектура Java-редакції |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | План виправлень |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | План розвитку (`main` / `beta`) |
 | [CHANGELOG.md](CHANGELOG.md) | Історія змін |
 
-Python: `./pingui.sh` на гілці **`beta`** (venv). Java: `cd java && ./gradlew check`.
+Python: `./pingui.sh` на гілці **`beta`** (venv). Java: `cd java && ./gradlew check`. Для NOC без GUI на **`beta`**: `./pingui-java.sh -- --daemon --config …`.
 
 ## Support the project
 

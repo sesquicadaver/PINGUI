@@ -193,8 +193,8 @@ public final class SessionStore implements AutoCloseable {
             if (!node.isReachable() || node.pingMs() == null) {
                 continue;
             }
-            history.computeIfAbsent(node.ip(), ignored -> new ArrayList<>()).add(node.pingMs());
-            List<Double> samples = history.get(node.ip());
+            List<Double> samples = mutablePingSamples(history, node.ip());
+            samples.add(node.pingMs());
             if (samples.size() > MAX_PING_SAMPLES) {
                 samples.subList(0, samples.size() - MAX_PING_SAMPLES).clear();
             }
@@ -203,6 +203,21 @@ public final class SessionStore implements AutoCloseable {
         if (changed) {
             persist(host);
         }
+    }
+
+    private static List<Double> mutablePingSamples(Map<String, List<Double>> history, String ip) {
+        List<Double> existing = history.get(ip);
+        if (existing == null) {
+            ArrayList<Double> created = new ArrayList<>();
+            history.put(ip, created);
+            return created;
+        }
+        if (existing instanceof ArrayList) {
+            return existing;
+        }
+        ArrayList<Double> copy = new ArrayList<>(existing);
+        history.put(ip, copy);
+        return copy;
     }
 
     public Double avgPing(String host, String ip) {

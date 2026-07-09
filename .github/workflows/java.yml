@@ -18,13 +18,13 @@ jobs:
       run:
         working-directory: java
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Check documentation parity (UK/EN)
         working-directory: ${{ github.workspace }}
         run: python3 scripts/check_doc_parity.py
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
@@ -43,9 +43,9 @@ jobs:
       run:
         working-directory: java
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
