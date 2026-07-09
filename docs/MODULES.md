@@ -371,7 +371,7 @@ YAML `persistence.events` + CLI `--no-persist-route-change` / `--no-persist-prob
 
 ### `RouteHistoryPresenter` (P11-020…021)
 
-Панель «Історія змін» у розширеному режимі: `listEvents(ROUTE_CHANGE, host, since)`; перемикач 24h/7d; вибір рядка → read-only replay на `GraphCanvas`.
+Панель «Історія змін» у розширеному режимі: ComboBox **Ціль** (фільтр хоста), `listEvents(ROUTE_CHANGE, host, since)`; перемикач 24h/7d; зміна цілі повністю очищає список і replay; вибір рядка → read-only replay на `GraphCanvas`.
 
 ### `PersistenceSettingsDialog` (P11-014)
 

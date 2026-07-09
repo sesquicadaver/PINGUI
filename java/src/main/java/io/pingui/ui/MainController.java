@@ -70,6 +70,8 @@ public final class MainController {
     private final RadioButton historyRange24h = new RadioButton("24 год");
     private final RadioButton historyRange7d = new RadioButton("7 днів");
     private final Label historyLabel = new Label("Історія змін");
+    private final ComboBox<String> historyHostFilter = new ComboBox<>();
+    private final HBox historyFilterBar = new HBox(8);
     private final HBox historyRangeBar = new HBox(8);
     private final Label statusLabel = new Label("Очікування даних…");
     private final VBox graphPanel = new VBox(8);
@@ -248,7 +250,7 @@ public final class MainController {
 
         routeHistoryPresenter = new RouteHistoryPresenter(
                 () -> store,
-                hostList,
+                historyHostFilter,
                 historyList,
                 historyRange24h,
                 historyRange7d,
@@ -256,20 +258,40 @@ public final class MainController {
                 routeGraphPresenter::replayRouteChange,
                 routeGraphPresenter::clearReplay);
         routeHistoryPresenter.configure();
+        hostItems.addListener(
+                (javafx.collections.ListChangeListener<? super HostItem>) change -> syncHistoryHostFilter());
+        hostList.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, item) -> {
+            if (item != null && !item.getHost().equals(historyHostFilter.getValue())) {
+                historyHostFilter.setValue(item.getHost());
+            }
+        });
+    }
+
+    private void syncHistoryHostFilter() {
+        if (routeHistoryPresenter == null) {
+            return;
+        }
+        routeHistoryPresenter.rebuildHostFilter(
+                hostItems.stream().map(HostItem::getHost).toList());
     }
 
     private void configureHistoryPanel() {
         updateHistoryPanelVisibility();
         historyList.setPrefHeight(120);
+        historyHostFilter.setPromptText("Оберіть ціль…");
+        historyHostFilter.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(historyHostFilter, Priority.ALWAYS);
+        historyFilterBar.getChildren().addAll(new Label("Ціль:"), historyHostFilter);
         Button refreshHistory = new Button("Оновити");
         refreshHistory.setOnAction(e -> refreshRouteHistory());
         historyRangeBar.getChildren().addAll(historyRange24h, historyRange7d, refreshHistory);
-        graphPanel.getChildren().addAll(historyLabel, historyRangeBar, historyList);
+        graphPanel.getChildren().addAll(historyLabel, historyFilterBar, historyRangeBar, historyList);
+        syncHistoryHostFilter();
     }
 
     private void refreshRouteHistory() {
         if (routeHistoryPresenter != null) {
-            routeHistoryPresenter.refresh();
+            routeHistoryPresenter.reloadKeepingFilter();
         }
     }
 
@@ -277,6 +299,8 @@ public final class MainController {
         boolean persistence = store.hasPersistence();
         historyLabel.setVisible(persistence);
         historyLabel.setManaged(persistence);
+        historyFilterBar.setVisible(persistence);
+        historyFilterBar.setManaged(persistence);
         historyRangeBar.setVisible(persistence);
         historyRangeBar.setManaged(persistence);
         historyList.setVisible(persistence);
@@ -405,6 +429,7 @@ public final class MainController {
         monitor = createMonitor(profile, liveEntries);
         updateHistoryPanelVisibility();
         hostListPresenter.rebuild(liveEntries);
+        syncHistoryHostFilter();
         hostList.getSelectionModel().clearSelection();
         if (!hostItems.isEmpty()) {
             hostList.getSelectionModel().select(0);
@@ -435,6 +460,7 @@ public final class MainController {
         monitor = createMonitor(profile, sessionHosts);
         updateHistoryPanelVisibility();
         hostListPresenter.rebuild(sessionHosts);
+        syncHistoryHostFilter();
         hostList.getSelectionModel().clearSelection();
         if (!hostItems.isEmpty()) {
             hostList.getSelectionModel().select(0);

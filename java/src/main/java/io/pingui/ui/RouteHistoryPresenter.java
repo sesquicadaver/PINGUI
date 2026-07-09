@@ -15,6 +15,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.RadioButton;
@@ -25,7 +26,7 @@ final class RouteHistoryPresenter {
     private static final int MAX_ROWS = 200;
 
     private final Supplier<SessionStore> store;
-    private final ListView<HostItem> hostList;
+    private final ComboBox<String> hostFilter;
     private final ListView<RouteHistoryItem> historyList;
     private final RadioButton range24h;
     private final RadioButton range7d;
@@ -37,7 +38,7 @@ final class RouteHistoryPresenter {
 
     RouteHistoryPresenter(
             Supplier<SessionStore> store,
-            ListView<HostItem> hostList,
+            ComboBox<String> hostFilter,
             ListView<RouteHistoryItem> historyList,
             RadioButton range24h,
             RadioButton range7d,
@@ -45,7 +46,7 @@ final class RouteHistoryPresenter {
             Consumer<RouteChangeEvent> onReplay,
             Runnable onClearReplay) {
         this.store = store;
-        this.hostList = hostList;
+        this.hostFilter = hostFilter;
         this.historyList = historyList;
         this.range24h = range24h;
         this.range7d = range7d;
@@ -65,7 +66,7 @@ final class RouteHistoryPresenter {
             } else {
                 lookback = Duration.ofHours(24);
             }
-            refresh();
+            resetAndRefresh();
         });
 
         historyList.setCellFactory(list -> new ListCell<>() {
@@ -82,11 +83,42 @@ final class RouteHistoryPresenter {
                 onReplay.accept(newItem.event());
             }
         });
-        hostList.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, newItem) -> {
-            historyList.getSelectionModel().clearSelection();
-            onClearReplay.run();
-            refresh();
-        });
+        hostFilter.valueProperty().addListener((obs, oldHost, newHost) -> resetAndRefresh());
+    }
+
+    /** Repopulates host filter after profile / host list changes. */
+    void rebuildHostFilter(List<String> hosts) {
+        String previous = hostFilter.getValue();
+        hostFilter.getItems().setAll(hosts);
+        if (previous != null && hosts.contains(previous)) {
+            if (!previous.equals(hostFilter.getValue())) {
+                hostFilter.setValue(previous);
+            } else {
+                resetAndRefresh();
+            }
+            return;
+        }
+        if (!hosts.isEmpty()) {
+            hostFilter.setValue(hosts.get(0));
+        } else {
+            hostFilter.setValue(null);
+            clearHistoryContent();
+        }
+    }
+
+    private void resetAndRefresh() {
+        clearHistoryContent();
+        refresh();
+    }
+
+    private void clearHistoryContent() {
+        historyList.getSelectionModel().clearSelection();
+        historyList.setItems(FXCollections.observableArrayList());
+        onClearReplay.run();
+    }
+
+    void reloadKeepingFilter() {
+        resetAndRefresh();
     }
 
     void refresh() {
@@ -96,15 +128,15 @@ final class RouteHistoryPresenter {
             historyList.setItems(items);
             return;
         }
-        HostItem selected = hostList.getSelectionModel().getSelectedItem();
-        if (selected == null) {
+        String host = hostFilter.getValue();
+        if (host == null || host.isBlank()) {
             historyList.setItems(items);
             return;
         }
         SessionDatabase database = session.database();
         Instant since = Instant.now().minus(lookback);
         List<PersistenceEventRecord> rows =
-                database.listEvents(PersistenceEventType.ROUTE_CHANGE, selected.getHost(), since, MAX_ROWS);
+                database.listEvents(PersistenceEventType.ROUTE_CHANGE, host, since, MAX_ROWS);
         for (PersistenceEventRecord row : rows) {
             try {
                 RouteChangeEvent event = RouteChangeEvent.fromJson(row.payloadJson());
