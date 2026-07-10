@@ -88,6 +88,6 @@ __main__ ← config, icmp, ui, logging_setup
 ## Що поза scope MVP
 
 - Немає персистентності між сесіями за замовчуванням (RAM-only MVP).
-- Опційно: `--session-db PATH` — Python `persistence/session_db.py`; Java `io.pingui.persistence` (P11-011…012 на `beta`).
+- Опційно: `--session-db PATH` — Python `persistence/session_db.py`; Java `io.pingui.persistence` (P11-011…012).
 - Немає окремого backend/API-сервера.
 - IPv6 literal у YAML (RFC 5952); subprocess `traceroute -6` для v6 trace; raw ICMP лишається v4-only.

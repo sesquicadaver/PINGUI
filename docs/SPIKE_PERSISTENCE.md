@@ -3,9 +3,9 @@
 # SPIKE: SQLite персистентність сесії (P11-001)
 
 **Дата:** 2026-07-09  
-**Оновлено:** 2026-07-09 (політика подій, меню, YAML)  
+**Оновлено:** 2026-07-10 (політика подій, меню, YAML; evidence після P11/PY-P11)  
 **Статус:** **accepted** — реалізація у [ROADMAP.md](ROADMAP.md) **Фаза 11 (P11-*)**  
-**Гілки:** `beta` (Java + Python reference), `main` (Java GUI)
+**Гілки:** `main` і `beta` (Java + Python reference після merge; нові зміни — спочатку `beta`)
 
 ---
 
@@ -24,16 +24,18 @@
 
 ## Поточний стан (evidence)
 
-| Шар | Python `beta` | Java `beta` |
-|-----|---------------|-------------|
-| In-memory | `SessionStore` | `SessionStore` |
-| SQLite | `persistence/session_db.py` (`SCHEMA_VERSION = 2`) | **немає** |
-| CLI | `--session-db PATH` | **немає** |
-| Route change / probe_error у SQLite | **немає** (лише timeseries) | **немає** |
-| Меню вибору подій | **немає** | **немає** |
-| Export CSV/HTML | `export/session_report.py` | **немає** |
+> Оновлено 2026-07-10: P11 Java + PY-P11 реалізовані на `main`/`beta` після merge.
 
-Python `SessionStore._write_route_event` пише лише в **timeseries** (`InfluxDB` / `Timescale`), не в `session_db`.
+| Шар | Python | Java |
+|-----|--------|------|
+| In-memory | `SessionStore` | `SessionStore` |
+| SQLite | `persistence/session_db.py` (schema v3) | `io.pingui.persistence.SessionDatabase` |
+| CLI | `--session-db PATH` | `--session-db PATH` |
+| Route change / probe_error у SQLite | ✅ `persistence_event` (PY-P11) | ✅ `persistence_event` |
+| Меню вибору подій | YAML `persistence.events` | GUI «База даних…» + YAML |
+| Export CSV/HTML | `export/session_report.py` | `--export-report` |
+
+Timeseries (`InfluxDB` / `Timescale`) лишається окремим каналом від SQLite session DB.
 
 ---
 

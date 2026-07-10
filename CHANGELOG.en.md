@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Branches `main` / `beta` (docs):** README and related docs no longer describe `main` as “RAM-only / no SQLite·alerts·daemon·IPv6·Python”. Reality: `main` = last stable merge; `beta` = development ahead; Pro stack and Python are on both after merge.
 - **ROADMAP NEXT + linear queue:** `docs/ROADMAP.md` / `docs/en/ROADMAP.md` and root `ROADMAP*.md` — single **Current task** field; `/autopilot` with no args always takes that ID (no “which item?”). Agent rule: `.cursor/rules/roadmap-next.mdc`.
 
 ### Fixed

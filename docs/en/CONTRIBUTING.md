@@ -13,8 +13,9 @@ Thank you for your interest in the project. This document describes the process 
 
 ## Branches
 
-- `main` — stable branch; CI on push/PR.
-- Feature branches: `feature/short-description`.
+- `beta` — active development (ROADMAP queue / `/autopilot`); CI on push/PR.
+- `main` — stable snapshot after merge from `beta`; CI on push/PR.
+- Feature branches: `feature/short-description` → PR into `beta`.
 
 ## Pull Request
 

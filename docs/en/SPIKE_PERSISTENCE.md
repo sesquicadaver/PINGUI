@@ -3,9 +3,9 @@
 # SPIKE: SQLite session persistence (P11-001)
 
 **Date:** 2026-07-09  
-**Updated:** 2026-07-09 (event policy, menu, YAML)  
+**Updated:** 2026-07-10 (event policy, menu, YAML; evidence after P11/PY-P11)  
 **Status:** **accepted** — implementation in [ROADMAP.md](ROADMAP.md) **Phase 11 (P11-*)**  
-**Branches:** `beta` (Java + Python reference), `main` (Java GUI)
+**Branches:** `main` and `beta` (Java + Python reference after merge; new work lands on `beta` first)
 
 ---
 
@@ -24,16 +24,18 @@ What SQLite schema and API does Java need to:
 
 ## Current state (evidence)
 
-| Layer | Python `beta` | Java `beta` |
-|-------|---------------|-------------|
-| In-memory | `SessionStore` | `SessionStore` |
-| SQLite | `persistence/session_db.py` (`SCHEMA_VERSION = 2`) | **none** |
-| CLI | `--session-db PATH` | **none** |
-| Route change / probe_error in SQLite | **none** (timeseries only) | **none** |
-| Event selection menu | **none** | **none** |
-| Export CSV/HTML | `export/session_report.py` | **none** |
+> Updated 2026-07-10: Java P11 + PY-P11 implemented on `main`/`beta` after merge.
 
-Python `SessionStore._write_route_event` writes only to **timeseries**, not `session_db`.
+| Layer | Python | Java |
+|-------|--------|------|
+| In-memory | `SessionStore` | `SessionStore` |
+| SQLite | `persistence/session_db.py` (schema v3) | `io.pingui.persistence.SessionDatabase` |
+| CLI | `--session-db PATH` | `--session-db PATH` |
+| Route change / probe_error in SQLite | ✅ `persistence_event` (PY-P11) | ✅ `persistence_event` |
+| Event selection menu | YAML `persistence.events` | GUI “Database…” + YAML |
+| Export CSV/HTML | `export/session_report.py` | `--export-report` |
+
+Timeseries (`InfluxDB` / `Timescale`) remains a separate channel from the SQLite session DB.
 
 ---
 

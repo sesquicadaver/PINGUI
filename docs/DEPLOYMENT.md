@@ -14,7 +14,7 @@
 
 Expert ping (режим «Експерт») — **лише Linux** (iputils `ping`).
 
-**Dual-stack (phase 9, `beta` / **0.2.0**):** YAML і session приймають IPv6 literal (RFC 5952). IPv6 literal → subprocess `traceroute -6` у `probe: auto` (**Linux/macOS**); `probe: raw` + `cap_net_raw` — raw ICMPv6 на Linux. Windows Python trace для v6 literal поки не підтримується.
+**Dual-stack (phase 9 / **0.2.0**):** YAML і session приймають IPv6 literal (RFC 5952). IPv6 literal → subprocess `traceroute -6` у `probe: auto` (**Linux/macOS**); `probe: raw` + `cap_net_raw` — raw ICMPv6 на Linux. Windows Python trace для v6 literal поки не підтримується.
 
 ## Рекомендація щодо ОС
 
@@ -80,14 +80,14 @@ sudo setcap cap_net_raw+ep "$(readlink -f "$(which java)")"
 
 Після `setcap` перезапустіть PINGUI. Той самий capability потрібен для Python raw ICMP (scapy) на JDK/venv не стосується — лише для процесу, що відкриває raw socket.
 
-### IPv6 і `cap_net_raw` (dual-stack, `beta`)
+### IPv6 і `cap_net_raw` (dual-stack)
 
 | Шлях trace/ping | Ціль | `cap_net_raw`? | Примітка |
 |-----------------|------|----------------|----------|
 | `probe: auto` / `raw` | IPv4 literal, hostname (A) | **Так** (raw) | Без cap → fallback на `traceroute` |
 | `probe: auto` | IPv6 literal | **Ні** | Завжди subprocess `traceroute -6` (Java і Python) |
 | Expert ping `-6` | IPv6 literal / `-6` | **Ні** | iputils `ping`, не raw socket |
-| Raw ICMPv6 (`probe: raw`) | IPv6 literal | **Так** | Java `beta`: `LinuxJnaIcmpTransport` + `IcmpV6Packet`; `auto` лишає process trace |
+| Raw ICMPv6 (`probe: raw`) | IPv6 literal | **Так** | Java: `LinuxJnaIcmpTransport` + `IcmpV6Packet`; `auto` лишає process trace |
 
 **Поточна поведінка:** навіть із `cap_net_raw` на JDK, **IPv6 literal ніколи не йде через raw ICMP** — лише процесний trace. Capability впливає на v4/hostname у режимі `auto|raw`.
 
@@ -117,7 +117,7 @@ profiles:
         enabled: true
 ```
 
-## Python NOC (headless, гілка `beta`)
+## Python NOC (headless)
 
 Без Qt — фоновий моніторинг для серверів / NOC:
 
@@ -194,4 +194,4 @@ cd /path/to/PINGUI/java
 
 ## Розробка
 
-Тести, CI, Python-редакція — гілка **`beta`**.
+Нові зміни ROADMAP — на гілці **`beta`**; `main` — останній стабільний merge. Тести Java + Python доступні на обох гілках.

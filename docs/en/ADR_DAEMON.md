@@ -4,7 +4,7 @@
 
 **Date:** 2026-07-09  
 **Status:** accepted  
-**Branch:** `beta`
+**Branch (historical):** accepted on `beta`; shipped on `main` and `beta` after merge.
 
 ## Context
 

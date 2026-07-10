@@ -2,7 +2,7 @@
 
 # PINGUI documentation
 
-On **`beta`** — full package (Java phases 9–12 + Python). On **`main`** — stable Java GUI without P10–P12; see the Branches section in [README.en.md](../README.en.md).
+On **`main`** and **`beta`** — full package (Java Pro + Python) after merge; **`beta`** is the development branch (ROADMAP queue), **`main`** is the last stable snapshot. See Branches in [README.en.md](../README.en.md).
 
 ## Navigation
 
@@ -29,10 +29,10 @@ On **`beta`** — full package (Java phases 9–12 + Python). On **`main`** — 
 | [USER_GUIDE.md](USER_GUIDE.md) | User | End user guide |
 | [../java/README.md](../java/README.md) | All | Java launcher, Gradle |
 | [../.github/workflows/java.yml](../.github/workflows/java.yml) | CI | Java `./gradlew check` |
-| [../.github/workflows/ci.yml](../.github/workflows/ci.yml) | CI | Python pytest (beta) |
+| [../.github/workflows/ci.yml](../.github/workflows/ci.yml) | CI | Python pytest |
 
 ## Recommended order
 
 **Java:** [../README.md](../README.md) → CHECKLIST → [../java/README.md](../java/README.md)
 
-**Python (beta):** DEVELOPMENT → TESTING → CONFIGURATION
+**Python:** DEVELOPMENT → TESTING → CONFIGURATION (develop on `beta`)

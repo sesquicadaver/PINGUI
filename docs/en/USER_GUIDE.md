@@ -91,8 +91,9 @@ When the IP chain changes:
 
 ## Session Data
 
-All routes and ping history are **in RAM only**. Data is lost after closing the window.
-The saved YAML contains **only the target list**, not route history.
+By default routes and ping history live **in RAM** (lost when the window closes).
+Optionally: `--session-db` / **Settings → Database…** — SQLite keeps metrics and events across restarts.
+Saved YAML holds the **target list** (and persistence path/policy if set), not full hop history without a DB.
 
 ## Common Issues
 
@@ -111,7 +112,7 @@ The saved YAML contains **only the target list**, not route history.
 
 Details: [CONFIGURATION.md](CONFIGURATION.md).
 
-## Pro / NOC workflow (Java, `beta` branch)
+## Pro / NOC workflow (Java)
 
 Target scenario for an on-call NOC/SRE shift on the **Java edition** (`cd java && ./pingui-java.sh`). The basic Python GUI above remains for quick session monitoring; below is the pro loop.
 

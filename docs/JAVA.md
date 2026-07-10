@@ -196,7 +196,7 @@ gradlew.bat build
 pingui-java.bat --package    REM .msi
 ```
 
-Тести та CI — гілка **`beta`**.
+Тести та CI — на **`main`** і **`beta`** (розробка ROADMAP — на `beta`).
 
 ## Матриця parity з MVP
 
@@ -215,4 +215,4 @@ pingui-java.bat --package    REM .msi
 
 ## Майбутнє
 
-Див. backlog у гілці **`beta`**.
+Див. чергу ROADMAP на гілці **`beta`** ([docs/ROADMAP.md](ROADMAP.md) § NEXT).

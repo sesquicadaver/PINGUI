@@ -196,7 +196,7 @@ gradlew.bat build
 pingui-java.bat --package    REM .msi
 ```
 
-Tests and CI — branch **`beta`**.
+Tests and CI — on **`main`** and **`beta`** (ROADMAP development on `beta`).
 
 ## MVP parity matrix
 
@@ -215,4 +215,4 @@ Tests and CI — branch **`beta`**.
 
 ## Future
 
-See backlog on branch **`beta`**.
+See the ROADMAP queue on **`beta`** ([docs/en/ROADMAP.md](ROADMAP.md) § NEXT).

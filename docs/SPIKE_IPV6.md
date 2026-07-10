@@ -4,9 +4,9 @@
 
 **Дата:** 2025-06-26  
 **Оновлено:** 2026-06-26  
-**Статус:** **implemented** (фаза 9 code-complete на `beta`, semver **0.2.0**)  
+**Статус:** **implemented** (фаза 9 code-complete, semver **0.2.0**; на `main` і `beta` після merge)  
 **Попередній статус:** wontfix (MVP IPv4-only, B-053) — знято за product request  
-**Гілки:** `main` (Java GUI), `beta` (+ Python, тести)
+**Гілки:** `main` (стабільний зріз), `beta` (розробка) — Java + Python dual-stack
 
 ---
 

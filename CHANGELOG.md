@@ -9,6 +9,7 @@
 
 ### Changed
 
+- **Гілки `main` / `beta` (docs):** README і супутні docs більше не описують `main` як «лише RAM / без SQLite·alerts·daemon·IPv6·Python». Фактично: `main` = останній стабільний merge; `beta` = розробка попереду; Pro-стек і Python — на обох після merge.
 - **ROADMAP NEXT + лінійна черга:** у `docs/ROADMAP.md` / `docs/en/ROADMAP.md` і кореневих `ROADMAP*.md` — єдине поле **Поточна задача**; `/autopilot` без аргументів завжди бере цей ID (без питання «який пункт?»). Правило агента: `.cursor/rules/roadmap-next.mdc`.
 
 ### Fixed
