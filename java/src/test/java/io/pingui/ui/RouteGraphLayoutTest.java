@@ -5,13 +5,27 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.pingui.dns.DnsResolver;
 import io.pingui.model.Models.HopNode;
 import io.pingui.ui.RouteGraphLayout.GraphNode;
 import io.pingui.ui.RouteGraphLayout.GraphScene;
+import java.time.Duration;
 import java.util.List;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class RouteGraphLayoutTest {
+    @BeforeEach
+    void disableLiveRdns() {
+        DnsResolver.configureForTests(true, Duration.ofMinutes(5), java.time.Clock.systemUTC(), addr -> null);
+    }
+
+    @AfterEach
+    void resetRdns() {
+        DnsResolver.resetForTests();
+    }
+
     @Test
     void dualColumnsDoNotOverlap() {
         List<HopNode> prev = List.of(new HopNode(1, "9.9.9.9", 1.0, false));

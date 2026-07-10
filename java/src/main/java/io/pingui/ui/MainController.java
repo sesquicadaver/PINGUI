@@ -9,6 +9,7 @@ import io.pingui.config.ProfileDocument;
 import io.pingui.config.ProfilesConfig;
 import io.pingui.config.SessionDbResolver;
 import io.pingui.config.TracingProfile;
+import io.pingui.dns.DnsResolver;
 import io.pingui.geoip.AsnLookup;
 import io.pingui.geoip.GeoCountry;
 import io.pingui.model.Models.RouteSnapshot;
@@ -103,6 +104,7 @@ public final class MainController {
         applyCliOverridesToActiveProfile();
         GeoCountry.configure(options.geoipEnabled(), options.geoipHintsPath());
         AsnLookup.configure(options.asnEnabled(), options.asnHintsPath(), options.asnTimeoutMs());
+        DnsResolver.configure(true);
         TracingProfile active = profileDocument.active();
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(active.hosts());
         this.store = SessionStore.fromEntries(
@@ -272,6 +274,7 @@ public final class MainController {
                 () -> viewModeController.isExtended(),
                 () -> easterEggActive,
                 routeDiffPresenter);
+        DnsResolver.addListener(() -> Platform.runLater(routeGraphPresenter::redrawIfExtended));
 
         routeHistoryPresenter = new RouteHistoryPresenter(
                 () -> store,

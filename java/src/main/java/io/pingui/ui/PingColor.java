@@ -1,5 +1,6 @@
 package io.pingui.ui;
 
+import io.pingui.dns.DnsResolver;
 import io.pingui.geoip.AsnLookup;
 import io.pingui.geoip.GeoCountry;
 import io.pingui.model.Models;
@@ -49,9 +50,10 @@ public final class PingColor {
             }
             return "Hop " + node.hop() + "\n*";
         }
+        String rdnsLine = DnsResolver.labelLine(node.ip());
         String countryLine = countryLine(node.ip());
         String asnLine = AsnLookup.labelLine(node.ip());
-        String metaLines = countryLine + asnLine;
+        String metaLines = rdnsLine + countryLine + asnLine;
         String statsLine = statsLine(node.hop(), hopStatsFn);
         String displayIp = HopDisplay.formatHopIp(node.ip());
         Double avg = avgPingFn.apply(node.ip());

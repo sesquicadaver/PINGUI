@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P14-031** |
+| **Current task** | **P14-040** |
 | **Phase** | 14 — Pro GUI |
-| **DoD (short)** | rDNS in label (async, cache TTL 5 min) |
+| **DoD (short)** | Expert ping presets (4 buttons + `ping_presets.yaml`) |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -45,7 +45,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 |---|-----|--------|-------------|
 | 1 | **P14-021** | [x] | Tag filter chips + edit tags → YAML (`HostListPresenter`) |
 | 2 | **P14-030** | [x] | ASN in hop label: wire existing `AsnLookup*` / `asn_hints.yaml` or remove dead code |
-| 3 | **P14-031** | [ ] | rDNS in label (async, cache TTL 5 min) |
+| 3 | **P14-031** | [x] | rDNS in label (async, cache TTL 5 min) |
 | 4 | **P14-040** | [ ] | Expert ping presets (4 buttons + `ping_presets.yaml`) |
 | 5 | **P14-050** | [ ] | USER_GUIDE § pro / NOC workflow |
 | 6 | **PY-P11** | [ ] | Python: YAML `persistence.events` + SQLite `persistence_event` |
@@ -531,7 +531,7 @@ flowchart TD
 | **P14-020** | [x] Target tags: `tags: [dc, vpn, customer-x]` in YAML | `HostEntry`, `ProfilesConfig` | Filter in ListView |
 | **P14-021** | [x] UI: tag filter + quick filter chips | `HostListPresenter` | Saved in YAML |
 | **P14-030** | [x] ASN + short descr in hop label (offline cache) | `geoip/AsnLookup.java` | Offline configurable; whois timeout reserved 2s |
-| **P14-031** | [ ] rDNS in label (async, non-blocking UI) | `DnsResolver.java`, `GraphCanvas` | Cache TTL 5 min |
+| **P14-031** | [x] rDNS in label (async, non-blocking UI) | `DnsResolver.java`, `GraphCanvas` | Cache TTL 5 min |
 | **P14-040** | [ ] Expert ping presets: MTU probe, DF, DSCP, burst | `PingExpertDialog`, `ping_presets.yaml` | 4 preset buttons |
 | **P14-050** | [ ] USER_GUIDE § pro workflow | `docs/USER_GUIDE.md` | NOC scenario |
 
