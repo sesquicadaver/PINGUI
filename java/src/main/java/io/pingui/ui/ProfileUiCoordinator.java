@@ -57,7 +57,8 @@ final class ProfileUiCoordinator {
                         current.hostProbeMode(),
                         hosts,
                         current.alerts(),
-                        current.persistence()));
+                        current.persistence(),
+                        current.maxConcurrentTraces()));
     }
 
     void refreshCombo() {

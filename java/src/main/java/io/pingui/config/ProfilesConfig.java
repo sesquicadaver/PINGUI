@@ -107,7 +107,10 @@ public final class ProfilesConfig {
         List<HostEntry> hosts = parseHostEntries(hostsList, name);
         AlertConfig alerts = parseAlerts(map, name);
         PersistenceConfig persistence = parsePersistence(map, name);
-        return new TracingProfile(interval, maxHops, timeout, probe, hostProbeMode, hosts, alerts, persistence);
+        int maxConcurrentTraces =
+                readInt(map, "max_concurrent_traces", io.pingui.monitor.TraceConcurrencyLimiter.DEFAULT_MAX, name);
+        return new TracingProfile(
+                interval, maxHops, timeout, probe, hostProbeMode, hosts, alerts, persistence, maxConcurrentTraces);
     }
 
     private static PersistenceConfig parsePersistence(Map<?, ?> map, String profileName) {
@@ -237,6 +240,9 @@ public final class ProfilesConfig {
         map.put("probe", profile.probeMode().cliValue());
         if (profile.hostProbeMode() != HostProbeMode.TRACE) {
             map.put("probe_mode", profile.hostProbeMode().yamlValue());
+        }
+        if (profile.maxConcurrentTraces() != io.pingui.monitor.TraceConcurrencyLimiter.DEFAULT_MAX) {
+            map.put("max_concurrent_traces", profile.maxConcurrentTraces());
         }
         List<Object> hostsOut = new ArrayList<>();
         for (HostEntry host : profile.hosts()) {

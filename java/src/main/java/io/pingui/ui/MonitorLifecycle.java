@@ -34,7 +34,11 @@ public final class MonitorLifecycle {
             SessionDatabase sessionDatabase,
             List<HostEntry> sessionHosts) {
         MonitorService service = new MonitorService(
-                profile.intervalSeconds(), profile.maxHops(), profile.timeoutSeconds(), profile.probeMode());
+                profile.intervalSeconds(),
+                profile.maxHops(),
+                profile.timeoutSeconds(),
+                profile.probeMode(),
+                profile.maxConcurrentTraces());
         service.setAlertProfileName(profileName);
         service.setAlertDispatcher(AlertDispatchers.build(alerts));
         service.setExpertResolver(store::getPingExpert);

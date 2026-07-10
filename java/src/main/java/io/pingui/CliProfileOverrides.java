@@ -32,6 +32,7 @@ public record CliProfileOverrides(
                 profile.hostProbeMode(),
                 profile.hosts(),
                 profile.alerts(),
-                profile.persistence());
+                profile.persistence(),
+                profile.maxConcurrentTraces());
     }
 }

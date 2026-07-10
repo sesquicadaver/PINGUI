@@ -227,6 +227,79 @@ class MonitorServiceTest {
     }
 
     @Test
+    void limitsConcurrentTracePolls() throws Exception {
+        AtomicInteger concurrent = new AtomicInteger();
+        AtomicInteger maxConcurrent = new AtomicInteger();
+        CountDownLatch started = new CountDownLatch(4);
+        RouteProbe slowProbe = (targetHost, maxHops, timeoutSeconds) -> {
+            int active = concurrent.incrementAndGet();
+            maxConcurrent.updateAndGet(prev -> Math.max(prev, active));
+            started.countDown();
+            try {
+                Thread.sleep(400);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new java.io.IOException("interrupted", ex);
+            }
+            concurrent.decrementAndGet();
+            return new RouteSnapshot(targetHost, targetHost, List.of(new HopNode(1, "10.0.0.1", 1.0, false)));
+        };
+        MonitorService service = new MonitorService(0.05, 20, 0.5, slowProbe, 2);
+        for (int i = 0; i < 4; i++) {
+            service.addHost("host" + i, true, HostProbeMode.TRACE);
+        }
+        assertTrue(started.await(5, TimeUnit.SECONDS));
+        Thread.sleep(1200);
+        assertTrue(maxConcurrent.get() <= 2, "at most 2 trace polls in flight");
+        service.close();
+    }
+
+    @Test
+    void pingOnlyPollsWhileTraceSlotExhausted() throws Exception {
+        CountDownLatch traceStarted = new CountDownLatch(1);
+        CountDownLatch releaseTrace = new CountDownLatch(1);
+        RouteSnapshot snapshot = new RouteSnapshot("trace", "1.1.1.1", List.of(new HopNode(1, "10.0.0.1", 1.0, false)));
+        RouteProbe blockingTrace = (targetHost, maxHops, timeoutSeconds) -> {
+            traceStarted.countDown();
+            try {
+                if (!releaseTrace.await(5, TimeUnit.SECONDS)) {
+                    throw new java.io.IOException("trace wait timed out");
+                }
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new java.io.IOException("trace interrupted", ex);
+            }
+            return snapshot;
+        };
+        CountDownLatch pingDone = new CountDownLatch(1);
+        MonitorService service = new MonitorService(0.05, 20, 0.5, blockingTrace, 1);
+        service.setListener(new MonitorService.Listener() {
+            @Override
+            public void onDataReceived(String host, RouteSnapshot snap) {
+                if ("127.0.0.1".equals(host)) {
+                    pingDone.countDown();
+                }
+            }
+
+            @Override
+            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
+
+            @Override
+            public void onProbeError(String host, String message) {
+                if ("127.0.0.1".equals(host)) {
+                    pingDone.countDown();
+                }
+            }
+        });
+        service.addHost("trace", true, HostProbeMode.TRACE);
+        service.addHost("127.0.0.1", true, HostProbeMode.PING_ONLY);
+        assertTrue(traceStarted.await(5, TimeUnit.SECONDS));
+        assertTrue(pingDone.await(5, TimeUnit.SECONDS));
+        releaseTrace.countDown();
+        service.close();
+    }
+
+    @Test
     void acceleratesPollingAfterRouteChange() throws Exception {
         RouteSnapshot first = new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
         RouteSnapshot second =

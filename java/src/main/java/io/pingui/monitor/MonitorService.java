@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 /** Background polling of enabled hosts (cross-platform, no Qt). */
 public final class MonitorService implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(MonitorService.class);
-    private static final int MAX_PARALLEL_PROBES = 4;
+    private static final int MIN_PROBE_POOL_THREADS = 4;
 
     public interface Listener {
         void onDataReceived(String host, RouteSnapshot snapshot);
@@ -91,25 +91,59 @@ public final class MonitorService implements AutoCloseable {
     private volatile PersistenceEventWriter persistenceEvents;
     private final PersistencePolicyHolder persistencePolicy = new PersistencePolicyHolder();
     private final BurstSchedulePolicy burstPolicy = new BurstSchedulePolicy();
+    private final TraceConcurrencyLimiter traceLimiter;
 
     public MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds) {
         this(intervalSeconds, maxHops, timeoutSeconds, ProbeMode.AUTO);
     }
 
     public MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds, ProbeMode probeMode) {
-        this(intervalSeconds, maxHops, timeoutSeconds, RouteProbeFactory.create(probeMode));
+        this(
+                intervalSeconds,
+                maxHops,
+                timeoutSeconds,
+                RouteProbeFactory.create(probeMode),
+                TraceConcurrencyLimiter.DEFAULT_MAX);
+    }
+
+    public MonitorService(
+            double intervalSeconds, int maxHops, double timeoutSeconds, ProbeMode probeMode, int maxConcurrentTraces) {
+        this(intervalSeconds, maxHops, timeoutSeconds, RouteProbeFactory.create(probeMode), maxConcurrentTraces);
     }
 
     MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds, RouteProbe probe) {
-        this(intervalSeconds, maxHops, timeoutSeconds, probe, new MtrProbe(MtrHopProbers.platformDefault()));
+        this(intervalSeconds, maxHops, timeoutSeconds, probe, TraceConcurrencyLimiter.DEFAULT_MAX);
+    }
+
+    MonitorService(
+            double intervalSeconds, int maxHops, double timeoutSeconds, RouteProbe probe, int maxConcurrentTraces) {
+        this(
+                intervalSeconds,
+                maxHops,
+                timeoutSeconds,
+                probe,
+                new MtrProbe(MtrHopProbers.platformDefault()),
+                maxConcurrentTraces);
     }
 
     MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds, RouteProbe probe, MtrProbe mtrProbe) {
+        this(intervalSeconds, maxHops, timeoutSeconds, probe, mtrProbe, TraceConcurrencyLimiter.DEFAULT_MAX);
+    }
+
+    MonitorService(
+            double intervalSeconds,
+            int maxHops,
+            double timeoutSeconds,
+            RouteProbe probe,
+            MtrProbe mtrProbe,
+            int maxConcurrentTraces) {
         this.profileIntervalSeconds = intervalSeconds;
         this.maxHops = maxHops;
         this.timeoutSeconds = timeoutSeconds;
         this.poller = new RoutePoller(probe, mtrProbe);
-        this.probePool = Executors.newFixedThreadPool(MAX_PARALLEL_PROBES, r -> {
+        this.traceLimiter = new TraceConcurrencyLimiter(maxConcurrentTraces);
+        int poolSize = Math.max(MIN_PROBE_POOL_THREADS, maxConcurrentTraces + 2);
+        this.probePool = Executors.newFixedThreadPool(poolSize, r -> {
             Thread thread = new Thread(r, "pingui-probe");
             thread.setDaemon(true);
             return thread;
@@ -319,9 +353,26 @@ public final class MonitorService implements AutoCloseable {
             if (!HostPollSchedule.isDue(lastPoll, now, intervalSeconds)) {
                 continue;
             }
-            probePool.execute(() -> pollHost(host));
+            dispatchDueHost(host, mode);
         }
         persistencePolicy.applyPendingAfterCycle();
+    }
+
+    private void dispatchDueHost(String host, HostProbeMode mode) {
+        if (!TraceConcurrencyLimiter.limitsConcurrency(mode)) {
+            probePool.execute(() -> pollHost(host));
+            return;
+        }
+        if (!traceLimiter.tryAcquire()) {
+            return;
+        }
+        probePool.execute(() -> {
+            try {
+                pollHost(host);
+            } finally {
+                traceLimiter.release();
+            }
+        });
     }
 
     private void pollHost(String host) {

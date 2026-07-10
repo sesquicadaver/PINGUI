@@ -265,6 +265,25 @@ class ProfilesConfigTest {
     }
 
     @Test
+    void loadMaxConcurrentTraces() throws Exception {
+        Path path = tempDir.resolve("max-traces.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    max_concurrent_traces: 5
+                    hosts:
+                      - "8.8.8.8"
+                """);
+        assertEquals(5, ProfilesConfig.load(path).active().maxConcurrentTraces());
+
+        ProfilesConfig.save(path, ProfilesConfig.load(path));
+        assertEquals(5, ProfilesConfig.load(path).active().maxConcurrentTraces());
+    }
+
+    @Test
     void loadHostIntervalOverride() throws Exception {
         Path path = tempDir.resolve("host-interval.yaml");
         Files.writeString(

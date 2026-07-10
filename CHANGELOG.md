@@ -38,6 +38,7 @@
 - **Probe mode YAML (P13-011):** `probe_mode: trace | mtr | ping_only` на профіль і хост; `MonitorService` гілкує trace/mtr/ping_only; `ping_only: true` → backward compat.
 - **Smart poll interval (P13-020):** `HostPollSchedule` — per-host cadence за `probe_mode` (`ping_only` 1.5s, `mtr` 10s, `trace` = profile `interval`); опційний `interval` на хост; `MonitorService` опитує лише due-хости (tick 0.25s).
 - **Burst on route change (P13-021):** `BurstSchedulePolicy` — після `route_change` інтервал ×0.25 на 5 хв; інтеграція в `MonitorService.resolveIntervalSeconds`.
+- **Trace concurrency cap (P13-030):** `max_concurrent_traces` (default 3) у YAML; `TraceConcurrencyLimiter` обмежує одночасні TRACE-опити; `ping_only`/`mtr` без ліміту.
 
 ### Fixed
 

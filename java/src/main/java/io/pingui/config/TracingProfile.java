@@ -14,7 +14,8 @@ public record TracingProfile(
         HostProbeMode hostProbeMode,
         List<HostEntry> hosts,
         AlertConfig alerts,
-        PersistenceConfig persistence) {
+        PersistenceConfig persistence,
+        int maxConcurrentTraces) {
     public TracingProfile {
         if (intervalSeconds <= 0) {
             throw new IllegalArgumentException("intervalSeconds must be positive");
@@ -24,6 +25,9 @@ public record TracingProfile(
         }
         if (timeoutSeconds <= 0) {
             throw new IllegalArgumentException("timeoutSeconds must be positive");
+        }
+        if (maxConcurrentTraces < 1) {
+            throw new IllegalArgumentException("maxConcurrentTraces must be >= 1");
         }
         probeMode = probeMode != null ? probeMode : ProbeMode.AUTO;
         hostProbeMode = hostProbeMode != null ? hostProbeMode : HostProbeMode.TRACE;
@@ -41,7 +45,16 @@ public record TracingProfile(
             List<HostEntry> hosts,
             AlertConfig alerts,
             PersistenceConfig persistence) {
-        this(intervalSeconds, maxHops, timeoutSeconds, probeMode, HostProbeMode.TRACE, hosts, alerts, persistence);
+        this(
+                intervalSeconds,
+                maxHops,
+                timeoutSeconds,
+                probeMode,
+                HostProbeMode.TRACE,
+                hosts,
+                alerts,
+                persistence,
+                io.pingui.monitor.TraceConcurrencyLimiter.DEFAULT_MAX);
     }
 
     public static TracingProfile defaults(List<HostEntry> hosts) {
@@ -53,22 +66,47 @@ public record TracingProfile(
                 HostProbeMode.TRACE,
                 hosts,
                 AlertConfig.disabled(),
-                PersistenceConfig.defaults());
+                PersistenceConfig.defaults(),
+                io.pingui.monitor.TraceConcurrencyLimiter.DEFAULT_MAX);
     }
 
     public TracingProfile withHosts(List<HostEntry> newHosts) {
         return new TracingProfile(
-                intervalSeconds, maxHops, timeoutSeconds, probeMode, hostProbeMode, newHosts, alerts, persistence);
+                intervalSeconds,
+                maxHops,
+                timeoutSeconds,
+                probeMode,
+                hostProbeMode,
+                newHosts,
+                alerts,
+                persistence,
+                maxConcurrentTraces);
     }
 
     public TracingProfile withAlerts(AlertConfig newAlerts) {
         return new TracingProfile(
-                intervalSeconds, maxHops, timeoutSeconds, probeMode, hostProbeMode, hosts, newAlerts, persistence);
+                intervalSeconds,
+                maxHops,
+                timeoutSeconds,
+                probeMode,
+                hostProbeMode,
+                hosts,
+                newAlerts,
+                persistence,
+                maxConcurrentTraces);
     }
 
     public TracingProfile withPersistence(PersistenceConfig newPersistence) {
         return new TracingProfile(
-                intervalSeconds, maxHops, timeoutSeconds, probeMode, hostProbeMode, hosts, alerts, newPersistence);
+                intervalSeconds,
+                maxHops,
+                timeoutSeconds,
+                probeMode,
+                hostProbeMode,
+                hosts,
+                alerts,
+                newPersistence,
+                maxConcurrentTraces);
     }
 
     public List<String> hostAddresses() {

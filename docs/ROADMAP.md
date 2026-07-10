@@ -438,7 +438,7 @@ flowchart TD
 | **P13-011** | [x] YAML `probe_mode` на профіль + override на host | `ProfilesConfig`, `HostEntry`, `MonitorService` | `ProfilesConfigTest.loadProbeModeOnProfileAndHost`, `HostEntryProbeModeTest` |
 | **P13-020** | [x] Smart interval: `ping_only` 1–2s, `trace` 30–300s per host | `MonitorService`, `HostPollSchedule` | Profile default + per-host override |
 | **P13-021** | [x] Burst on change: після route change — interval ×0.25 на 5 хв | `BurstSchedulePolicy.java` | Unit-тест timer |
-| **P13-030** | [ ] Parallel poll: `max_concurrent_traces` (default 3) | `MonitorService` | Не більше N subprocess одночасно |
+| **P13-030** | [x] Parallel poll: `max_concurrent_traces` (default 3) | `MonitorService`, `TraceConcurrencyLimiter` | Не більше N subprocess одночасно |
 | **P13-040** | [ ] Windows profile preset: auto `ping_only` + `interval: 60` | `config/hosts.windows.example.yaml` | CHECKLIST Windows |
 | **P13-050** | [ ] LIVING_SPEC + JAVA.md known limitations | `docs/JAVA.md` | MTR vs traceroute doc |
 
