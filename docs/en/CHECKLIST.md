@@ -129,7 +129,7 @@ ls build/dist/*.deb
 
 ## Windows 11+
 
-> ⚠ **Warning:** Windows is **not recommended** for intensive route monitoring. `tracert` runs 3 probes per hop with long timeouts; one trace to 20 hops can take **1–4+ minutes**. Expert ping unavailable. For practical use: **Ping only** in the GUI or `ping_only: true` / `interval: 30` in YAML. Recommended platform — **Linux**. [DEPLOYMENT.md#os-recommendation](DEPLOYMENT.md#os-recommendation)
+> ⚠ **Warning:** Windows is **not recommended** for intensive route monitoring. `tracert` runs 3 probes per hop with long timeouts; one trace to 20 hops can take **1–4+ minutes**. Expert ping unavailable. For practical use: **Ping only** in the GUI or starter preset `config/hosts.windows.example.yaml` (`probe_mode: ping_only`, `interval: 60`). Recommended platform — **Linux**. [DEPLOYMENT.md#os-recommendation](DEPLOYMENT.md#os-recommendation)
 
 ### Preflight
 
@@ -165,17 +165,18 @@ pingui-java.bat --build
 ```bat
 cd C:\path\to\PINGUI\java
 pingui-java.bat --build
-pingui-java.bat
+pingui-java.bat --config config/hosts.windows.example.yaml
 ```
 
 - [ ] `java -version` → **21**
 - [ ] `./gradlew build` — SUCCESS
-- [ ] GUI (JavaFX) opens
+- [ ] GUI (JavaFX) opens with `hosts.windows.example.yaml` (ping_only, interval 60)
 
 ### Smoke test
 
+- [ ] Start with `config/hosts.windows.example.yaml` (P13-040 preset)
 - [ ] Target `8.8.8.8`, checkbox enabled
-- [ ] **Ping only** ON → RTT within a few seconds (no wait for full trace)
+- [ ] **Ping only** ON (preset) → RTT within a few seconds (no wait for full trace)
 - [ ] Or trace OFF + ping only OFF: first trace — **up to 4 min** (normal for `tracert`)
 - [ ] Simple / Extended — metrics and graph
 - [ ] YAML save/load

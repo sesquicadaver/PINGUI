@@ -28,8 +28,9 @@ Expert ping (“Expert” mode) — **Linux only** (iputils `ping`).
 
 **How to mitigate on Windows:**
 
+- Starter preset: `java/config/hosts.windows.example.yaml` — `probe_mode: ping_only`, `interval: 60` (P13-040).
 - In the GUI: **Ping only** checkbox on the host (RTT to target only, no hops).
-- In YAML: `ping_only: true` or `interval: 30` (or higher) for trace mode.
+- In YAML: `probe_mode: ping_only` or `interval: 60` (or higher) for trace mode.
 - Expect a 1–4 minute delay for the first full trace to a remote target.
 
 ## Requirements
@@ -58,7 +59,7 @@ export PINGUI_JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64   # if needed
 ```bat
 cd java
 pingui-java.bat --build
-pingui-java.bat
+pingui-java.bat --config config/hosts.windows.example.yaml
 ```
 
 ## Build and packaging

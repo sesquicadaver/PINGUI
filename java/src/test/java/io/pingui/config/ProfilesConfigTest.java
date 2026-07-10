@@ -265,6 +265,16 @@ class ProfilesConfigTest {
     }
 
     @Test
+    void loadWindowsExamplePreset() throws Exception {
+        Path path = Path.of("config/hosts.windows.example.yaml");
+        org.junit.jupiter.api.Assumptions.assumeTrue(Files.isRegularFile(path), "Run from java/ module directory");
+        TracingProfile profile = ProfilesConfig.load(path).active();
+        assertEquals(60.0, profile.intervalSeconds());
+        assertEquals(HostProbeMode.PING_ONLY, profile.hostProbeMode());
+        assertTrue(profile.hosts().stream().anyMatch(h -> h.address().equals("8.8.8.8") && h.enabled()));
+    }
+
+    @Test
     void loadMaxConcurrentTraces() throws Exception {
         Path path = tempDir.resolve("max-traces.yaml");
         Files.writeString(

@@ -9,7 +9,7 @@
 Працює на **Linux, macOS та Windows**: трасування через системні
 `traceroute` / `tracert`. Дані сесії — в RAM за замовчуванням; опційно SQLite через `--session-db` (P11-011…012).
 
-> **Рекомендація:** **Linux** — оптимальна платформа (швидкий `traceroute -q 1`, Expert ping, raw ICMP). **Windows** — для періодичних перевірок: повний trace повільний через `tracert`; у GUI використовуйте **Ping only** або збільште `interval` у YAML. [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md#рекомендація-щодо-ос)
+> **Рекомендація:** **Linux** — оптимальна платформа (швидкий `traceroute -q 1`, Expert ping, raw ICMP). **Windows** — для періодичних перевірок: повний trace повільний через `tracert`; стартовий пресет `config/hosts.windows.example.yaml` (`probe_mode: ping_only`, `interval: 60`). [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md#рекомендація-щодо-ос)
 
 ## Вимоги
 
@@ -46,7 +46,7 @@ gradlew.bat build
 gradlew.bat run
 rem або
 pingui-java.bat --build
-pingui-java.bat
+pingui-java.bat --config config/hosts.windows.example.yaml
 ```
 
 Якщо `java` не в PATH:

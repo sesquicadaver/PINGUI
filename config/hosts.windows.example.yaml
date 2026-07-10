@@ -1,0 +1,24 @@
+# Windows-optimized tracing profile (P13-040 / ADR_PROBE_MODES).
+#
+# tracert is slow (3 probes/hop, 1–4+ min per target at 20 hops).
+# Recommended on Windows: ping_only + interval >= 60 s.
+#
+# Java GUI/CLI (from java/):
+#   ./pingui-java.sh --config ../config/hosts.windows.example.yaml
+#
+# For v2 profiles with probe_mode, prefer java/config/hosts.windows.example.yaml
+# when working directory is java/.
+#
+active_profile: windows
+profiles:
+  windows:
+    interval: 60.0
+    max_hops: 20
+    timeout: 0.5
+    probe: process
+    probe_mode: ping_only
+    hosts:
+      - address: "8.8.8.8"
+        enabled: true
+      - address: "1.1.1.1"
+        enabled: true
