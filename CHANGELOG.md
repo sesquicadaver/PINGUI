@@ -21,6 +21,7 @@
 
 ### Added
 
+- **Observability ADR (P15-001):** `docs/ADR_OBSERVABILITY.md` — Prometheus pull (`/metrics`) vs опційний push Influx/Timescale; межі з P10/P11/P16.
 - **Alerts ADR (P10-001):** `docs/ADR_ALERTS.md` — channels (webhook, desktop), `RouteChangeEvent` JSON, rate limit, failure policy.
 - **Java alerts foundation (P10-010…011):** `RouteChangeEvent`, `AlertDispatcher`, dispatch from `MonitorService` on route change.
 - **Java alerts pipeline (P10-020…050):** webhook POST, desktop `notify-send`, YAML `alerts:` + CLI overrides, per-host rate limit, `RouteChangeNotifier`, tests and CHECKLIST smoke.

@@ -21,6 +21,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Observability ADR (P15-001):** `docs/ADR_OBSERVABILITY.md` — Prometheus pull (`/metrics`) vs optional Influx/Timescale push; boundaries with P10/P11/P16.
 - **MTR probe (P13-010):** `MtrProbe` — per-hop state machine (DISCOVERING → MONITORING), one TTL per poll; `RoutePoller.pollHostMtr`.
 - **Probe mode YAML (P13-011):** `probe_mode: trace | mtr | ping_only` on profile and host; `MonitorService` branches trace/mtr/ping_only; `ping_only: true` backward compat.
 - **Smart poll interval (P13-020):** `HostPollSchedule` — per-host cadence by `probe_mode` (`ping_only` 1.5s, `mtr` 10s, `trace` = profile `interval`); optional host `interval` override; `MonitorService` polls due hosts only (0.25s tick, non-blocking dispatch).

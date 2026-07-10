@@ -17,6 +17,7 @@
 | [ADR_ALERTS.md](ADR_ALERTS.md) | Розробник | Route-change alerts ADR (P10-001) |
 | [ADR_DAEMON.md](ADR_DAEMON.md) | Розробник | Headless daemon ADR (P12-001) |
 | [ADR_PROBE_MODES.md](ADR_PROBE_MODES.md) | Розробник | Probe modes trace/mtr/ping_only ADR (P13-001) |
+| [ADR_OBSERVABILITY.md](ADR_OBSERVABILITY.md) | Розробник | Prometheus vs TS backend ADR (P15-001) |
 | [SPIKE_IPV6.md](SPIKE_IPV6.md) | Розробник | IPv6 scope (**planned**, фаза 9 V6-*) |
 | [SPIKE_PERSISTENCE.md](SPIKE_PERSISTENCE.md) | Розробник | SQLite session schema (фаза 11 P11-*) |
 | [CONFIGURATION.md](CONFIGURATION.md) | Розробник | YAML, CLI (Python) |

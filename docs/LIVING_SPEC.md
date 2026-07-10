@@ -31,6 +31,7 @@
 | rDNS hop labels (P14-031) | `DnsResolver`, `PingColor`, `MainController`, `GraphCanvas` | `DnsResolverTest`, `PingColorTest.nodeLabelIncludesCachedRdns` |
 | Expert ping presets (P14-040) | `PingPresets`, `PingPreset`, `PingExpertDialog`, `ping_presets.yaml` | `PingPresetsTest` |
 | USER_GUIDE pro/NOC (P14-050) | `docs/USER_GUIDE.md`, `docs/en/USER_GUIDE.md`, `docs/en/DEPLOYMENT.md` | `scripts/check_doc_parity.py` |
+| Observability boundaries (P15-001) | `docs/ADR_OBSERVABILITY.md`, `docs/en/ADR_OBSERVABILITY.md` | Docs parity (`check_doc_parity.py`); Prometheus pull vs TS push |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |

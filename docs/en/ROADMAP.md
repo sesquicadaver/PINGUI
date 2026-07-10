@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P15-001** |
+| **Current task** | **P15-010** |
 | **Phase** | 15 — Team integrations |
-| **DoD (short)** | ADR observability boundaries |
+| **DoD (short)** | Prometheus `/metrics` (daemon) |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -49,7 +49,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 4 | **P14-040** | [x] | Expert ping presets (4 buttons + `ping_presets.yaml`) |
 | 5 | **P14-050** | [x] | USER_GUIDE § pro / NOC workflow |
 | 6 | **PY-P11** | [x] | Python: YAML `persistence.events` + SQLite `persistence_event` |
-| 7 | **P15-001** | [ ] | ADR observability boundaries |
+| 7 | **P15-001** | [x] | ADR observability boundaries |
 | 8 | **P15-010** | [ ] | Prometheus `/metrics` (daemon) |
 | 9 | **P15-011** | [ ] | CLI `--metrics-port` |
 | 10 | **P15-020** | [ ] | InfluxDB/Timescale writer (Java parity) |
@@ -545,7 +545,7 @@ flowchart TD
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **P15-001** | [ ] ADR: observability boundaries (metrics vs TS backend) | `docs/ADR_OBSERVABILITY.md` | Prometheus read; Influx write optional |
+| **P15-001** | [x] ADR: observability boundaries (metrics vs TS backend) | `docs/ADR_OBSERVABILITY.md` | Prometheus read; Influx write optional |
 | **P15-010** | [ ] Prometheus `/metrics` endpoint (daemon mode) | `observability/PrometheusExporter.java` | `pingui_rtt_ms`, `pingui_route_change_total` |
 | **P15-011** | [ ] CLI `--metrics-port 9090` | `DaemonRunner` | localhost bind default |
 | **P15-020** | [ ] Java parity: InfluxDB/Timescale writer (Python B-05) | `persistence/timeseries/` | Config parity with Python |
