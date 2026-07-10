@@ -1,0 +1,17 @@
+# Offline ASN hints for hop node labels (longest-prefix match).
+# Extend or override via --asn-hints PATH. Values: { asn: N, org: "Name" }.
+prefixes:
+  8.8.8.0/24: { asn: 15169, org: Google }
+  8.8.4.0/24: { asn: 15169, org: Google }
+  1.1.1.0/24: { asn: 13335, org: Cloudflare }
+  1.0.0.0/24: { asn: 13335, org: Cloudflare }
+  9.9.9.0/24: { asn: 19281, org: Quad9 }
+  208.67.222.0/24: { asn: 36692, org: OpenDNS }
+  208.67.220.0/24: { asn: 36692, org: OpenDNS }
+  142.250.0.0/15: { asn: 15169, org: Google }
+  172.217.0.0/16: { asn: 15169, org: Google }
+  157.240.0.0/16: { asn: 32934, org: Meta }
+  31.13.0.0/16: { asn: 32934, org: Meta }
+prefixes_v6:
+  2001:4860:4860::/48: { asn: 15169, org: Google }
+  2606:4700:4700::/48: { asn: 13335, org: Cloudflare }

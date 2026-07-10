@@ -27,6 +27,7 @@ Module → unit test matrix. Update when adding features.
 | Route diff panel (P14-010) | `RouteDiff`, `RouteDiffPresenter`, `RouteGraphPresenter`, `GraphCanvas` | `RouteDiffTest`, `RouteDiffPresenterTest`, `RouteGraphPresenterTest.liveRedrawShowsDiffAgainstPreviousRoute` |
 | Host tags YAML (P14-020) | `HostTags`, `HostEntry`, `ProfilesConfig`, `HostItem`, `MainController` | `HostTagsTest`, `HostEntryTest.withTagsPreservesOtherFields`, `ProfilesConfigTest.loadHostTagsRoundTrip` |
 | Tag filter chips + edit (P14-021) | `HostListPresenter`, `HostTagsDialog`, `SessionStore.setTags` | `HostTagsDialogTest`, `HostListPresenterTest`, `SessionStoreTest.setTagsUpdatesSessionAndToHostEntries` |
+| ASN hop labels (P14-030) | `AsnLookup`, `AsnInfo`, `IpLiterals`, `PingColor`, `config/asn_hints.yaml` | `AsnLookupTest`, `IpLiteralsTest`, `PingColorTest.nodeLabelUsesAvgPing`, `PinguiApplicationTest.parseOptions_asnFlags` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
 | SQLite session (P11-010) | `SessionDatabase`, `SessionJsonCodec` | `SessionDatabaseTest` |

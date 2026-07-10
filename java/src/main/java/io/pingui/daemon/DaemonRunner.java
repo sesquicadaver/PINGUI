@@ -7,6 +7,7 @@ import io.pingui.config.ProfileDocument;
 import io.pingui.config.ProfilesConfig;
 import io.pingui.config.SessionDbResolver;
 import io.pingui.config.TracingProfile;
+import io.pingui.geoip.AsnLookup;
 import io.pingui.geoip.GeoCountry;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.monitor.MonitorService;
@@ -47,6 +48,7 @@ public final class DaemonRunner implements AutoCloseable {
         profileDocument = ProfilesConfig.load(options.configPath());
         applyCliOverridesToActiveProfile();
         GeoCountry.configure(options.geoipEnabled(), options.geoipHintsPath());
+        AsnLookup.configure(options.asnEnabled(), options.asnHintsPath(), options.asnTimeoutMs());
         TracingProfile active = profileDocument.active();
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(active.hosts());
         store = SessionStore.fromEntries(sessionHosts, openSessionDatabase(active), active.hostProbeMode());

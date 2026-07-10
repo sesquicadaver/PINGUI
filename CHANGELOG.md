@@ -44,6 +44,7 @@
 - **Route diff panel (P14-010):** `RouteDiff` / `RouteDiffPresenter` — hop-by-hop «було → стало» з Δ RTT у розширеному режимі (live + replay історії).
 - **Host tags (P14-020):** YAML `tags: [dc, vpn, …]` на хост; фільтр ListView за тегом; збереження через `ProfilesConfig` / `SessionStore`.
 - **Tag filter chips (P14-021):** quick filter chips у `HostListPresenter`; кнопка «Теги» + `HostTagsDialog`; `SessionStore.setTags` → Save у YAML.
+- **ASN hop labels (P14-030):** offline `AsnLookup` + `asn_hints.yaml`; мітка hop `AS#### Org`; CLI `--asn-hints` / `--no-asn` / `--asn-timeout-ms`.
 
 ### Fixed
 

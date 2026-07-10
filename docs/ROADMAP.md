@@ -455,7 +455,7 @@ flowchart TD
 | **P14-010** | [x] Route diff panel: hop-by-hop «було → стало», Δ RTT | `RouteDiffPresenter.java`, `GraphCanvas` | Manual smoke route change |
 | **P14-020** | [x] Теги цілей: `tags: [dc, vpn, customer-x]` у YAML | `HostEntry`, `ProfilesConfig` | Filter у ListView |
 | **P14-021** | [x] UI: фільтр за тегом + quick filter chips | `HostListPresenter` | Збереження в YAML |
-| **P14-030** | [ ] ASN + короткий descr у label hop (offline cache) | `geoip/AsnLookup.java` або lazy whois | Configurable; timeout 2s |
+| **P14-030** | [x] ASN + короткий descr у label hop (offline cache) | `geoip/AsnLookup.java` | Offline configurable; whois timeout reserved 2s |
 | **P14-031** | [ ] rDNS у label (async, не блокує UI) | `DnsResolver.java`, `GraphCanvas` | Cache TTL 5 хв |
 | **P14-040** | [ ] Expert ping presets: MTU probe, DF, DSCP, burst | `PingExpertDialog`, `ping_presets.yaml` | 4 preset кнопки |
 | **P14-050** | [ ] USER_GUIDE § pro workflow | `docs/USER_GUIDE.md` | NOC сценарій |
