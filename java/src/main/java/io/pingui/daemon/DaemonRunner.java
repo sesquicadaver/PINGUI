@@ -12,6 +12,8 @@ import io.pingui.geoip.GeoCountry;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
+import io.pingui.observability.MetricsHttpServer;
+import io.pingui.observability.PrometheusExporter;
 import io.pingui.persistence.PersistencePolicy;
 import io.pingui.persistence.SessionDatabase;
 import io.pingui.ui.HostViewRules;
@@ -33,6 +35,7 @@ public final class DaemonRunner implements AutoCloseable {
     private ProfileDocument profileDocument;
     private SessionStore store;
     private MonitorService monitor;
+    private MetricsHttpServer metricsServer;
     private final CountDownLatch running = new CountDownLatch(1);
     private volatile boolean closed;
 
@@ -53,6 +56,7 @@ public final class DaemonRunner implements AutoCloseable {
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(active.hosts());
         store = SessionStore.fromEntries(sessionHosts, openSessionDatabase(active), active.hostProbeMode());
         monitor = createMonitor(active, sessionHosts);
+        startMetricsIfConfigured();
         DaemonPidFile.write(pidFile, ProcessHandle.current().pid());
         Runtime.getRuntime().addShutdownHook(new Thread(this::closeQuietly, "pingui-daemon-shutdown"));
         LOG.info(
@@ -70,12 +74,21 @@ public final class DaemonRunner implements AutoCloseable {
         running.await();
     }
 
+    /** Exposed for tests — metrics HTTP server when {@code metricsPort} is set. */
+    public Optional<MetricsHttpServer> metricsServer() {
+        return Optional.ofNullable(metricsServer);
+    }
+
     @Override
     public void close() {
         if (closed) {
             return;
         }
         closed = true;
+        if (metricsServer != null) {
+            metricsServer.close();
+            metricsServer = null;
+        }
         if (monitor != null) {
             monitor.close();
             monitor = null;
@@ -91,6 +104,16 @@ public final class DaemonRunner implements AutoCloseable {
         }
         running.countDown();
         LOG.info("PINGUI daemon stopped");
+    }
+
+    private void startMetricsIfConfigured() throws IOException {
+        Optional<Integer> port = options.metricsPort();
+        if (port.isEmpty()) {
+            return;
+        }
+        PrometheusExporter exporter = new PrometheusExporter();
+        metricsServer = MetricsHttpServer.start(exporter, port.get());
+        monitor.setPrometheusExporter(exporter);
     }
 
     private void closeQuietly() {

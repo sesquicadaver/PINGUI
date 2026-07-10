@@ -91,6 +91,8 @@ gradlew.bat run        # Windows
 
 The CLI **does not overwrite** profile defaults (1.0 / 20 / 0.5 / auto) unless the corresponding flag is provided.
 
+**Prometheus (P15-010):** the daemon can listen on `http://127.0.0.1:<port>/metrics` when `AppOptions.metricsPort` is set (CLI `--metrics-port` — P15-011). Metrics: `pingui_rtt_ms`, `pingui_route_change_total`, `pingui_target_reachable`, `pingui_trace_duration_ms`.
+
 ## GUI
 
 - **About** / **Help** — menu with “About PINGUI…” and “Help…” dialogs (F1); dual-stack IPv4/IPv6 literals
@@ -111,6 +113,7 @@ io.pingui
                        UnixTraceOutputParser, WindowsTraceOutputParser, ProcessExpertPing
 ├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
 ├── persistence/     SessionDatabase, PersistenceEventWriter (P11-010…011)
+├── observability/   PrometheusExporter, MetricsHttpServer (P15-010)
 ├── export/          SessionReportExporter (P11-030)
 └── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,
                        MonitorLifecycle, ViewModeController, RouteGraphPresenter, GraphCanvas

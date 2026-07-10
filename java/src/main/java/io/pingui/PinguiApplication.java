@@ -120,7 +120,8 @@ public final class PinguiApplication extends Application {
                 sessionDb,
                 exportReport,
                 runMode,
-                pidFile);
+                pidFile,
+                Optional.empty());
     }
 
     private static CliPersistenceOverrides parsePersistenceOverrides(Map<String, String> params) {

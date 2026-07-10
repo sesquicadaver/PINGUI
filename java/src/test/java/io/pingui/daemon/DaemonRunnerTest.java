@@ -1,5 +1,6 @@
 package io.pingui.daemon;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -50,13 +51,67 @@ class DaemonRunnerTest {
                 Optional.empty(),
                 Optional.empty(),
                 CliRunMode.DAEMON,
-                pidFile);
+                pidFile,
+                Optional.empty());
 
         try (DaemonRunner runner = new DaemonRunner(options, pidFile)) {
             runner.start();
             assertTrue(DaemonPidFile.isRunning(pidFile));
+            assertTrue(runner.metricsServer().isEmpty());
         }
         assertTrue(Files.notExists(pidFile));
+    }
+
+    @Test
+    void startWithMetricsPortServesPrometheus() throws Exception {
+        Path config = tempDir.resolve("hosts-metrics.yaml");
+        Files.writeString(
+                config,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    interval: 30.0
+                    max_hops: 5
+                    timeout: 1.0
+                    probe: process
+                    hosts:
+                      - address: 127.0.0.1
+                        enabled: false
+                """);
+        Path pidFile = tempDir.resolve("metrics.pid");
+        java.net.ServerSocket probe = new java.net.ServerSocket(0);
+        int port = probe.getLocalPort();
+        probe.close();
+        AppOptions options = new AppOptions(
+                config,
+                CliProfileOverrides.none(),
+                CliAlertOverrides.none(),
+                CliPersistenceOverrides.none(),
+                false,
+                false,
+                Path.of("config/geoip_hints.yaml"),
+                false,
+                Path.of("config/asn_hints.yaml"),
+                2000,
+                Optional.empty(),
+                Optional.empty(),
+                CliRunMode.DAEMON,
+                pidFile,
+                Optional.of(port));
+
+        try (DaemonRunner runner = new DaemonRunner(options, pidFile)) {
+            runner.start();
+            assertTrue(runner.metricsServer().isPresent());
+            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+            java.net.http.HttpResponse<String> response = client.send(
+                    java.net.http.HttpRequest.newBuilder(java.net.URI.create("http://127.0.0.1:" + port + "/metrics"))
+                            .GET()
+                            .build(),
+                    java.net.http.HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, response.statusCode());
+            assertTrue(response.body().contains("# TYPE pingui_rtt_ms gauge"));
+        }
     }
 
     @Test
@@ -86,7 +141,8 @@ class DaemonRunnerTest {
                 Optional.empty(),
                 Optional.empty(),
                 CliRunMode.DAEMON,
-                pidFile);
+                pidFile,
+                Optional.empty());
 
         try (DaemonRunner runner = new DaemonRunner(options, pidFile)) {
             assertThrows(IllegalStateException.class, runner::start);

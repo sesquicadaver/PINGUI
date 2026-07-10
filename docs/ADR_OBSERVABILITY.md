@@ -65,7 +65,7 @@ MonitorService / poll loop
 |--------|-----|-------------|------|
 | `pingui_rtt_ms` | gauge | `host`, `hop` | Останній відомий RTT (мс) |
 | `pingui_route_change_total` | counter | `host` | Кількість виявлених змін маршруту |
-| `pingui_target_reachable` | gauge | `host` | `1` / `0` за останнім poll |
+| `pingui_target_reachable` | gauge | `host` | `1` / `0` — ціль досяжна в останньому poll (hop IP == `targetIp`) |
 | `pingui_trace_duration_ms` | gauge | `host`, `probe_mode` | Тривалість останнього trace/mtr/ping |
 
 - Bind default: **localhost** (`--metrics-port`, P15-011).
@@ -105,7 +105,7 @@ ADR P16-001 деталізує events vs samples vs aggregates і mapping іме
 ## Наслідки
 
 - **Документація:** цей ADR — gate перед P15-010/P15-020; індекс у `docs/README.md`.
-- **Імплементація:** код зʼявиться в наступних ID черги; P15-001 **не** додає runtime.
+- **Імплементація:** P15-010 ✅ (`PrometheusExporter` / `MetricsHttpServer`); CLI `--metrics-port` — P15-011; TS write — P15-020.
 - **Оператори:** Grafana = scrape Prometheus **і/або** Influx/Timescale datasource; SQLite session — для GUI history, не для dashboards.
 - **Не робити:** єдиний «observability blob», що змішує alerts + SQLite + Prometheus remote_write.
 

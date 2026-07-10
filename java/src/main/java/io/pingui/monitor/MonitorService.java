@@ -2,6 +2,7 @@ package io.pingui.monitor;
 
 import io.pingui.config.PingExpertEntry;
 import io.pingui.model.Models.RouteSnapshot;
+import io.pingui.observability.PrometheusExporter;
 import io.pingui.persistence.PersistenceEventWriter;
 import io.pingui.persistence.PersistencePolicy;
 import io.pingui.persistence.PersistencePolicyHolder;
@@ -92,6 +93,7 @@ public final class MonitorService implements AutoCloseable {
     private final PersistencePolicyHolder persistencePolicy = new PersistencePolicyHolder();
     private final BurstSchedulePolicy burstPolicy = new BurstSchedulePolicy();
     private final TraceConcurrencyLimiter traceLimiter;
+    private volatile PrometheusExporter prometheusExporter;
 
     public MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds) {
         this(intervalSeconds, maxHops, timeoutSeconds, ProbeMode.AUTO);
@@ -196,6 +198,11 @@ public final class MonitorService implements AutoCloseable {
 
     public void setPersistenceEventWriter(PersistenceEventWriter persistenceEvents) {
         this.persistenceEvents = persistenceEvents;
+    }
+
+    /** Optional Prometheus scrape state (P15-010); null disables dual-emit. */
+    public void setPrometheusExporter(PrometheusExporter prometheusExporter) {
+        this.prometheusExporter = prometheusExporter;
     }
 
     public PersistencePolicyHolder persistencePolicy() {
@@ -404,12 +411,14 @@ public final class MonitorService implements AutoCloseable {
             probeMode = resolveProbeMode(host);
             lastPollAt.put(host, Instant.now());
         }
+        long startedNanos = System.nanoTime();
         HostPollOutcome outcome =
                 switch (probeMode) {
                     case PING_ONLY -> poller.pollHostPingOnly(host, previousIps, timeoutSeconds, resolveExpert(host));
                     case MTR -> poller.pollHostMtr(host, previousIps, maxHops, timeoutSeconds);
                     case TRACE -> poller.pollHostRoute(host, previousIps, maxHops, timeoutSeconds);
                 };
+        double durationMs = (System.nanoTime() - startedNanos) / 1_000_000.0;
         Listener current = listener;
         if (current == null || !isKnownHost(host)) {
             return;
@@ -423,6 +432,7 @@ public final class MonitorService implements AutoCloseable {
                     LOG.warn("Persistence probe_error failed for {}: {}", host, ex.getMessage());
                 }
             }
+            recordPrometheusFailure(host, probeMode, durationMs);
             current.onProbeError(host, outcome.error());
             return;
         }
@@ -441,17 +451,85 @@ public final class MonitorService implements AutoCloseable {
                     snapshot = defaultTargetPingEnricher.enrich(snapshot, timeoutSeconds);
                 }
             }
+            recordPrometheusSuccess(host, probeMode, snapshot, durationMs);
             current.onDataReceived(host, snapshot);
         }
         if (outcome.routeChanged() && BurstSchedulePolicy.shouldArmBurst(outcome.oldIps(), outcome.newIps())) {
             burstPolicy.onRouteChange(host, Instant.now());
         }
         if (outcome.routeChanged()) {
+            if (!outcome.oldIps().isEmpty()) {
+                recordPrometheusRouteChange(host);
+            }
             current.onRouteChanged(host, outcome.oldIps(), outcome.newIps());
             dispatchRouteChangeAlert(host, outcome.oldIps(), outcome.newIps());
         } else if (isFirstBaseline(previousIps, outcome.currentIps())) {
             persistBaselineRouteChange(host, outcome.currentIps());
             current.onRouteChanged(host, List.of(), outcome.currentIps());
+        }
+    }
+
+    private void recordPrometheusSuccess(
+            String host, HostProbeMode probeMode, RouteSnapshot snapshot, double durationMs) {
+        PrometheusExporter exporter = prometheusExporter;
+        if (exporter == null) {
+            return;
+        }
+        try {
+            exporter.clearHostRtt(host);
+            exporter.recordReachable(host, isTargetReachable(snapshot));
+            exporter.recordTraceDuration(host, probeMode.yamlValue(), durationMs);
+            for (var node : snapshot.nodes()) {
+                if (node.pingMs() != null && node.isReachable()) {
+                    exporter.recordRtt(host, node.hop(), node.pingMs());
+                }
+            }
+        } catch (RuntimeException ex) {
+            LOG.warn("Prometheus update failed for {}: {}", host, ex.getMessage());
+        }
+    }
+
+    /** Target reachable when a hop IP matches {@code targetIp}, else any reachable hop. */
+    static boolean isTargetReachable(RouteSnapshot snapshot) {
+        String targetIp = snapshot.targetIp();
+        if (targetIp != null && !targetIp.isBlank()) {
+            for (var node : snapshot.nodes()) {
+                if (node.isReachable() && targetIp.equals(node.ip())) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        for (var node : snapshot.nodes()) {
+            if (node.isReachable()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void recordPrometheusFailure(String host, HostProbeMode probeMode, double durationMs) {
+        PrometheusExporter exporter = prometheusExporter;
+        if (exporter == null) {
+            return;
+        }
+        try {
+            exporter.recordReachable(host, false);
+            exporter.recordTraceDuration(host, probeMode.yamlValue(), durationMs);
+        } catch (RuntimeException ex) {
+            LOG.warn("Prometheus update failed for {}: {}", host, ex.getMessage());
+        }
+    }
+
+    private void recordPrometheusRouteChange(String host) {
+        PrometheusExporter exporter = prometheusExporter;
+        if (exporter == null) {
+            return;
+        }
+        try {
+            exporter.incrementRouteChange(host);
+        } catch (RuntimeException ex) {
+            LOG.warn("Prometheus route_change counter failed for {}: {}", host, ex.getMessage());
         }
     }
 

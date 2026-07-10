@@ -97,6 +97,8 @@ gradlew.bat run        # Windows
 
 CLI **не затирає** поля профілю defaults (1.0 / 20 / 0.5 / auto), якщо відповідний прапор не передано.
 
+**Prometheus (P15-010):** daemon може слухати `http://127.0.0.1:<port>/metrics` коли задано `AppOptions.metricsPort` (CLI `--metrics-port` — P15-011). Метрики: `pingui_rtt_ms`, `pingui_route_change_total`, `pingui_target_reachable`, `pingui_trace_duration_ms`.
+
 ## GUI
 
 - **Про** / **Довідка** — меню з діалогами «Про PINGUI…» та «Довідка…» (F1); dual-stack IPv4/IPv6 literal
@@ -117,6 +119,7 @@ io.pingui
                        UnixTraceOutputParser, WindowsTraceOutputParser, ProcessExpertPing
 ├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
 ├── persistence/     SessionDatabase, PersistenceEventWriter (P11-010…011)
+├── observability/   PrometheusExporter, MetricsHttpServer (P15-010)
 ├── export/          SessionReportExporter (P11-030)
 └── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,
                        MonitorLifecycle, ViewModeController, RouteGraphPresenter, GraphCanvas

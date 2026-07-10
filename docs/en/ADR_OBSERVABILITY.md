@@ -65,7 +65,7 @@ Minimal metric names (`pingui_` prefix):
 |--------|------|-------------|-------------|
 | `pingui_rtt_ms` | gauge | `host`, `hop` | Last known RTT (ms) |
 | `pingui_route_change_total` | counter | `host` | Detected route-change count |
-| `pingui_target_reachable` | gauge | `host` | `1` / `0` from last poll |
+| `pingui_target_reachable` | gauge | `host` | `1` / `0` — target reachable on last poll (hop IP == `targetIp`) |
 | `pingui_trace_duration_ms` | gauge | `host`, `probe_mode` | Last trace/mtr/ping duration |
 
 - Default bind: **localhost** (`--metrics-port`, P15-011).
@@ -105,7 +105,7 @@ ADR P16-001 will detail events vs samples vs aggregates and metric-name mapping 
 ## Consequences
 
 - **Docs:** this ADR is the gate before P15-010/P15-020; indexed in `docs/README.md`.
-- **Implementation:** code arrives in later queue IDs; P15-001 adds **no** runtime.
+- **Implementation:** P15-010 ✅ (`PrometheusExporter` / `MetricsHttpServer`); CLI `--metrics-port` — P15-011; TS write — P15-020.
 - **Operators:** Grafana = scrape Prometheus **and/or** Influx/Timescale datasource; SQLite session is for GUI history, not dashboards.
 - **Do not build:** a single “observability blob” mixing alerts + SQLite + Prometheus remote_write.
 
