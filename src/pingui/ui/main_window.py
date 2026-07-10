@@ -29,6 +29,8 @@ from pingui.models import RouteChangeEvent, RouteSnapshot
 from pingui.monitor.alert_dispatcher import AlertDispatcher
 from pingui.monitor.session_store import SessionStore
 from pingui.monitor.worker import LightweightMonitorWorker
+from pingui.persistence.events import PersistenceEventWriter
+from pingui.persistence.policy import PersistencePolicy
 from pingui.persistence.session_db import SessionDatabase
 from pingui.persistence.timeseries.base import TimeSeriesBackend
 from pingui.ui.graph_canvas import GraphCanvas
@@ -51,6 +53,7 @@ class MainWindow(QMainWindow):
         geo_map_enabled: bool = True,
         timeseries_backend: TimeSeriesBackend | None = None,
         alert_dispatcher: AlertDispatcher | None = None,
+        persistence_policy: PersistencePolicy | None = None,
     ) -> None:
         super().__init__()
         self.setWindowTitle("PINGUI — Сесійний монітор маршрутів Linux")
@@ -58,6 +61,11 @@ class MainWindow(QMainWindow):
         self._config_path = Path(config_path)
         self._session_db = (
             SessionDatabase(session_db_path) if session_db_path is not None else None
+        )
+        self._event_writer = (
+            PersistenceEventWriter(self._session_db, persistence_policy)
+            if self._session_db is not None
+            else None
         )
 
         self._store = SessionStore(
@@ -361,13 +369,17 @@ class MainWindow(QMainWindow):
             f"Було: {old_str}\n"
             f"Стало: {new_str}\n"
         )
+        event = RouteChangeEvent.from_route_change(host, old_ips, new_ips)
+        if self._event_writer is not None:
+            self._event_writer.write_route_change(event)
         if self._alert_dispatcher is not None:
-            event = RouteChangeEvent.from_route_change(host, old_ips, new_ips)
             self._alert_dispatcher.dispatch(event)
 
     def _on_probe_error(self, host: str, message: str) -> None:
         ts = time.strftime("%H:%M:%S")
         self._log.append(f"[{ts}] Помилка [{host}]: {message}\n")
+        if self._event_writer is not None:
+            self._event_writer.write_probe_error(host, message)
 
     def _update_status(self, host: str) -> None:
         if self._last_update is None:

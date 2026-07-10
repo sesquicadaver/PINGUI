@@ -2,7 +2,7 @@
 
 # Документація PINGUI
 
-На **`beta`** — повний пакет (Java фази 9–12 + Python). На **`main`** — стабільний Java GUI без P10–P12; див. розділ «Гілки» у [README.md](../README.md).
+На **`main`** і **`beta`** — повний пакет (Java Pro + Python) після merge; **`beta`** — гілка розробки (черга ROADMAP), **`main`** — останній стабільний зріз. Див. «Гілки» у [README.md](../README.md).
 
 ## Навігація
 
@@ -29,13 +29,13 @@
 | [USER_GUIDE.md](USER_GUIDE.md) | Користувач | Керівництво користувача |
 | [../java/README.md](../java/README.md) | Усі | Java launcher, Gradle |
 | [../.github/workflows/java.yml](../.github/workflows/java.yml) | CI | Java `./gradlew check` |
-| [../.github/workflows/ci.yml](../.github/workflows/ci.yml) | CI | Python pytest (beta) |
+| [../.github/workflows/ci.yml](../.github/workflows/ci.yml) | CI | Python pytest |
 
 ## Рекомендований порядок
 
 **Java:** [../README.md](../README.md) → CHECKLIST → [../java/README.md](../java/README.md)
 
-**Python (beta):** DEVELOPMENT → TESTING → CONFIGURATION → USER_GUIDE
+**Python:** DEVELOPMENT → TESTING → CONFIGURATION → USER_GUIDE (розробка на `beta`)
 
 ## English
 

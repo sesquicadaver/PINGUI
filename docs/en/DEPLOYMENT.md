@@ -14,7 +14,7 @@ Step-by-step checklist: **[CHECKLIST.md](CHECKLIST.md)**.
 
 Expert ping (“Expert” mode) — **Linux only** (iputils `ping`).
 
-**Dual-stack (phase 9, `beta` / **0.2.0**):** YAML and session accept IPv6 literals (RFC 5952). IPv6 literal → subprocess `traceroute -6` with `probe: auto` (**Linux/macOS**); `probe: raw` + `cap_net_raw` — raw ICMPv6 on Linux. Windows Python trace for v6 literals is not supported yet.
+**Dual-stack (phase 9 / **0.2.0**):** YAML and session accept IPv6 literals (RFC 5952). IPv6 literal → subprocess `traceroute -6` with `probe: auto` (**Linux/macOS**); `probe: raw` + `cap_net_raw` — raw ICMPv6 on Linux. Windows Python trace for v6 literals is not supported yet.
 
 ## OS recommendation
 
@@ -80,14 +80,14 @@ sudo setcap cap_net_raw+ep "$(readlink -f "$(which java)")"
 
 Restart PINGUI after `setcap`. The same capability is required for Python raw ICMP (scapy); it applies to the process opening the raw socket, not the venv itself.
 
-### IPv6 and `cap_net_raw` (dual-stack, `beta`)
+### IPv6 and `cap_net_raw` (dual-stack)
 
 | Trace/ping path | Target | `cap_net_raw`? | Notes |
 |-----------------|--------|----------------|-------|
 | `probe: auto` / `raw` | IPv4 literal, hostname (A) | **Yes** (raw) | Without cap → fallback to `traceroute` |
 | `probe: auto` | IPv6 literal | **No** | Always subprocess `traceroute -6` (Java and Python) |
 | Expert ping `-6` | IPv6 literal / `-6` | **No** | iputils `ping`, not a raw socket |
-| Raw ICMPv6 (`probe: raw`) | IPv6 literal | **Yes** | Java `beta`: `LinuxJnaIcmpTransport` + `IcmpV6Packet`; `auto` keeps process trace |
+| Raw ICMPv6 (`probe: raw`) | IPv6 literal | **Yes** | Java: `LinuxJnaIcmpTransport` + `IcmpV6Packet`; `auto` keeps process trace |
 
 **Current behaviour:** even with `cap_net_raw` on the JDK, **IPv6 literals never use raw ICMP** — only process trace. The capability affects v4/hostname in `auto|raw` mode.
 
@@ -117,7 +117,7 @@ profiles:
         enabled: true
 ```
 
-## Python NOC (headless, `beta` branch)
+## Python NOC (headless)
 
 No Qt — background monitoring for servers / NOC:
 
@@ -138,6 +138,26 @@ Daemon with PID file (PY-030…032):
 
 systemd example: `systemd/pingui.service.example` (Type=simple, `ExecStart=... daemon`).
 
+## Java NOC (headless daemon, P12)
+
+Same `MonitorService` as the GUI, without JavaFX:
+
+```bash
+cd /path/to/PINGUI/java
+./pingui-java.sh -- --daemon \
+  --config config/hosts.example.yaml \
+  --session-db data/ping.db \
+  --pid-file /tmp/pingui-java.pid \
+  --alert-webhook https://hooks.example.com/pingui
+
+./pingui-java.sh -- --status --pid-file /tmp/pingui-java.pid
+./pingui-java.sh -- --stop --pid-file /tmp/pingui-java.pid
+```
+
+In YAML set `enabled: true` for targets (daemon has no UI checkboxes).
+
+systemd example: `systemd/pingui-java.service.example`. ADR: [ADR_DAEMON.md](ADR_DAEMON.md).
+
 ## SQLite session persistence (Java / Python)
 
 | What | Where |
@@ -153,7 +173,7 @@ systemd example: `systemd/pingui.service.example` (Type=simple, `ExecStart=... d
 - No automatic TTL / rotation for `host_session` — the file grows with host count and accumulated `ping_history` / `hop_stats` (in-memory caps: up to 50 RTT samples per hop in `hop_stats`, ping history per IP).
 - `persistence_event` rows are removed only manually: GUI **Database…** → disable event type → **Delete** (purge confirm).
 - Full reset: delete the `.db` file or remove the host row via the UI.
-- Headless report: `./pingui-java.sh -- --session-db data/ping.db --export-report report.csv`
+- Headless report: `cd java && ./pingui-java.sh -- --session-db data/ping.db --export-report report.csv`
 - Typical size: a few–tens of KB per host on a NOC profile; monitor `du -h data/ping.db` on long-running daemons.
 
 Schema details: [SPIKE_PERSISTENCE.md](../SPIKE_PERSISTENCE.md).
@@ -174,4 +194,4 @@ Schema details: [SPIKE_PERSISTENCE.md](../SPIKE_PERSISTENCE.md).
 
 ## Development
 
-Tests, CI, Python edition — branch **`beta`**.
+ROADMAP work lands on **`beta`**; `main` is the last stable merge. Java and Python tests are available on both branches.

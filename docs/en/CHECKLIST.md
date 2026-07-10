@@ -6,11 +6,11 @@ Checklist for the Java edition on **Linux / Windows / macOS**.
 
 **Expert ping** (“Expert” mode, **Exten.** button) — **Linux + iputils-ping only**.
 
-Python edition and tests — branch **`beta`**.
+Python edition and tests are in **both** branch trees; ROADMAP work lands on **`beta`**.
 
 Details: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 
-### Python daemon smoke (beta)
+### Python daemon smoke
 
 - [ ] `./pingui.sh --deploy` — venv + doc parity
 - [ ] `.venv/bin/python -m pingui monitor --config config/hosts.example.yaml` — foreground headless (Ctrl+C)
@@ -18,14 +18,14 @@ Details: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 - [ ] `.venv/bin/python -m pingui status --pid-file /tmp/pingui.pid` → running
 - [ ] `.venv/bin/python -m pingui stop --pid-file /tmp/pingui.pid`
 
-### Python IPv6 smoke (beta, Linux/macOS)
+### Python IPv6 smoke (Linux/macOS)
 
 - [ ] `traceroute -6` installed (`which traceroute`)
 - [ ] YAML with `::1` or `2001:db8::1`: `load_hosts_config` succeeds
 - [ ] `.venv/bin/python -c "from pingui.icmp.tracer import trace_route; print(trace_route('::1', max_hops=3))"` — ≥1 hop
 - [ ] GeoIP v6: `country_code_for_ip('2001:4860:4860::8888')` → `US` (from `config/geoip_hints.yaml`)
 
-### Java IPv6 UI smoke (beta)
+### Java IPv6 UI smoke
 
 - [ ] Help (F1) mentions IPv4/IPv6 literals
 - [ ] Add target `2001:db8::1` — normalized in log; invalid `not:valid:ipv6` → error in journal
@@ -51,13 +51,13 @@ Details: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 - [ ] `./gradlew test --tests io.pingui.probe.RawIcmpRouteProbeTest.traceIpv6UsesHopLimitSequence` — hop-limit trace (CI)
 - [ ] YAML `probe: raw` + `cap_net_raw` + target `::1` — trace without crash (manual)
 
-### Python alert smoke (beta)
+### Python alert smoke
 
 - [ ] `python -m pingui monitor --alert-webhook http://127.0.0.1:9/hook` — starts without crash (unreachable webhook → log)
 - [ ] `python -m pingui run --desktop-alerts` — GUI + notify-send on route change (Linux)
 - [ ] `python -m pingui daemon --alert-webhook URL --session-db data/ping.db` — route change → POST JSON
 
-### Java alert smoke (beta, Linux)
+### Java alert smoke (Linux)
 
 - [ ] `./gradlew test --tests io.pingui.monitor.WebhookAlertDispatcherTest` — contract POST JSON (CI)
 - [ ] `./gradlew test --tests io.pingui.monitor.AlertRateLimiterTest` — burst rate limit (CI)
@@ -294,4 +294,4 @@ Verify README ↔ actual CLI alignment:
 | Expert ping | ✅ | ❌ | ❌ |
 | Raw ICMP (`probe: raw`) | ✅ | ❌ | ❌ |
 
-Unit tests: `cd java && ./gradlew check` (JUnit 5 on `main`; Python tests — branch **`beta`**).
+Unit tests: `cd java && ./gradlew check` (JUnit 5); Python — `.venv/bin/pytest` (both branches; develop on **`beta`**).

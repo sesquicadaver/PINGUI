@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Branches `main` / `beta` (docs):** README and related docs no longer describe `main` as “RAM-only / no SQLite·alerts·daemon·IPv6·Python”. Reality: `main` = last stable merge; `beta` = development ahead; Pro stack and Python are on both after merge.
 - **ROADMAP NEXT + linear queue:** `docs/ROADMAP.md` / `docs/en/ROADMAP.md` and root `ROADMAP*.md` — single **Current task** field; `/autopilot` with no args always takes that ID (no “which item?”). Agent rule: `.cursor/rules/roadmap-next.mdc`.
 
 ### Fixed
@@ -33,6 +34,8 @@ Versioning: [Semantic Versioning](https://semver.org/).
 - **ASN hop labels (P14-030):** offline `AsnLookup` + `asn_hints.yaml`; hop label `AS#### Org`; CLI `--asn-hints` / `--no-asn` / `--asn-timeout-ms`.
 - **rDNS hop labels (P14-031):** async `DnsResolver` (PTR, cache TTL 5 min); hop label after IP; graph redraw on resolve.
 - **Expert ping presets (P14-040):** 4 buttons in `PingExpertDialog` from `ping_presets.yaml` (MTU probe, DF, DSCP, Burst); AF preserved.
+- **USER_GUIDE pro/NOC (P14-050):** NOC shift scenario on Java GUI + headless daemon; EN DEPLOYMENT § Java NOC.
+- **Python persistence events (PY-P11):** YAML `persistence.events` + SQLite `persistence_event` (schema v3); CLI `--no-persist-route-change` / `--no-persist-probe-error`.
 - **Java GUI SQLite connection (P11-016):** file picker in Database settings, YAML `persistence.session_db`, active menu without CLI `--session-db`.
 - **Java hop stats from history (P11-040):** `hop_stats` persist to SQLite on every probe; graph labels (`j:`/`loss:`) survive session reopen.
 - **SQLite disk/retention docs (P11-050):** `docs/DEPLOYMENT.md` — no auto-TTL on `host_session`, manual event purge, sizing notes.

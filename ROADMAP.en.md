@@ -8,7 +8,7 @@
 
 | Field | Value |
 |------|----------|
-| **Current task** | **[P14-050](docs/en/ROADMAP.md#next--single-source-of-truth)** |
+| **Current task** | **[P15-001](docs/en/ROADMAP.md#next--single-source-of-truth)** |
 | **Rule** | `/autopilot` with no args = this ID. **Do not ask** “which item?”. |
 
 Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear).
@@ -17,8 +17,8 @@ Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#e
 
 **Target audience for upcoming phases:** NOC/SRE, network engineers, WAN/MPLS admins.
 
-- Launch: `./pingui.sh` / `./pingui.sh --deploy` (beta) · `java/pingui-java.sh` (main)
-- CI: ruff + mypy + pytest (beta) · `./gradlew check` (Java)
+- Launch: `./pingui.sh` / `./pingui.sh --deploy` · `java/pingui-java.sh` (develop on `beta`; production snapshot — `main`)
+- CI: ruff + mypy + pytest · `./gradlew check` (both branches)
 - Documentation: bilingual `docs/` + `docs/en/`
 
 ---
@@ -29,14 +29,14 @@ Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#e
 |-------|-------------|--------|
 | P0–P8 | Python MVP: venv, ICMP, GUI, CI | ✅ |
 | **P9** | Java cross-platform edition | ✅ |
-| **9** | IPv6 dual-stack (V6-*) | ✅ on `beta` |
-| **PY** | Python CLI/NOC hardening | ✅ (tail: **PY-P11**) |
+| **9** | IPv6 dual-stack (V6-*) | ✅ |
+| **PY** | Python CLI/NOC hardening | ✅ |
 | **10** | Route change alerts | ✅ |
 | **11** | Persistence and timeline (Java) | ✅ |
 | **12** | Headless / daemon + systemd | ✅ |
 | **13** | Probe efficiency (MTR, smart interval, burst) | ✅ P13-001…050 |
-| **14** | Pro GUI (diff, tags, ASN/rDNS, presets) | 🔄 **NEXT → P14-050** |
-| **15** | Integrations (Prometheus, REST API, export) | 📋 queued after P14 |
+| **14** | Pro GUI (diff, tags, ASN/rDNS, presets) | ✅ |
+| **15** | Integrations (Prometheus, REST API, export) | 🔄 **NEXT → P15-001** |
 | **16** | Telemetry + LOG-server | 📋 queued after P15 |
 
 ---
@@ -76,10 +76,10 @@ flowchart LR
 
 ```
 PINGUI/
-├── pingui.sh                 # Python launcher (beta)
-├── java/                     # Java edition (main + beta)
-├── src/pingui/               # Python (beta)
-├── tests/                    # pytest (beta)
+├── pingui.sh                 # Python launcher
+├── java/                     # Java edition
+├── src/pingui/               # Python
+├── tests/                    # pytest
 ├── docs/
 │   ├── ROADMAP.md            # ← detailed plan + NEXT + queue (UK)
 │   └── en/ROADMAP.md         # ← detailed plan + NEXT + queue (EN)

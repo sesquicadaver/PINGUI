@@ -67,8 +67,22 @@ hosts:
 | Опція | Тип | За замовч. | Опис |
 |-------|-----|------------|------|
 | `--session-db` | Path | — | SQLite: маршрути/ping між сесіями |
+| `--no-persist-route-change` | flag | off | Не писати `route_change` у `persistence_event` (PY-P11) |
+| `--no-persist-probe-error` | flag | off | Не писати `probe_error` у `persistence_event` (PY-P11) |
 | `--export-csv` | Path | — | Експорт CSV і вихід (без GUI/ICMP) |
 | `--export-html` | Path | — | Експорт HTML і вихід (без GUI/ICMP) |
+
+YAML (спільний з Java SPIKE):
+
+```yaml
+persistence:
+  session_db: data/ping.db   # якщо немає CLI --session-db
+  events:
+    route_change: true
+    probe_error: true
+```
+
+Пріоритет: CLI > YAML > default (обидва типи подій увімкнені).
 
 ### Alerts (PY-042…044)
 

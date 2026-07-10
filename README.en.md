@@ -6,7 +6,7 @@
 ![Python CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/ci.yml/badge.svg)
 
 Cross-platform route and RTT monitor for up to 10 targets simultaneously (Java 21 + JavaFX).
-By default session data lives **in RAM**; on branch **`beta`**, Java also supports optional **SQLite** (`--session-db`, GUI Database settings) and a headless **daemon**.
+By default session data lives **in RAM**; optional **SQLite** (`--session-db`, GUI Database settings), alerts, route history, headless **daemon**, dual-stack **IPv6**, and the Python edition are in **both** branch trees after merges from `beta`.
 
 > **OS recommendation:** use **Linux** for daily work — fastest tracing and full feature set (Expert ping, raw ICMP). **Windows** is supported, but `tracert` is slow (3 probes per hop, seconds of wait each); a full trace to 20 hops can take **minutes**. On Windows prefer **Ping only** or `interval` ≥ 30 s. Details: [docs/en/DEPLOYMENT.md](docs/en/DEPLOYMENT.md#os-recommendation).
 
@@ -14,18 +14,15 @@ By default session data lives **in RAM**; on branch **`beta`**, Java also suppor
 
 | | **`main`** | **`beta`** |
 |---|------------|------------|
-| **Role** | Stable line for daily Java GUI | Development: new ROADMAP phases, Python edition |
-| **Java desktop** | ✅ GUI, profiles, trace/tracert, Expert ping (Linux) | ✅ Everything on `main` **plus** phases 9–12 (see below) |
-| **Session** | RAM only | RAM or **SQLite** (metrics + `route_change` / `probe_error`) |
-| **Alerts** | — | Webhook + desktop alerts on route change (P10) |
-| **Route history** | — | “Route history” panel + graph replay (P11) |
-| **Headless NOC** | — | `--daemon`, `--stop`, `--status`, systemd example (P12) |
-| **Dual-stack IPv6** | Limited / without phase 9 | ✅ Java + Python (phase 9) |
-| **Python PyQt6** | Code in repo, **without** full `beta` parity | ✅ `./pingui.sh`, pytest, timeseries/export |
-| **CI** | Java `gradlew check` | Java + Python pytest |
-| **Documentation** | UK + EN index | Full set + ADR/SPIKE (P10–P13) |
+| **Role** | Stable snapshot after merge from `beta` (production) | Active development: ROADMAP queue / `/autopilot` |
+| **Java desktop** | ✅ GUI + Pro (IPv6, SQLite, alerts, history, daemon, export) as of last merge | ✅ Same **plus** unmerged queue items |
+| **Session** | RAM by default; optional **SQLite** | Same |
+| **Alerts / history / daemon / IPv6** | ✅ (after phases 9–12+ merged) | ✅ + newer work until merge |
+| **Python PyQt6** | ✅ `src/pingui/`, `./pingui.sh`, pytest (may lag `beta` slightly) | ✅ Latest Python stack |
+| **CI** | Java `gradlew check` + Python pytest | Same |
+| **Documentation** | Synced on merge | Living docs ahead of `main` until merge |
 
-**Which to use:** production GUI on a stable base — `main`; SQLite, alerts, history, daemon, IPv6, and Python — **`beta`**. Full plan: [docs/en/ROADMAP.md](docs/en/ROADMAP.md).
+**Which to use:** **`main`** — last stable merge for production; **`beta`** — day-to-day development and newest features (until merged to `main`). The gap is **how far `beta` is ahead**, not “`main` lacks SQLite/alerts/Python”. Plan: [docs/en/ROADMAP.md](docs/en/ROADMAP.md).
 
 ```bash
 git clone https://github.com/sesquicadaver/PINGUI.git
@@ -66,7 +63,7 @@ Requirements: **JDK 21** ([Eclipse Temurin](https://adoptium.net/temurin/release
 - **Simple** / **Extended** UI modes; loss %, min/avg/max RTT; route graph
 - **Expert ping** (Linux, iputils) — **Exten.** dialog per host
 - Tracing via `traceroute` / `tracert`; optional raw ICMP on Linux (`probe: auto|raw`)
-- **`beta`:** dual-stack IPv6, route-change alerts, SQLite + route history, headless daemon, CSV/HTML export — see [java/README.en.md](java/README.en.md)
+- Dual-stack IPv6, route-change alerts, SQLite + route history, headless daemon, CSV/HTML export — see [java/README.en.md](java/README.en.md)
 
 ## CLI
 
@@ -82,10 +79,10 @@ cd java
 | `--max-hops` | Override active profile `max_hops` **only if passed** |
 | `--timeout` | Override active profile `timeout` **only if passed** |
 | `--probe` | Override active profile `probe` **only if passed** |
-| `--session-db` | *(beta)* SQLite metrics + session events |
-| `--export-report` | *(beta)* CSV/HTML from `--session-db` without GUI |
-| `--daemon` / `--stop` / `--status` | *(beta)* headless monitor (NOC) |
-| `--alert-webhook` / `--desktop-alerts` | *(beta)* route-change alerts |
+| `--session-db` | SQLite metrics + session events |
+| `--export-report` | CSV/HTML from `--session-db` without GUI |
+| `--daemon` / `--stop` / `--status` | Headless monitor (NOC) |
+| `--alert-webhook` / `--desktop-alerts` | Route-change alerts |
 | `--geoip-hints` | Offline CIDR→country |
 | `--no-geoip` | Disable country in labels |
 | `--verbose` | Debug log |
@@ -96,11 +93,11 @@ Without `--interval` / `--max-hops` / `--timeout` / `--probe`, values come from 
 
 ```
 PINGUI/
-├── java/                 # Java edition (JavaFX + optional daemon on beta)
-├── src/pingui/           # Python edition (full cycle on beta)
-├── tests/                # pytest (beta)
+├── java/                 # Java edition (JavaFX + daemon / SQLite / alerts)
+├── src/pingui/           # Python edition
+├── tests/                # pytest
 ├── config/               # YAML examples, GeoIP hints
-├── systemd/              # pingui-java.service.example (beta)
+├── systemd/              # pingui-java.service.example
 ├── docs/
 │   ├── en/               # English documentation
 │   └── *.md              # Ukrainian documentation
@@ -121,7 +118,7 @@ PINGUI/
 | [docs/en/ROADMAP.md](docs/en/ROADMAP.md) | Development plan (`main` / `beta`) |
 | [CHANGELOG.md](CHANGELOG.md) | Change history |
 
-Python: `./pingui.sh` on branch **`beta`** (venv). Java: `cd java && ./gradlew check`. Headless NOC on **`beta`**: `./pingui-java.sh -- --daemon --config …`.
+Python: `./pingui.sh` (venv; develop on **`beta`**). Java: `cd java && ./gradlew check`. Headless NOC: `./pingui-java.sh -- --daemon --config …`.
 
 ## Support the project
 

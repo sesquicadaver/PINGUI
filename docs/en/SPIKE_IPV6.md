@@ -4,9 +4,9 @@
 
 **Date:** 2025-06-26  
 **Updated:** 2026-06-26  
-**Status:** **implemented** (phase 9 code-complete on `beta`, semver **0.2.0**)  
+**Status:** **implemented** (phase 9 code-complete, semver **0.2.0**; on `main` and `beta` after merge)  
 **Previous status:** wontfix (MVP IPv4-only, B-053) — lifted per product request  
-**Branches:** `main` (Java GUI), `beta` (+ Python, tests)
+**Branches:** `main` (stable snapshot), `beta` (development) — Java + Python dual-stack
 
 ---
 

@@ -6,11 +6,11 @@ Checklist для Java-редакції на **Linux / Windows / macOS**.
 
 **Expert ping** (режим «Експерт», кнопка **Exten.**) — **лише Linux + iputils-ping**.
 
-Python-редакція та тести — гілка **`beta`**.
+Python-редакція та тести — у дереві **обох** гілок; нові зміни ROADMAP — на **`beta`**.
 
 Деталі: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 
-### Java daemon smoke (beta, P12)
+### Java daemon smoke (P12)
 
 - [ ] `./pingui-java.sh -- --daemon --config config/hosts.example.yaml --session-db data/ping.db --pid-file /tmp/pingui-java.pid` (hosts `enabled: true` у YAML)
 - [ ] `./pingui-java.sh -- --status --pid-file /tmp/pingui-java.pid` → `running pid=…`
@@ -18,7 +18,7 @@ Python-редакція та тести — гілка **`beta`**.
 - [ ] `./pingui-java.sh -- --daemon --alert-webhook URL …` — route change → POST (лог webhook)
 - [ ] `./pingui-java.sh -- --stop --pid-file /tmp/pingui-java.pid`
 
-### Python daemon smoke (beta)
+### Python daemon smoke
 
 - [ ] `./pingui.sh --deploy` — venv + doc parity
 - [ ] `.venv/bin/python -m pingui monitor --config config/hosts.example.yaml` — foreground headless (Ctrl+C)
@@ -26,14 +26,14 @@ Python-редакція та тести — гілка **`beta`**.
 - [ ] `.venv/bin/python -m pingui status --pid-file /tmp/pingui.pid` → running
 - [ ] `.venv/bin/python -m pingui stop --pid-file /tmp/pingui.pid`
 
-### Python IPv6 smoke (beta, Linux/macOS)
+### Python IPv6 smoke (Linux/macOS)
 
 - [ ] `traceroute -6` встановлено (`which traceroute`)
 - [ ] YAML з `::1` або `2001:db8::1`: `load_hosts_config` без помилки
 - [ ] `.venv/bin/python -c "from pingui.icmp.tracer import trace_route; print(trace_route('::1', max_hops=3))"` — ≥1 hop
 - [ ] GeoIP v6: `country_code_for_ip('2001:4860:4860::8888')` → `US` (з `config/geoip_hints.yaml`)
 
-### Java IPv6 UI smoke (beta)
+### Java IPv6 UI smoke
 
 - [ ] Довідка (F1) згадує IPv4/IPv6 literal
 - [ ] Додати ціль `2001:db8::1` — нормалізується в лог; невалідна `not:valid:ipv6` → помилка в журналі
@@ -59,13 +59,13 @@ Python-редакція та тести — гілка **`beta`**.
 - [ ] `./gradlew test --tests io.pingui.probe.RawIcmpRouteProbeTest.traceIpv6UsesHopLimitSequence` — hop-limit trace (CI)
 - [ ] YAML `probe: raw` + `cap_net_raw` + ціль `::1` — trace без crash (ручний)
 
-### Python alert smoke (beta)
+### Python alert smoke
 
 - [ ] `python -m pingui monitor --alert-webhook http://127.0.0.1:9/hook` — старт без crash (webhook недоступний → log)
 - [ ] `python -m pingui run --desktop-alerts` — GUI + notify-send при зміні маршруту (Linux)
 - [ ] `python -m pingui daemon --alert-webhook URL --session-db data/ping.db` — route change → POST JSON
 
-### Java alert smoke (beta, Linux)
+### Java alert smoke (Linux)
 
 - [ ] `./gradlew test --tests io.pingui.monitor.WebhookAlertDispatcherTest` — contract POST JSON (CI)
 - [ ] `./gradlew test --tests io.pingui.monitor.AlertRateLimiterTest` — burst rate limit (CI)
@@ -302,4 +302,4 @@ chmod +x pingui-java.sh gradlew
 | Expert ping | ✅ | ❌ | ❌ |
 | Raw ICMP (`probe: raw`) | ✅ | ❌ | ❌ |
 
-Unit-тести: `cd java && ./gradlew check` (JUnit 5 на `main`; Python-тести — гілка **`beta`**).
+Unit-тести: `cd java && ./gradlew check` (JUnit 5); Python — `.venv/bin/pytest` (обидві гілки; розробка на **`beta`**).

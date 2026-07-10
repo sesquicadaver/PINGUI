@@ -13,8 +13,9 @@
 
 ## Гілки
 
-- `main` — стабільна гілка; CI на push/PR.
-- Feature-гілки: `feature/короткий-опис`.
+- `beta` — активна розробка (черга ROADMAP / `/autopilot`); CI на push/PR.
+- `main` — стабільний зріз після merge з `beta`; CI на push/PR.
+- Feature-гілки: `feature/короткий-опис` → PR у `beta`.
 
 ## Pull Request
 

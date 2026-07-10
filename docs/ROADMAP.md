@@ -10,7 +10,7 @@
 
 | Поле | Значення |
 |------|----------|
-| **Гілка** | `main` — стабільний Java GUI (RAM); `beta` — розробка: Java P9–P12 (SQLite, alerts, daemon) + Python + повний CI |
+| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (черга ROADMAP). Обидві: Java Pro (P9+) + Python після merge |
 | **Пріоритет** | P0 критично · P1 важливо · P2 бажано |
 | **DoD** | Definition of Done — умова закриття задачі |
 
@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P14-050** |
-| **Фаза** | 14 — GUI для профі |
-| **DoD (коротко)** | USER_GUIDE § pro / NOC workflow |
+| **Поточна задача** | **P15-001** |
+| **Фаза** | 15 — Інтеграції для команд |
+| **DoD (коротко)** | ADR observability boundaries |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -47,8 +47,8 @@
 | 2 | **P14-030** | [x] | ASN у hop label: підключити наявний `AsnLookup*` / `asn_hints.yaml` або прибрати мертвий код |
 | 3 | **P14-031** | [x] | rDNS у label (async, cache TTL 5 хв) |
 | 4 | **P14-040** | [x] | Expert ping presets (4 кнопки + `ping_presets.yaml`) |
-| 5 | **P14-050** | [ ] | USER_GUIDE § pro / NOC workflow |
-| 6 | **PY-P11** | [ ] | Python: YAML `persistence.events` + SQLite `persistence_event` |
+| 5 | **P14-050** | [x] | USER_GUIDE § pro / NOC workflow |
+| 6 | **PY-P11** | [x] | Python: YAML `persistence.events` + SQLite `persistence_event` |
 | 7 | **P15-001** | [ ] | ADR observability boundaries |
 | 8 | **P15-010** | [ ] | Prometheus `/metrics` (daemon) |
 | 9 | **P15-011** | [ ] | CLI `--metrics-port` |
@@ -327,7 +327,7 @@ flowchart TD
 
 **Контекст:** B-01…B-06 ✅ (`--session-db`, export, GeoIP, geo-map, timeseries, jitter/loss). Фази 10–16 описані переважно Java-файлами; Python **випереджає** в P11/P15, але **відстає** в launcher, docs, daemon, alerts.
 
-**Гілка:** лише `beta` (Python-дерево на `main` не додається).
+**Гілка розробки:** `beta` (Python також у дереві `main` після merge; нові PY-* — спочатку на `beta`).
 
 **Звʼязок:** PY-S1 — перед Pro-S2; PY-S2 — передумова Python-частини P12; PY-S3 — Python parity P10.
 
@@ -397,7 +397,7 @@ flowchart TD
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **PY-P11** | [ ] YAML `persistence.events` + запис у SQLite | `config.py`, `session_db.py`, `session_store.py` | Спільний YAML з SPIKE; `route_change` + `probe_error` у `persistence_event` |
+| **PY-P11** | [x] YAML `persistence.events` + запис у SQLite | `config.py`, `session_db.py`, `session_store.py` | Спільний YAML з SPIKE; `route_change` + `probe_error` у `persistence_event` |
 
 **Орієнтовно:** 1 sprint після Java P11-013. **Не блокує** Java P11-010.
 
@@ -461,7 +461,7 @@ flowchart TD
 
 **Мета:** історія маршрутів між сесіями; replay «коли змінився hop N».
 
-**Контекст:** Python `beta` має `--session-db`, export, jitter/loss; Java `beta` — `--session-db` + wire `SessionStore`/`MonitorService` (policy GUI — P11-013+). Підключення БД з GUI без CLI — **P11-016**.
+**Контекст:** Python має `--session-db`, export, jitter/loss; Java — `--session-db` + wire `SessionStore`/`MonitorService` (policy GUI — P11-013+). Підключення БД з GUI без CLI — **P11-016**.
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
@@ -533,7 +533,7 @@ flowchart TD
 | **P14-030** | [x] ASN + короткий descr у label hop (offline cache) | `geoip/AsnLookup.java` | Offline configurable; whois timeout reserved 2s |
 | **P14-031** | [x] rDNS у label (async, не блокує UI) | `DnsResolver.java`, `GraphCanvas` | Cache TTL 5 хв |
 | **P14-040** | [x] Expert ping presets: MTU probe, DF, DSCP, burst | `PingExpertDialog`, `ping_presets.yaml` | 4 preset кнопки |
-| **P14-050** | [ ] USER_GUIDE § pro workflow | `docs/USER_GUIDE.md` | NOC сценарій |
+| **P14-050** | [x] USER_GUIDE § pro workflow | `docs/USER_GUIDE.md` | NOC сценарій |
 
 **Орієнтовно:** 2 sprint.
 
@@ -731,7 +731,7 @@ flowchart LR
 
 - [ ] Немає `pass` / `return null` / `Mock` без TODO з ticket ID  
 - [ ] Змінений модуль — тест або оновлений рядок у `LIVING_SPEC.md`  
-- [ ] `./gradlew check` (або `compileJava` на `main`) green у venv/CI  
+- [ ] `./gradlew check` green у CI (обидві гілки)  
 - [ ] README / `java/README` / CHANGELOG — якщо змінилась поведінка  
 - [ ] Ревʼю: рекурсія, невикористані поля, заглушки  
 - [ ] **NEXT** + рядок у **Черзі виконання** оновлені після `[x]`  
@@ -742,8 +742,11 @@ flowchart LR
 
 | Після задачі | Дія |
 |--------------|-----|
-| `main` only | cherry-pick або merge `main` → `beta` |
-| `beta` only | періодично merge `beta` Java-шар → `main` (без Python/tests у tree `main`) |
+| Робота ROADMAP | Лише на **`beta`**; після DoD — commit/push на `beta` |
+| Hotfix на `main` | cherry-pick або merge `main` → `beta` |
+| Реліз | Періодично merge **`beta` → `main`** (повне дерево: Java + Python + docs + tests) |
+
+> **Історична примітка (2025-06):** ранні sprint-и нижче описували політику «Python лише на `beta`». З merge 2026 (PR з `beta`) Python-дерево і Java Pro (P9–P12+) є на **обох** гілках; `beta` лишається гілкою розробки попереду `main`.
 
 **Sprint 10 (2025-06-26):** `origin/main` злито в `beta`; Python-дерево збережено; `./gradlew check` + JaCoCo ≥80% + Python pytest green.
 

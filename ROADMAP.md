@@ -8,7 +8,7 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **[P14-050](docs/ROADMAP.md#next--єдине-джерело-правди)** |
+| **Поточна задача** | **[P15-001](docs/ROADMAP.md#next--єдине-джерело-правди)** |
 | **Правило** | `/autopilot` без аргументів = цей ID. **Не питати** «який пункт?». |
 
 Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна).
@@ -17,8 +17,8 @@
 
 **Цільова аудиторія наступних фаз:** NOC/SRE, мережеві інженери, адміни WAN/MPLS.
 
-- Запуск: `./pingui.sh` / `./pingui.sh --deploy` (beta) · `java/pingui-java.sh` (main)
-- CI: ruff + mypy + pytest (beta) · `./gradlew check` (Java)
+- Запуск: `./pingui.sh` / `./pingui.sh --deploy` · `java/pingui-java.sh` (розробка на `beta`; production-зріз — `main`)
+- CI: ruff + mypy + pytest · `./gradlew check` (обидві гілки)
 - Документація: двомовна `docs/` + `docs/en/`
 
 ---
@@ -29,14 +29,14 @@
 |------|------|--------|
 | P0–P8 | Python MVP: venv, ICMP, GUI, CI | ✅ |
 | **P9** | Java cross-platform edition | ✅ |
-| **9** | IPv6 dual-stack (V6-*) | ✅ на `beta` |
-| **PY** | Python CLI/NOC hardening | ✅ (хвіст: **PY-P11**) |
+| **9** | IPv6 dual-stack (V6-*) | ✅ |
+| **PY** | Python CLI/NOC hardening | ✅ |
 | **10** | Оповіщення про зміну маршруту | ✅ |
 | **11** | Персистентність і таймлайн (Java) | ✅ |
 | **12** | Headless / daemon + systemd | ✅ |
 | **13** | Ефективність probe (MTR, smart interval, burst) | ✅ P13-001…050 |
-| **14** | GUI для профі (diff, теги, ASN/rDNS, presets) | 🔄 **NEXT → P14-050** |
-| **15** | Інтеграції (Prometheus, REST API, export) | 📋 у черзі після P14 |
+| **14** | GUI для профі (diff, теги, ASN/rDNS, presets) | ✅ |
+| **15** | Інтеграції (Prometheus, REST API, export) | 🔄 **NEXT → P15-001** |
 | **16** | Телеметрія + LOG-server | 📋 у черзі після P15 |
 
 ---
@@ -76,10 +76,10 @@ flowchart LR
 
 ```
 PINGUI/
-├── pingui.sh                 # Python launcher (beta)
-├── java/                     # Java edition (main + beta)
-├── src/pingui/               # Python (beta)
-├── tests/                    # pytest (beta)
+├── pingui.sh                 # Python launcher
+├── java/                     # Java edition
+├── src/pingui/               # Python
+├── tests/                    # pytest
 ├── docs/
 │   ├── ROADMAP.md            # ← детальний план + NEXT + черга (UK)
 │   └── en/ROADMAP.md         # ← детальний план + NEXT + queue (EN)

@@ -10,7 +10,7 @@ Post-MVP roadmap (2026-06-26) for **professional users** (NOC/SRE, network engin
 
 | Field | Value |
 |-------|-------|
-| **Branch** | `main` — stable Java GUI (RAM); `beta` — development: Java P9–P12 (SQLite, alerts, daemon) + Python + full CI |
+| **Branch** | `main` — stable snapshot after merge; `beta` — development (ROADMAP queue). Both: Java Pro (P9+) + Python after merge |
 | **Priority** | P0 critical · P1 important · P2 nice-to-have |
 | **DoD** | Definition of Done — task closure condition |
 
@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P14-050** |
-| **Phase** | 14 — Pro GUI |
-| **DoD (short)** | USER_GUIDE § pro / NOC workflow |
+| **Current task** | **P15-001** |
+| **Phase** | 15 — Team integrations |
+| **DoD (short)** | ADR observability boundaries |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -47,8 +47,8 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 2 | **P14-030** | [x] | ASN in hop label: wire existing `AsnLookup*` / `asn_hints.yaml` or remove dead code |
 | 3 | **P14-031** | [x] | rDNS in label (async, cache TTL 5 min) |
 | 4 | **P14-040** | [x] | Expert ping presets (4 buttons + `ping_presets.yaml`) |
-| 5 | **P14-050** | [ ] | USER_GUIDE § pro / NOC workflow |
-| 6 | **PY-P11** | [ ] | Python: YAML `persistence.events` + SQLite `persistence_event` |
+| 5 | **P14-050** | [x] | USER_GUIDE § pro / NOC workflow |
+| 6 | **PY-P11** | [x] | Python: YAML `persistence.events` + SQLite `persistence_event` |
 | 7 | **P15-001** | [ ] | ADR observability boundaries |
 | 8 | **P15-010** | [ ] | Prometheus `/metrics` (daemon) |
 | 9 | **P15-011** | [ ] | CLI `--metrics-port` |
@@ -327,7 +327,7 @@ flowchart TD
 
 **Context:** B-01…B-06 ✅ (`--session-db`, export, GeoIP, geo-map, timeseries, jitter/loss). Phases 10–16 are mostly Java-oriented; Python **leads** on P11/P15 but **lags** on launcher, docs, daemon, alerts.
 
-**Branch:** `beta` only (Python tree is not added to `main`).
+**Development branch:** `beta` (Python is also in the `main` tree after merge; new PY-* land on `beta` first).
 
 **Links:** PY-S1 — before Pro-S2; PY-S2 — Python prerequisite for P12; PY-S3 — Python parity for P10.
 
@@ -397,7 +397,7 @@ flowchart TD
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **PY-P11** | [ ] YAML `persistence.events` + SQLite writes | `config.py`, `session_db.py`, `session_store.py` | Shared YAML with SPIKE; `route_change` + `probe_error` in `persistence_event` |
+| **PY-P11** | [x] YAML `persistence.events` + SQLite writes | `config.py`, `session_db.py`, `session_store.py` | Shared YAML with SPIKE; `route_change` + `probe_error` in `persistence_event` |
 
 **Estimate:** 1 sprint after Java P11-013. **Does not block** Java P11-010.
 
@@ -461,7 +461,7 @@ flowchart TD
 
 **Goal:** route history across sessions; replay «when hop N changed».
 
-**Context:** Python `beta` has `--session-db`, export, jitter/loss; Java `beta` has `--session-db` + wired `SessionStore`/`MonitorService` (policy GUI — P11-013+). GUI DB connection without CLI — **P11-016**.
+**Context:** Python has `--session-db`, export, jitter/loss; Java has `--session-db` + wired `SessionStore`/`MonitorService` (policy GUI — P11-013+). GUI DB connection without CLI — **P11-016**.
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
@@ -533,7 +533,7 @@ flowchart TD
 | **P14-030** | [x] ASN + short descr in hop label (offline cache) | `geoip/AsnLookup.java` | Offline configurable; whois timeout reserved 2s |
 | **P14-031** | [x] rDNS in label (async, non-blocking UI) | `DnsResolver.java`, `GraphCanvas` | Cache TTL 5 min |
 | **P14-040** | [x] Expert ping presets: MTU probe, DF, DSCP, burst | `PingExpertDialog`, `ping_presets.yaml` | 4 preset buttons |
-| **P14-050** | [ ] USER_GUIDE § pro workflow | `docs/USER_GUIDE.md` | NOC scenario |
+| **P14-050** | [x] USER_GUIDE § pro workflow | `docs/USER_GUIDE.md` | NOC scenario |
 
 **Estimate:** 2 sprints.
 
@@ -731,7 +731,7 @@ Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 
 - [ ] No `pass` / `return null` / `Mock` without TODO with ticket ID  
 - [ ] Changed module — test or updated row in `LIVING_SPEC.md`  
-- [ ] `./gradlew check` (or `compileJava` on `main`) green in venv/CI  
+- [ ] `./gradlew check` green in CI (both branches)  
 - [ ] README / `java/README` / CHANGELOG — if behavior changed
 - [ ] Review: recursion, unused fields, stubs
 - [ ] **NEXT** + **Execution queue** row updated after `[x]`
@@ -742,8 +742,11 @@ Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 
 | After task | Action |
 |------------|--------|
-| `main` only | cherry-pick or merge `main` → `beta` |
-| `beta` only | periodically merge `beta` Java layer → `main` (without Python/tests in `main` tree) |
+| ROADMAP work | On **`beta` only**; after DoD — commit/push to `beta` |
+| Hotfix on `main` | cherry-pick or merge `main` → `beta` |
+| Release | Periodically merge **`beta` → `main`** (full tree: Java + Python + docs + tests) |
+
+> **Historical note (2025-06):** early sprints below described a “Python only on `beta`” policy. After 2026 merges from `beta`, the Python tree and Java Pro (P9–P12+) exist on **both** branches; `beta` remains the development branch ahead of `main`.
 
 **Sprint 10 (2025-06-26):** `origin/main` merged into `beta`; Python tree preserved; `./gradlew check` + JaCoCo ≥80% + Python pytest green.
 

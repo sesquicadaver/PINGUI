@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import threading
 from contextlib import suppress
 from datetime import UTC, datetime
 from pathlib import Path
@@ -11,7 +12,7 @@ from typing import Any
 
 from pingui.models import HopNode, HopProbeStats, HostSessionData
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 
 def _hop_to_json(node: HopNode) -> dict[str, Any]:
@@ -106,7 +107,9 @@ class SessionDatabase:
     def __init__(self, path: Path | str) -> None:
         self._path = Path(path)
         self._path.parent.mkdir(parents=True, exist_ok=True)
-        self._conn = sqlite3.connect(self._path)
+        # MonitorLoop / Qt worker may call save/insert_event off the opener thread.
+        self._conn = sqlite3.connect(self._path, check_same_thread=False)
+        self._lock = threading.RLock()
         self._conn.execute("PRAGMA foreign_keys = ON")
         self._init_schema()
 
@@ -130,6 +133,17 @@ class SessionDatabase:
                 hop_stats_json TEXT NOT NULL DEFAULT '{}',
                 updated_at TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS persistence_event (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_type TEXT NOT NULL,
+                host TEXT NOT NULL,
+                profile TEXT,
+                payload_json TEXT NOT NULL,
+                observed_at TEXT NOT NULL,
+                FOREIGN KEY (host) REFERENCES host_session(host) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_pe_host_type_time
+                ON persistence_event(host, event_type, observed_at);
             """
         )
         row = self._conn.execute("SELECT version FROM schema_meta LIMIT 1").fetchone()
@@ -138,7 +152,9 @@ class SessionDatabase:
                 "INSERT INTO schema_meta(version) VALUES (?)",
                 (SCHEMA_VERSION,),
             )
-        self._migrate_schema(int(row[0]) if row is not None else SCHEMA_VERSION)
+            self._conn.commit()
+            return
+        self._migrate_schema(int(row[0]))
         self._conn.commit()
 
     def _migrate_schema(self, current_version: int) -> None:
@@ -148,16 +164,77 @@ class SessionDatabase:
                     "ALTER TABLE host_session ADD COLUMN hop_stats_json TEXT NOT NULL DEFAULT '{}'"
                 )
             self._conn.execute("UPDATE schema_meta SET version = ?", (2,))
+            current_version = 2
+        if current_version < 3:
+            self._conn.executescript(
+                """
+                CREATE TABLE IF NOT EXISTS persistence_event (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_type TEXT NOT NULL,
+                    host TEXT NOT NULL,
+                    profile TEXT,
+                    payload_json TEXT NOT NULL,
+                    observed_at TEXT NOT NULL,
+                    FOREIGN KEY (host) REFERENCES host_session(host) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS idx_pe_host_type_time
+                    ON persistence_event(host, event_type, observed_at);
+                """
+            )
+            self._conn.execute("UPDATE schema_meta SET version = ?", (3,))
+
+    def insert_event(
+        self,
+        event_type: str,
+        host: str,
+        profile: str | None,
+        payload_json: str,
+        observed_at: datetime,
+    ) -> int:
+        """Append one ``persistence_event`` row; returns new id."""
+        ts = observed_at.astimezone(UTC).isoformat().replace("+00:00", "Z")
+        with self._lock:
+            cursor = self._conn.execute(
+                """
+                INSERT INTO persistence_event(event_type, host, profile, payload_json, observed_at)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (event_type, host, profile, payload_json, ts),
+            )
+            self._conn.commit()
+            row_id = cursor.lastrowid
+        if row_id is None:
+            msg = "INSERT persistence_event did not return row id"
+            raise RuntimeError(msg)
+        return int(row_id)
+
+    def count_events(self, event_type: str | None = None, host: str | None = None) -> int:
+        clauses: list[str] = []
+        params: list[str] = []
+        if event_type is not None:
+            clauses.append("event_type = ?")
+            params.append(event_type)
+        if host is not None:
+            clauses.append("host = ?")
+            params.append(host)
+        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        with self._lock:
+            row = self._conn.execute(
+                f"SELECT COUNT(*) FROM persistence_event{where}",
+                params,
+            ).fetchone()
+        return int(row[0]) if row else 0
 
     def load(self, host: str) -> HostSessionData | None:
-        row = self._conn.execute(
-            """
-            SELECT enabled, current_route_json, previous_route_json,
-                   last_known_json, ping_history_json, hop_stats_json
-            FROM host_session WHERE host = ?
-            """,
-            (host,),
-        ).fetchone()
+        with self._lock:
+            row = self._conn.execute(
+                """
+                SELECT enabled, current_route_json, previous_route_json,
+                       last_known_json, ping_history_json, hop_stats_json
+                FROM host_session WHERE host = ?
+                """,
+                (host,),
+            ).fetchone()
         if row is None:
             return None
         enabled, current_json, previous_json, last_known_json, ping_json, hop_stats_json = row
@@ -173,57 +250,70 @@ class SessionDatabase:
 
     def save(self, host: str, data: HostSessionData) -> None:
         now = datetime.now(UTC).isoformat()
-        self._conn.execute(
-            """
-            INSERT INTO host_session(
-                host, enabled, current_route_json, previous_route_json,
-                last_known_json, ping_history_json, hop_stats_json, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(host) DO UPDATE SET
-                enabled = excluded.enabled,
-                current_route_json = excluded.current_route_json,
-                previous_route_json = excluded.previous_route_json,
-                last_known_json = excluded.last_known_json,
-                ping_history_json = excluded.ping_history_json,
-                hop_stats_json = excluded.hop_stats_json,
-                updated_at = excluded.updated_at
-            """,
-            (
-                host,
-                int(data.enabled),
-                _route_to_json(data.current_route),
-                _route_to_json(data.previous_route),
-                _last_known_to_json(data.last_known_by_hop),
-                _ping_history_to_json(data.ping_history),
-                _hop_stats_to_json(data.hop_stats),
-                now,
-            ),
-        )
-        self._conn.commit()
+        with self._lock:
+            self._conn.execute(
+                """
+                INSERT INTO host_session(
+                    host, enabled, current_route_json, previous_route_json,
+                    last_known_json, ping_history_json, hop_stats_json, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(host) DO UPDATE SET
+                    enabled = excluded.enabled,
+                    current_route_json = excluded.current_route_json,
+                    previous_route_json = excluded.previous_route_json,
+                    last_known_json = excluded.last_known_json,
+                    ping_history_json = excluded.ping_history_json,
+                    hop_stats_json = excluded.hop_stats_json,
+                    updated_at = excluded.updated_at
+                """,
+                (
+                    host,
+                    int(data.enabled),
+                    _route_to_json(data.current_route),
+                    _route_to_json(data.previous_route),
+                    _last_known_to_json(data.last_known_by_hop),
+                    _ping_history_to_json(data.ping_history),
+                    _hop_stats_to_json(data.hop_stats),
+                    now,
+                ),
+            )
+            self._conn.commit()
 
     def delete(self, host: str) -> None:
-        self._conn.execute("DELETE FROM host_session WHERE host = ?", (host,))
-        self._conn.commit()
+        with self._lock:
+            self._conn.execute("DELETE FROM host_session WHERE host = ?", (host,))
+            self._conn.commit()
 
     def rename(self, old_host: str, new_host: str) -> None:
-        row = self._conn.execute(
-            "SELECT enabled, current_route_json, previous_route_json, "
-            "last_known_json, ping_history_json, hop_stats_json FROM host_session WHERE host = ?",
-            (old_host,),
-        ).fetchone()
-        if row is None:
-            return
-        self.delete(old_host)
-        hop_stats_payload = row[5] if row[5] is not None else "{}"
-        data = HostSessionData(
-            current_route=_route_from_json(row[1]),
-            previous_route=_route_from_json(row[2]),
-            last_known_by_hop=_last_known_from_json(row[3]),
-            ping_history=_ping_history_from_json(row[4]),
-            hop_stats=_hop_stats_from_json(hop_stats_payload),
-            enabled=bool(row[0]),
-        )
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT enabled, current_route_json, previous_route_json, "
+                "last_known_json, ping_history_json, hop_stats_json "
+                "FROM host_session WHERE host = ?",
+                (old_host,),
+            ).fetchone()
+            if row is None:
+                return
+            if old_host == new_host:
+                return
+            hop_stats_payload = row[5] if row[5] is not None else "{}"
+            data = HostSessionData(
+                current_route=_route_from_json(row[1]),
+                previous_route=_route_from_json(row[2]),
+                last_known_by_hop=_last_known_from_json(row[3]),
+                ping_history=_ping_history_from_json(row[4]),
+                hop_stats=_hop_stats_from_json(hop_stats_payload),
+                enabled=bool(row[0]),
+            )
         self.save(new_host, data)
+        with self._lock:
+            self._conn.execute(
+                "UPDATE persistence_event SET host = ? WHERE host = ?",
+                (new_host, old_host),
+            )
+            self._conn.execute("DELETE FROM host_session WHERE host = ?", (old_host,))
+            self._conn.commit()
 
     def close(self) -> None:
-        self._conn.close()
+        with self._lock:
+            self._conn.close()
