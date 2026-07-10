@@ -15,7 +15,11 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
-/** JavaFX route graph: vertical layout, inactive column left, active right. */
+/** JavaFX route graph: vertical layout, inactive column left, active right (pairs with {@link RouteDiffPresenter}).
+ *
+ * <p>Hop labels may include async rDNS from {@link io.pingui.dns.DnsResolver}; {@link MainController}
+ * registers a listener that redraws via {@link RouteGraphPresenter} when PTR resolves.
+ */
 public final class GraphCanvas extends Region {
     private static final double TEXT_PAD = 6.0;
     private static final Font LABEL_FONT = Font.font("Monospace", 10);

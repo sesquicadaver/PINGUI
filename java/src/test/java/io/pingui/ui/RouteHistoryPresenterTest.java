@@ -12,6 +12,7 @@ import io.pingui.monitor.SessionStore;
 import io.pingui.persistence.PersistenceEventType;
 import io.pingui.persistence.SessionDatabase;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -48,7 +49,10 @@ class RouteHistoryPresenterTest {
             assertEquals(1, harness.replayCount.get());
 
             harness.insertEvent(
-                    "8.8.8.8", List.of("1.0.0.1"), List.of("9.9.9.9"), Instant.parse("2026-07-09T11:00:00Z"));
+                    "8.8.8.8",
+                    List.of("1.0.0.1"),
+                    List.of("9.9.9.9"),
+                    Instant.now().minusSeconds(30));
             harness.presenter.onRouteChanged("8.8.8.8");
 
             assertEquals(2, harness.historyList.getItems().size());
@@ -83,13 +87,36 @@ class RouteHistoryPresenterTest {
             harness.historyList.getSelectionModel().select(0);
 
             harness.insertEvent(
-                    "8.8.8.8", List.of("1.0.0.1"), List.of("8.8.4.4"), Instant.parse("2026-07-09T12:00:00Z"));
+                    "8.8.8.8",
+                    List.of("1.0.0.1"),
+                    List.of("8.8.4.4"),
+                    Instant.now().minusSeconds(15));
             harness.presenter.reloadKeepingFilter();
 
             assertEquals(2, harness.historyList.getItems().size());
             assertEquals(
                     selectedId,
                     harness.historyList.getSelectionModel().getSelectedItem().id());
+        });
+    }
+
+    @Test
+    void rebuildHostFilterPreservesActiveHostWhenSecondHostAdded() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            PresenterHarness harness = new PresenterHarness(tempDir.resolve("e.db"));
+            harness.presenter.configure();
+            harness.filter.setValue("8.8.8.8");
+            harness.presenter.refresh();
+            assertEquals(1, harness.historyList.getItems().size());
+            assertEquals(
+                    "8.8.8.8", harness.historyList.getItems().get(0).event().host());
+
+            harness.presenter.rebuildHostFilter(List.of("8.8.8.8", "1.1.1.1"));
+
+            assertEquals("8.8.8.8", harness.filter.getValue());
+            assertEquals(1, harness.historyList.getItems().size());
+            assertEquals(
+                    "8.8.8.8", harness.historyList.getItems().get(0).event().host());
         });
     }
 
@@ -120,8 +147,9 @@ class RouteHistoryPresenterTest {
                     () -> true,
                     event -> replayCount.incrementAndGet(),
                     () -> clearReplayCount.incrementAndGet());
-            insertEvent("8.8.8.8", List.of(), List.of("1.1.1.1"), Instant.parse("2026-07-09T10:00:00Z"));
-            insertEvent("1.1.1.1", List.of(), List.of("8.8.8.8"), Instant.parse("2026-07-09T10:05:00Z"));
+            // Relative times stay inside the default 24h lookback regardless of wall clock.
+            insertEvent("8.8.8.8", List.of(), List.of("1.1.1.1"), Instant.now().minus(Duration.ofHours(2)));
+            insertEvent("1.1.1.1", List.of(), List.of("8.8.8.8"), Instant.now().minus(Duration.ofHours(1)));
         }
 
         void insertEvent(String host, List<String> oldIps, List<String> newIps, Instant timestamp) {

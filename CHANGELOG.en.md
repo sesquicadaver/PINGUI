@@ -7,13 +7,37 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **ROADMAP NEXT + linear queue:** `docs/ROADMAP.md` / `docs/en/ROADMAP.md` and root `ROADMAP*.md` — single **Current task** field; `/autopilot` with no args always takes that ID (no “which item?”). Agent rule: `.cursor/rules/roadmap-next.mdc`.
+
+### Fixed
+
+- **RouteHistoryPresenterTest:** fixed `2026-07-09` timestamps fell outside the 24h lookback — tests now use relative `Instant.now()`.
+- **Java UI:** adding a second host no longer switches the route-history target filter to the new host — history stays on the current target.
+- **CI:** GitHub Actions upgraded to Node.js 24 (`checkout@v6`, `setup-java@v5`, `setup-python@v6`) — removes Node 20 deprecation warnings.
+- **Java persistence:** `appendPingSamples` no longer crashes after SQLite reopen when ping history lists were loaded as immutable (`UnsupportedOperationException` on GUI poll).
+
 ### Added
 
-- **Java session export (P11-030):** `SessionReportExporter` — CSV/HTML from `--session-db`; headless CLI `--export-report PATH` (format by extension).
+- **MTR probe (P13-010):** `MtrProbe` — per-hop state machine (DISCOVERING → MONITORING), one TTL per poll; `RoutePoller.pollHostMtr`.
+- **Probe mode YAML (P13-011):** `probe_mode: trace | mtr | ping_only` on profile and host; `MonitorService` branches trace/mtr/ping_only; `ping_only: true` backward compat.
+- **Smart poll interval (P13-020):** `HostPollSchedule` — per-host cadence by `probe_mode` (`ping_only` 1.5s, `mtr` 10s, `trace` = profile `interval`); optional host `interval` override; `MonitorService` polls due hosts only (0.25s tick, non-blocking dispatch).
+- **Burst on route change (P13-021):** `BurstSchedulePolicy` — after `route_change` interval ×0.25 for 5 min; wired in `MonitorService.resolveIntervalSeconds`.
+- **Trace concurrency cap (P13-030):** YAML `max_concurrent_traces` (default 3); `TraceConcurrencyLimiter` caps simultaneous TRACE polls; `ping_only`/`mtr` bypass.
+- **Windows preset (P13-040):** `config/hosts.windows.example.yaml` — `probe_mode: ping_only`, `interval: 60`; CHECKLIST/DEPLOYMENT Windows.
+- **MTR vs trace docs (P13-050):** `docs/JAVA.md` — `probe_mode`, MTR limitations vs full trace; Monitor layer updated for P13-020…030.
+- **Route diff panel (P14-010):** `RouteDiff` / `RouteDiffPresenter` — hop-by-hop «was → became» with Δ RTT in extended view (live + history replay).
+- **Host tags (P14-020):** YAML `tags: [dc, vpn, …]` per host; ListView filter by tag; persisted via `ProfilesConfig` / `SessionStore`.
+- **Tag filter chips (P14-021):** quick filter chips in `HostListPresenter`; «Теги» button + `HostTagsDialog`; `SessionStore.setTags` → Save to YAML.
+- **ASN hop labels (P14-030):** offline `AsnLookup` + `asn_hints.yaml`; hop label `AS#### Org`; CLI `--asn-hints` / `--no-asn` / `--asn-timeout-ms`.
+- **rDNS hop labels (P14-031):** async `DnsResolver` (PTR, cache TTL 5 min); hop label after IP; graph redraw on resolve.
+- **Expert ping presets (P14-040):** 4 buttons in `PingExpertDialog` from `ping_presets.yaml` (MTU probe, DF, DSCP, Burst); AF preserved.
 - **Java GUI SQLite connection (P11-016):** file picker in Database settings, YAML `persistence.session_db`, active menu without CLI `--session-db`.
 - **Java hop stats from history (P11-040):** `hop_stats` persist to SQLite on every probe; graph labels (`j:`/`loss:`) survive session reopen.
 - **SQLite disk/retention docs (P11-050):** `docs/DEPLOYMENT.md` — no auto-TTL on `host_session`, manual event purge, sizing notes.
 - **Java headless daemon (P12-001…040):** `--daemon`, `--pid-file`, `--stop`, `--status`; `DaemonRunner`; `systemd/pingui-java.service.example`; [ADR_DAEMON.md](docs/ADR_DAEMON.md).
+- **Probe modes ADR (P13-001):** [ADR_PROBE_MODES.md](docs/en/ADR_PROBE_MODES.md) — `trace | mtr | ping_only` vs transport `probe: auto|process|raw`; MTR = continuous per-hop.
 
 ### Fixed
 

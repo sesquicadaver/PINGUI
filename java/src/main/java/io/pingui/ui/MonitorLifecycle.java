@@ -34,18 +34,24 @@ public final class MonitorLifecycle {
             SessionDatabase sessionDatabase,
             List<HostEntry> sessionHosts) {
         MonitorService service = new MonitorService(
-                profile.intervalSeconds(), profile.maxHops(), profile.timeoutSeconds(), profile.probeMode());
+                profile.intervalSeconds(),
+                profile.maxHops(),
+                profile.timeoutSeconds(),
+                profile.probeMode(),
+                profile.maxConcurrentTraces());
         service.setAlertProfileName(profileName);
         service.setAlertDispatcher(AlertDispatchers.build(alerts));
         service.setExpertResolver(store::getPingExpert);
-        service.setPingOnlyResolver(store::isPingOnly);
+        service.setProfileProbeMode(profile.hostProbeMode());
+        service.setHostProbeModeResolver(store::getProbeMode);
+        service.setHostPollIntervalResolver(store::getIntervalOverride);
         if (sessionDatabase != null) {
             service.setPersistenceEventWriter(new PersistenceEventWriter(sessionDatabase, service.persistencePolicy()));
         }
         service.setListener(listener);
         for (HostEntry entry : sessionHosts) {
             if (!HostViewRules.matches(entry.address())) {
-                service.addHost(entry.address(), entry.enabled(), entry.pingOnly());
+                service.addHost(entry.address(), entry.enabled(), entry.effectiveProbeMode(profile.hostProbeMode()));
             }
         }
         return service;

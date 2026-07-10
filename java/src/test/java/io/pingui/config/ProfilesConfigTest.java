@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.pingui.monitor.HostProbeMode;
 import io.pingui.probe.ProbeMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -222,6 +223,121 @@ class ProfilesConfigTest {
                 """);
         ConfigError error = assertThrows(ConfigError.class, () -> ProfilesConfig.load(path));
         assertTrue(error.getMessage().contains("Duplicate host"));
+    }
+
+    @Test
+    void loadProbeModeOnProfileAndHost() throws Exception {
+        Path path = tempDir.resolve("probe-mode.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    probe_mode: mtr
+                    hosts:
+                      - address: "8.8.8.8"
+                        enabled: true
+                      - address: "1.1.1.1"
+                        probe_mode: ping_only
+                """);
+        TracingProfile profile = ProfilesConfig.load(path).active();
+        assertEquals(HostProbeMode.MTR, profile.hostProbeMode());
+        HostEntry primary = profile.hosts().stream()
+                .filter(h -> h.address().equals("8.8.8.8"))
+                .findFirst()
+                .orElseThrow();
+        HostEntry pingOnlyHost = profile.hosts().stream()
+                .filter(h -> h.address().equals("1.1.1.1"))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(HostProbeMode.MTR, primary.effectiveProbeMode(profile.hostProbeMode()));
+        assertEquals(HostProbeMode.PING_ONLY, pingOnlyHost.effectiveProbeMode(profile.hostProbeMode()));
+
+        ProfilesConfig.save(path, ProfilesConfig.load(path));
+        TracingProfile reloaded = ProfilesConfig.load(path).active();
+        assertEquals(HostProbeMode.MTR, reloaded.hostProbeMode());
+        HostEntry reloadedPingOnly = reloaded.hosts().stream()
+                .filter(h -> h.address().equals("1.1.1.1"))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(HostProbeMode.PING_ONLY, reloadedPingOnly.probeModeOverride());
+    }
+
+    @Test
+    void loadHostTagsRoundTrip() throws Exception {
+        Path path = tempDir.resolve("tags.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    hosts:
+                      - address: "8.8.8.8"
+                        enabled: true
+                        tags: [DC, vpn, dc]
+                      - address: "1.1.1.1"
+                """);
+        HostEntry tagged = ProfilesConfig.load(path).active().hosts().get(0);
+        assertEquals(List.of("dc", "vpn"), tagged.tags());
+
+        ProfilesConfig.save(path, ProfilesConfig.load(path));
+        HostEntry reloaded = ProfilesConfig.load(path).active().hosts().get(0);
+        assertEquals(List.of("dc", "vpn"), reloaded.tags());
+    }
+
+    @Test
+    void loadWindowsExamplePreset() throws Exception {
+        Path path = Path.of("config/hosts.windows.example.yaml");
+        org.junit.jupiter.api.Assumptions.assumeTrue(Files.isRegularFile(path), "Run from java/ module directory");
+        TracingProfile profile = ProfilesConfig.load(path).active();
+        assertEquals(60.0, profile.intervalSeconds());
+        assertEquals(HostProbeMode.PING_ONLY, profile.hostProbeMode());
+        assertTrue(profile.hosts().stream().anyMatch(h -> h.address().equals("8.8.8.8") && h.enabled()));
+    }
+
+    @Test
+    void loadMaxConcurrentTraces() throws Exception {
+        Path path = tempDir.resolve("max-traces.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    max_concurrent_traces: 5
+                    hosts:
+                      - "8.8.8.8"
+                """);
+        assertEquals(5, ProfilesConfig.load(path).active().maxConcurrentTraces());
+
+        ProfilesConfig.save(path, ProfilesConfig.load(path));
+        assertEquals(5, ProfilesConfig.load(path).active().maxConcurrentTraces());
+    }
+
+    @Test
+    void loadHostIntervalOverride() throws Exception {
+        Path path = tempDir.resolve("host-interval.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    interval: 30.0
+                    hosts:
+                      - address: "8.8.8.8"
+                        enabled: true
+                        interval: 2.5
+                """);
+        HostEntry host = ProfilesConfig.load(path).active().hosts().get(0);
+        assertEquals(2.5, host.intervalSecondsOverride());
+        assertEquals(2.5, host.effectiveIntervalSeconds(HostProbeMode.TRACE, 30.0));
+
+        ProfilesConfig.save(path, ProfilesConfig.load(path));
+        HostEntry reloaded = ProfilesConfig.load(path).active().hosts().get(0);
+        assertEquals(2.5, reloaded.intervalSecondsOverride());
     }
 
     @Test

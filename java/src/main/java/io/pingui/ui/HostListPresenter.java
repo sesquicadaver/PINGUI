@@ -2,6 +2,7 @@ package io.pingui.ui;
 
 import io.pingui.config.ConfigError;
 import io.pingui.config.HostEntry;
+import io.pingui.config.HostTags;
 import io.pingui.config.HostsConfig;
 import io.pingui.config.PingExpertEntry;
 import io.pingui.monitor.HostTargetStats;
@@ -9,20 +10,33 @@ import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.geometry.Insets;
+import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Toggle;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 
-/** Host list CRUD, toggles, and row metrics in the main window. */
+/** Host list CRUD, tag filter chips, toggles, and row metrics in the main window. */
 final class HostListPresenter {
     private static final double HOST_ROW_HEIGHT = 56.0;
     private static final double HOST_LIST_INSET = 4.0;
+    static final String TAG_FILTER_ALL = "Усі";
 
     private final ObservableList<HostItem> hostItems;
+    private final FilteredList<HostItem> filteredHosts;
     private final ListView<HostItem> hostList;
     private final TextField hostInput;
     private final Supplier<SessionStore> store;
@@ -35,7 +49,14 @@ final class HostListPresenter {
     private final java.util.function.BiConsumer<String, String> onHostRenamed;
     private final Runnable startEasterEgg;
     private final Runnable fitWindow;
+    private final Consumer<Runnable> runWithoutHistoryFilterSync;
+    private final FlowPane tagChipPane = new FlowPane(6, 6);
+    private final ToggleGroup tagFilterGroup = new ToggleGroup();
+    private final HBox tagFilterBar = new HBox(8);
+    private String activeFilterTag;
     private boolean updatingList;
+    private boolean refreshingChips;
+    private BiFunction<String, List<String>, Optional<List<String>>> tagsEditor = HostTagsDialog::show;
 
     HostListPresenter(
             ObservableList<HostItem> hostItems,
@@ -50,8 +71,10 @@ final class HostListPresenter {
             Runnable clearHistoryReplay,
             java.util.function.BiConsumer<String, String> onHostRenamed,
             Runnable startEasterEgg,
-            Runnable fitWindow) {
+            Runnable fitWindow,
+            Consumer<Runnable> runWithoutHistoryFilterSync) {
         this.hostItems = hostItems;
+        this.filteredHosts = new FilteredList<>(hostItems, item -> true);
         this.hostList = hostList;
         this.hostInput = hostInput;
         this.store = store;
@@ -64,13 +87,43 @@ final class HostListPresenter {
         this.onHostRenamed = onHostRenamed;
         this.startEasterEgg = startEasterEgg;
         this.fitWindow = fitWindow;
+        this.runWithoutHistoryFilterSync = runWithoutHistoryFilterSync;
+        Label tagLabel = new Label("Тег:");
+        tagChipPane.setPadding(new Insets(2, 0, 2, 0));
+        HBox.setHgrow(tagChipPane, Priority.ALWAYS);
+        tagFilterBar.getChildren().addAll(tagLabel, tagChipPane);
+        tagFilterGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
+            if (refreshingChips) {
+                return;
+            }
+            if (newToggle == null) {
+                // Keep one chip selected (re-select previous or «Усі»).
+                Toggle restore = oldToggle != null ? oldToggle : findAllToggle();
+                refreshingChips = true;
+                tagFilterGroup.selectToggle(restore);
+                refreshingChips = false;
+                return;
+            }
+            Object data = newToggle.getUserData();
+            activeFilterTag = data instanceof String tag && !tag.isBlank() ? tag : null;
+            applyTagFilter();
+        });
+    }
+
+    Node tagFilterBar() {
+        return tagFilterBar;
     }
 
     void configure() {
+        hostList.setItems(filteredHosts);
         hostList.setFixedCellSize(HOST_ROW_HEIGHT);
         hostList.setMaxHeight(listHeightForRows(HostsConfig.MAX_HOSTS));
-        hostItems.addListener((ListChangeListener.Change<? extends HostItem> change) -> syncListHeight());
+        hostItems.addListener((ListChangeListener.Change<? extends HostItem> change) -> {
+            syncListHeight();
+            refreshTagChips();
+        });
         syncListHeight();
+        refreshTagChips();
         hostList.setCellFactory(list ->
                 new HostListCell(this::onToggleEnabled, this::onTogglePingOnly, expertMode, this::onOpenExpertPing));
     }
@@ -78,9 +131,106 @@ final class HostListPresenter {
     void rebuild(List<HostEntry> entries) {
         hostItems.clear();
         for (HostEntry entry : HostViewRules.sessionEntries(entries)) {
-            HostItem item = new HostItem(entry.address(), entry.enabled(), entry.pingOnly());
+            HostItem item = new HostItem(entry.address(), entry.enabled(), entry.pingOnly(), entry.tags());
             item.setExpertConfigured(entry.pingExpert().isConfigured());
             hostItems.add(item);
+        }
+    }
+
+    void refreshTagChips() {
+        String previous = activeFilterTag;
+        List<String> tags =
+                HostTags.collectUnique(hostItems.stream().map(HostItem::getTags).toList());
+        refreshingChips = true;
+        for (Toggle toggle : List.copyOf(tagFilterGroup.getToggles())) {
+            toggle.setToggleGroup(null);
+        }
+        tagChipPane.getChildren().clear();
+        ToggleButton all = chipButton(TAG_FILTER_ALL, null);
+        tagChipPane.getChildren().add(all);
+        ToggleButton selected = all;
+        for (String tag : tags) {
+            ToggleButton chip = chipButton(tag, tag);
+            tagChipPane.getChildren().add(chip);
+            if (tag.equals(previous)) {
+                selected = chip;
+            }
+        }
+        tagFilterGroup.selectToggle(selected);
+        Object data = selected.getUserData();
+        activeFilterTag = data instanceof String tag && !tag.isBlank() ? tag : null;
+        refreshingChips = false;
+        applyTagFilter();
+    }
+
+    /** Clears tag filter when history selects a host hidden by the current chip. */
+    void ensureHostVisibleForTagFilter(String host) {
+        if (host == null || host.isBlank()) {
+            return;
+        }
+        HostItem item = HistoryHostSync.findItem(hostItems, host);
+        if (item == null) {
+            return;
+        }
+        if (!item.hasTag(activeFilterTag)) {
+            selectAllChip();
+        }
+    }
+
+    /** Package-visible for tests: inject dialog without JavaFX modality. */
+    void setTagsEditor(BiFunction<String, List<String>, Optional<List<String>>> tagsEditor) {
+        this.tagsEditor = tagsEditor != null ? tagsEditor : HostTagsDialog::show;
+    }
+
+    String activeFilterTag() {
+        return activeFilterTag;
+    }
+
+    int visibleHostCount() {
+        return filteredHosts.size();
+    }
+
+    void selectFilterChip(String tagOrNull) {
+        for (Toggle toggle : tagFilterGroup.getToggles()) {
+            Object data = toggle.getUserData();
+            if (tagOrNull == null && data == null) {
+                tagFilterGroup.selectToggle(toggle);
+                return;
+            }
+            if (tagOrNull != null && tagOrNull.equals(data)) {
+                tagFilterGroup.selectToggle(toggle);
+                return;
+            }
+        }
+    }
+
+    void editSelectedHostTags() {
+        HostItem selected = hostList.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            appendLog.accept("Оберіть ціль, щоб змінити теги");
+            return;
+        }
+        Optional<List<String>> updated = tagsEditor.apply(selected.getHost(), selected.getTags());
+        if (updated.isEmpty()) {
+            return;
+        }
+        try {
+            String host = selected.getHost();
+            store.get().setTags(host, updated.get());
+            selected.setTags(updated.get());
+            refreshTagChips();
+            HostItem item = findItem(host);
+            if (item != null) {
+                if (!item.hasTag(activeFilterTag)) {
+                    selectAllChip();
+                }
+                hostList.getSelectionModel().select(item);
+            }
+            hostList.refresh();
+            appendLog.accept(
+                    "Теги [" + host + "]: " + (updated.get().isEmpty() ? "(немає)" : String.join(", ", updated.get())));
+        } catch (ConfigError ex) {
+            appendLog.accept(ex.getMessage());
         }
     }
 
@@ -122,7 +272,10 @@ final class HostListPresenter {
             session.addHost(host, false, false, PingExpertEntry.empty());
             HostItem item = new HostItem(host, false);
             hostItems.add(item);
-            hostList.getSelectionModel().select(item);
+            if (!item.hasTag(activeFilterTag)) {
+                selectAllChip();
+            }
+            selectHostWithoutHistoryFilterSync(item);
             hostInput.clear();
             appendLog.accept("Додано ціль: " + host);
             syncControls.run();
@@ -193,6 +346,38 @@ final class HostListPresenter {
         }
     }
 
+    private void applyTagFilter() {
+        filteredHosts.setPredicate(item -> item.hasTag(activeFilterTag));
+    }
+
+    private void selectAllChip() {
+        Toggle all = findAllToggle();
+        if (all != null) {
+            tagFilterGroup.selectToggle(all);
+        } else {
+            activeFilterTag = null;
+            applyTagFilter();
+        }
+    }
+
+    private Toggle findAllToggle() {
+        for (Toggle toggle : tagFilterGroup.getToggles()) {
+            if (toggle.getUserData() == null) {
+                return toggle;
+            }
+        }
+        return null;
+    }
+
+    private ToggleButton chipButton(String label, String tag) {
+        ToggleButton button = new ToggleButton(label);
+        button.setUserData(tag);
+        button.setToggleGroup(tagFilterGroup);
+        button.setFocusTraversable(false);
+        button.setStyle("-fx-font-size: 11px;");
+        return button;
+    }
+
     private void syncListHeight() {
         int rows = Math.max(1, hostItems.size());
         hostList.setPrefHeight(listHeightForRows(Math.min(rows, HostsConfig.MAX_HOSTS)));
@@ -201,6 +386,16 @@ final class HostListPresenter {
 
     private static double listHeightForRows(int rows) {
         return rows * HOST_ROW_HEIGHT + HOST_LIST_INSET;
+    }
+
+    /** Keeps route-history host filter when a newly added row is auto-selected. */
+    private void selectHostWithoutHistoryFilterSync(HostItem item) {
+        Runnable select = () -> hostList.getSelectionModel().select(item);
+        if (runWithoutHistoryFilterSync != null) {
+            runWithoutHistoryFilterSync.accept(select);
+        } else {
+            select.run();
+        }
     }
 
     private void onToggleEnabled(HostItem item, boolean enabled) {

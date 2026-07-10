@@ -28,8 +28,9 @@ Expert ping (режим «Експерт») — **лише Linux** (iputils `pin
 
 **Як пом’якшити на Windows:**
 
+- Стартовий пресет: `java/config/hosts.windows.example.yaml` — `probe_mode: ping_only`, `interval: 60` (P13-040).
 - У GUI: чекбокс **Ping only** на хості (лише RTT до цілі, без hop-ів).
-- У YAML: `ping_only: true` або `interval: 30` (і більше) для режиму з trace.
+- У YAML: `probe_mode: ping_only` або `interval: 60` (і більше) для режиму з trace.
 - Очікуйте затримку 1–4 хвилини на перший повний trace до віддаленої цілі.
 
 ## Вимоги
@@ -58,7 +59,7 @@ export PINGUI_JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64   # за потреб
 ```bat
 cd java
 pingui-java.bat --build
-pingui-java.bat
+pingui-java.bat --config config/hosts.windows.example.yaml
 ```
 
 ## Збірка та пакування

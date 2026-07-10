@@ -1,0 +1,17 @@
+# Expert ping quick presets (P14-040).
+# Args must be accepted by PingExpertValidator (no -c/-w/-W/-i/-f/-l).
+# Address family (-4/-6) is kept from the dialog when a preset is applied.
+
+presets:
+  - id: mtu_probe
+    label: MTU probe
+    args: ["-M", "probe", "-s", "1472"]
+  - id: df
+    label: DF
+    args: ["-M", "do"]
+  - id: dscp
+    label: DSCP
+    args: ["-Q", "46"]
+  - id: burst
+    label: Burst
+    args: ["-s", "1024", "-O"]

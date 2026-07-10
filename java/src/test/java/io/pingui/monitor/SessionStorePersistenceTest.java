@@ -60,6 +60,28 @@ class SessionStorePersistenceTest {
     }
 
     @Test
+    void appendPingSamplesAfterDbReopen() {
+        Path dbPath = tempDir.resolve("append-reopen.db");
+        try (SessionDatabase db = new SessionDatabase(dbPath)) {
+            SessionStore store = new SessionStore(List.of("8.8.8.8"), db);
+            RouteSnapshot snapshot =
+                    new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 4.0, false)));
+            store.appendPingSamples("8.8.8.8", snapshot);
+            store.close();
+        }
+
+        try (SessionDatabase db2 = new SessionDatabase(dbPath)) {
+            SessionStore restored = new SessionStore(List.of("8.8.8.8"), db2);
+            RouteSnapshot next =
+                    new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 6.0, false)));
+            restored.appendPingSamples("8.8.8.8", next);
+            assertEquals(
+                    List.of(4.0, 6.0), restored.get("8.8.8.8").getPingHistory().get("10.0.0.1"));
+            restored.close();
+        }
+    }
+
+    @Test
     void removeHostDeletesRow() {
         Path dbPath = tempDir.resolve("delete.db");
         try (SessionDatabase db = new SessionDatabase(dbPath)) {

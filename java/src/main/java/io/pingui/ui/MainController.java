@@ -5,10 +5,13 @@ import io.pingui.CliProfileOverrides;
 import io.pingui.config.ConfigError;
 import io.pingui.config.HostEntry;
 import io.pingui.config.PersistenceConfig;
+import io.pingui.config.PingPresets;
 import io.pingui.config.ProfileDocument;
 import io.pingui.config.ProfilesConfig;
 import io.pingui.config.SessionDbResolver;
 import io.pingui.config.TracingProfile;
+import io.pingui.dns.DnsResolver;
+import io.pingui.geoip.AsnLookup;
 import io.pingui.geoip.GeoCountry;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.monitor.MonitorService;
@@ -62,7 +65,7 @@ public final class MainController {
     private SessionStore store;
     private MonitorService monitor;
     private final ObservableList<HostItem> hostItems = FXCollections.observableArrayList();
-    private final ListView<HostItem> hostList = new ListView<>(hostItems);
+    private final ListView<HostItem> hostList = new ListView<>();
     private final TextField hostInput = new TextField();
     private final TextArea logArea = new TextArea();
     private final GraphCanvas graphCanvas = new GraphCanvas();
@@ -93,6 +96,7 @@ public final class MainController {
     private ViewModeController viewModeController;
     private RouteGraphPresenter routeGraphPresenter;
     private RouteHistoryPresenter routeHistoryPresenter;
+    private final RouteDiffPresenter routeDiffPresenter = new RouteDiffPresenter();
     private final HistoryHostSync historyHostSync = new HistoryHostSync();
 
     public MainController(AppOptions options, ProfileDocument document) {
@@ -100,9 +104,13 @@ public final class MainController {
         this.profileDocument = document;
         applyCliOverridesToActiveProfile();
         GeoCountry.configure(options.geoipEnabled(), options.geoipHintsPath());
+        AsnLookup.configure(options.asnEnabled(), options.asnHintsPath(), options.asnTimeoutMs());
+        DnsResolver.configure(true);
+        PingPresets.configure(PingPresets.resolvePath(options.configPath()));
         TracingProfile active = profileDocument.active();
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(active.hosts());
-        this.store = SessionStore.fromEntries(sessionHosts, openSessionDatabase());
+        this.store = SessionStore.fromEntries(
+                sessionHosts, openSessionDatabase(), profileDocument.active().hostProbeMode());
         this.monitor = createMonitor(active, sessionHosts);
         initCoordinators();
         hostListPresenter.rebuild(sessionHosts);
@@ -116,10 +124,12 @@ public final class MainController {
 
         Button addButton = new Button("Додати");
         Button editButton = new Button("Змінити");
+        Button tagsButton = new Button("Теги");
         Button removeButton = new Button("Видалити");
         Button saveButton = new Button("Зберегти");
         addButton.setOnAction(e -> hostListPresenter.addHost());
         editButton.setOnAction(e -> hostListPresenter.editHost());
+        tagsButton.setOnAction(e -> hostListPresenter.editSelectedHostTags());
         removeButton.setOnAction(e -> hostListPresenter.removeHost());
         saveButton.setOnAction(e -> onSaveConfig());
         hostInput.setOnAction(e -> hostListPresenter.addHost());
@@ -156,8 +166,18 @@ public final class MainController {
         HBox.setHgrow(profileCombo, Priority.ALWAYS);
 
         HBox modeBar = new HBox(12, new Label("Режим:"), simpleMode, extendedModeButton, expertCheck);
-        HBox buttons = new HBox(8, addButton, editButton, removeButton, saveButton);
-        leftPanel.getChildren().addAll(profileBar, modeBar, hostList, hostInput, buttons, statusLabel, logArea);
+        HBox buttons = new HBox(8, addButton, editButton, tagsButton, removeButton, saveButton);
+        leftPanel
+                .getChildren()
+                .addAll(
+                        profileBar,
+                        modeBar,
+                        hostListPresenter.tagFilterBar(),
+                        hostList,
+                        hostInput,
+                        buttons,
+                        statusLabel,
+                        logArea);
         VBox.setVgrow(hostList, Priority.NEVER);
         VBox.setVgrow(logArea, Priority.ALWAYS);
         leftPanel.setPadding(new Insets(8));
@@ -170,7 +190,7 @@ public final class MainController {
             }
         });
 
-        graphPanel.getChildren().addAll(new Label("Граф маршруту"), graphCanvas);
+        graphPanel.getChildren().addAll(new Label("Граф маршруту"), graphCanvas, routeDiffPresenter.panel());
         configureHistoryPanel();
         VBox.setVgrow(graphCanvas, Priority.ALWAYS);
         graphPanel.setPadding(new Insets(8));
@@ -233,7 +253,8 @@ public final class MainController {
                 this::clearHistoryReplay,
                 this::onHostRenamed,
                 this::startEasterEgg,
-                () -> viewModeController.fitWindowToContent());
+                () -> viewModeController.fitWindowToContent(),
+                historyHostSync::runWhileSyncing);
 
         viewModeController = new ViewModeController(
                 graphPanel,
@@ -249,7 +270,13 @@ public final class MainController {
                 () -> easterEggActive);
 
         routeGraphPresenter = new RouteGraphPresenter(
-                graphCanvas, hostList, () -> store, () -> viewModeController.isExtended(), () -> easterEggActive);
+                graphCanvas,
+                hostList,
+                () -> store,
+                () -> viewModeController.isExtended(),
+                () -> easterEggActive,
+                routeDiffPresenter);
+        DnsResolver.addListener(() -> Platform.runLater(routeGraphPresenter::redrawIfExtended));
 
         routeHistoryPresenter = new RouteHistoryPresenter(
                 () -> store,
@@ -271,6 +298,7 @@ public final class MainController {
             if (historyHostSync.isSyncing()) {
                 return;
             }
+            hostListPresenter.ensureHostVisibleForTagFilter(newHost);
             historyHostSync.syncHostListFromFilter(newHost, hostItems, hostList);
             redrawRouteGraph();
         });
@@ -468,7 +496,7 @@ public final class MainController {
         TracingProfile profile = profileDocument.active();
         monitor.close();
         store.close();
-        store = SessionStore.fromEntries(liveEntries, openSessionDatabase());
+        store = SessionStore.fromEntries(liveEntries, openSessionDatabase(), profile.hostProbeMode());
         sessionPersistenceOverride = policyOverride != null ? policyOverride : Optional.empty();
         monitor = createMonitor(profile, liveEntries);
         updateHistoryPanelVisibility();
@@ -501,7 +529,7 @@ public final class MainController {
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(profile.hosts());
         monitor.close();
         store.close();
-        store = SessionStore.fromEntries(sessionHosts, openSessionDatabase());
+        store = SessionStore.fromEntries(sessionHosts, openSessionDatabase(), profile.hostProbeMode());
         monitor = createMonitor(profile, sessionHosts);
         updateHistoryPanelVisibility();
         hostListPresenter.rebuild(sessionHosts);

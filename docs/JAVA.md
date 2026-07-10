@@ -45,7 +45,50 @@ Python використовує scapy + raw ICMP. Java підтримує два
 
 CLI: `--probe auto|process|raw` (default: `auto`).
 
-> **Продуктивність:** на **Windows** subprocess trace через `tracert` на порядки повільніший за Linux `traceroute` (`-q 1`). Для production-моніторингу рекомендується **Linux**; на Windows — **Ping only** або великий `interval`. Див. [DEPLOYMENT.md](DEPLOYMENT.md#рекомендація-щодо-ос).
+### Режими poll (`probe_mode`, P13-001…050)
+
+Ортогонально транспорту `probe:` — це **стратегія моніторингу**, не backend trace.
+
+| `probe_mode` | Виклик | За один poll | Per-hop RTT/loss | Зміна маршруту |
+|--------------|--------|--------------|------------------|----------------|
+| **`trace`** | `RoutePoller.pollHostRoute` → `RouteProbe.trace()` | Повний trace усіх hop-ів | Так (expert/default ping) | Порівняння повного шляху |
+| **`mtr`** | `RoutePoller.pollHostMtr` → `MtrProbe` | **Один hop** (TTL probe) | Так, інкрементально | DISCOVERING росте по prefix; burst лише на reroute |
+| **`ping_only`** | `RoutePoller.pollHostPingOnly` | Ping до цілі | Лише ціль | Hop-ів немає |
+
+YAML (профіль + override на хост):
+
+```yaml
+profiles:
+  default:
+    probe_mode: trace          # trace | mtr | ping_only
+    interval: 30.0
+    max_concurrent_traces: 3
+    hosts:
+      - address: "8.8.8.8"
+        probe_mode: ping_only  # optional override
+```
+
+Legacy `ping_only: true` на хості → `probe_mode: ping_only` (deprecated flag; збережено для backward compat).
+
+Див. [ADR_PROBE_MODES.md](ADR_PROBE_MODES.md).
+
+#### MTR vs повний trace — known limitations (P13-050)
+
+| Тема | `trace` | `mtr` |
+|------|---------|-------|
+| Навантаження за цикл | Усі hop-и (subprocess або raw ICMP) | Один hop за виклик `MtrProbe.poll()` |
+| Транспорт | Залежить від `probe:` (`auto`/`process`/`raw`) | `IcmpMtrHopProber` / platform ping — **не** зовнішній `mtr` subprocess |
+| Discovery маршруту | Повний шлях одразу | Фаза **DISCOVERING**: hop 1→N поки не досягнуто цілі |
+| Windows | Повільний `tracert` (3 probe/hop) | Легші per-hop ping; рекомендовано `ping_only` на Windows |
+| `probe: raw` | Raw ICMP trace (Linux) | MTR **не** використовує `RawIcmpRouteProbe` |
+| Expert ping | Після trace (chain/target) | Після MTR snapshot, якщо expert налаштовано |
+| Паралелізм | Ліміт `max_concurrent_traces` | Без ліміту (легкі probe) |
+| Інтервал (default) | `interval` профілю (30–300 с) | 10 с; `ping_only` — 1.5 с (`HostPollSchedule`) |
+| Burst після reroute | Так (`BurstSchedulePolicy`) | Ні на prefix growth (лише справжній reroute) |
+
+**Не є MTR:** парсинг виводу зовнішньої утиліти `mtr`/`mtr.exe` — поза scope (див. parser table нижче). In-process state machine — див. `MtrProbe`, `MtrProbeState`.
+
+> **Продуктивність:** на **Windows** subprocess trace через `tracert` на порядки повільніший за Linux `traceroute` (`-q 1`). Стартовий пресет `config/hosts.windows.example.yaml` (`probe_mode: ping_only`, `interval: 60`). Див. [DEPLOYMENT.md](DEPLOYMENT.md#рекомендація-щодо-ос).
 
 ### ProcessRouteProbe (subprocess)
 
@@ -66,7 +109,7 @@ CLI: `--probe auto|process|raw` (default: `auto`).
 | **Unix hostname hops** | Token після номера hop зберігається як «IP» (може бути hostname) |
 | **Windows локалізація** | Timeout: `timed out`, `timeout`, `перевищ…`; RTT: `ms` / `мс`, `<1 ms` → 0.5 |
 | **GNU inetutils** | Flavor без `-n`; `-n` дає exit 64 — детекція через `traceroute --version` |
-| **Mixed trace formats** | Лише класичний vertical traceroute/tracert; MTR/JSON — поза scope |
+| **Mixed trace formats** | Лише класичний vertical traceroute/tracert; вивід зовнішнього **mtr** / JSON — поза scope (`probe_mode: mtr` ≠ subprocess mtr) |
 
 ### RawIcmpRouteProbe (JNA, Linux)
 
@@ -74,16 +117,20 @@ CLI: `--probe auto|process|raw` (default: `auto`).
 
 Потрібно: `sudo setcap cap_net_raw+ep` на JDK binary або запуск від root. IPv6 literal у режимі `probe: raw`; у `probe: auto` — subprocess `traceroute -6`.
 
-## Monitor-шар
+## Monitor-шар (P13-020…030)
 
-`MonitorService` — один daemon thread (`ScheduledExecutorService`):
+`MonitorService` — scheduler tick **0.25 с** + пул probe-потоків:
 
-1. Збирає enabled хости.
-2. `RoutePoller.pollHostRoute()` → `RouteProbe.trace()`.
-3. Якщо для хоста налаштовано expert ping — `ExpertPingEnricher` виконує `ping -c 1` з додатковими flags.
-4. Callbacks: `onDataReceived`, `onRouteChanged`, `onProbeError`.
+1. `cycle()` — лише **due** хости (`HostPollSchedule`, per-host `lastPollAt`).
+2. `dispatchDueHost()` — `TraceConcurrencyLimiter` для `probe_mode: trace`.
+3. `pollHostOnce()` гілкується за `resolveProbeMode(host)`:
+   - **trace** → `pollHostRoute`
+   - **mtr** → `pollHostMtr`
+   - **ping_only** → `pollHostPingOnly`
+4. `BurstSchedulePolicy` — ×0.25 інтервал на 5 хв після reroute (не MTR prefix growth).
+5. Expert/default ping enrich для trace/mtr; callbacks + persistence + alerts.
 
-Логіка store/history/change detection — порт з Python (`SessionStore`, `RouteHistory`, `RouteChangeDetector`).
+Store/history/change detection — `SessionStore`, `RouteHistory`, `RouteChangeDetector`.
 
 ## UI-шар
 
@@ -91,7 +138,7 @@ CLI: `--probe auto|process|raw` (default: `auto`).
 
 - Меню **Про** / **Довідка** (F1) — `AppMenuDialogs`
 - Вибір **профілю трасування** (ComboBox + новий/видалити); усі профілі в одному YAML
-- Чекбокс **«Експерт»** → кнопка **Exten.** на рядку хоста → `PingExpertDialog` (каталог з `pingMan.txt`, без `-c/-w/-W/-i` тощо)
+- Чекбокс **«Експерт»** → кнопка **Exten.** на рядку хоста → `PingExpertDialog` (каталог з `pingMan.txt`, без `-c/-w/-W/-i` тощо); 4 quick presets з `ping_presets.yaml` (MTU probe, DF, DSCP, Burst)
 - `ListView<HostItem>` + CheckBox у комірці
 - **GraphCanvas** — вертикальний граф, inactive/active колонки
 - Log `TextArea`
@@ -110,6 +157,8 @@ profiles:
     max_hops: 20
     timeout: 0.5
     probe: auto
+    probe_mode: trace
+    max_concurrent_traces: 3
     hosts:
       - address: "8.8.8.8"
         enabled: true

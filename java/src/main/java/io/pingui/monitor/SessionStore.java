@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalDouble;
 
 /** In-memory session storage for route and ping metrics; optional SQLite persistence (P11-011). */
 public final class SessionStore implements AutoCloseable {
@@ -38,8 +39,13 @@ public final class SessionStore implements AutoCloseable {
     }
 
     public static SessionStore fromEntries(List<HostEntry> entries, SessionDatabase database) {
+        return fromEntries(entries, database, HostProbeMode.TRACE);
+    }
+
+    public static SessionStore fromEntries(
+            List<HostEntry> entries, SessionDatabase database, HostProbeMode profileDefault) {
         SessionStore store = new SessionStore(List.of(), database);
-        store.loadHostEntries(entries);
+        store.loadHostEntries(entries, profileDefault);
         return store;
     }
 
@@ -72,13 +78,17 @@ public final class SessionStore implements AutoCloseable {
     }
 
     public String addHost(String host, boolean enabled, boolean pingOnly, PingExpertEntry pingExpert) {
+        return addHost(host, enabled, pingOnly ? HostProbeMode.PING_ONLY : HostProbeMode.TRACE, pingExpert);
+    }
+
+    public String addHost(String host, boolean enabled, HostProbeMode probeMode, PingExpertEntry pingExpert) {
         String normalized = HostsConfig.validateSessionHost(host, hosts());
         if (data.containsKey(normalized)) {
             throw new ConfigError("Host already in list: " + normalized);
         }
         HostSessionData session = new HostSessionData();
         session.setEnabled(enabled);
-        session.setPingOnly(pingOnly);
+        session.setProbeMode(probeMode);
         session.setPingExpert(pingExpert);
         data.put(normalized, session);
         persist(normalized);
@@ -108,25 +118,52 @@ public final class SessionStore implements AutoCloseable {
         get(host).setPingExpert(expert);
     }
 
+    public List<String> getTags(String host) {
+        return get(host).getTags();
+    }
+
+    /** Replaces host tags (normalized via {@link io.pingui.config.HostTags}). */
+    public void setTags(String host, List<String> tags) {
+        get(host).setTags(tags);
+    }
+
     public boolean isPingOnly(String host) {
         return get(host).isPingOnly();
     }
 
-    public void setPingOnly(String host, boolean pingOnly) {
+    public HostProbeMode getProbeMode(String host) {
+        return get(host).getProbeMode();
+    }
+
+    public OptionalDouble getIntervalOverride(String host) {
+        Double override = get(host).getIntervalSecondsOverride();
+        return override != null ? OptionalDouble.of(override) : OptionalDouble.empty();
+    }
+
+    public void setProbeMode(String host, HostProbeMode probeMode) {
         HostSessionData session = get(host);
-        session.setPingOnly(pingOnly);
+        session.setProbeMode(probeMode);
+        session.setProbeModeOverride(null);
         session.setCurrentRoute(List.of());
         session.setPreviousRoute(List.of());
         session.getLastKnownByHop().clear();
         persist(host);
     }
 
+    public void setPingOnly(String host, boolean pingOnly) {
+        setProbeMode(host, pingOnly ? HostProbeMode.PING_ONLY : HostProbeMode.TRACE);
+    }
+
     public void loadHostEntries(List<HostEntry> entries) {
+        loadHostEntries(entries, HostProbeMode.TRACE);
+    }
+
+    public void loadHostEntries(List<HostEntry> entries, HostProbeMode profileDefault) {
         data.clear();
         for (HostEntry entry : entries) {
             HostSessionData session = database != null ? loadOrCreate(entry.address()) : new HostSessionData();
             session.setEnabled(entry.enabled());
-            session.setPingOnly(entry.pingOnly());
+            session.applyProbeFromEntry(entry, profileDefault);
             session.setPingExpert(entry.pingExpert());
             data.put(entry.address(), session);
             persist(entry.address());
@@ -137,7 +174,15 @@ public final class SessionStore implements AutoCloseable {
         List<HostEntry> out = new ArrayList<>();
         for (Map.Entry<String, HostSessionData> entry : data.entrySet()) {
             HostSessionData session = entry.getValue();
-            out.add(new HostEntry(entry.getKey(), session.isEnabled(), session.isPingOnly(), session.getPingExpert()));
+            boolean pingOnly = session.isPingOnly() && session.getProbeModeOverride() == null;
+            out.add(new HostEntry(
+                    entry.getKey(),
+                    session.isEnabled(),
+                    pingOnly,
+                    session.getPingExpert(),
+                    session.getProbeModeOverride(),
+                    session.getIntervalSecondsOverride(),
+                    session.getTags()));
         }
         return List.copyOf(out);
     }
@@ -193,8 +238,8 @@ public final class SessionStore implements AutoCloseable {
             if (!node.isReachable() || node.pingMs() == null) {
                 continue;
             }
-            history.computeIfAbsent(node.ip(), ignored -> new ArrayList<>()).add(node.pingMs());
-            List<Double> samples = history.get(node.ip());
+            List<Double> samples = mutablePingSamples(history, node.ip());
+            samples.add(node.pingMs());
             if (samples.size() > MAX_PING_SAMPLES) {
                 samples.subList(0, samples.size() - MAX_PING_SAMPLES).clear();
             }
@@ -203,6 +248,21 @@ public final class SessionStore implements AutoCloseable {
         if (changed) {
             persist(host);
         }
+    }
+
+    private static List<Double> mutablePingSamples(Map<String, List<Double>> history, String ip) {
+        List<Double> existing = history.get(ip);
+        if (existing == null) {
+            ArrayList<Double> created = new ArrayList<>();
+            history.put(ip, created);
+            return created;
+        }
+        if (existing instanceof ArrayList) {
+            return existing;
+        }
+        ArrayList<Double> copy = new ArrayList<>(existing);
+        history.put(ip, copy);
+        return copy;
     }
 
     public Double avgPing(String host, String ip) {

@@ -1,6 +1,7 @@
 package io.pingui.model;
 
 import io.pingui.config.PingExpertEntry;
+import io.pingui.monitor.HostProbeMode;
 import java.time.Instant;
 import java.util.List;
 
@@ -87,6 +88,10 @@ public final class Models {
         private final java.util.Map<Integer, HopProbeStats> hopStats = new java.util.HashMap<>();
         private boolean enabled;
         private boolean pingOnly;
+        private HostProbeMode probeMode = HostProbeMode.TRACE;
+        private HostProbeMode probeModeOverride;
+        private Double intervalSecondsOverride;
+        private java.util.List<String> tags = java.util.List.of();
         private PingExpertEntry pingExpert = PingExpertEntry.empty();
 
         public List<HopNode> getCurrentRoute() {
@@ -126,11 +131,60 @@ public final class Models {
         }
 
         public boolean isPingOnly() {
-            return pingOnly;
+            return probeMode == HostProbeMode.PING_ONLY;
         }
 
         public void setPingOnly(boolean pingOnly) {
-            this.pingOnly = pingOnly;
+            if (pingOnly) {
+                setProbeMode(HostProbeMode.PING_ONLY);
+            } else if (probeMode == HostProbeMode.PING_ONLY) {
+                setProbeMode(HostProbeMode.TRACE);
+            }
+            this.pingOnly = this.probeMode == HostProbeMode.PING_ONLY;
+        }
+
+        public HostProbeMode getProbeMode() {
+            return probeMode;
+        }
+
+        public HostProbeMode getProbeModeOverride() {
+            return probeModeOverride;
+        }
+
+        public void setProbeMode(HostProbeMode mode) {
+            probeMode = mode != null ? mode : HostProbeMode.TRACE;
+            pingOnly = probeMode == HostProbeMode.PING_ONLY;
+        }
+
+        public void setProbeModeOverride(HostProbeMode override) {
+            probeModeOverride = override;
+        }
+
+        public Double getIntervalSecondsOverride() {
+            return intervalSecondsOverride;
+        }
+
+        public void setIntervalSecondsOverride(Double override) {
+            if (override != null && override <= 0) {
+                throw new IllegalArgumentException("interval must be positive");
+            }
+            intervalSecondsOverride = override;
+        }
+
+        public java.util.List<String> getTags() {
+            return tags;
+        }
+
+        public void setTags(java.util.List<String> tags) {
+            this.tags = io.pingui.config.HostTags.normalize(tags);
+        }
+
+        public void applyProbeFromEntry(io.pingui.config.HostEntry entry, HostProbeMode profileDefault) {
+            probeModeOverride = entry.probeModeOverride();
+            intervalSecondsOverride = entry.intervalSecondsOverride();
+            tags = entry.tags();
+            probeMode = entry.effectiveProbeMode(profileDefault);
+            pingOnly = probeMode == HostProbeMode.PING_ONLY;
         }
 
         public PingExpertEntry getPingExpert() {

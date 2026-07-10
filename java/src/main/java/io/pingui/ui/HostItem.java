@@ -1,6 +1,7 @@
 package io.pingui.ui;
 
 import io.pingui.monitor.HostTargetStats;
+import java.util.List;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -17,16 +18,23 @@ public final class HostItem {
     private final BooleanProperty showMetrics = new SimpleBooleanProperty(false);
     private final BooleanProperty expertConfigured = new SimpleBooleanProperty(false);
     private final StringProperty metricsText = new SimpleStringProperty("");
+    private final StringProperty tagsText = new SimpleStringProperty("");
     private final StringProperty rowColor = new SimpleStringProperty(DISABLED_ROW);
+    private List<String> tags = List.of();
 
     public HostItem(String host, boolean enabled) {
-        this(host, enabled, false);
+        this(host, enabled, false, List.of());
     }
 
     public HostItem(String host, boolean enabled, boolean pingOnly) {
+        this(host, enabled, pingOnly, List.of());
+    }
+
+    public HostItem(String host, boolean enabled, boolean pingOnly, List<String> tags) {
         this.host.set(host);
         this.enabled.set(enabled);
         this.pingOnly.set(pingOnly);
+        setTags(tags);
         if (!enabled) {
             clearMetrics();
         } else {
@@ -58,6 +66,10 @@ public final class HostItem {
         return metricsText;
     }
 
+    public StringProperty tagsTextProperty() {
+        return tagsText;
+    }
+
     public StringProperty rowColorProperty() {
         return rowColor;
     }
@@ -80,6 +92,19 @@ public final class HostItem {
 
     public void setExpertConfigured(boolean configured) {
         expertConfigured.set(configured);
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags != null ? List.copyOf(tags) : List.of();
+        tagsText.set(this.tags.isEmpty() ? "" : String.join(", ", this.tags));
+    }
+
+    public boolean hasTag(String tag) {
+        return io.pingui.config.HostTags.matchesFilter(tags, tag);
     }
 
     public void clearMetrics() {

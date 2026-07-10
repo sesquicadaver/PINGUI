@@ -94,7 +94,7 @@ final class SessionJsonCodec {
             for (Object value : list) {
                 samples.add(asDouble(value));
             }
-            result.put(entry.getKey(), List.copyOf(samples));
+            result.put(entry.getKey(), samples);
         }
         return result;
     }

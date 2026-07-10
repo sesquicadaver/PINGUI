@@ -7,6 +7,17 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **ROADMAP NEXT + лінійна черга:** у `docs/ROADMAP.md` / `docs/en/ROADMAP.md` і кореневих `ROADMAP*.md` — єдине поле **Поточна задача**; `/autopilot` без аргументів завжди бере цей ID (без питання «який пункт?»). Правило агента: `.cursor/rules/roadmap-next.mdc`.
+
+### Fixed
+
+- **RouteHistoryPresenterTest:** фіксовані timestamps `2026-07-09` виходили за 24h lookback — тести використовують відносний `Instant.now()`.
+- **Java UI:** додавання другого хоста більше не перемикає фільтр «Ціль» в «Історії змін» на новий хост — історія лишається для поточної цілі.
+- **CI:** GitHub Actions оновлено на Node.js 24 (`checkout@v6`, `setup-java@v5`, `setup-python@v6`) — прибирає deprecation Node 20.
+- **Java persistence:** `appendPingSamples` no longer crashes after SQLite reopen when ping history lists were loaded as immutable (`UnsupportedOperationException` on GUI poll).
+
 ### Added
 
 - **Alerts ADR (P10-001):** `docs/ADR_ALERTS.md` — channels (webhook, desktop), `RouteChangeEvent` JSON, rate limit, failure policy.
@@ -27,6 +38,20 @@
 - **Java hop stats from history (P11-040):** `hop_stats` persist to SQLite on every probe; graph labels (`j:`/`loss:`) survive session reopen.
 - **SQLite disk/retention docs (P11-050):** `docs/DEPLOYMENT.md` — no auto-TTL on `host_session`, manual event purge, sizing notes.
 - **Java headless daemon (P12-001…040):** `--daemon`, `--pid-file`, `--stop`, `--status`; `DaemonRunner`; `systemd/pingui-java.service.example`; [ADR_DAEMON.md](docs/ADR_DAEMON.md).
+- **Probe modes ADR (P13-001):** [ADR_PROBE_MODES.md](docs/ADR_PROBE_MODES.md) — `trace | mtr | ping_only` vs transport `probe: auto|process|raw`; MTR = continuous per-hop.
+- **MTR probe (P13-010):** `MtrProbe` — per-hop state machine (DISCOVERING → MONITORING), one TTL per poll; `RoutePoller.pollHostMtr`.
+- **Probe mode YAML (P13-011):** `probe_mode: trace | mtr | ping_only` на профіль і хост; `MonitorService` гілкує trace/mtr/ping_only; `ping_only: true` → backward compat.
+- **Smart poll interval (P13-020):** `HostPollSchedule` — per-host cadence за `probe_mode` (`ping_only` 1.5s, `mtr` 10s, `trace` = profile `interval`); опційний `interval` на хост; `MonitorService` опитує лише due-хости (tick 0.25s).
+- **Burst on route change (P13-021):** `BurstSchedulePolicy` — після `route_change` інтервал ×0.25 на 5 хв; інтеграція в `MonitorService.resolveIntervalSeconds`.
+- **Trace concurrency cap (P13-030):** `max_concurrent_traces` (default 3) у YAML; `TraceConcurrencyLimiter` обмежує одночасні TRACE-опити; `ping_only`/`mtr` без ліміту.
+- **Windows preset (P13-040):** `config/hosts.windows.example.yaml` — `probe_mode: ping_only`, `interval: 60`; CHECKLIST/DEPLOYMENT Windows.
+- **MTR vs trace docs (P13-050):** `docs/JAVA.md` — `probe_mode`, MTR limitations vs full trace; Monitor-шар оновлено під P13-020…030.
+- **Route diff panel (P14-010):** `RouteDiff` / `RouteDiffPresenter` — hop-by-hop «було → стало» з Δ RTT у розширеному режимі (live + replay історії).
+- **Host tags (P14-020):** YAML `tags: [dc, vpn, …]` на хост; фільтр ListView за тегом; збереження через `ProfilesConfig` / `SessionStore`.
+- **Tag filter chips (P14-021):** quick filter chips у `HostListPresenter`; кнопка «Теги» + `HostTagsDialog`; `SessionStore.setTags` → Save у YAML.
+- **ASN hop labels (P14-030):** offline `AsnLookup` + `asn_hints.yaml`; мітка hop `AS#### Org`; CLI `--asn-hints` / `--no-asn` / `--asn-timeout-ms`.
+- **rDNS hop labels (P14-031):** async `DnsResolver` (PTR, cache TTL 5 хв); мітка hop після IP; redraw графа після resolve.
+- **Expert ping presets (P14-040):** 4 кнопки в `PingExpertDialog` з `ping_presets.yaml` (MTU probe, DF, DSCP, Burst); AF зберігається.
 
 ### Fixed
 

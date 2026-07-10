@@ -7,7 +7,7 @@ Cross-platform PINGUI built with **Java 21 + JavaFX**.
 Runs on **Linux, macOS, and Windows**: route tracing via system
 `traceroute` / `tracert`. Session data is RAM-only by default; optional SQLite via `--session-db` (P11-011…012).
 
-> **Recommendation:** **Linux** is the optimal platform (fast `traceroute -q 1`, Expert ping, raw ICMP). **Windows** is suitable for periodic checks: full trace is slow via `tracert`; in the GUI use **Ping only** or increase `interval` in YAML. [docs/DEPLOYMENT.md](../docs/en/DEPLOYMENT.md#os-recommendation)
+> **Recommendation:** **Linux** is the optimal platform (fast `traceroute -q 1`, Expert ping, raw ICMP). **Windows** is suitable for periodic checks: full trace is slow via `tracert`; starter preset `config/hosts.windows.example.yaml` (`probe_mode: ping_only`, `interval: 60`). [docs/DEPLOYMENT.md](../docs/en/DEPLOYMENT.md#os-recommendation)
 
 ## Requirements
 
@@ -44,7 +44,7 @@ gradlew.bat build
 gradlew.bat run
 rem or
 pingui-java.bat --build
-pingui-java.bat
+pingui-java.bat --config config/hosts.windows.example.yaml
 ```
 
 If `java` is not on PATH:
@@ -84,6 +84,9 @@ gradlew.bat run        # Windows
 | `--no-persist-probe-error` | off | Skip `probe_error` events in SQLite |
 | `--geoip-hints` | `config/geoip_hints.yaml` | Offline CIDR→country |
 | `--no-geoip` | off | Disable country in labels |
+| `--asn-hints` | `config/asn_hints.yaml` | Offline CIDR→ASN+org |
+| `--no-asn` | off | Disable ASN in labels |
+| `--asn-timeout-ms` | `2000` | Reserved for whois fallback |
 | `--verbose` | off | Debug log |
 
 The CLI **does not overwrite** profile defaults (1.0 / 20 / 0.5 / auto) unless the corresponding flag is provided.
@@ -96,6 +99,7 @@ The CLI **does not overwrite** profile defaults (1.0 / 20 / 0.5 / auto) unless t
 - **Add / Edit / Delete / Save** → YAML
 - **Expert** (Linux): **Exten.** → `ping(8)` iputils parameters; single AF (`-4` or `-6`, default IPv4); disabled on Win/mac
 - **Simple** / **Advanced**: RTT metrics, loss %, route graph, change log
+- **Database…** (menu): connect SQLite without CLI; **Route history** — `route_change` timeline + graph replay (advanced mode)
 
 ## Architecture
 

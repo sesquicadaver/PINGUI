@@ -9,7 +9,7 @@
 Працює на **Linux, macOS та Windows**: трасування через системні
 `traceroute` / `tracert`. Дані сесії — в RAM за замовчуванням; опційно SQLite через `--session-db` (P11-011…012).
 
-> **Рекомендація:** **Linux** — оптимальна платформа (швидкий `traceroute -q 1`, Expert ping, raw ICMP). **Windows** — для періодичних перевірок: повний trace повільний через `tracert`; у GUI використовуйте **Ping only** або збільште `interval` у YAML. [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md#рекомендація-щодо-ос)
+> **Рекомендація:** **Linux** — оптимальна платформа (швидкий `traceroute -q 1`, Expert ping, raw ICMP). **Windows** — для періодичних перевірок: повний trace повільний через `tracert`; стартовий пресет `config/hosts.windows.example.yaml` (`probe_mode: ping_only`, `interval: 60`). [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md#рекомендація-щодо-ос)
 
 ## Вимоги
 
@@ -46,7 +46,7 @@ gradlew.bat build
 gradlew.bat run
 rem або
 pingui-java.bat --build
-pingui-java.bat
+pingui-java.bat --config config/hosts.windows.example.yaml
 ```
 
 Якщо `java` не в PATH:
@@ -90,6 +90,9 @@ gradlew.bat run        # Windows
 | `--no-persist-probe-error` | off | Не писати `probe_error` у SQLite |
 | `--geoip-hints` | `config/geoip_hints.yaml` | Offline CIDR→країна |
 | `--no-geoip` | off | Вимкнути країну в підписах |
+| `--asn-hints` | `config/asn_hints.yaml` | Offline CIDR→ASN+org |
+| `--no-asn` | off | Вимкнути ASN у підписах |
+| `--asn-timeout-ms` | `2000` | Резерв під whois fallback |
 | `--verbose` | off | Debug-лог |
 
 CLI **не затирає** поля профілю defaults (1.0 / 20 / 0.5 / auto), якщо відповідний прапор не передано.
@@ -102,6 +105,7 @@ CLI **не затирає** поля профілю defaults (1.0 / 20 / 0.5 / a
 - **Додати / Змінити / Видалити / Зберегти** → YAML
 - **Експерт** (Linux): **Exten.** → параметри `ping(8)` iputils; один AF (`-4` або `-6`, default IPv4); на Win/mac disabled
 - **Простий** / **Розширений**: метрики RTT, loss %, граф маршруту, лог змін
+- **База даних…** (меню): підключення SQLite без CLI; **Історія змін** — timeline `route_change` + replay на графі (розширений режим)
 
 ## Архітектура
 

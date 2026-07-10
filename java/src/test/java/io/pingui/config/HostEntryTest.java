@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.pingui.monitor.HostProbeMode;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -43,6 +44,25 @@ class HostEntryTest {
     void withPingExpertNullUsesEmpty() {
         HostEntry entry = HostEntry.basic("8.8.8.8", false).withPingExpert(null);
         assertFalse(entry.pingExpert().isConfigured());
+    }
+
+    @Test
+    void withTagsPreservesOtherFields() {
+        HostEntry entry = HostEntry.basic("8.8.8.8", true).withTags(List.of("dc", "VPN"));
+        assertEquals(List.of("dc", "vpn"), entry.tags());
+        assertTrue(entry.enabled());
+    }
+
+    @Test
+    void effectiveIntervalUsesModeDefaultsAndOverride() {
+        HostEntry trace = HostEntry.basic("8.8.8.8", true);
+        assertEquals(30.0, trace.effectiveIntervalSeconds(HostProbeMode.TRACE, 30.0));
+
+        HostEntry pingOnly = trace.withPingOnly(true);
+        assertEquals(1.5, pingOnly.effectiveIntervalSeconds(HostProbeMode.TRACE, 30.0));
+
+        HostEntry override = pingOnly.withIntervalSecondsOverride(0.75);
+        assertEquals(0.75, override.effectiveIntervalSeconds(HostProbeMode.TRACE, 30.0));
     }
 
     @Test

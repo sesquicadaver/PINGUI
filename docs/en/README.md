@@ -2,7 +2,7 @@
 
 # PINGUI documentation
 
-On **`beta`** — full package (Java + Python). On **`main`** — Java docs for launch.
+On **`beta`** — full package (Java phases 9–12 + Python). On **`main`** — stable Java GUI without P10–P12; see the Branches section in [README.en.md](../README.en.md).
 
 ## Navigation
 
@@ -15,6 +15,8 @@ On **`beta`** — full package (Java + Python). On **`main`** — Java docs for 
 | [LIVING_SPEC.md](LIVING_SPEC.md) | Developer | Module → tests matrix |
 | [ADR_IPV6.md](ADR_IPV6.md) | Developer | Dual-stack config ADR (V6-002) |
 | [ADR_ALERTS.md](ADR_ALERTS.md) | Developer | Route-change alerts ADR (P10-001) |
+| [ADR_DAEMON.md](ADR_DAEMON.md) | Developer | Headless daemon ADR (P12-001) |
+| [ADR_PROBE_MODES.md](ADR_PROBE_MODES.md) | Developer | Probe modes trace/mtr/ping_only ADR (P13-001) |
 | [SPIKE_IPV6.md](SPIKE_IPV6.md) | Developer | IPv6 scope (**planned**, phase 9 V6-*) |
 | [SPIKE_PERSISTENCE.md](SPIKE_PERSISTENCE.md) | Developer | SQLite session schema (phase 11 P11-*) |
 | [CONFIGURATION.md](CONFIGURATION.md) | Developer | YAML, CLI (Python) |

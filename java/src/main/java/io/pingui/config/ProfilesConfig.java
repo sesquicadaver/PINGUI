@@ -1,5 +1,6 @@
 package io.pingui.config;
 
+import io.pingui.monitor.HostProbeMode;
 import io.pingui.probe.ProbeMode;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -94,6 +95,11 @@ public final class ProfilesConfig {
         if (probeObj instanceof String probeStr && !probeStr.isBlank()) {
             probe = ProbeMode.parse(probeStr);
         }
+        HostProbeMode hostProbeMode = HostProbeMode.TRACE;
+        Object hostProbeModeObj = map.get("probe_mode");
+        if (hostProbeModeObj instanceof String hostProbeModeStr && !hostProbeModeStr.isBlank()) {
+            hostProbeMode = HostProbeMode.parse(hostProbeModeStr);
+        }
         Object hostsObj = map.get("hosts");
         if (!(hostsObj instanceof List<?> hostsList)) {
             throw new ConfigError("Profile '" + name + "' must contain 'hosts' list");
@@ -101,7 +107,10 @@ public final class ProfilesConfig {
         List<HostEntry> hosts = parseHostEntries(hostsList, name);
         AlertConfig alerts = parseAlerts(map, name);
         PersistenceConfig persistence = parsePersistence(map, name);
-        return new TracingProfile(interval, maxHops, timeout, probe, hosts, alerts, persistence);
+        int maxConcurrentTraces =
+                readInt(map, "max_concurrent_traces", io.pingui.monitor.TraceConcurrencyLimiter.DEFAULT_MAX, name);
+        return new TracingProfile(
+                interval, maxHops, timeout, probe, hostProbeMode, hosts, alerts, persistence, maxConcurrentTraces);
     }
 
     private static PersistenceConfig parsePersistence(Map<?, ?> map, String profileName) {
@@ -193,6 +202,11 @@ public final class ProfilesConfig {
             String normalized = HostsConfig.normalizeHostEntry(address);
             boolean enabled = readBoolean(hostMap.get("enabled"), false);
             boolean pingOnly = readBoolean(hostMap.get("ping_only"), false);
+            HostProbeMode probeModeOverride = null;
+            Object hostProbeModeObj = hostMap.get("probe_mode");
+            if (hostProbeModeObj instanceof String hostProbeModeStr && !hostProbeModeStr.isBlank()) {
+                probeModeOverride = HostProbeMode.parse(hostProbeModeStr);
+            }
             PingExpertEntry expert = PingExpertEntry.empty();
             Object expertObj = hostMap.get("ping_expert");
             if (expertObj instanceof Map<?, ?> expertMap) {
@@ -200,7 +214,24 @@ public final class ProfilesConfig {
                 List<String> args = readStringList(expertMap.get("args"), "ping_expert.args", profileName);
                 expert = new PingExpertEntry(chain, args);
             }
-            return new HostEntry(normalized, enabled, pingOnly, expert);
+            Double intervalOverride = null;
+            Object intervalObj = hostMap.get("interval");
+            if (intervalObj != null) {
+                if (!(intervalObj instanceof Number number)) {
+                    throw new ConfigError("Host in profile '" + profileName + "' interval must be a number");
+                }
+                double parsed = number.doubleValue();
+                if (parsed <= 0) {
+                    throw new ConfigError("Host in profile '" + profileName + "' interval must be positive");
+                }
+                intervalOverride = parsed;
+            }
+            List<String> tags = List.of();
+            Object tagsObj = hostMap.get("tags");
+            if (tagsObj != null) {
+                tags = readStringList(tagsObj, "tags", profileName);
+            }
+            return new HostEntry(normalized, enabled, pingOnly, expert, probeModeOverride, intervalOverride, tags);
         }
         throw new ConfigError("Each host in profile '" + profileName + "' must be a string or mapping, got "
                 + (entry == null ? "null" : entry.getClass().getSimpleName()));
@@ -212,6 +243,12 @@ public final class ProfilesConfig {
         map.put("max_hops", profile.maxHops());
         map.put("timeout", profile.timeoutSeconds());
         map.put("probe", profile.probeMode().cliValue());
+        if (profile.hostProbeMode() != HostProbeMode.TRACE) {
+            map.put("probe_mode", profile.hostProbeMode().yamlValue());
+        }
+        if (profile.maxConcurrentTraces() != io.pingui.monitor.TraceConcurrencyLimiter.DEFAULT_MAX) {
+            map.put("max_concurrent_traces", profile.maxConcurrentTraces());
+        }
         List<Object> hostsOut = new ArrayList<>();
         for (HostEntry host : profile.hosts()) {
             hostsOut.add(hostEntryToMap(host));
@@ -250,7 +287,12 @@ public final class ProfilesConfig {
 
     private static Map<String, Object> hostEntryToMap(HostEntry host) {
         PingExpertEntry expert = host.pingExpert();
-        if (!host.enabled() && !host.pingOnly() && !expert.isConfigured()) {
+        if (!host.enabled()
+                && !host.pingOnly()
+                && host.probeModeOverride() == null
+                && host.intervalSecondsOverride() == null
+                && host.tags().isEmpty()
+                && !expert.isConfigured()) {
             return Map.of("address", host.address());
         }
         Map<String, Object> map = new LinkedHashMap<>();
@@ -260,6 +302,16 @@ public final class ProfilesConfig {
         }
         if (host.pingOnly()) {
             map.put("ping_only", true);
+        } else if (host.probeModeOverride() != null && host.probeModeOverride() != HostProbeMode.PING_ONLY) {
+            map.put("probe_mode", host.probeModeOverride().yamlValue());
+        } else if (host.probeModeOverride() == HostProbeMode.PING_ONLY) {
+            map.put("probe_mode", HostProbeMode.PING_ONLY.yamlValue());
+        }
+        if (host.intervalSecondsOverride() != null) {
+            map.put("interval", host.intervalSecondsOverride());
+        }
+        if (!host.tags().isEmpty()) {
+            map.put("tags", host.tags());
         }
         if (expert.isConfigured()) {
             Map<String, Object> expertMap = new LinkedHashMap<>();

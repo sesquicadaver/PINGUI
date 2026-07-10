@@ -10,11 +10,86 @@
 
 | Поле | Значення |
 |------|----------|
-| **Гілка** | `main` — Java + docs; `beta` — + Python, тести, CI |
+| **Гілка** | `main` — стабільний Java GUI (RAM); `beta` — розробка: Java P9–P12 (SQLite, alerts, daemon) + Python + повний CI |
 | **Пріоритет** | P0 критично · P1 важливо · P2 бажано |
 | **DoD** | Definition of Done — умова закриття задачі |
 
 Задачі **атомарні**: одна задача ≈ один MR/коміт, ≤ 1 день роботи.
+
+---
+
+## NEXT — єдине джерело правди
+
+| Поле | Значення |
+|------|----------|
+| **Поточна задача** | **P14-050** |
+| **Фаза** | 14 — GUI для профі |
+| **DoD (коротко)** | USER_GUIDE § pro / NOC workflow |
+| **Гілка** | `beta` |
+
+### Контракт для `/autopilot` і агентів
+
+1. **Без аргументів** `/autopilot` / `$autopilot` = виконати **лише** ID з поля **Поточна задача**.
+2. **Заборонено питати** «який пункт далі?» — відповідь завжди в цій секції.
+3. Після `[x]` у таблиці фази: оновити **Поточна задача** на **наступний** рядок з **Черги виконання** (перший ще `[ ]`).
+4. Якщо код задачі вже є, але wiring знято (мертвий код) — **не** створювати паралельну задачу і **не** питати: виконати DoD (підключити або видалити мертве в межах того ж ID).
+5. Пропуск / зміна порядку — **лише** явною командою користувача з новим ID (тоді оновити NEXT + чергу).
+
+---
+
+## Черга виконання (лінійна)
+
+Порядок **суворий**. Береться перший рядок зі статусом `[ ]`.
+
+| # | ID | Статус | Одна строка |
+|---|-----|--------|-------------|
+| 1 | **P14-021** | [x] | Tag filter chips + edit tags → YAML (`HostListPresenter`) |
+| 2 | **P14-030** | [x] | ASN у hop label: підключити наявний `AsnLookup*` / `asn_hints.yaml` або прибрати мертвий код |
+| 3 | **P14-031** | [x] | rDNS у label (async, cache TTL 5 хв) |
+| 4 | **P14-040** | [x] | Expert ping presets (4 кнопки + `ping_presets.yaml`) |
+| 5 | **P14-050** | [ ] | USER_GUIDE § pro / NOC workflow |
+| 6 | **PY-P11** | [ ] | Python: YAML `persistence.events` + SQLite `persistence_event` |
+| 7 | **P15-001** | [ ] | ADR observability boundaries |
+| 8 | **P15-010** | [ ] | Prometheus `/metrics` (daemon) |
+| 9 | **P15-011** | [ ] | CLI `--metrics-port` |
+| 10 | **P15-020** | [ ] | InfluxDB/Timescale writer (Java parity) |
+| 11 | **P15-030** | [ ] | Scheduled CSV/HTML export |
+| 12 | **P15-040** | [ ] | REST read-only API |
+| 13 | **P15-041** | [ ] | DEPLOYMENT § reverse proxy + TLS |
+| 14 | **P15-050** | [ ] | LIVING_SPEC + contract tests API |
+| 15 | **P16-001** | [ ] | ADR telemetry |
+| 16 | **P16-002** | [ ] | SPIKE LOG-server protocols |
+| 17 | **P16-010** | [ ] | `MetricSample` + `TelemetryEvent` |
+| 18 | **P16-011** | [ ] | `TelemetrySink` + `SinkRegistry` |
+| 19 | **P16-012** | [ ] | `TelemetryBus` |
+| 20 | **P16-013** | [ ] | Wire MonitorService → bus |
+| 21 | **P16-014** | [ ] | Metric names (`trace_duration_ms`, …) |
+| 22 | **P16-020** | [ ] | `SqliteTelemetrySink` |
+| 23 | **P16-021** | [ ] | `JsonlRotateSink` |
+| 24 | **P16-022** | [ ] | `retention_days` purge |
+| 25 | **P16-023** | [ ] | `--telemetry-dump` |
+| 26 | **P16-030** | [ ] | `SyslogSink` |
+| 27 | **P16-031** | [ ] | `GelfSink` |
+| 28 | **P16-032** | [ ] | `LokiPushSink` (P2) |
+| 29 | **P16-033** | [ ] | `events_only` mode |
+| 30 | **P16-034** | [ ] | 5m aggregates → LOG |
+| 31 | **P16-040** | [ ] | YAML `telemetry:` |
+| 32 | **P16-041** | [ ] | CLI telemetry overrides |
+| 33 | **P16-042** | [ ] | Secret redaction |
+| 34 | **P16-043** | [ ] | Windows telemetry preset |
+| 35 | **P16-050** | [ ] | Webhook as `TelemetrySink` |
+| 36 | **P16-051** | [ ] | Prometheus as sink |
+| 37 | **P16-052** | [ ] | Python Influx sink wrapper |
+| 38 | **P16-060** | [ ] | CONFIGURATION § telemetry |
+| 39 | **P16-061** | [ ] | DEPLOYMENT § LOG-server |
+| 40 | **P16-070** | [ ] | LIVING_SPEC telemetry matrix |
+| 41 | **P16-071** | [ ] | CHECKLIST telemetry smoke |
+| 42 | **P16-072** | [ ] | Contract tests syslog/gelf |
+| 43 | **P16-080** | [ ] | OTLP export (P2) |
+
+**Закінчення черги:** оновити NEXT → `DONE` (немає відкритих ID).
+
+Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
 ---
 
@@ -433,14 +508,14 @@ flowchart TD
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **P13-001** | [ ] ADR: `probe_mode: trace \| mtr \| ping_only` | `docs/ADR_PROBE_MODES.md` | MTR = continuous per-hop, не full trace кожен цикл |
-| **P13-010** | [ ] `MtrProbe` / per-hop poll state machine | `probe/MtrProbe.java` | Unit-тест state transitions |
-| **P13-011** | [ ] YAML `probe_mode` на профіль + override на host | `ProfilesConfig`, `HostEntry` | Backward compat: default `trace` |
-| **P13-020** | [ ] Smart interval: `ping_only` 1–2s, `trace` 30–300s per host | `MonitorService`, `HostPollSchedule` | Profile default + per-host override |
-| **P13-021** | [ ] Burst on change: після route change — interval ×0.25 на 5 хв | `BurstSchedulePolicy.java` | Unit-тест timer |
-| **P13-030** | [ ] Parallel poll: `max_concurrent_traces` (default 3) | `MonitorService` | Не більше N subprocess одночасно |
-| **P13-040** | [ ] Windows profile preset: auto `ping_only` + `interval: 60` | `config/hosts.windows.example.yaml` | CHECKLIST Windows |
-| **P13-050** | [ ] LIVING_SPEC + JAVA.md known limitations | `docs/JAVA.md` | MTR vs traceroute doc |
+| **P13-001** | [x] ADR: `probe_mode: trace \| mtr \| ping_only` | `docs/ADR_PROBE_MODES.md` | MTR = continuous per-hop, не full trace кожен цикл |
+| **P13-010** | [x] `MtrProbe` / per-hop poll state machine | `probe/MtrProbe.java` | Unit-тест state transitions |
+| **P13-011** | [x] YAML `probe_mode` на профіль + override на host | `ProfilesConfig`, `HostEntry`, `MonitorService` | `ProfilesConfigTest.loadProbeModeOnProfileAndHost`, `HostEntryProbeModeTest` |
+| **P13-020** | [x] Smart interval: `ping_only` 1–2s, `trace` 30–300s per host | `MonitorService`, `HostPollSchedule` | Profile default + per-host override |
+| **P13-021** | [x] Burst on change: після route change — interval ×0.25 на 5 хв | `BurstSchedulePolicy.java` | Unit-тест timer |
+| **P13-030** | [x] Parallel poll: `max_concurrent_traces` (default 3) | `MonitorService`, `TraceConcurrencyLimiter` | Не більше N subprocess одночасно |
+| **P13-040** | [x] Windows profile preset: auto `ping_only` + `interval: 60` | `config/hosts.windows.example.yaml` | CHECKLIST Windows |
+| **P13-050** | [x] LIVING_SPEC + JAVA.md known limitations | `docs/JAVA.md` | MTR vs traceroute doc |
 
 **Орієнтовно:** 2–3 sprint.
 
@@ -452,12 +527,12 @@ flowchart TD
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **P14-010** | [ ] Route diff panel: hop-by-hop «було → стало», Δ RTT | `RouteDiffPresenter.java`, `GraphCanvas` | Manual smoke route change |
-| **P14-020** | [ ] Теги цілей: `tags: [dc, vpn, customer-x]` у YAML | `HostEntry`, `ProfilesConfig` | Filter у ListView |
-| **P14-021** | [ ] UI: фільтр за тегом + quick filter chips | `HostListPresenter` | Збереження в YAML |
-| **P14-030** | [ ] ASN + короткий descr у label hop (offline cache) | `geoip/AsnLookup.java` або lazy whois | Configurable; timeout 2s |
-| **P14-031** | [ ] rDNS у label (async, не блокує UI) | `DnsResolver.java`, `GraphCanvas` | Cache TTL 5 хв |
-| **P14-040** | [ ] Expert ping presets: MTU probe, DF, DSCP, burst | `PingExpertDialog`, `ping_presets.yaml` | 4 preset кнопки |
+| **P14-010** | [x] Route diff panel: hop-by-hop «було → стало», Δ RTT | `RouteDiffPresenter.java`, `GraphCanvas` | Manual smoke route change |
+| **P14-020** | [x] Теги цілей: `tags: [dc, vpn, customer-x]` у YAML | `HostEntry`, `ProfilesConfig` | Filter у ListView |
+| **P14-021** | [x] UI: фільтр за тегом + quick filter chips | `HostListPresenter` | Збереження в YAML |
+| **P14-030** | [x] ASN + короткий descr у label hop (offline cache) | `geoip/AsnLookup.java` | Offline configurable; whois timeout reserved 2s |
+| **P14-031** | [x] rDNS у label (async, не блокує UI) | `DnsResolver.java`, `GraphCanvas` | Cache TTL 5 хв |
+| **P14-040** | [x] Expert ping presets: MTU probe, DF, DSCP, burst | `PingExpertDialog`, `ping_presets.yaml` | 4 preset кнопки |
 | **P14-050** | [ ] USER_GUIDE § pro workflow | `docs/USER_GUIDE.md` | NOC сценарій |
 
 **Орієнтовно:** 2 sprint.
@@ -576,6 +651,10 @@ flowchart TD
 
 ## Рекомендований порядок (2026 Q3–Q4)
 
+> **Застаріло як джерело «що далі».** Актуальний порядок — лише секція **[NEXT](#next--єдине-джерело-правди)** і **[Черга виконання](#черга-виконання-лінійна)** на початку цього файлу.
+
+Історична діаграма залежностей фаз (довідково):
+
 ```mermaid
 flowchart TD
   V6070[V6-070 IPv6 QA gate] --> PYS1[PY-S1 launcher docs]
@@ -624,6 +703,8 @@ flowchart TD
 
 ## Рекомендований порядок виконання
 
+> Історичний sprint-порядок (M/B). **Що робити зараз** — лише [NEXT](#next--єдине-джерело-правди).
+
 ```mermaid
 flowchart LR
   M001[M-001 hygiene] --> M010[M-010 CLI Optional]
@@ -653,6 +734,7 @@ flowchart LR
 - [ ] `./gradlew check` (або `compileJava` на `main`) green у venv/CI  
 - [ ] README / `java/README` / CHANGELOG — якщо змінилась поведінка  
 - [ ] Ревʼю: рекурсія, невикористані поля, заглушки  
+- [ ] **NEXT** + рядок у **Черзі виконання** оновлені після `[x]`  
 
 ---
 
