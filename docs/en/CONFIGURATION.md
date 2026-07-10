@@ -67,8 +67,22 @@ Flat legacy CLI (`--export-csv`, `--session-db` without subcommand) remains for 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `--session-db` | Path | — | SQLite: routes/ping across sessions |
+| `--no-persist-route-change` | flag | off | Do not write `route_change` to `persistence_event` (PY-P11) |
+| `--no-persist-probe-error` | flag | off | Do not write `probe_error` to `persistence_event` (PY-P11) |
 | `--export-csv` | Path | — | Export CSV and exit (no GUI/ICMP) |
 | `--export-html` | Path | — | Export HTML and exit (no GUI/ICMP) |
+
+YAML (shared with Java SPIKE):
+
+```yaml
+persistence:
+  session_db: data/ping.db   # when CLI --session-db is omitted
+  events:
+    route_change: true
+    probe_error: true
+```
+
+Priority: CLI > YAML > default (both event types on).
 
 ### Alerts (PY-042…044)
 

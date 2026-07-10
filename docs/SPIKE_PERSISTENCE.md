@@ -74,6 +74,8 @@ persistence:
 
 До реалізації PY-P11: Python може ігнорувати невідомий блок `persistence:` (forward-compat).
 
+**Статус:** PY-P11 ✅ — Python читає `persistence.events` / `session_db`, пише `persistence_event` (schema v3).
+
 ---
 
 ## Меню «База даних…» (Java GUI, P11-014)

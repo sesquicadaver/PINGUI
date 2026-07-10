@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **PY-P11** |
-| **Фаза** | PY — Python CLI/NOC hardening |
-| **DoD (коротко)** | Python: YAML `persistence.events` + SQLite `persistence_event` |
+| **Поточна задача** | **P15-001** |
+| **Фаза** | 15 — Інтеграції для команд |
+| **DoD (коротко)** | ADR observability boundaries |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -48,7 +48,7 @@
 | 3 | **P14-031** | [x] | rDNS у label (async, cache TTL 5 хв) |
 | 4 | **P14-040** | [x] | Expert ping presets (4 кнопки + `ping_presets.yaml`) |
 | 5 | **P14-050** | [x] | USER_GUIDE § pro / NOC workflow |
-| 6 | **PY-P11** | [ ] | Python: YAML `persistence.events` + SQLite `persistence_event` |
+| 6 | **PY-P11** | [x] | Python: YAML `persistence.events` + SQLite `persistence_event` |
 | 7 | **P15-001** | [ ] | ADR observability boundaries |
 | 8 | **P15-010** | [ ] | Prometheus `/metrics` (daemon) |
 | 9 | **P15-011** | [ ] | CLI `--metrics-port` |
@@ -397,7 +397,7 @@ flowchart TD
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **PY-P11** | [ ] YAML `persistence.events` + запис у SQLite | `config.py`, `session_db.py`, `session_store.py` | Спільний YAML з SPIKE; `route_change` + `probe_error` у `persistence_event` |
+| **PY-P11** | [x] YAML `persistence.events` + запис у SQLite | `config.py`, `session_db.py`, `session_store.py` | Спільний YAML з SPIKE; `route_change` + `probe_error` у `persistence_event` |
 
 **Орієнтовно:** 1 sprint після Java P11-013. **Не блокує** Java P11-010.
 

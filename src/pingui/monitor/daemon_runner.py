@@ -12,6 +12,8 @@ from pingui.models import RouteChangeEvent
 from pingui.monitor.alert_dispatcher import AlertDispatcher
 from pingui.monitor.monitor_loop import MonitorCallbacks, MonitorLoop
 from pingui.monitor.session_store import SessionStore
+from pingui.persistence.events import PersistenceEventWriter
+from pingui.persistence.policy import PersistencePolicy
 from pingui.persistence.session_db import SessionDatabase
 from pingui.persistence.timeseries.base import TimeSeriesBackend
 
@@ -94,6 +96,7 @@ def _store_callbacks(
     *,
     alert_dispatcher: AlertDispatcher | None = None,
     profile: str = "default",
+    event_writer: PersistenceEventWriter | None = None,
 ) -> MonitorCallbacks:
     def on_data(host: str, snapshot: object) -> None:
         from pingui.models import RouteSnapshot
@@ -113,17 +116,21 @@ def _store_callbacks(
             " ".join(old_ips) or "(none)",
             " ".join(new_ips) or "(none)",
         )
+        event = RouteChangeEvent.from_route_change(
+            host,
+            old_ips,
+            new_ips,
+            profile=profile,
+        )
+        if event_writer is not None:
+            event_writer.write_route_change(event)
         if alert_dispatcher is not None:
-            event = RouteChangeEvent.from_route_change(
-                host,
-                old_ips,
-                new_ips,
-                profile=profile,
-            )
             alert_dispatcher.dispatch(event)
 
     def on_error(host: str, message: str) -> None:
         logger.warning("Probe error %s: %s", host, message)
+        if event_writer is not None:
+            event_writer.write_probe_error(host, message)
 
     return MonitorCallbacks(
         on_data_received=on_data,
@@ -145,6 +152,7 @@ def run_headless_monitor(
     transport: ProbeTransport | None = None,
     alert_dispatcher: AlertDispatcher | None = None,
     profile: str = "default",
+    persistence_policy: PersistencePolicy | None = None,
 ) -> int:
     """
     Run monitoring loop until SIGINT/SIGTERM.
@@ -152,6 +160,9 @@ def run_headless_monitor(
     When ``pid_file`` is set, write PID on start and remove on exit.
     """
     session_db = SessionDatabase(session_db_path) if session_db_path is not None else None
+    event_writer = (
+        PersistenceEventWriter(session_db, persistence_policy) if session_db is not None else None
+    )
     store = SessionStore(hosts, session_db=session_db, timeseries=timeseries_backend)
     if enable_all_hosts:
         for host in hosts:
@@ -167,6 +178,7 @@ def run_headless_monitor(
             store,
             alert_dispatcher=alert_dispatcher,
             profile=profile,
+            event_writer=event_writer,
         ),
     )
 

@@ -155,7 +155,7 @@ def load_hosts_config(path: Path | str) -> list[str]:
 
 
 def save_hosts_config(path: Path | str, hosts: list[str]) -> None:
-    """Write host list to YAML (0–10 entries)."""
+    """Write host list to YAML (0–10 entries); preserve other top-level keys."""
     if not 0 <= len(hosts) <= MAX_HOSTS:
         msg = f"hosts count must be between 0 and {MAX_HOSTS}, got {len(hosts)}"
         raise ConfigError(msg)
@@ -173,7 +173,12 @@ def save_hosts_config(path: Path | str, hosts: list[str]) -> None:
 
     config_path = Path(path)
     config_path.parent.mkdir(parents=True, exist_ok=True)
-    payload = {"hosts": normalized}
+    payload: dict[str, object] = {}
+    if config_path.is_file():
+        raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+        if isinstance(raw, dict):
+            payload = dict(raw)
+    payload["hosts"] = normalized
     config_path.write_text(
         yaml.safe_dump(payload, allow_unicode=True, sort_keys=False),
         encoding="utf-8",

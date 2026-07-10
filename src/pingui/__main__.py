@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 
-from pingui.config import load_hosts_config
+from pingui.config import ConfigError, load_hosts_config
 from pingui.export.session_report import export_session_csv, export_session_html
 from pingui.geoip import configure as configure_geoip
 from pingui.geoip.country import GeoIpHintsError
@@ -21,6 +21,12 @@ from pingui.monitor.daemon_runner import (
     run_headless_monitor,
 )
 from pingui.monitor.session_store import SessionStore
+from pingui.persistence.policy import (
+    PersistencePolicy,
+    apply_cli_event_overrides,
+    load_persistence_config,
+    resolve_session_db_path,
+)
 from pingui.persistence.session_db import SessionDatabase
 from pingui.persistence.timeseries.base import TimeSeriesBackend, TimeSeriesConfigError
 from pingui.persistence.timeseries.factory import create_timeseries_backend
@@ -64,6 +70,16 @@ def _add_monitor_args(parser: argparse.ArgumentParser) -> None:
         type=Path,
         default=None,
         help="Optional SQLite path to persist routes/ping between sessions",
+    )
+    parser.add_argument(
+        "--no-persist-route-change",
+        action="store_true",
+        help="Do not write route_change rows to persistence_event",
+    )
+    parser.add_argument(
+        "--no-persist-probe-error",
+        action="store_true",
+        help="Do not write probe_error rows to persistence_event",
     )
     parser.add_argument(
         "--geoip-hints",
@@ -297,10 +313,27 @@ def _configure_geoip(args: argparse.Namespace) -> int | None:
     return None
 
 
+def _resolve_persistence(args: argparse.Namespace) -> tuple[Path | None, PersistencePolicy]:
+    """Return (session_db_path, PersistencePolicy) with CLI > YAML > defaults."""
+    yaml_cfg = load_persistence_config(args.config)
+    policy = apply_cli_event_overrides(
+        yaml_cfg.events,
+        no_persist_route_change=bool(getattr(args, "no_persist_route_change", False)),
+        no_persist_probe_error=bool(getattr(args, "no_persist_probe_error", False)),
+    )
+    session_db = resolve_session_db_path(args.session_db, args.config)
+    return session_db, policy
+
+
 def _run_gui(args: argparse.Namespace, hosts: list[str]) -> int:
     geo_err = _configure_geoip(args)
     if geo_err is not None:
         return geo_err
+    try:
+        session_db_path, policy = _resolve_persistence(args)
+    except ConfigError as exc:
+        print(f"Config error: {exc}", file=sys.stderr)
+        return 1
     timeseries_backend = _build_timeseries_backend(args)
     from pingui.ui.app import run_app
 
@@ -311,10 +344,11 @@ def _run_gui(args: argparse.Namespace, hosts: list[str]) -> int:
         max_hops=args.max_hops,
         timeout=args.timeout,
         quiet=not args.verbose,
-        session_db_path=args.session_db,
+        session_db_path=session_db_path,
         geo_map_enabled=not args.no_geo_map,
         timeseries_backend=timeseries_backend,
         alert_dispatcher=_build_alert_dispatcher(args),
+        persistence_policy=policy,
     )
 
 
@@ -322,16 +356,22 @@ def _run_headless(args: argparse.Namespace, hosts: list[str], *, pid_file: Path 
     icmp_err = _require_icmp()
     if icmp_err is not None:
         return icmp_err
+    try:
+        session_db_path, policy = _resolve_persistence(args)
+    except ConfigError as exc:
+        print(f"Config error: {exc}", file=sys.stderr)
+        return 1
     timeseries_backend = _build_timeseries_backend(args)
     return run_headless_monitor(
         hosts,
         interval_seconds=args.interval,
         max_hops=args.max_hops,
         timeout=args.timeout,
-        session_db_path=args.session_db,
+        session_db_path=session_db_path,
         timeseries_backend=timeseries_backend,
         pid_file=pid_file,
         alert_dispatcher=_build_alert_dispatcher(args),
+        persistence_policy=policy,
     )
 
 
@@ -365,9 +405,14 @@ def _dispatch_command(args: argparse.Namespace) -> int:
         if csv_path is None and html_path is None:
             print("Config error: specify --csv and/or --html", file=sys.stderr)
             return 1
+        try:
+            session_db_path, _policy = _resolve_persistence(args)
+        except ConfigError as exc:
+            print(f"Config error: {exc}", file=sys.stderr)
+            return 1
         return _export_reports(
             hosts,
-            session_db_path=args.session_db,
+            session_db_path=session_db_path,
             csv_path=csv_path,
             html_path=html_path,
         )

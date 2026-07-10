@@ -74,6 +74,8 @@ persistence:
 
 Until PY-P11: Python may ignore unknown `persistence:` block (forward-compat).
 
+**Status:** PY-P11 ✅ — Python reads `persistence.events` / `session_db`, writes `persistence_event` (schema v3).
+
 ---
 
 ## “Database…” menu (Java GUI, P11-014)

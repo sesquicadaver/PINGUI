@@ -53,6 +53,7 @@
 - **rDNS hop labels (P14-031):** async `DnsResolver` (PTR, cache TTL 5 хв); мітка hop після IP; redraw графа після resolve.
 - **Expert ping presets (P14-040):** 4 кнопки в `PingExpertDialog` з `ping_presets.yaml` (MTU probe, DF, DSCP, Burst); AF зберігається.
 - **USER_GUIDE pro/NOC (P14-050):** сценарій зміни NOC на Java GUI + headless daemon; EN DEPLOYMENT § Java NOC.
+- **Python persistence events (PY-P11):** YAML `persistence.events` + SQLite `persistence_event` (schema v3); CLI `--no-persist-route-change` / `--no-persist-probe-error`.
 
 ### Fixed
 

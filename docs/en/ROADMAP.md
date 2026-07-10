@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **PY-P11** |
-| **Phase** | PY — Python CLI/NOC hardening |
-| **DoD (short)** | Python: YAML `persistence.events` + SQLite `persistence_event` |
+| **Current task** | **P15-001** |
+| **Phase** | 15 — Team integrations |
+| **DoD (short)** | ADR observability boundaries |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -48,7 +48,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 3 | **P14-031** | [x] | rDNS in label (async, cache TTL 5 min) |
 | 4 | **P14-040** | [x] | Expert ping presets (4 buttons + `ping_presets.yaml`) |
 | 5 | **P14-050** | [x] | USER_GUIDE § pro / NOC workflow |
-| 6 | **PY-P11** | [ ] | Python: YAML `persistence.events` + SQLite `persistence_event` |
+| 6 | **PY-P11** | [x] | Python: YAML `persistence.events` + SQLite `persistence_event` |
 | 7 | **P15-001** | [ ] | ADR observability boundaries |
 | 8 | **P15-010** | [ ] | Prometheus `/metrics` (daemon) |
 | 9 | **P15-011** | [ ] | CLI `--metrics-port` |
@@ -397,7 +397,7 @@ flowchart TD
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **PY-P11** | [ ] YAML `persistence.events` + SQLite writes | `config.py`, `session_db.py`, `session_store.py` | Shared YAML with SPIKE; `route_change` + `probe_error` in `persistence_event` |
+| **PY-P11** | [x] YAML `persistence.events` + SQLite writes | `config.py`, `session_db.py`, `session_store.py` | Shared YAML with SPIKE; `route_change` + `probe_error` in `persistence_event` |
 
 **Estimate:** 1 sprint after Java P11-013. **Does not block** Java P11-010.
 
