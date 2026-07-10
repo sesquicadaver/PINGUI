@@ -90,9 +90,6 @@ gradlew.bat run        # Windows
 | `--no-persist-probe-error` | off | Не писати `probe_error` у SQLite |
 | `--geoip-hints` | `config/geoip_hints.yaml` | Offline CIDR→країна |
 | `--no-geoip` | off | Вимкнути країну в підписах |
-| `--asn-hints` | `config/asn_hints.yaml` | Offline CIDR→ASN+org |
-| `--no-asn` | off | Вимкнути ASN у підписах |
-| `--asn-timeout-ms` | `2000` | Резерв під whois fallback |
 | `--verbose` | off | Debug-лог |
 
 CLI **не затирає** поля профілю defaults (1.0 / 20 / 0.5 / auto), якщо відповідний прапор не передано.

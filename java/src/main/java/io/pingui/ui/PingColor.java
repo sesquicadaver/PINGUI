@@ -1,6 +1,5 @@
 package io.pingui.ui;
 
-import io.pingui.geoip.AsnLookup;
 import io.pingui.geoip.GeoCountry;
 import io.pingui.model.Models;
 import io.pingui.model.Models.HopNode;
@@ -50,20 +49,18 @@ public final class PingColor {
             return "Hop " + node.hop() + "\n*";
         }
         String countryLine = countryLine(node.ip());
-        String asnLine = AsnLookup.labelLine(node.ip());
-        String metaLines = countryLine + asnLine;
         String statsLine = statsLine(node.hop(), hopStatsFn);
         String displayIp = HopDisplay.formatHopIp(node.ip());
         Double avg = avgPingFn.apply(node.ip());
         if (avg != null) {
-            return "Hop " + node.hop() + "\n" + displayIp + metaLines + "\n" + avg.intValue() + " ms" + statsLine;
+            return "Hop " + node.hop() + "\n" + displayIp + countryLine + "\n" + avg.intValue() + " ms" + statsLine;
         }
         if (node.pingMs() != null) {
-            return "Hop " + node.hop() + "\n" + displayIp + metaLines + "\n"
+            return "Hop " + node.hop() + "\n" + displayIp + countryLine + "\n"
                     + node.pingMs().intValue() + " ms" + statsLine;
         }
-        if (!metaLines.isEmpty() || !statsLine.isEmpty()) {
-            return "Hop " + node.hop() + "\n" + displayIp + metaLines + statsLine;
+        if (!countryLine.isEmpty() || !statsLine.isEmpty()) {
+            return "Hop " + node.hop() + "\n" + displayIp + countryLine + statsLine;
         }
         return "Hop " + node.hop() + "\n" + displayIp;
     }

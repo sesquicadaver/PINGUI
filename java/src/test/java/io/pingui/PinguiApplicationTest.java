@@ -1,8 +1,6 @@
 package io.pingui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.config.ProfilesConfig;
@@ -139,26 +137,6 @@ class PinguiApplicationTest {
         AppOptions options = PinguiApplication.parseOptions(Map.of("no-persist-route-change", "true"));
         assertEquals(false, options.persistenceOverrides().routeChange().orElseThrow());
         assertTrue(options.persistenceOverrides().probeError().isEmpty());
-    }
-
-    @Test
-    void parseOptions_asnFlags() {
-        AppOptions disabled = PinguiApplication.parseOptions(Map.of("no-asn", "true"));
-        assertFalse(disabled.asnEnabled());
-
-        AppOptions custom = PinguiApplication.parseOptions(Map.of(
-                "asn-hints", "config/custom-asn.yaml",
-                "asn-timeout-ms", "1500"));
-        assertTrue(custom.asnEnabled());
-        assertEquals(Path.of("config/custom-asn.yaml"), custom.asnHintsPath());
-        assertEquals(1500, custom.asnTimeoutMs());
-    }
-
-    @Test
-    void parseOptions_asnTimeoutMustBePositive() {
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> PinguiApplication.parseOptions(Map.of("asn-timeout-ms", "0")));
     }
 
     @Test

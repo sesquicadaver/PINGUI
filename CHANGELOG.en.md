@@ -24,8 +24,6 @@ Versioning: [Semantic Versioning](https://semver.org/).
 - **MTR vs trace docs (P13-050):** `docs/JAVA.md` — `probe_mode`, MTR limitations vs full trace; Monitor layer updated for P13-020…030.
 - **Route diff panel (P14-010):** `RouteDiff` / `RouteDiffPresenter` — hop-by-hop «was → became» with Δ RTT in extended view (live + history replay).
 - **Host tags (P14-020):** YAML `tags: [dc, vpn, …]` per host; ListView filter by tag; persisted via `ProfilesConfig` / `SessionStore`.
-- **Tag filter chips (P14-021):** quick filter chips in `HostListPresenter`; «Теги» button + `HostTagsDialog`; `SessionStore.setTags` → Save to YAML.
-- **ASN hop labels (P14-030):** offline `AsnLookup` + `asn_hints.yaml`; hop label `AS#### Org`; CLI `--asn-hints` / `--no-asn` / `--asn-timeout-ms`.
 - **Java GUI SQLite connection (P11-016):** file picker in Database settings, YAML `persistence.session_db`, active menu without CLI `--session-db`.
 - **Java hop stats from history (P11-040):** `hop_stats` persist to SQLite on every probe; graph labels (`j:`/`loss:`) survive session reopen.
 - **SQLite disk/retention docs (P11-050):** `docs/DEPLOYMENT.md` — no auto-TTL on `host_session`, manual event purge, sizing notes.

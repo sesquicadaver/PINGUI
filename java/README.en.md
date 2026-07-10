@@ -84,9 +84,6 @@ gradlew.bat run        # Windows
 | `--no-persist-probe-error` | off | Skip `probe_error` events in SQLite |
 | `--geoip-hints` | `config/geoip_hints.yaml` | Offline CIDR→country |
 | `--no-geoip` | off | Disable country in labels |
-| `--asn-hints` | `config/asn_hints.yaml` | Offline CIDR→ASN+org |
-| `--no-asn` | off | Disable ASN in labels |
-| `--asn-timeout-ms` | `2000` | Reserved for whois fallback |
 | `--verbose` | off | Debug log |
 
 The CLI **does not overwrite** profile defaults (1.0 / 20 / 0.5 / auto) unless the corresponding flag is provided.

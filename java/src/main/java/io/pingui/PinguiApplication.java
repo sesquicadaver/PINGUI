@@ -63,15 +63,6 @@ public final class PinguiApplication extends Application {
         boolean geoipEnabled = !params.containsKey("no-geoip");
         Path geoipHints =
                 params.containsKey("geoip-hints") ? Path.of(params.get("geoip-hints")) : defaults.geoipHintsPath();
-        boolean asnEnabled = !params.containsKey("no-asn");
-        Path asnHints = params.containsKey("asn-hints") ? Path.of(params.get("asn-hints")) : defaults.asnHintsPath();
-        int asnTimeoutMs = defaults.asnTimeoutMs();
-        if (params.containsKey("asn-timeout-ms")) {
-            asnTimeoutMs = parseRequiredInt(params.get("asn-timeout-ms"), "--asn-timeout-ms");
-            if (asnTimeoutMs < 1) {
-                throw new IllegalArgumentException("--asn-timeout-ms must be >= 1");
-            }
-        }
         Optional<Path> sessionDb = Optional.empty();
         if (params.containsKey("session-db")) {
             String value = params.get("session-db");
@@ -114,9 +105,6 @@ public final class PinguiApplication extends Application {
                 verbose,
                 geoipEnabled,
                 geoipHints,
-                asnEnabled,
-                asnHints,
-                asnTimeoutMs,
                 sessionDb,
                 exportReport,
                 runMode,
@@ -373,9 +361,6 @@ public final class PinguiApplication extends Application {
                   --no-persist-probe-error     Disable probe_error events in session DB
                   --geoip-hints PATH  CIDR→country YAML (default: config/geoip_hints.yaml)
                   --no-geoip        Disable country hints in hop labels
-                  --asn-hints PATH    CIDR→ASN YAML (default: config/asn_hints.yaml)
-                  --no-asn          Disable ASN hints in hop labels
-                  --asn-timeout-ms N Reserved for future whois fallback (default: 2000)
                   --verbose         Debug logging
                 """);
     }
