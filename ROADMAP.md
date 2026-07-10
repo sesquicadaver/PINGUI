@@ -8,7 +8,7 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **[P14-050](docs/ROADMAP.md#next--єдине-джерело-правди)** |
+| **Поточна задача** | **[PY-P11](docs/ROADMAP.md#next--єдине-джерело-правди)** |
 | **Правило** | `/autopilot` без аргументів = цей ID. **Не питати** «який пункт?». |
 
 Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна).
@@ -30,12 +30,12 @@
 | P0–P8 | Python MVP: venv, ICMP, GUI, CI | ✅ |
 | **P9** | Java cross-platform edition | ✅ |
 | **9** | IPv6 dual-stack (V6-*) | ✅ на `beta` |
-| **PY** | Python CLI/NOC hardening | ✅ (хвіст: **PY-P11**) |
+| **PY** | Python CLI/NOC hardening | 🔄 **NEXT → PY-P11** |
 | **10** | Оповіщення про зміну маршруту | ✅ |
 | **11** | Персистентність і таймлайн (Java) | ✅ |
 | **12** | Headless / daemon + systemd | ✅ |
 | **13** | Ефективність probe (MTR, smart interval, burst) | ✅ P13-001…050 |
-| **14** | GUI для профі (diff, теги, ASN/rDNS, presets) | 🔄 **NEXT → P14-050** |
+| **14** | GUI для профі (diff, теги, ASN/rDNS, presets) | ✅ |
 | **15** | Інтеграції (Prometheus, REST API, export) | 📋 у черзі після P14 |
 | **16** | Телеметрія + LOG-server | 📋 у черзі після P15 |
 

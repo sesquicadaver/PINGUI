@@ -110,3 +110,48 @@
 ```
 
 Деталі: [CONFIGURATION.md](CONFIGURATION.md).
+
+## Pro / NOC workflow (Java, гілка `beta`)
+
+Цільовий сценарій для чергової зміни NOC/SRE на **Java-редакції** (`cd java && ./pingui-java.sh`). Базовий Python GUI вище лишається для швидкого сесійного моніторингу; нижче — профільний цикл.
+
+### Запуск Java GUI
+
+```bash
+cd java
+./pingui-java.sh -- --config config/hosts.example.yaml --session-db data/ping.db
+```
+
+Права ICMP / raw: див. [DEPLOYMENT.md](DEPLOYMENT.md) і `./scripts/check_caps.sh`. Деталі UI: [JAVA.md](JAVA.md).
+
+### Типова зміна (15–30 хв)
+
+1. **Увімкніть цілі** чекбоксами (або `enabled: true` у YAML) — без цього немає trace і запису в SQLite.
+2. **Розширений вигляд** — граф + панель diff «було → стало» (Δ RTT) і **Історія змін** (24h / 7d); клік по події — replay маршруту на графі.
+3. **Теги** — кнопка **Теги** на хості; chips фільтра зверху списку (напр. `dc`, `vpn`, `customer-x`). Збережіть YAML (**Зберегти**).
+4. **Мітки hop** на графі (після IP): країна (GeoIP hints) → ASN (`asn_hints.yaml`) → rDNS (async PTR, TTL 5 хв). Офлайн-підказки: [CONFIGURATION.md](CONFIGURATION.md#geoip-і-карта).
+5. **Expert ping** — чекбокс **Експерт** → **Exten.** → пресети **MTU probe / DF / DSCP / Burst** з `ping_presets.yaml` (AF `-4`/`-6` зберігається).
+6. **Алерти** — webhook / desktop при зміні маршруту (`alerts:` у YAML або `--alert-webhook`). Rate limit на хост: [CONFIGURATION.md](CONFIGURATION.md).
+7. **Персистентність** — `--session-db` або **Налаштування → База даних…**; історія й `hop_stats` переживають рестарт. Export: `--export-report report.csv`.
+
+### Headless NOC (без GUI)
+
+Той самий монітор без JavaFX — зручно на сервері зміни:
+
+```bash
+cd java
+./pingui-java.sh -- --daemon --config config/hosts.example.yaml \
+  --session-db data/ping.db --pid-file /tmp/pingui-java.pid \
+  --alert-webhook https://hooks.example.com/pingui
+```
+
+Статус / стоп: `--status` / `--stop`. systemd: `systemd/pingui-java.service.example`. Повний розділ: [DEPLOYMENT.md § Java NOC](DEPLOYMENT.md#java-noc-headless-daemon-p12).
+
+### Що перевірити перед здачею зміни
+
+| Перевірка | Очікування |
+|-----------|------------|
+| Увімкнені хости | У лозі є оновлення / немає постійних «Помилка» |
+| Зміна маршруту | Рядок у **Історії змін** + (якщо налаштовано) webhook |
+| SQLite | Файл `--session-db` росте; після рестарту граф відновлюється |
+| Daemon (якщо є) | `--status` показує running; alerts доходять |

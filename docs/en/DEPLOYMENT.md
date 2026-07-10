@@ -138,6 +138,26 @@ Daemon with PID file (PY-030…032):
 
 systemd example: `systemd/pingui.service.example` (Type=simple, `ExecStart=... daemon`).
 
+## Java NOC (headless daemon, P12)
+
+Same `MonitorService` as the GUI, without JavaFX:
+
+```bash
+cd /path/to/PINGUI/java
+./pingui-java.sh -- --daemon \
+  --config config/hosts.example.yaml \
+  --session-db data/ping.db \
+  --pid-file /tmp/pingui-java.pid \
+  --alert-webhook https://hooks.example.com/pingui
+
+./pingui-java.sh -- --status --pid-file /tmp/pingui-java.pid
+./pingui-java.sh -- --stop --pid-file /tmp/pingui-java.pid
+```
+
+In YAML set `enabled: true` for targets (daemon has no UI checkboxes).
+
+systemd example: `systemd/pingui-java.service.example`. ADR: [ADR_DAEMON.md](ADR_DAEMON.md).
+
 ## SQLite session persistence (Java / Python)
 
 | What | Where |
@@ -153,7 +173,7 @@ systemd example: `systemd/pingui.service.example` (Type=simple, `ExecStart=... d
 - No automatic TTL / rotation for `host_session` — the file grows with host count and accumulated `ping_history` / `hop_stats` (in-memory caps: up to 50 RTT samples per hop in `hop_stats`, ping history per IP).
 - `persistence_event` rows are removed only manually: GUI **Database…** → disable event type → **Delete** (purge confirm).
 - Full reset: delete the `.db` file or remove the host row via the UI.
-- Headless report: `./pingui-java.sh -- --session-db data/ping.db --export-report report.csv`
+- Headless report: `cd java && ./pingui-java.sh -- --session-db data/ping.db --export-report report.csv`
 - Typical size: a few–tens of KB per host on a NOC profile; monitor `du -h data/ping.db` on long-running daemons.
 
 Schema details: [SPIKE_PERSISTENCE.md](../SPIKE_PERSISTENCE.md).

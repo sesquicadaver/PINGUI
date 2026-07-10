@@ -109,4 +109,49 @@ The saved YAML contains **only the target list**, not route history.
 .venv/bin/python -m pingui --interval 2 --max-hops 30 --verbose
 ```
 
-Details: [CONFIGURATION.md](../CONFIGURATION.md).
+Details: [CONFIGURATION.md](CONFIGURATION.md).
+
+## Pro / NOC workflow (Java, `beta` branch)
+
+Target scenario for an on-call NOC/SRE shift on the **Java edition** (`cd java && ./pingui-java.sh`). The basic Python GUI above remains for quick session monitoring; below is the pro loop.
+
+### Launch Java GUI
+
+```bash
+cd java
+./pingui-java.sh -- --config config/hosts.example.yaml --session-db data/ping.db
+```
+
+ICMP / raw permissions: see [DEPLOYMENT.md](DEPLOYMENT.md) and `./scripts/check_caps.sh`. UI details: [JAVA.md](JAVA.md).
+
+### Typical shift (15–30 min)
+
+1. **Enable targets** with checkboxes (or `enabled: true` in YAML) — without this there is no trace and no SQLite writes.
+2. **Extended view** — graph + diff panel “was → now” (Δ RTT) and **Route history** (24h / 7d); click an event to replay the route on the graph.
+3. **Tags** — **Tags** button on the host; filter chips above the list (e.g. `dc`, `vpn`, `customer-x`). Save YAML (**Save**).
+4. **Hop labels** on the graph (after IP): country (GeoIP hints) → ASN (`asn_hints.yaml`) → rDNS (async PTR, 5 min TTL). Offline hints: [CONFIGURATION.md](CONFIGURATION.md#geoip-and-map).
+5. **Expert ping** — **Expert** checkbox → **Exten.** → presets **MTU probe / DF / DSCP / Burst** from `ping_presets.yaml` (AF `-4`/`-6` is kept).
+6. **Alerts** — webhook / desktop on route change (`alerts:` in YAML or `--alert-webhook`). Per-host rate limit: [CONFIGURATION.md](CONFIGURATION.md).
+7. **Persistence** — `--session-db` or **Settings → Database…**; history and `hop_stats` survive restart. Export: `--export-report report.csv`.
+
+### Headless NOC (no GUI)
+
+Same monitor without JavaFX — useful on the shift server:
+
+```bash
+cd java
+./pingui-java.sh -- --daemon --config config/hosts.example.yaml \
+  --session-db data/ping.db --pid-file /tmp/pingui-java.pid \
+  --alert-webhook https://hooks.example.com/pingui
+```
+
+Status / stop: `--status` / `--stop`. systemd: `systemd/pingui-java.service.example`. Full section: [DEPLOYMENT.md § Java NOC](DEPLOYMENT.md#java-noc-headless-daemon-p12).
+
+### Handoff checklist
+
+| Check | Expectation |
+|-------|-------------|
+| Enabled hosts | Log shows updates / no constant “Error” lines |
+| Route change | Row in **Route history** + webhook (if configured) |
+| SQLite | `--session-db` file grows; graph restores after restart |
+| Daemon (if used) | `--status` shows running; alerts arrive |

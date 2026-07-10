@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P14-050** |
-| **Phase** | 14 — Pro GUI |
-| **DoD (short)** | USER_GUIDE § pro / NOC workflow |
+| **Current task** | **PY-P11** |
+| **Phase** | PY — Python CLI/NOC hardening |
+| **DoD (short)** | Python: YAML `persistence.events` + SQLite `persistence_event` |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -47,7 +47,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 2 | **P14-030** | [x] | ASN in hop label: wire existing `AsnLookup*` / `asn_hints.yaml` or remove dead code |
 | 3 | **P14-031** | [x] | rDNS in label (async, cache TTL 5 min) |
 | 4 | **P14-040** | [x] | Expert ping presets (4 buttons + `ping_presets.yaml`) |
-| 5 | **P14-050** | [ ] | USER_GUIDE § pro / NOC workflow |
+| 5 | **P14-050** | [x] | USER_GUIDE § pro / NOC workflow |
 | 6 | **PY-P11** | [ ] | Python: YAML `persistence.events` + SQLite `persistence_event` |
 | 7 | **P15-001** | [ ] | ADR observability boundaries |
 | 8 | **P15-010** | [ ] | Prometheus `/metrics` (daemon) |
@@ -533,7 +533,7 @@ flowchart TD
 | **P14-030** | [x] ASN + short descr in hop label (offline cache) | `geoip/AsnLookup.java` | Offline configurable; whois timeout reserved 2s |
 | **P14-031** | [x] rDNS in label (async, non-blocking UI) | `DnsResolver.java`, `GraphCanvas` | Cache TTL 5 min |
 | **P14-040** | [x] Expert ping presets: MTU probe, DF, DSCP, burst | `PingExpertDialog`, `ping_presets.yaml` | 4 preset buttons |
-| **P14-050** | [ ] USER_GUIDE § pro workflow | `docs/USER_GUIDE.md` | NOC scenario |
+| **P14-050** | [x] USER_GUIDE § pro workflow | `docs/USER_GUIDE.md` | NOC scenario |
 
 **Estimate:** 2 sprints.
 

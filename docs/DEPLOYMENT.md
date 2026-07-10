@@ -143,7 +143,7 @@ Daemon з PID-файлом (PY-030…032):
 Без JavaFX — той самий `MonitorService`, що й GUI:
 
 ```bash
-cd /path/to/PINGUI
+cd /path/to/PINGUI/java
 ./pingui-java.sh -- --daemon \
   --config config/hosts.example.yaml \
   --session-db data/ping.db \
@@ -173,7 +173,7 @@ cd /path/to/PINGUI
 - Автоматичного TTL / ротації для `host_session` **немає** — файл росте з кількістю хостів і накопиченими `ping_history` / `hop_stats` (обмеження в RAM: до 50 RTT на hop у `hop_stats`, історія ping по IP).
 - Події `persistence_event` видаляються лише вручну: GUI **База даних…** → вимкнути тип події → **Видалити** (purge confirm).
 - Повне скидання: видалити файл `.db` або рядок хоста через видалення цілі в UI.
-- Звіт без GUI: `./pingui-java.sh -- --session-db data/ping.db --export-report report.csv`
+- Звіт без GUI: `cd java && ./pingui-java.sh -- --session-db data/ping.db --export-report report.csv`
 - Орієнтовний розмір: кілька–десятки KB на хост при типовому NOC-профілі; моніторити `du -h data/ping.db` на довгоживучих daemon.
 
 Деталі схеми: [SPIKE_PERSISTENCE.md](SPIKE_PERSISTENCE.md).
