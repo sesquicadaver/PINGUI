@@ -18,6 +18,81 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 ---
 
+## NEXT — single source of truth
+
+| Field | Value |
+|------|----------|
+| **Current task** | **P14-021** |
+| **Phase** | 14 — Pro GUI |
+| **DoD (short)** | Tag filter chips in `HostListPresenter` + edit tags → Save → YAML |
+| **Branch** | `beta` |
+
+### Contract for `/autopilot` and agents
+
+1. **With no args**, `/autopilot` / `$autopilot` = execute **only** the ID in **Current task**.
+2. **Do not ask** “which item next?” — the answer is always this section.
+3. After marking `[x]` in the phase table: set **Current task** to the **next** still-`[ ]` row in the **Execution queue**.
+4. If task code already exists but wiring was removed (dead code) — **do not** invent a parallel task and **do not** ask: finish the DoD (wire or delete dead code under the same ID).
+5. Skip / reorder — **only** on an explicit user command naming a new ID (then update NEXT + queue).
+
+---
+
+## Execution queue (linear)
+
+**Strict** order. Always take the first row with status `[ ]`.
+
+| # | ID | Status | One-liner |
+|---|-----|--------|-------------|
+| 1 | **P14-021** | [ ] | Tag filter chips + edit tags → YAML (`HostListPresenter`) |
+| 2 | **P14-030** | [ ] | ASN in hop label: wire existing `AsnLookup*` / `asn_hints.yaml` or remove dead code |
+| 3 | **P14-031** | [ ] | rDNS in label (async, cache TTL 5 min) |
+| 4 | **P14-040** | [ ] | Expert ping presets (4 buttons + `ping_presets.yaml`) |
+| 5 | **P14-050** | [ ] | USER_GUIDE § pro / NOC workflow |
+| 6 | **PY-P11** | [ ] | Python: YAML `persistence.events` + SQLite `persistence_event` |
+| 7 | **P15-001** | [ ] | ADR observability boundaries |
+| 8 | **P15-010** | [ ] | Prometheus `/metrics` (daemon) |
+| 9 | **P15-011** | [ ] | CLI `--metrics-port` |
+| 10 | **P15-020** | [ ] | InfluxDB/Timescale writer (Java parity) |
+| 11 | **P15-030** | [ ] | Scheduled CSV/HTML export |
+| 12 | **P15-040** | [ ] | REST read-only API |
+| 13 | **P15-041** | [ ] | DEPLOYMENT § reverse proxy + TLS |
+| 14 | **P15-050** | [ ] | LIVING_SPEC + contract tests API |
+| 15 | **P16-001** | [ ] | ADR telemetry |
+| 16 | **P16-002** | [ ] | SPIKE LOG-server protocols |
+| 17 | **P16-010** | [ ] | `MetricSample` + `TelemetryEvent` |
+| 18 | **P16-011** | [ ] | `TelemetrySink` + `SinkRegistry` |
+| 19 | **P16-012** | [ ] | `TelemetryBus` |
+| 20 | **P16-013** | [ ] | Wire MonitorService → bus |
+| 21 | **P16-014** | [ ] | Metric names (`trace_duration_ms`, …) |
+| 22 | **P16-020** | [ ] | `SqliteTelemetrySink` |
+| 23 | **P16-021** | [ ] | `JsonlRotateSink` |
+| 24 | **P16-022** | [ ] | `retention_days` purge |
+| 25 | **P16-023** | [ ] | `--telemetry-dump` |
+| 26 | **P16-030** | [ ] | `SyslogSink` |
+| 27 | **P16-031** | [ ] | `GelfSink` |
+| 28 | **P16-032** | [ ] | `LokiPushSink` (P2) |
+| 29 | **P16-033** | [ ] | `events_only` mode |
+| 30 | **P16-034** | [ ] | 5m aggregates → LOG |
+| 31 | **P16-040** | [ ] | YAML `telemetry:` |
+| 32 | **P16-041** | [ ] | CLI telemetry overrides |
+| 33 | **P16-042** | [ ] | Secret redaction |
+| 34 | **P16-043** | [ ] | Windows telemetry preset |
+| 35 | **P16-050** | [ ] | Webhook as `TelemetrySink` |
+| 36 | **P16-051** | [ ] | Prometheus as sink |
+| 37 | **P16-052** | [ ] | Python Influx sink wrapper |
+| 38 | **P16-060** | [ ] | CONFIGURATION § telemetry |
+| 39 | **P16-061** | [ ] | DEPLOYMENT § LOG-server |
+| 40 | **P16-070** | [ ] | LIVING_SPEC telemetry matrix |
+| 41 | **P16-071** | [ ] | CHECKLIST telemetry smoke |
+| 42 | **P16-072** | [ ] | Contract tests syslog/gelf |
+| 43 | **P16-080** | [ ] | OTLP export (P2) |
+
+**End of queue:** set NEXT → `DONE` (no open IDs).
+
+Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
+
+---
+
 ## Phase 0 — Quick fixes (`main`, P0)
 
 | ID | Task | Files | DoD |
@@ -455,7 +530,7 @@ flowchart TD
 | **P14-010** | [x] Route diff panel: hop-by-hop «was → now», Δ RTT | `RouteDiffPresenter.java`, `GraphCanvas` | Manual smoke route change |
 | **P14-020** | [x] Target tags: `tags: [dc, vpn, customer-x]` in YAML | `HostEntry`, `ProfilesConfig` | Filter in ListView |
 | **P14-021** | [ ] UI: tag filter + quick filter chips | `HostListPresenter` | Saved in YAML |
-| **P14-030** | [ ] ASN + short descr in hop label (offline cache) | `geoip/AsnLookup.java` or lazy whois | Configurable; 2s timeout |
+| **P14-030** | [ ] ASN + short descr in hop label (offline cache) | `geoip/AsnLookup.java` (exists — wire or delete) | Configurable; 2s timeout |
 | **P14-031** | [ ] rDNS in label (async, non-blocking UI) | `DnsResolver.java`, `GraphCanvas` | Cache TTL 5 min |
 | **P14-040** | [ ] Expert ping presets: MTU probe, DF, DSCP, burst | `PingExpertDialog`, `ping_presets.yaml` | 4 preset buttons |
 | **P14-050** | [ ] USER_GUIDE § pro workflow | `docs/USER_GUIDE.md` | NOC scenario |
@@ -576,6 +651,10 @@ flowchart TD
 
 ## Recommended order (2026 Q3–Q4)
 
+> **Deprecated as the “what’s next” source.** Authoritative order is only **[NEXT](#next--single-source-of-truth)** and the **[Execution queue](#execution-queue-linear)** at the top of this file.
+
+Historical phase-dependency diagram (reference):
+
 ```mermaid
 flowchart TD
   V6070[V6-070 IPv6 QA gate] --> PYS1[PY-S1 launcher docs]
@@ -624,6 +703,8 @@ flowchart TD
 
 ## Recommended execution order
 
+> Historical sprint order (M/B). **What to do now** — only [NEXT](#next--single-source-of-truth).
+
 ```mermaid
 flowchart LR
   M001[M-001 hygiene] --> M010[M-010 CLI Optional]
@@ -651,8 +732,9 @@ Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 - [ ] No `pass` / `return null` / `Mock` without TODO with ticket ID  
 - [ ] Changed module — test or updated row in `LIVING_SPEC.md`  
 - [ ] `./gradlew check` (or `compileJava` on `main`) green in venv/CI  
-- [ ] README / `java/README` / CHANGELOG — if behavior changed  
-- [ ] Review: recursion, unused fields, stubs  
+- [ ] README / `java/README` / CHANGELOG — if behavior changed
+- [ ] Review: recursion, unused fields, stubs
+- [ ] **NEXT** + **Execution queue** row updated after `[x]`
 
 ---
 

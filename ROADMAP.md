@@ -4,6 +4,15 @@
 
 **Офіційний індекс планів роботи.** Детальний атомарний план: **[docs/ROADMAP.md](docs/ROADMAP.md)** (UK) · **[docs/en/ROADMAP.md](docs/en/ROADMAP.md)** (EN).
 
+## NEXT
+
+| Поле | Значення |
+|------|----------|
+| **Поточна задача** | **[P14-021](docs/ROADMAP.md#next--єдине-джерело-правди)** |
+| **Правило** | `/autopilot` без аргументів = цей ID. **Не питати** «який пункт?». |
+
+Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна).
+
 **Статус MVP:** ✅ реалізовано (2026-06-26)
 
 **Цільова аудиторія наступних фаз:** NOC/SRE, мережеві інженери, адміни WAN/MPLS.
@@ -20,15 +29,15 @@
 |------|------|--------|
 | P0–P8 | Python MVP: venv, ICMP, GUI, CI | ✅ |
 | **P9** | Java cross-platform edition | ✅ |
-| **9** | IPv6 dual-stack (V6-*) | 🔄 в роботі |
-| **PY** | Python CLI/NOC hardening (PY-010…PY-064) | 📋 заплановано |
-| **10** | Оповіщення про зміну маршруту (webhook, desktop) | 📋 заплановано |
-| **11** | Персистентність і таймлайн (Java parity з Python) | 📋 заплановано |
-| **12** | Headless / daemon + systemd (Linux NOC) | 📋 заплановано |
+| **9** | IPv6 dual-stack (V6-*) | ✅ на `beta` |
+| **PY** | Python CLI/NOC hardening | ✅ (хвіст: **PY-P11**) |
+| **10** | Оповіщення про зміну маршруту | ✅ |
+| **11** | Персистентність і таймлайн (Java) | ✅ |
+| **12** | Headless / daemon + systemd | ✅ |
 | **13** | Ефективність probe (MTR, smart interval, burst) | ✅ P13-001…050 |
-| **14** | GUI для профі (diff, теги, ASN/rDNS, presets) | 📋 заплановано |
-| **15** | Інтеграції (Prometheus, REST API, export) | 📋 заплановано |
-| **16** | Телеметрія: метрики мережі + LOG-server (SQLite/JSONL, syslog/GELF) | 📋 заплановано |
+| **14** | GUI для профі (diff, теги, ASN/rDNS, presets) | 🔄 **NEXT → P14-021** |
+| **15** | Інтеграції (Prometheus, REST API, export) | 📋 у черзі після P14 |
+| **16** | Телеметрія + LOG-server | 📋 у черзі після P15 |
 
 ---
 
@@ -49,29 +58,16 @@ Linux desktop-додаток: моніторинг до 10 цілей, ICMP trac
 
 ---
 
-## Рекомендований порядок (2026 Q3–Q4)
+## Порядок робіт
 
-1. **PY-S1** — launcher + docs + CI (`PY-010…016`) — швидкий ROI на `beta`
-2. **Закрити фазу 9** — IPv6 QA gate (V6-035…074)
-3. **PY-S2 + Фаза 10** — MonitorLoop/daemon (Python) + alerts (Java/Python)
-4. **Фаза 11** — SQLite + history в Java (Python уже має)
-5. **Фаза 12** — daemon Java (Python — PY-030…034)
-6. **Фази 13–15** — MTR, pro GUI, Prometheus/API
-7. **Фаза 16** — telemetry: локальне збереження + LOG-server
-8. **PY-S4 (opt.)** — IPv6 Python (PY-050…052)
+**Єдине джерело «що далі»:** [docs/ROADMAP.md § NEXT](docs/ROADMAP.md#next--єдине-джерело-правди).  
+Історичні sprint-таблиці в `docs/ROADMAP.md` — довідкові, не для вибору задачі.
 
 ```mermaid
 flowchart LR
-  PY1[PY-S1 launcher docs] --> F9[Phase 9 IPv6]
-  PY1 --> F10[Phase 10 Alerts]
-  F10 --> PY2[PY-S2 daemon]
-  F10 --> F11[Phase 11 Persistence]
-  PY2 --> F12[Phase 12 Daemon]
-  F12 --> F13[Phase 13 MTR]
-  F13 --> F14[Phase 14 Pro GUI]
+  F13[Phase 13 done] --> F14[Phase 14 Pro GUI]
   F14 --> F15[Phase 15 Integrations]
   F15 --> F16[Phase 16 Telemetry]
-  F9 --> PY4[PY-S4 IPv6 Python]
 ```
 
 ---
@@ -85,8 +81,8 @@ PINGUI/
 ├── src/pingui/               # Python (beta)
 ├── tests/                    # pytest (beta)
 ├── docs/
-│   ├── ROADMAP.md            # ← детальний план (UK)
-│   └── en/ROADMAP.md         # ← детальний план (EN)
+│   ├── ROADMAP.md            # ← детальний план + NEXT + черга (UK)
+│   └── en/ROADMAP.md         # ← детальний план + NEXT + queue (EN)
 ├── config/
 ├── scripts/
 └── systemd/
@@ -101,6 +97,7 @@ PINGUI/
 3. `./pingui.sh --deploy` або `./gradlew check` green.
 4. Рядок у `docs/LIVING_SPEC.md`.
 5. README / DEPLOYMENT / CHANGELOG — якщо змінився запуск або UX.
+6. Оновити **NEXT** + рядок у **Черзі виконання** (`[x]` → наступний ID).
 
 ---
 
@@ -110,4 +107,4 @@ PINGUI/
 pingui.sh → config/models → icmp/tracer → session_store → worker → main_window/graph → CI
 ```
 
-Task details PY-010…PY-064, P10-001…P16-080: [docs/ROADMAP.md](docs/ROADMAP.md).
+Task details: [docs/ROADMAP.md](docs/ROADMAP.md).
