@@ -26,7 +26,6 @@ import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -63,10 +62,7 @@ public final class MainController {
     private SessionStore store;
     private MonitorService monitor;
     private final ObservableList<HostItem> hostItems = FXCollections.observableArrayList();
-    private final FilteredList<HostItem> filteredHosts = new FilteredList<>(hostItems, item -> true);
-    private final ListView<HostItem> hostList = new ListView<>(filteredHosts);
-    private final ComboBox<String> tagFilter = new ComboBox<>();
-    private static final String TAG_FILTER_ALL = "Усі теги";
+    private final ListView<HostItem> hostList = new ListView<>();
     private final TextField hostInput = new TextField();
     private final TextArea logArea = new TextArea();
     private final GraphCanvas graphCanvas = new GraphCanvas();
@@ -122,10 +118,12 @@ public final class MainController {
 
         Button addButton = new Button("Додати");
         Button editButton = new Button("Змінити");
+        Button tagsButton = new Button("Теги");
         Button removeButton = new Button("Видалити");
         Button saveButton = new Button("Зберегти");
         addButton.setOnAction(e -> hostListPresenter.addHost());
         editButton.setOnAction(e -> hostListPresenter.editHost());
+        tagsButton.setOnAction(e -> hostListPresenter.editSelectedHostTags());
         removeButton.setOnAction(e -> hostListPresenter.removeHost());
         saveButton.setOnAction(e -> onSaveConfig());
         hostInput.setOnAction(e -> hostListPresenter.addHost());
@@ -162,13 +160,18 @@ public final class MainController {
         HBox.setHgrow(profileCombo, Priority.ALWAYS);
 
         HBox modeBar = new HBox(12, new Label("Режим:"), simpleMode, extendedModeButton, expertCheck);
-        tagFilter.setPromptText(TAG_FILTER_ALL);
-        tagFilter.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(tagFilter, Priority.ALWAYS);
-        tagFilter.setOnAction(e -> applyTagFilter());
-        HBox tagBar = new HBox(8, new Label("Тег:"), tagFilter);
-        HBox buttons = new HBox(8, addButton, editButton, removeButton, saveButton);
-        leftPanel.getChildren().addAll(profileBar, modeBar, tagBar, hostList, hostInput, buttons, statusLabel, logArea);
+        HBox buttons = new HBox(8, addButton, editButton, tagsButton, removeButton, saveButton);
+        leftPanel
+                .getChildren()
+                .addAll(
+                        profileBar,
+                        modeBar,
+                        hostListPresenter.tagFilterBar(),
+                        hostList,
+                        hostInput,
+                        buttons,
+                        statusLabel,
+                        logArea);
         VBox.setVgrow(hostList, Priority.NEVER);
         VBox.setVgrow(logArea, Priority.ALWAYS);
         leftPanel.setPadding(new Insets(8));
@@ -278,10 +281,8 @@ public final class MainController {
                 routeGraphPresenter::replayRouteChange,
                 routeGraphPresenter::clearReplay);
         routeHistoryPresenter.configure();
-        hostItems.addListener((javafx.collections.ListChangeListener<? super HostItem>) change -> {
-            syncHistoryHostFilter();
-            refreshTagFilterOptions();
-        });
+        hostItems.addListener(
+                (javafx.collections.ListChangeListener<? super HostItem>) change -> syncHistoryHostFilter());
         hostList.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, item) -> {
             historyHostSync.syncFilterFromHostList(
                     item != null ? item.getHost() : null, historyHostFilter.getValue(), historyHostFilter::setValue);
@@ -290,26 +291,10 @@ public final class MainController {
             if (historyHostSync.isSyncing()) {
                 return;
             }
-            ensureHostVisibleForTagFilter(newHost);
+            hostListPresenter.ensureHostVisibleForTagFilter(newHost);
             historyHostSync.syncHostListFromFilter(newHost, hostItems, hostList);
             redrawRouteGraph();
         });
-    }
-
-    private void ensureHostVisibleForTagFilter(String host) {
-        if (host == null || host.isBlank()) {
-            return;
-        }
-        HostItem item = HistoryHostSync.findItem(hostItems, host);
-        if (item == null) {
-            return;
-        }
-        String selected = tagFilter.getValue();
-        String filter = TAG_FILTER_ALL.equals(selected) ? null : selected;
-        if (!item.hasTag(filter)) {
-            tagFilter.setValue(TAG_FILTER_ALL);
-            applyTagFilter();
-        }
     }
 
     private void syncHistoryHostFilter() {
@@ -318,28 +303,6 @@ public final class MainController {
         }
         routeHistoryPresenter.rebuildHostFilter(
                 hostItems.stream().map(HostItem::getHost).toList());
-    }
-
-    private void refreshTagFilterOptions() {
-        String previous = tagFilter.getValue();
-        java.util.List<String> tags = io.pingui.config.HostTags.collectUnique(
-                hostItems.stream().map(HostItem::getTags).toList());
-        java.util.List<String> options = new java.util.ArrayList<>();
-        options.add(TAG_FILTER_ALL);
-        options.addAll(tags);
-        tagFilter.getItems().setAll(options);
-        if (previous != null && options.contains(previous)) {
-            tagFilter.setValue(previous);
-        } else {
-            tagFilter.setValue(TAG_FILTER_ALL);
-        }
-        applyTagFilter();
-    }
-
-    private void applyTagFilter() {
-        String selected = tagFilter.getValue();
-        String filter = TAG_FILTER_ALL.equals(selected) ? null : selected;
-        filteredHosts.setPredicate(item -> item.hasTag(filter));
     }
 
     private void configureHistoryPanel() {
