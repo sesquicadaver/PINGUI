@@ -2,6 +2,8 @@ package io.pingui.ui;
 
 import io.pingui.config.ConfigError;
 import io.pingui.config.PingExpertEntry;
+import io.pingui.config.PingPreset;
+import io.pingui.config.PingPresets;
 import io.pingui.probe.PingExpertCompatibility;
 import io.pingui.probe.PingExpertValidator;
 import io.pingui.probe.PingOptionCatalog;
@@ -16,6 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
@@ -26,6 +29,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
@@ -133,10 +137,12 @@ public final class PingExpertDialog {
 
         wireUiConstraints(host, addressFamily, flagChoices, textValues);
 
+        HBox presetsBar = buildPresetsBar(addressFamily, flagChoices, choiceValues, textValues);
+
         ScrollPane scroll = new ScrollPane(grid);
         scroll.setFitToWidth(true);
         scroll.setPrefViewportHeight(360);
-        VBox content = new VBox(8, chainCheck, scroll);
+        VBox content = new VBox(8, chainCheck, presetsBar, scroll);
         content.setPadding(new Insets(10));
         dialog.getDialogPane().setContent(content);
 
@@ -156,6 +162,58 @@ public final class PingExpertDialog {
                 error.setHeaderText(ex.getMessage());
                 error.getDialogPane().getButtonTypes().add(ButtonType.OK);
                 error.showAndWait();
+            }
+        }
+    }
+
+    private static HBox buildPresetsBar(
+            ComboBox<String> addressFamily,
+            Map<String, ComboBox<String>> flagChoices,
+            Map<String, ComboBox<String>> choiceValues,
+            Map<String, TextField> textValues) {
+        HBox bar = new HBox(6);
+        Label title = new Label("Presets:");
+        title.setMinWidth(56);
+        bar.getChildren().add(title);
+        for (PingPreset preset : PingPresets.all()) {
+            Button button = new Button(preset.label());
+            button.setTooltip(new Tooltip(String.join(" ", preset.args())));
+            button.setOnAction(event -> {
+                List<String> current = collectArgs(addressFamily, flagChoices, choiceValues, textValues);
+                List<String> merged = PingPresets.mergeKeepingAddressFamily(current, preset.args());
+                applyArgsToForm(merged, addressFamily, flagChoices, choiceValues, textValues);
+            });
+            bar.getChildren().add(button);
+        }
+        return bar;
+    }
+
+    /** Clears form controls and applies validated expert args (including AF). */
+    static void applyArgsToForm(
+            List<String> args,
+            ComboBox<String> addressFamily,
+            Map<String, ComboBox<String>> flagChoices,
+            Map<String, ComboBox<String>> choiceValues,
+            Map<String, TextField> textValues) {
+        List<String> safeArgs = args != null ? args : List.of();
+        applyAddressFamilySelection(safeArgs, addressFamily);
+        for (Map.Entry<String, ComboBox<String>> entry : flagChoices.entrySet()) {
+            applyFlagSelection(PingOptionCatalog.find(entry.getKey()), safeArgs, entry.getValue());
+        }
+        for (Map.Entry<String, ComboBox<String>> entry : choiceValues.entrySet()) {
+            PingOption option = PingOptionCatalog.find(entry.getKey());
+            if (option == null || option.valueSpec() == null) {
+                continue;
+            }
+            applyChoiceSelection(
+                    option, safeArgs, entry.getValue(), option.valueSpec().choices());
+        }
+        for (Map.Entry<String, TextField> entry : textValues.entrySet()) {
+            entry.getValue().clear();
+            clearFieldError(entry.getValue());
+            PingOption option = PingOptionCatalog.find(entry.getKey());
+            if (option != null) {
+                applyTextSelection(option, safeArgs, entry.getValue());
             }
         }
     }
@@ -310,6 +368,10 @@ public final class PingExpertDialog {
     }
 
     private static void applyFlagSelection(PingOption option, List<String> args, ComboBox<String> choice) {
+        if (option == null) {
+            choice.getSelectionModel().select(BOOL_FALSE);
+            return;
+        }
         for (String arg : args) {
             if (option.flag().equals(arg)) {
                 choice.getSelectionModel().select(BOOL_TRUE);

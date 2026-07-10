@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P14-040** |
+| **Поточна задача** | **P14-050** |
 | **Фаза** | 14 — GUI для профі |
-| **DoD (коротко)** | Expert ping presets (4 кнопки + `ping_presets.yaml`) |
+| **DoD (коротко)** | USER_GUIDE § pro / NOC workflow |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -46,7 +46,7 @@
 | 1 | **P14-021** | [x] | Tag filter chips + edit tags → YAML (`HostListPresenter`) |
 | 2 | **P14-030** | [x] | ASN у hop label: підключити наявний `AsnLookup*` / `asn_hints.yaml` або прибрати мертвий код |
 | 3 | **P14-031** | [x] | rDNS у label (async, cache TTL 5 хв) |
-| 4 | **P14-040** | [ ] | Expert ping presets (4 кнопки + `ping_presets.yaml`) |
+| 4 | **P14-040** | [x] | Expert ping presets (4 кнопки + `ping_presets.yaml`) |
 | 5 | **P14-050** | [ ] | USER_GUIDE § pro / NOC workflow |
 | 6 | **PY-P11** | [ ] | Python: YAML `persistence.events` + SQLite `persistence_event` |
 | 7 | **P15-001** | [ ] | ADR observability boundaries |
@@ -532,7 +532,7 @@ flowchart TD
 | **P14-021** | [x] UI: фільтр за тегом + quick filter chips | `HostListPresenter` | Збереження в YAML |
 | **P14-030** | [x] ASN + короткий descr у label hop (offline cache) | `geoip/AsnLookup.java` | Offline configurable; whois timeout reserved 2s |
 | **P14-031** | [x] rDNS у label (async, не блокує UI) | `DnsResolver.java`, `GraphCanvas` | Cache TTL 5 хв |
-| **P14-040** | [ ] Expert ping presets: MTU probe, DF, DSCP, burst | `PingExpertDialog`, `ping_presets.yaml` | 4 preset кнопки |
+| **P14-040** | [x] Expert ping presets: MTU probe, DF, DSCP, burst | `PingExpertDialog`, `ping_presets.yaml` | 4 preset кнопки |
 | **P14-050** | [ ] USER_GUIDE § pro workflow | `docs/USER_GUIDE.md` | NOC сценарій |
 
 **Орієнтовно:** 2 sprint.

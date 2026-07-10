@@ -116,6 +116,8 @@ profiles:
 | `--asn-timeout-ms` | int | `2000` | Зарезервовано під майбутній whois fallback |
 | `--no-geo-map` | flag | off | Вимкнути вкладку folium geo-map |
 
+Expert ping presets (Java GUI, P14-040): `config/ping_presets.yaml` поруч із hosts-конфігом (або CWD `config/ping_presets.yaml`); інакше bundled resource. Рівно 4 пресети (`mtu_probe`, `df`, `dscp`, `burst`); кнопки в `PingExpertDialog` підставляють args і зберігають поточний AF (`-4`/`-6`).
+
 ### Time-series (optional extra: `pip install -e ".[timeseries]"`)
 
 | Опція | Тип | За замовч. | Опис |

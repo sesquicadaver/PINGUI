@@ -5,6 +5,7 @@ import io.pingui.CliProfileOverrides;
 import io.pingui.config.ConfigError;
 import io.pingui.config.HostEntry;
 import io.pingui.config.PersistenceConfig;
+import io.pingui.config.PingPresets;
 import io.pingui.config.ProfileDocument;
 import io.pingui.config.ProfilesConfig;
 import io.pingui.config.SessionDbResolver;
@@ -105,6 +106,7 @@ public final class MainController {
         GeoCountry.configure(options.geoipEnabled(), options.geoipHintsPath());
         AsnLookup.configure(options.asnEnabled(), options.asnHintsPath(), options.asnTimeoutMs());
         DnsResolver.configure(true);
+        PingPresets.configure(PingPresets.resolvePath(options.configPath()));
         TracingProfile active = profileDocument.active();
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(active.hosts());
         this.store = SessionStore.fromEntries(

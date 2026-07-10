@@ -8,7 +8,7 @@
 
 | Field | Value |
 |------|----------|
-| **Current task** | **[P14-040](docs/en/ROADMAP.md#next--single-source-of-truth)** |
+| **Current task** | **[P14-050](docs/en/ROADMAP.md#next--single-source-of-truth)** |
 | **Rule** | `/autopilot` with no args = this ID. **Do not ask** “which item?”. |
 
 Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear).
@@ -35,7 +35,7 @@ Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#e
 | **11** | Persistence and timeline (Java) | ✅ |
 | **12** | Headless / daemon + systemd | ✅ |
 | **13** | Probe efficiency (MTR, smart interval, burst) | ✅ P13-001…050 |
-| **14** | Pro GUI (diff, tags, ASN/rDNS, presets) | 🔄 **NEXT → P14-040** |
+| **14** | Pro GUI (diff, tags, ASN/rDNS, presets) | 🔄 **NEXT → P14-050** |
 | **15** | Integrations (Prometheus, REST API, export) | 📋 queued after P14 |
 | **16** | Telemetry + LOG-server | 📋 queued after P15 |
 

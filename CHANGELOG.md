@@ -51,6 +51,7 @@
 - **Tag filter chips (P14-021):** quick filter chips у `HostListPresenter`; кнопка «Теги» + `HostTagsDialog`; `SessionStore.setTags` → Save у YAML.
 - **ASN hop labels (P14-030):** offline `AsnLookup` + `asn_hints.yaml`; мітка hop `AS#### Org`; CLI `--asn-hints` / `--no-asn` / `--asn-timeout-ms`.
 - **rDNS hop labels (P14-031):** async `DnsResolver` (PTR, cache TTL 5 хв); мітка hop після IP; redraw графа після resolve.
+- **Expert ping presets (P14-040):** 4 кнопки в `PingExpertDialog` з `ping_presets.yaml` (MTU probe, DF, DSCP, Burst); AF зберігається.
 
 ### Fixed
 

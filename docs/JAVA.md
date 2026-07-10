@@ -138,7 +138,7 @@ Store/history/change detection — `SessionStore`, `RouteHistory`, `RouteChangeD
 
 - Меню **Про** / **Довідка** (F1) — `AppMenuDialogs`
 - Вибір **профілю трасування** (ComboBox + новий/видалити); усі профілі в одному YAML
-- Чекбокс **«Експерт»** → кнопка **Exten.** на рядку хоста → `PingExpertDialog` (каталог з `pingMan.txt`, без `-c/-w/-W/-i` тощо)
+- Чекбокс **«Експерт»** → кнопка **Exten.** на рядку хоста → `PingExpertDialog` (каталог з `pingMan.txt`, без `-c/-w/-W/-i` тощо); 4 quick presets з `ping_presets.yaml` (MTU probe, DF, DSCP, Burst)
 - `ListView<HostItem>` + CheckBox у комірці
 - **GraphCanvas** — вертикальний граф, inactive/active колонки
 - Log `TextArea`

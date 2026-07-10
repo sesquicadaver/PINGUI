@@ -116,6 +116,8 @@ Alerts are disabled by default (`NoOp` dispatcher).
 | `--asn-timeout-ms` | int | `2000` | Reserved for future whois fallback |
 | `--no-geo-map` | flag | off | Disable folium geo-map tab |
 
+Expert ping presets (Java GUI, P14-040): `config/ping_presets.yaml` beside the hosts config (or CWD `config/ping_presets.yaml`); otherwise the bundled resource. Exactly 4 presets (`mtu_probe`, `df`, `dscp`, `burst`); buttons in `PingExpertDialog` apply args and keep the current AF (`-4`/`-6`).
+
 ### Time-series (optional extra: `pip install -e ".[timeseries]"`)
 
 | Option | Type | Default | Description |

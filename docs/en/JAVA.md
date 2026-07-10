@@ -138,7 +138,7 @@ Store/history/change detection — `SessionStore`, `RouteHistory`, `RouteChangeD
 
 - **About** / **Help** (F1) menu — `AppMenuDialogs`
 - **Trace profile** selection (ComboBox + new/delete); all profiles in one YAML
-- **“Expert”** checkbox → **Exten.** button on host row → `PingExpertDialog` (catalog from `pingMan.txt`, without `-c/-w/-W/-i` etc.)
+- **“Expert”** checkbox → **Exten.** button on host row → `PingExpertDialog` (catalog from `pingMan.txt`, without `-c/-w/-W/-i` etc.); 4 quick presets from `ping_presets.yaml` (MTU probe, DF, DSCP, Burst)
 - `ListView<HostItem>` + CheckBox in cell
 - **GraphCanvas** — vertical graph, inactive/active columns
 - Log `TextArea`
