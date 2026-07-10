@@ -25,7 +25,7 @@
 | **10** | Route change alerts (webhook, desktop) | 📋 planned |
 | **11** | Persistence and timeline (Java parity with Python) | 📋 planned |
 | **12** | Headless / daemon + systemd (Linux NOC) | 📋 planned |
-| **13** | Probe efficiency (MTR, smart interval, burst) | 📋 planned |
+| **13** | Probe efficiency (MTR, smart interval, burst) | ✅ P13-001…050 |
 | **14** | Pro GUI (diff, tags, ASN/rDNS, presets) | 📋 planned |
 | **15** | Integrations (Prometheus, REST API, export) | 📋 planned |
 | **16** | Telemetry: network metrics + LOG-server (SQLite/JSONL, syslog/GELF) | 📋 planned |

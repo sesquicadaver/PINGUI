@@ -25,7 +25,7 @@
 | **10** | Оповіщення про зміну маршруту (webhook, desktop) | 📋 заплановано |
 | **11** | Персистентність і таймлайн (Java parity з Python) | 📋 заплановано |
 | **12** | Headless / daemon + systemd (Linux NOC) | 📋 заплановано |
-| **13** | Ефективність probe (MTR, smart interval, burst) | 📋 заплановано |
+| **13** | Ефективність probe (MTR, smart interval, burst) | ✅ P13-001…050 |
 | **14** | GUI для профі (diff, теги, ASN/rDNS, presets) | 📋 заплановано |
 | **15** | Інтеграції (Prometheus, REST API, export) | 📋 заплановано |
 | **16** | Телеметрія: метрики мережі + LOG-server (SQLite/JSONL, syslog/GELF) | 📋 заплановано |
