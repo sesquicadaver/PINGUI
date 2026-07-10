@@ -118,6 +118,15 @@ public final class SessionStore implements AutoCloseable {
         get(host).setPingExpert(expert);
     }
 
+    public List<String> getTags(String host) {
+        return get(host).getTags();
+    }
+
+    /** Replaces host tags (normalized via {@link io.pingui.config.HostTags}). */
+    public void setTags(String host, List<String> tags) {
+        get(host).setTags(tags);
+    }
+
     public boolean isPingOnly(String host) {
         return get(host).isPingOnly();
     }

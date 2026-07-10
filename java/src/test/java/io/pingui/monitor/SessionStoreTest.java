@@ -147,10 +147,26 @@ class SessionStoreTest {
 
     @Test
     void loadHostEntriesPreservesTags() {
-        HostEntry tagged = new HostEntry(
-                "8.8.8.8", true, false, PingExpertEntry.empty(), null, null, List.of("dc", "vpn"));
+        HostEntry tagged =
+                new HostEntry("8.8.8.8", true, false, PingExpertEntry.empty(), null, null, List.of("dc", "vpn"));
         SessionStore store = SessionStore.fromEntries(List.of(tagged));
         assertEquals(List.of("dc", "vpn"), store.toHostEntries().get(0).tags());
+    }
+
+    @Test
+    void setTagsUpdatesSessionAndToHostEntries() {
+        SessionStore store =
+                SessionStore.fromEntries(List.of(new HostEntry("8.8.8.8", true, false, PingExpertEntry.empty())));
+        assertEquals(List.of(), store.getTags("8.8.8.8"));
+        store.setTags("8.8.8.8", List.of("DC", "vpn", "dc"));
+        assertEquals(List.of("dc", "vpn"), store.getTags("8.8.8.8"));
+        assertEquals(List.of("dc", "vpn"), store.toHostEntries().get(0).tags());
+    }
+
+    @Test
+    void setTagsRejectsInvalid() {
+        SessionStore store = new SessionStore(List.of("h"));
+        assertThrows(ConfigError.class, () -> store.setTags("h", List.of("Bad Tag!")));
     }
 
     @Test

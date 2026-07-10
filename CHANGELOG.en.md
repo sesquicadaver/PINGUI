@@ -13,6 +13,8 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **RouteHistoryPresenterTest:** fixed `2026-07-09` timestamps fell outside the 24h lookback — tests now use relative `Instant.now()`.
+- **PingColorTest:** drop ASN label expectation after P14-030 wiring revert (ASN returns in P14-030).
 - **Java UI:** adding a second host no longer switches the route-history target filter to the new host — history stays on the current target.
 - **CI:** GitHub Actions upgraded to Node.js 24 (`checkout@v6`, `setup-java@v5`, `setup-python@v6`) — removes Node 20 deprecation warnings.
 - **Java persistence:** `appendPingSamples` no longer crashes after SQLite reopen when ping history lists were loaded as immutable (`UnsupportedOperationException` on GUI poll).
@@ -28,6 +30,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 - **MTR vs trace docs (P13-050):** `docs/JAVA.md` — `probe_mode`, MTR limitations vs full trace; Monitor layer updated for P13-020…030.
 - **Route diff panel (P14-010):** `RouteDiff` / `RouteDiffPresenter` — hop-by-hop «was → became» with Δ RTT in extended view (live + history replay).
 - **Host tags (P14-020):** YAML `tags: [dc, vpn, …]` per host; ListView filter by tag; persisted via `ProfilesConfig` / `SessionStore`.
+- **Tag filter chips (P14-021):** quick filter chips in `HostListPresenter`; «Теги» button + `HostTagsDialog`; `SessionStore.setTags` → Save to YAML.
 - **Java GUI SQLite connection (P11-016):** file picker in Database settings, YAML `persistence.session_db`, active menu without CLI `--session-db`.
 - **Java hop stats from history (P11-040):** `hop_stats` persist to SQLite on every probe; graph labels (`j:`/`loss:`) survive session reopen.
 - **SQLite disk/retention docs (P11-050):** `docs/DEPLOYMENT.md` — no auto-TTL on `host_session`, manual event purge, sizing notes.
