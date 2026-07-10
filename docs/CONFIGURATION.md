@@ -111,6 +111,9 @@ profiles:
 |-------|-----|------------|------|
 | `--geoip-hints` | Path | `config/geoip_hints.yaml` | CIDR→country для міток hop (`prefixes` v4, `prefixes_v6` v6) |
 | `--no-geoip` | flag | off | Вимкнути country hints |
+| `--asn-hints` | Path | `config/asn_hints.yaml` | CIDR→ASN+org для міток hop (`{asn, org}`) |
+| `--no-asn` | flag | off | Вимкнути ASN hints |
+| `--asn-timeout-ms` | int | `2000` | Зарезервовано під майбутній whois fallback |
 | `--no-geo-map` | flag | off | Вимкнути вкладку folium geo-map |
 
 ### Time-series (optional extra: `pip install -e ".[timeseries]"`)

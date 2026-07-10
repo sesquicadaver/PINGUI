@@ -116,12 +116,7 @@ public final class GeoCountry {
         }
 
         String resolve(String ip) {
-            InetAddress parsed;
-            try {
-                parsed = InetAddress.getByName(ip);
-            } catch (UnknownHostException exc) {
-                return null;
-            }
+            InetAddress parsed = IpLiterals.parseLiteralOrNull(ip);
             if (parsed instanceof Inet4Address ipv4) {
                 return resolveV4(ipv4);
             }

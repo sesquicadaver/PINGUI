@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P14-030** |
+| **Поточна задача** | **P14-031** |
 | **Фаза** | 14 — GUI для профі |
-| **DoD (коротко)** | ASN у hop label: підключити наявний `AsnLookup*` / `asn_hints.yaml` або прибрати мертвий код |
+| **DoD (коротко)** | rDNS у label (async, cache TTL 5 хв) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -44,7 +44,7 @@
 | # | ID | Статус | Одна строка |
 |---|-----|--------|-------------|
 | 1 | **P14-021** | [x] | Tag filter chips + edit tags → YAML (`HostListPresenter`) |
-| 2 | **P14-030** | [ ] | ASN у hop label: підключити наявний `AsnLookup*` / `asn_hints.yaml` або прибрати мертвий код |
+| 2 | **P14-030** | [x] | ASN у hop label: підключити наявний `AsnLookup*` / `asn_hints.yaml` або прибрати мертвий код |
 | 3 | **P14-031** | [ ] | rDNS у label (async, cache TTL 5 хв) |
 | 4 | **P14-040** | [ ] | Expert ping presets (4 кнопки + `ping_presets.yaml`) |
 | 5 | **P14-050** | [ ] | USER_GUIDE § pro / NOC workflow |
@@ -530,7 +530,7 @@ flowchart TD
 | **P14-010** | [x] Route diff panel: hop-by-hop «було → стало», Δ RTT | `RouteDiffPresenter.java`, `GraphCanvas` | Manual smoke route change |
 | **P14-020** | [x] Теги цілей: `tags: [dc, vpn, customer-x]` у YAML | `HostEntry`, `ProfilesConfig` | Filter у ListView |
 | **P14-021** | [x] UI: фільтр за тегом + quick filter chips | `HostListPresenter` | Збереження в YAML |
-| **P14-030** | [ ] ASN + короткий descr у label hop (offline cache) | `geoip/AsnLookup.java` (вже є — підключити або видалити) | Configurable; timeout 2s |
+| **P14-030** | [x] ASN + короткий descr у label hop (offline cache) | `geoip/AsnLookup.java` | Offline configurable; whois timeout reserved 2s |
 | **P14-031** | [ ] rDNS у label (async, не блокує UI) | `DnsResolver.java`, `GraphCanvas` | Cache TTL 5 хв |
 | **P14-040** | [ ] Expert ping presets: MTU probe, DF, DSCP, burst | `PingExpertDialog`, `ping_presets.yaml` | 4 preset кнопки |
 | **P14-050** | [ ] USER_GUIDE § pro workflow | `docs/USER_GUIDE.md` | NOC сценарій |

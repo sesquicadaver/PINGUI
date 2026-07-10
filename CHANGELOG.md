@@ -14,7 +14,6 @@
 ### Fixed
 
 - **RouteHistoryPresenterTest:** фіксовані timestamps `2026-07-09` виходили за 24h lookback — тести використовують відносний `Instant.now()`.
-- **PingColorTest:** прибрано очікування ASN-рядка після revert wiring P14-030 (ASN повернеться в P14-030).
 - **Java UI:** додавання другого хоста більше не перемикає фільтр «Ціль» в «Історії змін» на новий хост — історія лишається для поточної цілі.
 - **CI:** GitHub Actions оновлено на Node.js 24 (`checkout@v6`, `setup-java@v5`, `setup-python@v6`) — прибирає deprecation Node 20.
 - **Java persistence:** `appendPingSamples` no longer crashes after SQLite reopen when ping history lists were loaded as immutable (`UnsupportedOperationException` on GUI poll).
@@ -50,6 +49,7 @@
 - **Route diff panel (P14-010):** `RouteDiff` / `RouteDiffPresenter` — hop-by-hop «було → стало» з Δ RTT у розширеному режимі (live + replay історії).
 - **Host tags (P14-020):** YAML `tags: [dc, vpn, …]` на хост; фільтр ListView за тегом; збереження через `ProfilesConfig` / `SessionStore`.
 - **Tag filter chips (P14-021):** quick filter chips у `HostListPresenter`; кнопка «Теги» + `HostTagsDialog`; `SessionStore.setTags` → Save у YAML.
+- **ASN hop labels (P14-030):** offline `AsnLookup` + `asn_hints.yaml`; мітка hop `AS#### Org`; CLI `--asn-hints` / `--no-asn` / `--asn-timeout-ms`.
 
 ### Fixed
 
