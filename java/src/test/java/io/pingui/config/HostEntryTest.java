@@ -47,6 +47,13 @@ class HostEntryTest {
     }
 
     @Test
+    void withTagsPreservesOtherFields() {
+        HostEntry entry = HostEntry.basic("8.8.8.8", true).withTags(List.of("dc", "VPN"));
+        assertEquals(List.of("dc", "vpn"), entry.tags());
+        assertTrue(entry.enabled());
+    }
+
+    @Test
     void effectiveIntervalUsesModeDefaultsAndOverride() {
         HostEntry trace = HostEntry.basic("8.8.8.8", true);
         assertEquals(30.0, trace.effectiveIntervalSeconds(HostProbeMode.TRACE, 30.0));

@@ -172,7 +172,8 @@ public final class SessionStore implements AutoCloseable {
                     pingOnly,
                     session.getPingExpert(),
                     session.getProbeModeOverride(),
-                    session.getIntervalSecondsOverride()));
+                    session.getIntervalSecondsOverride(),
+                    session.getTags()));
         }
         return List.copyOf(out);
     }

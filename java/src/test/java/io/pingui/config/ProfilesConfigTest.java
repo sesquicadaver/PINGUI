@@ -265,6 +265,29 @@ class ProfilesConfigTest {
     }
 
     @Test
+    void loadHostTagsRoundTrip() throws Exception {
+        Path path = tempDir.resolve("tags.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    hosts:
+                      - address: "8.8.8.8"
+                        enabled: true
+                        tags: [DC, vpn, dc]
+                      - address: "1.1.1.1"
+                """);
+        HostEntry tagged = ProfilesConfig.load(path).active().hosts().get(0);
+        assertEquals(List.of("dc", "vpn"), tagged.tags());
+
+        ProfilesConfig.save(path, ProfilesConfig.load(path));
+        HostEntry reloaded = ProfilesConfig.load(path).active().hosts().get(0);
+        assertEquals(List.of("dc", "vpn"), reloaded.tags());
+    }
+
+    @Test
     void loadWindowsExamplePreset() throws Exception {
         Path path = Path.of("config/hosts.windows.example.yaml");
         org.junit.jupiter.api.Assumptions.assumeTrue(Files.isRegularFile(path), "Run from java/ module directory");

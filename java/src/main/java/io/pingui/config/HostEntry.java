@@ -2,6 +2,7 @@ package io.pingui.config;
 
 import io.pingui.monitor.HostPollSchedule;
 import io.pingui.monitor.HostProbeMode;
+import java.util.List;
 import java.util.OptionalDouble;
 
 /** One monitored target inside a tracing profile. */
@@ -11,7 +12,8 @@ public record HostEntry(
         boolean pingOnly,
         PingExpertEntry pingExpert,
         HostProbeMode probeModeOverride,
-        Double intervalSecondsOverride) {
+        Double intervalSecondsOverride,
+        List<String> tags) {
     public HostEntry {
         if (address == null || address.isBlank()) {
             throw new IllegalArgumentException("address required");
@@ -20,10 +22,11 @@ public record HostEntry(
         if (intervalSecondsOverride != null && intervalSecondsOverride <= 0) {
             throw new IllegalArgumentException("interval must be positive");
         }
+        tags = HostTags.normalize(tags);
     }
 
     public HostEntry(String address, boolean enabled, boolean pingOnly, PingExpertEntry pingExpert) {
-        this(address, enabled, pingOnly, pingExpert, null, null);
+        this(address, enabled, pingOnly, pingExpert, null, null, List.of());
     }
 
     public HostEntry(
@@ -32,7 +35,17 @@ public record HostEntry(
             boolean pingOnly,
             PingExpertEntry pingExpert,
             HostProbeMode probeModeOverride) {
-        this(address, enabled, pingOnly, pingExpert, probeModeOverride, null);
+        this(address, enabled, pingOnly, pingExpert, probeModeOverride, null, List.of());
+    }
+
+    public HostEntry(
+            String address,
+            boolean enabled,
+            boolean pingOnly,
+            PingExpertEntry pingExpert,
+            HostProbeMode probeModeOverride,
+            Double intervalSecondsOverride) {
+        this(address, enabled, pingOnly, pingExpert, probeModeOverride, intervalSecondsOverride, List.of());
     }
 
     public static HostEntry basic(String address, boolean enabled) {
@@ -46,19 +59,26 @@ public record HostEntry(
                 pingOnly,
                 expert != null ? expert.normalized() : PingExpertEntry.empty(),
                 probeModeOverride,
-                intervalSecondsOverride);
+                intervalSecondsOverride,
+                tags);
     }
 
     public HostEntry withPingOnly(boolean hostPingOnly) {
-        return new HostEntry(address, enabled, hostPingOnly, pingExpert, probeModeOverride, intervalSecondsOverride);
+        return new HostEntry(
+                address, enabled, hostPingOnly, pingExpert, probeModeOverride, intervalSecondsOverride, tags);
     }
 
     public HostEntry withProbeModeOverride(HostProbeMode override) {
-        return new HostEntry(address, enabled, pingOnly, pingExpert, override, intervalSecondsOverride);
+        return new HostEntry(address, enabled, pingOnly, pingExpert, override, intervalSecondsOverride, tags);
     }
 
     public HostEntry withIntervalSecondsOverride(Double override) {
-        return new HostEntry(address, enabled, pingOnly, pingExpert, probeModeOverride, override);
+        return new HostEntry(address, enabled, pingOnly, pingExpert, probeModeOverride, override, tags);
+    }
+
+    public HostEntry withTags(List<String> newTags) {
+        return new HostEntry(
+                address, enabled, pingOnly, pingExpert, probeModeOverride, intervalSecondsOverride, newTags);
     }
 
     public OptionalDouble intervalOverride() {

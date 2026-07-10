@@ -42,6 +42,7 @@
 - **Windows preset (P13-040):** `config/hosts.windows.example.yaml` — `probe_mode: ping_only`, `interval: 60`; CHECKLIST/DEPLOYMENT Windows.
 - **MTR vs trace docs (P13-050):** `docs/JAVA.md` — `probe_mode`, MTR limitations vs full trace; Monitor-шар оновлено під P13-020…030.
 - **Route diff panel (P14-010):** `RouteDiff` / `RouteDiffPresenter` — hop-by-hop «було → стало» з Δ RTT у розширеному режимі (live + replay історії).
+- **Host tags (P14-020):** YAML `tags: [dc, vpn, …]` на хост; фільтр ListView за тегом; збереження через `ProfilesConfig` / `SessionStore`.
 
 ### Fixed
 

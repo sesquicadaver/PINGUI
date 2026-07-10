@@ -23,9 +23,10 @@ final class HostListCell extends ListCell<HostItem> {
     private final CheckBox pingOnlyCheck = new CheckBox("Ping only");
     private final Button extenButton = new Button("Exten.");
     private final Label hostLabel = new Label();
+    private final Label tagsLabel = new Label();
     private final Label metricsLabel = new Label();
     private final HBox hostRow = new HBox(6, extenButton, hostLabel);
-    private final VBox textBox = new VBox(2, hostRow, metricsLabel);
+    private final VBox textBox = new VBox(2, hostRow, tagsLabel, metricsLabel);
     private final HBox root = new HBox(8, checkBox, textBox, pingOnlyCheck);
     private final BiConsumer<HostItem, Boolean> onEnabledChanged;
     private final BiConsumer<HostItem, Boolean> onPingOnlyChanged;
@@ -56,6 +57,7 @@ final class HostListCell extends ListCell<HostItem> {
             }
         });
         metricsLabel.setStyle("-fx-font-family: monospace; -fx-font-size: 10px;");
+        tagsLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #666666;");
         HBox.setHgrow(textBox, Priority.ALWAYS);
         HBox.setHgrow(hostLabel, Priority.ALWAYS);
         root.setAlignment(Pos.CENTER_LEFT);
@@ -90,6 +92,9 @@ final class HostListCell extends ListCell<HostItem> {
         checkBox.setSelected(item.isEnabled());
         pingOnlyCheck.setSelected(item.isPingOnly());
         hostLabel.textProperty().bind(item.hostProperty());
+        tagsLabel.textProperty().bind(item.tagsTextProperty());
+        tagsLabel.visibleProperty().bind(item.tagsTextProperty().isNotEmpty());
+        tagsLabel.managedProperty().bind(item.tagsTextProperty().isNotEmpty());
         metricsLabel.textProperty().bind(item.metricsTextProperty());
         metricsLabel.visibleProperty().bind(item.showMetricsProperty());
         metricsLabel.managedProperty().bind(item.showMetricsProperty());
@@ -123,6 +128,9 @@ final class HostListCell extends ListCell<HostItem> {
             return;
         }
         hostLabel.textProperty().unbind();
+        tagsLabel.textProperty().unbind();
+        tagsLabel.visibleProperty().unbind();
+        tagsLabel.managedProperty().unbind();
         metricsLabel.textProperty().unbind();
         metricsLabel.visibleProperty().unbind();
         metricsLabel.managedProperty().unbind();

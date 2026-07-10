@@ -453,7 +453,7 @@ flowchart TD
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
 | **P14-010** | [x] Route diff panel: hop-by-hop «було → стало», Δ RTT | `RouteDiffPresenter.java`, `GraphCanvas` | Manual smoke route change |
-| **P14-020** | [ ] Теги цілей: `tags: [dc, vpn, customer-x]` у YAML | `HostEntry`, `ProfilesConfig` | Filter у ListView |
+| **P14-020** | [x] Теги цілей: `tags: [dc, vpn, customer-x]` у YAML | `HostEntry`, `ProfilesConfig` | Filter у ListView |
 | **P14-021** | [ ] UI: фільтр за тегом + quick filter chips | `HostListPresenter` | Збереження в YAML |
 | **P14-030** | [ ] ASN + короткий descr у label hop (offline cache) | `geoip/AsnLookup.java` або lazy whois | Configurable; timeout 2s |
 | **P14-031** | [ ] rDNS у label (async, не блокує UI) | `DnsResolver.java`, `GraphCanvas` | Cache TTL 5 хв |

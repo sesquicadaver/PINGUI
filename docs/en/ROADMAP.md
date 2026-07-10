@@ -453,7 +453,7 @@ flowchart TD
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
 | **P14-010** | [x] Route diff panel: hop-by-hop «was → now», Δ RTT | `RouteDiffPresenter.java`, `GraphCanvas` | Manual smoke route change |
-| **P14-020** | [ ] Target tags: `tags: [dc, vpn, customer-x]` in YAML | `HostEntry`, `ProfilesConfig` | Filter in ListView |
+| **P14-020** | [x] Target tags: `tags: [dc, vpn, customer-x]` in YAML | `HostEntry`, `ProfilesConfig` | Filter in ListView |
 | **P14-021** | [ ] UI: tag filter + quick filter chips | `HostListPresenter` | Saved in YAML |
 | **P14-030** | [ ] ASN + short descr in hop label (offline cache) | `geoip/AsnLookup.java` or lazy whois | Configurable; 2s timeout |
 | **P14-031** | [ ] rDNS in label (async, non-blocking UI) | `DnsResolver.java`, `GraphCanvas` | Cache TTL 5 min |

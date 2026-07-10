@@ -91,6 +91,7 @@ public final class Models {
         private HostProbeMode probeMode = HostProbeMode.TRACE;
         private HostProbeMode probeModeOverride;
         private Double intervalSecondsOverride;
+        private java.util.List<String> tags = java.util.List.of();
         private PingExpertEntry pingExpert = PingExpertEntry.empty();
 
         public List<HopNode> getCurrentRoute() {
@@ -170,9 +171,18 @@ public final class Models {
             intervalSecondsOverride = override;
         }
 
+        public java.util.List<String> getTags() {
+            return tags;
+        }
+
+        public void setTags(java.util.List<String> tags) {
+            this.tags = io.pingui.config.HostTags.normalize(tags);
+        }
+
         public void applyProbeFromEntry(io.pingui.config.HostEntry entry, HostProbeMode profileDefault) {
             probeModeOverride = entry.probeModeOverride();
             intervalSecondsOverride = entry.intervalSecondsOverride();
+            tags = entry.tags();
             probeMode = entry.effectiveProbeMode(profileDefault);
             pingOnly = probeMode == HostProbeMode.PING_ONLY;
         }

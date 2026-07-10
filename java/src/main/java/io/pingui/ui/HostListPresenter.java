@@ -81,7 +81,7 @@ final class HostListPresenter {
     void rebuild(List<HostEntry> entries) {
         hostItems.clear();
         for (HostEntry entry : HostViewRules.sessionEntries(entries)) {
-            HostItem item = new HostItem(entry.address(), entry.enabled(), entry.pingOnly());
+            HostItem item = new HostItem(entry.address(), entry.enabled(), entry.pingOnly(), entry.tags());
             item.setExpertConfigured(entry.pingExpert().isConfigured());
             hostItems.add(item);
         }

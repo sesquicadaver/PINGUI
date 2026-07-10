@@ -146,6 +146,14 @@ class SessionStoreTest {
     }
 
     @Test
+    void loadHostEntriesPreservesTags() {
+        HostEntry tagged =
+                new HostEntry("8.8.8.8", true, false, PingExpertEntry.empty(), null, null, List.of("dc", "vpn"));
+        SessionStore store = SessionStore.fromEntries(List.of(tagged));
+        assertEquals(List.of("dc", "vpn"), store.toHostEntries().get(0).tags());
+    }
+
+    @Test
     void loadHostEntriesRoundTrip() {
         List<HostEntry> entries = List.of(
                 new HostEntry("8.8.8.8", true, false, PingExpertEntry.empty()),

@@ -226,7 +226,12 @@ public final class ProfilesConfig {
                 }
                 intervalOverride = parsed;
             }
-            return new HostEntry(normalized, enabled, pingOnly, expert, probeModeOverride, intervalOverride);
+            List<String> tags = List.of();
+            Object tagsObj = hostMap.get("tags");
+            if (tagsObj != null) {
+                tags = readStringList(tagsObj, "tags", profileName);
+            }
+            return new HostEntry(normalized, enabled, pingOnly, expert, probeModeOverride, intervalOverride, tags);
         }
         throw new ConfigError("Each host in profile '" + profileName + "' must be a string or mapping, got "
                 + (entry == null ? "null" : entry.getClass().getSimpleName()));
@@ -286,6 +291,7 @@ public final class ProfilesConfig {
                 && !host.pingOnly()
                 && host.probeModeOverride() == null
                 && host.intervalSecondsOverride() == null
+                && host.tags().isEmpty()
                 && !expert.isConfigured()) {
             return Map.of("address", host.address());
         }
@@ -303,6 +309,9 @@ public final class ProfilesConfig {
         }
         if (host.intervalSecondsOverride() != null) {
             map.put("interval", host.intervalSecondsOverride());
+        }
+        if (!host.tags().isEmpty()) {
+            map.put("tags", host.tags());
         }
         if (expert.isConfigured()) {
             Map<String, Object> expertMap = new LinkedHashMap<>();
