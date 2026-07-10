@@ -21,6 +21,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 - **Burst on route change (P13-021):** `BurstSchedulePolicy` — after `route_change` interval ×0.25 for 5 min; wired in `MonitorService.resolveIntervalSeconds`.
 - **Trace concurrency cap (P13-030):** YAML `max_concurrent_traces` (default 3); `TraceConcurrencyLimiter` caps simultaneous TRACE polls; `ping_only`/`mtr` bypass.
 - **Windows preset (P13-040):** `config/hosts.windows.example.yaml` — `probe_mode: ping_only`, `interval: 60`; CHECKLIST/DEPLOYMENT Windows.
+- **MTR vs trace docs (P13-050):** `docs/JAVA.md` — `probe_mode`, MTR limitations vs full trace; Monitor layer updated for P13-020…030.
 - **Java GUI SQLite connection (P11-016):** file picker in Database settings, YAML `persistence.session_db`, active menu without CLI `--session-db`.
 - **Java hop stats from history (P11-040):** `hop_stats` persist to SQLite on every probe; graph labels (`j:`/`loss:`) survive session reopen.
 - **SQLite disk/retention docs (P11-050):** `docs/DEPLOYMENT.md` — no auto-TTL on `host_session`, manual event purge, sizing notes.

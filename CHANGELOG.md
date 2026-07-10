@@ -40,6 +40,7 @@
 - **Burst on route change (P13-021):** `BurstSchedulePolicy` — після `route_change` інтервал ×0.25 на 5 хв; інтеграція в `MonitorService.resolveIntervalSeconds`.
 - **Trace concurrency cap (P13-030):** `max_concurrent_traces` (default 3) у YAML; `TraceConcurrencyLimiter` обмежує одночасні TRACE-опити; `ping_only`/`mtr` без ліміту.
 - **Windows preset (P13-040):** `config/hosts.windows.example.yaml` — `probe_mode: ping_only`, `interval: 60`; CHECKLIST/DEPLOYMENT Windows.
+- **MTR vs trace docs (P13-050):** `docs/JAVA.md` — `probe_mode`, MTR limitations vs full trace; Monitor-шар оновлено під P13-020…030.
 
 ### Fixed
 

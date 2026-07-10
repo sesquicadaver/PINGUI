@@ -440,7 +440,7 @@ flowchart TD
 | **P13-021** | [x] Burst on change: після route change — interval ×0.25 на 5 хв | `BurstSchedulePolicy.java` | Unit-тест timer |
 | **P13-030** | [x] Parallel poll: `max_concurrent_traces` (default 3) | `MonitorService`, `TraceConcurrencyLimiter` | Не більше N subprocess одночасно |
 | **P13-040** | [x] Windows profile preset: auto `ping_only` + `interval: 60` | `config/hosts.windows.example.yaml` | CHECKLIST Windows |
-| **P13-050** | [ ] LIVING_SPEC + JAVA.md known limitations | `docs/JAVA.md` | MTR vs traceroute doc |
+| **P13-050** | [x] LIVING_SPEC + JAVA.md known limitations | `docs/JAVA.md` | MTR vs traceroute doc |
 
 **Орієнтовно:** 2–3 sprint.
 

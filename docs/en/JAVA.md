@@ -45,7 +45,50 @@ Python uses scapy + raw ICMP. Java supports two backends:
 
 CLI: `--probe auto|process|raw` (default: `auto`).
 
-> **Performance:** on **Windows** subprocess trace via `tracert` is orders of magnitude slower than Linux `traceroute` (`-q 1`). For production monitoring **Linux** is recommended; on Windows use **Ping only** or a large `interval`. See [DEPLOYMENT.md](DEPLOYMENT.md#os-recommendation).
+### Poll modes (`probe_mode`, P13-001…050)
+
+Orthogonal to transport `probe:` — this is the **monitoring strategy**, not the trace backend.
+
+| `probe_mode` | Call | Per poll | Per-hop RTT/loss | Route change |
+|--------------|------|----------|------------------|--------------|
+| **`trace`** | `RoutePoller.pollHostRoute` → `RouteProbe.trace()` | Full trace of all hops | Yes (expert/default ping) | Full path compare |
+| **`mtr`** | `RoutePoller.pollHostMtr` → `MtrProbe` | **One hop** (TTL probe) | Yes, incremental | DISCOVERING grows by prefix; burst only on reroute |
+| **`ping_only`** | `RoutePoller.pollHostPingOnly` | Ping to target | Target only | No hops |
+
+YAML (profile + per-host override):
+
+```yaml
+profiles:
+  default:
+    probe_mode: trace          # trace | mtr | ping_only
+    interval: 30.0
+    max_concurrent_traces: 3
+    hosts:
+      - address: "8.8.8.8"
+        probe_mode: ping_only  # optional override
+```
+
+Legacy `ping_only: true` on a host → `probe_mode: ping_only` (deprecated flag; kept for backward compat).
+
+See [ADR_PROBE_MODES.md](ADR_PROBE_MODES.md).
+
+#### MTR vs full trace — known limitations (P13-050)
+
+| Topic | `trace` | `mtr` |
+|-------|---------|-------|
+| Load per cycle | All hops (subprocess or raw ICMP) | One hop per `MtrProbe.poll()` call |
+| Transport | Depends on `probe:` (`auto`/`process`/`raw`) | `IcmpMtrHopProber` / platform ping — **not** external `mtr` subprocess |
+| Route discovery | Full path immediately | **DISCOVERING** phase: hop 1→N until target reached |
+| Windows | Slow `tracert` (3 probes/hop) | Lighter per-hop ping; `ping_only` recommended on Windows |
+| `probe: raw` | Raw ICMP trace (Linux) | MTR does **not** use `RawIcmpRouteProbe` |
+| Expert ping | After trace (chain/target) | After MTR snapshot when expert is configured |
+| Concurrency | `max_concurrent_traces` cap | No cap (light probes) |
+| Interval (default) | Profile `interval` (30–300 s) | 10 s; `ping_only` — 1.5 s (`HostPollSchedule`) |
+| Burst after reroute | Yes (`BurstSchedulePolicy`) | No on prefix growth (real reroute only) |
+
+**Not MTR:** parsing output from external `mtr`/`mtr.exe` — out of scope (see parser table below). In-process state machine — see `MtrProbe`, `MtrProbeState`.
+
+> **Performance:** on **Windows** subprocess trace via `tracert` is orders of magnitude slower than Linux `traceroute` (`-q 1`). Starter preset `config/hosts.windows.example.yaml` (`probe_mode: ping_only`, `interval: 60`). See [DEPLOYMENT.md](DEPLOYMENT.md#os-recommendation).
 
 ### ProcessRouteProbe (subprocess)
 
@@ -66,7 +109,7 @@ Parsers: `UnixTraceOutputParser`, `WindowsTraceOutputParser`. Factory: `TraceCom
 | **Unix hostname hops** | Token after hop number stored as “IP” (may be hostname) |
 | **Windows localization** | Timeout: `timed out`, `timeout`, `перевищ…`; RTT: `ms` / `мс`, `<1 ms` → 0.5 |
 | **GNU inetutils** | Flavor without `-n`; `-n` gives exit 64 — detection via `traceroute --version` |
-| **Mixed trace formats** | Classic vertical traceroute/tracert only; MTR/JSON — out of scope |
+| **Mixed trace formats** | Classic vertical traceroute/tracert only; external **mtr** / JSON output — out of scope (`probe_mode: mtr` ≠ subprocess mtr) |
 
 ### RawIcmpRouteProbe (JNA, Linux)
 
@@ -74,16 +117,20 @@ Incremental TTL/hop limit 1..N via raw ICMP socket (IPv4 `IP_TTL`, IPv6 `IPV6_UN
 
 Requires: `sudo setcap cap_net_raw+ep` on JDK binary or run as root. IPv6 literal with `probe: raw`; with `probe: auto` — subprocess `traceroute -6`.
 
-## Monitor layer
+## Monitor layer (P13-020…030)
 
-`MonitorService` — single daemon thread (`ScheduledExecutorService`):
+`MonitorService` — **0.25 s** scheduler tick + probe thread pool:
 
-1. Collects enabled hosts.
-2. `RoutePoller.pollHostRoute()` → `RouteProbe.trace()`.
-3. If expert ping is configured for a host — `ExpertPingEnricher` runs `ping -c 1` with extra flags.
-4. Callbacks: `onDataReceived`, `onRouteChanged`, `onProbeError`.
+1. `cycle()` — **due** hosts only (`HostPollSchedule`, per-host `lastPollAt`).
+2. `dispatchDueHost()` — `TraceConcurrencyLimiter` for `probe_mode: trace`.
+3. `pollHostOnce()` branches on `resolveProbeMode(host)`:
+   - **trace** → `pollHostRoute`
+   - **mtr** → `pollHostMtr`
+   - **ping_only** → `pollHostPingOnly`
+4. `BurstSchedulePolicy` — ×0.25 interval for 5 min after reroute (not MTR prefix growth).
+5. Expert/default ping enrich for trace/mtr; callbacks + persistence + alerts.
 
-Store/history/change detection logic — port from Python (`SessionStore`, `RouteHistory`, `RouteChangeDetector`).
+Store/history/change detection — `SessionStore`, `RouteHistory`, `RouteChangeDetector`.
 
 ## UI layer
 
@@ -110,6 +157,8 @@ profiles:
     max_hops: 20
     timeout: 0.5
     probe: auto
+    probe_mode: trace
+    max_concurrent_traces: 3
     hosts:
       - address: "8.8.8.8"
         enabled: true
