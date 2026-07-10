@@ -93,6 +93,7 @@ public final class MainController {
     private ViewModeController viewModeController;
     private RouteGraphPresenter routeGraphPresenter;
     private RouteHistoryPresenter routeHistoryPresenter;
+    private final RouteDiffPresenter routeDiffPresenter = new RouteDiffPresenter();
     private final HistoryHostSync historyHostSync = new HistoryHostSync();
 
     public MainController(AppOptions options, ProfileDocument document) {
@@ -171,7 +172,7 @@ public final class MainController {
             }
         });
 
-        graphPanel.getChildren().addAll(new Label("Граф маршруту"), graphCanvas);
+        graphPanel.getChildren().addAll(new Label("Граф маршруту"), graphCanvas, routeDiffPresenter.panel());
         configureHistoryPanel();
         VBox.setVgrow(graphCanvas, Priority.ALWAYS);
         graphPanel.setPadding(new Insets(8));
@@ -251,7 +252,12 @@ public final class MainController {
                 () -> easterEggActive);
 
         routeGraphPresenter = new RouteGraphPresenter(
-                graphCanvas, hostList, () -> store, () -> viewModeController.isExtended(), () -> easterEggActive);
+                graphCanvas,
+                hostList,
+                () -> store,
+                () -> viewModeController.isExtended(),
+                () -> easterEggActive,
+                routeDiffPresenter);
 
         routeHistoryPresenter = new RouteHistoryPresenter(
                 () -> store,

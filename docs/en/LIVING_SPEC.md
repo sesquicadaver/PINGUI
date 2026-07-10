@@ -24,6 +24,7 @@ Module → unit test matrix. Update when adding features.
 | Trace concurrency cap (P13-030) | `TraceConcurrencyLimiter`, `TracingProfile`, `MonitorService` | `TraceConcurrencyLimiterTest`, `ProfilesConfigTest.loadMaxConcurrentTraces`, `MonitorServiceTest.limitsConcurrentTracePolls`, `MonitorServiceTest.pingOnlyPollsWhileTraceSlotExhausted` |
 | Windows preset YAML (P13-040) | `config/hosts.windows.example.yaml`, `ProfilesConfig` | `ProfilesConfigTest.loadWindowsExamplePreset` |
 | MTR vs trace docs (P13-050) | `docs/JAVA.md`, `docs/ADR_PROBE_MODES.md` | Docs parity (`check_doc_parity.py`); § probe_mode + MTR limitations in JAVA.md |
+| Route diff panel (P14-010) | `RouteDiff`, `RouteDiffPresenter`, `RouteGraphPresenter`, `GraphCanvas` | `RouteDiffTest`, `RouteDiffPresenterTest`, `RouteGraphPresenterTest.liveRedrawShowsDiffAgainstPreviousRoute` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
 | SQLite session (P11-010) | `SessionDatabase`, `SessionJsonCodec` | `SessionDatabaseTest` |
