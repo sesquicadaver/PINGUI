@@ -21,6 +21,7 @@
 
 ### Added
 
+- **API contract tests (P15-050):** exact JSON contracts for `GET /hosts` / `/routes/{host}` / OpenAPI / 404 / 405; DaemonRunner `--api-port` smoke; фаза 15 закрита.
 - **DEPLOYMENT reverse proxy + TLS (P15-041):** nginx HTTPS example перед localhost `--api-port` / `--metrics-port` (Basic Auth, certbot).
 - **Read-only REST API (P15-040):** `ReadOnlyApiServer` — `GET /hosts`, `GET /routes/{host}`, `GET /openapi.json` на `127.0.0.1` через `--api-port` (daemon; auth out of scope).
 - **Scheduled CSV/HTML export (P15-030):** `ScheduledExport` + CLI `--export-schedule hourly|daily|weekly` з `--export-dir` (cron one-shot, UTC stamps, CSV+HTML).

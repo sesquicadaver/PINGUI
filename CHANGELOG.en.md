@@ -21,6 +21,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **API contract tests (P15-050):** exact JSON contracts for `GET /hosts` / `/routes/{host}` / OpenAPI / 404 / 405; DaemonRunner `--api-port` smoke; phase 15 closed.
 - **DEPLOYMENT reverse proxy + TLS (P15-041):** nginx HTTPS example in front of localhost `--api-port` / `--metrics-port` (Basic Auth, certbot).
 - **Read-only REST API (P15-040):** `ReadOnlyApiServer` — `GET /hosts`, `GET /routes/{host}`, `GET /openapi.json` on `127.0.0.1` via `--api-port` (daemon; auth out of scope).
 - **Scheduled CSV/HTML export (P15-030):** `ScheduledExport` + CLI `--export-schedule hourly|daily|weekly` with `--export-dir` (cron one-shot, UTC stamps, CSV+HTML).

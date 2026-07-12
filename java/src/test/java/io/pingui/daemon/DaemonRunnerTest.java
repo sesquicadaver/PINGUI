@@ -125,6 +125,64 @@ class DaemonRunnerTest {
     }
 
     @Test
+    void startWithApiPortServesHosts() throws Exception {
+        Path config = tempDir.resolve("hosts-api.yaml");
+        Files.writeString(
+                config,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    interval: 30.0
+                    max_hops: 5
+                    timeout: 1.0
+                    probe: process
+                    hosts:
+                      - address: 8.8.8.8
+                        enabled: true
+                """);
+        Path pidFile = tempDir.resolve("api.pid");
+        java.net.ServerSocket probe = new java.net.ServerSocket(0);
+        int port = probe.getLocalPort();
+        probe.close();
+        AppOptions options = new AppOptions(
+                config,
+                CliProfileOverrides.none(),
+                CliAlertOverrides.none(),
+                CliPersistenceOverrides.none(),
+                io.pingui.CliTimeSeriesOverrides.none(),
+                false,
+                false,
+                Path.of("config/geoip_hints.yaml"),
+                false,
+                Path.of("config/asn_hints.yaml"),
+                2000,
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                CliRunMode.DAEMON,
+                pidFile,
+                Optional.empty(),
+                Optional.of(port));
+
+        try (DaemonRunner runner = new DaemonRunner(options, pidFile)) {
+            runner.start();
+            assertTrue(runner.apiServer().isPresent());
+            assertTrue(runner.metricsServer().isEmpty());
+            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+            java.net.http.HttpResponse<String> response = client.send(
+                    java.net.http.HttpRequest.newBuilder(java.net.URI.create("http://127.0.0.1:" + port + "/hosts"))
+                            .GET()
+                            .build(),
+                    java.net.http.HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, response.statusCode());
+            assertTrue(response.body().contains("\"address\":\"8.8.8.8\""));
+            assertTrue(response.body().contains("\"enabled\":true"));
+        }
+    }
+
+    @Test
     void startRejectsDuplicatePidFile() throws Exception {
         Path config = tempDir.resolve("hosts.yaml");
         Files.writeString(
