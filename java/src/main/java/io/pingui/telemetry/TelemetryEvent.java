@@ -36,11 +36,7 @@ public record TelemetryEvent(
     }
 
     public static TelemetryEvent routeChange(
-            String host,
-            List<String> oldIps,
-            List<String> newIps,
-            Map<String, String> labels,
-            Instant timestamp) {
+            String host, List<String> oldIps, List<String> newIps, Map<String, String> labels, Instant timestamp) {
         return new TelemetryEvent(ROUTE_CHANGE, host, labels, null, oldIps, newIps, timestamp);
     }
 

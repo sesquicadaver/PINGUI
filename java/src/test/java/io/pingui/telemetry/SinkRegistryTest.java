@@ -217,9 +217,7 @@ class SinkRegistryTest {
     @Test
     void rejectsBlankSinkId() {
         SinkRegistry registry = new SinkRegistry();
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> registry.register(new RecordingSink("  ", false)));
+        assertThrows(IllegalArgumentException.class, () -> registry.register(new RecordingSink("  ", false)));
     }
 
     private static MetricSample sample() {

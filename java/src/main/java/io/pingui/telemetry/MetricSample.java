@@ -11,12 +11,7 @@ import java.util.Objects;
  * <p>JSON contract is shared with Python {@code MetricSample} ({@code kind=sample}).
  */
 public record MetricSample(
-        String name,
-        double value,
-        String host,
-        Integer hop,
-        Map<String, String> labels,
-        Instant timestamp) {
+        String name, double value, String host, Integer hop, Map<String, String> labels, Instant timestamp) {
     public static final String KIND = "sample";
 
     public MetricSample {

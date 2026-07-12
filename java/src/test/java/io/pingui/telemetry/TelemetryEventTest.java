@@ -47,10 +47,7 @@ class TelemetryEventTest {
     @Test
     void roundTripProbeError() {
         TelemetryEvent original = TelemetryEvent.probeError(
-                "1.1.1.1",
-                "timeout",
-                Map.of("profile", "default"),
-                Instant.parse("2026-07-12T13:00:00Z"));
+                "1.1.1.1", "timeout", Map.of("profile", "default"), Instant.parse("2026-07-12T13:00:00Z"));
         assertEquals(original, TelemetryEvent.fromJson(original.toJson()));
         assertEquals(TelemetryEvent.PROBE_ERROR, original.event());
     }

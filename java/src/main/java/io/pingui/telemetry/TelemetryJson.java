@@ -292,12 +292,7 @@ final class TelemetryJson {
         int end = index;
         while (end < json.length()) {
             char ch = json.charAt(end);
-            if ((ch >= '0' && ch <= '9')
-                    || ch == '-'
-                    || ch == '+'
-                    || ch == '.'
-                    || ch == 'e'
-                    || ch == 'E') {
+            if ((ch >= '0' && ch <= '9') || ch == '-' || ch == '+' || ch == '.' || ch == 'e' || ch == 'E') {
                 end++;
             } else {
                 break;

@@ -22,8 +22,7 @@ class MetricSampleTest {
         Map<String, String> labels = new LinkedHashMap<>();
         labels.put("profile", "noc");
         labels.put("probe_mode", "traceroute");
-        MetricSample original =
-                MetricSample.rttMs("8.8.8.8", 3, 12.5, labels, Instant.parse("2026-07-12T13:00:00Z"));
+        MetricSample original = MetricSample.rttMs("8.8.8.8", 3, 12.5, labels, Instant.parse("2026-07-12T13:00:00Z"));
         MetricSample parsed = MetricSample.fromJson(original.toJson());
         assertEquals(original, parsed);
         assertTrue(original.toJson().contains("\"kind\":\"sample\""));
@@ -57,8 +56,7 @@ class MetricSampleTest {
     void rejectsNonFiniteValue() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new MetricSample(
-                        "pingui_rtt_ms", Double.NaN, "x", 1, Map.of(), Instant.now()));
+                () -> new MetricSample("pingui_rtt_ms", Double.NaN, "x", 1, Map.of(), Instant.now()));
     }
 
     @Test
