@@ -110,7 +110,7 @@ CLI **не затирає** поля профілю defaults (1.0 / 20 / 0.5 / a
 
 **Scheduled export (P15-030):** `./pingui-java.sh -- --session-db data/session.db --export-schedule daily --export-dir reports/` → `pingui-daily-YYYY-MM-DD.csv` + `.html` (UTC). Для cron; не тримає процес.
 
-**Read-only API (P15-040):** `./pingui-java.sh -- --daemon --api-port 8080` → `http://127.0.0.1:8080/hosts`, `/routes/{host}`, `/openapi.json`. Auth поза scope v1 (див. P15-041).
+**Read-only API (P15-040):** `./pingui-java.sh -- --daemon --api-port 8080` → `http://127.0.0.1:8080/hosts`, `/routes/{host}`, `/openapi.json`. Auth поза scope v1 — див. [DEPLOYMENT § reverse proxy + TLS](../docs/DEPLOYMENT.md#reverse-proxy--tls-p15-041).
 
 ## GUI
 

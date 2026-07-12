@@ -10,6 +10,15 @@ Python edition and tests are in **both** branch trees; ROADMAP work lands on **`
 
 Details: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 
+### Java daemon smoke (P12)
+
+- [ ] `./pingui-java.sh -- --daemon --config config/hosts.example.yaml --session-db data/ping.db --pid-file /tmp/pingui-java.pid` (hosts `enabled: true` in YAML)
+- [ ] `./pingui-java.sh -- --status --pid-file /tmp/pingui-java.pid` → `running pid=…`
+- [ ] `sqlite3 data/ping.db "SELECT host FROM host_session;"` — rows after poll
+- [ ] `./pingui-java.sh -- --daemon --alert-webhook URL …` — route change → POST (webhook log)
+- [ ] `--api-port 8080` / `--metrics-port 9090`: `curl http://127.0.0.1:8080/hosts` and `curl http://127.0.0.1:9090/metrics`; TLS — see [DEPLOYMENT § reverse proxy](DEPLOYMENT.md#reverse-proxy--tls-p15-041)
+- [ ] `./pingui-java.sh -- --stop --pid-file /tmp/pingui-java.pid`
+
 ### Python daemon smoke
 
 - [ ] `./pingui.sh --deploy` — venv + doc parity

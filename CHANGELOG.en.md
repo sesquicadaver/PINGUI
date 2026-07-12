@@ -21,6 +21,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **DEPLOYMENT reverse proxy + TLS (P15-041):** nginx HTTPS example in front of localhost `--api-port` / `--metrics-port` (Basic Auth, certbot).
 - **Read-only REST API (P15-040):** `ReadOnlyApiServer` — `GET /hosts`, `GET /routes/{host}`, `GET /openapi.json` on `127.0.0.1` via `--api-port` (daemon; auth out of scope).
 - **Scheduled CSV/HTML export (P15-030):** `ScheduledExport` + CLI `--export-schedule hourly|daily|weekly` with `--export-dir` (cron one-shot, UTC stamps, CSV+HTML).
 - **InfluxDB/Timescale writer (P15-020):** Java `persistence/timeseries/` (Influx HTTP line protocol, Timescale JDBC) + CLI `--ts-backend` / `--influx-*` / `--timescale-dsn`; dual-emit via `SessionStore` (Python B-05 parity).

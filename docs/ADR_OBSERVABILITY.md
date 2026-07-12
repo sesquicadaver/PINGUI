@@ -70,7 +70,7 @@ MonitorService / poll loop
 
 - Bind default: **localhost** (`--metrics-port`, P15-011).
 - Лише **daemon** (і опційно headless monitor); GUI-only без listener — за замовчуванням.
-- Auth / TLS на `/metrics` — **out of scope v1**; reverse proxy — P15-041.
+- Auth / TLS на `/metrics` — **out of scope v1**; reverse proxy — P15-041 ✅ (`docs/DEPLOYMENT.md`).
 
 ### 4. Контракт TS backend (write)
 
@@ -105,7 +105,7 @@ ADR P16-001 деталізує events vs samples vs aggregates і mapping іме
 ## Наслідки
 
 - **Документація:** цей ADR — gate перед P15-010/P15-020; індекс у `docs/README.md`.
-- **Імплементація:** P15-010 ✅ (`PrometheusExporter` / `MetricsHttpServer`); P15-011 ✅ (`--metrics-port`); P15-020 ✅ (`persistence/timeseries/` + CLI `--ts-backend`).
+- **Імплементація:** P15-010 ✅ (`PrometheusExporter` / `MetricsHttpServer`); P15-011 ✅ (`--metrics-port`); P15-020 ✅ (`persistence/timeseries/` + CLI `--ts-backend`); P15-040 ✅ (read-only API); P15-041 ✅ (nginx/TLS у DEPLOYMENT).
 - **Оператори:** Grafana = scrape Prometheus **і/або** Influx/Timescale datasource; SQLite session — для GUI history, не для dashboards.
 - **Не робити:** єдиний «observability blob», що змішує alerts + SQLite + Prometheus remote_write.
 

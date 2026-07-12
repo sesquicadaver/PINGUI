@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P15-041** |
+| **Current task** | **P15-050** |
 | **Phase** | 15 — Team integrations |
-| **DoD (short)** | DEPLOYMENT § reverse proxy + TLS |
+| **DoD (short)** | LIVING_SPEC + contract tests API |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -55,7 +55,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 10 | **P15-020** | [x] | InfluxDB/Timescale writer (Java parity) |
 | 11 | **P15-030** | [x] | Scheduled CSV/HTML export |
 | 12 | **P15-040** | [x] | REST read-only API |
-| 13 | **P15-041** | [ ] | DEPLOYMENT § reverse proxy + TLS |
+| 13 | **P15-041** | [x] | DEPLOYMENT § reverse proxy + TLS |
 | 14 | **P15-050** | [ ] | LIVING_SPEC + contract tests API |
 | 15 | **P16-001** | [ ] | ADR telemetry |
 | 16 | **P16-002** | [ ] | SPIKE LOG-server protocols |
@@ -551,7 +551,7 @@ flowchart TD
 | **P15-020** | [x] Java parity: InfluxDB/Timescale writer (Python B-05) | `persistence/timeseries/` | Config parity with Python |
 | **P15-030** | [x] Scheduled CSV/HTML export (cron-friendly CLI) | `export/ScheduledExport.java` | `--export-schedule daily` one-shot |
 | **P15-040** | [x] REST read-only API: `GET /hosts`, `GET /routes/{host}` | `api/ReadOnlyApiServer.java` | OpenAPI stub; auth out of scope v1 |
-| **P15-041** | [ ] DEPLOYMENT § reverse proxy + TLS | `docs/DEPLOYMENT.md` | nginx example |
+| **P15-041** | [x] DEPLOYMENT § reverse proxy + TLS | `docs/DEPLOYMENT.md` | nginx example |
 | **P15-050** | [ ] LIVING_SPEC + API contract tests | `docs/LIVING_SPEC.md` | Mock HTTP tests |
 
 **Estimate:** 2–3 sprints. **Out of scope:** full Zabbix/NMS replacement.

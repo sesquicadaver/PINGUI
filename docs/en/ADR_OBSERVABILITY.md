@@ -70,7 +70,7 @@ Minimal metric names (`pingui_` prefix):
 
 - Default bind: **localhost** (`--metrics-port`, P15-011).
 - **Daemon** only (and optionally headless monitor); GUI-only has no listener by default.
-- Auth / TLS on `/metrics` — **out of scope v1**; reverse proxy — P15-041.
+- Auth / TLS on `/metrics` — **out of scope v1**; reverse proxy — P15-041 ✅ (`docs/DEPLOYMENT.md`).
 
 ### 4. TS backend contract (write)
 
@@ -105,7 +105,7 @@ ADR P16-001 will detail events vs samples vs aggregates and metric-name mapping 
 ## Consequences
 
 - **Docs:** this ADR is the gate before P15-010/P15-020; indexed in `docs/README.md`.
-- **Implementation:** P15-010 ✅ (`PrometheusExporter` / `MetricsHttpServer`); P15-011 ✅ (`--metrics-port`); P15-020 ✅ (`persistence/timeseries/` + CLI `--ts-backend`).
+- **Implementation:** P15-010 ✅ (`PrometheusExporter` / `MetricsHttpServer`); P15-011 ✅ (`--metrics-port`); P15-020 ✅ (`persistence/timeseries/` + CLI `--ts-backend`); P15-040 ✅ (read-only API); P15-041 ✅ (nginx/TLS in DEPLOYMENT).
 - **Operators:** Grafana = scrape Prometheus **and/or** Influx/Timescale datasource; SQLite session is for GUI history, not dashboards.
 - **Do not build:** a single “observability blob” mixing alerts + SQLite + Prometheus remote_write.
 

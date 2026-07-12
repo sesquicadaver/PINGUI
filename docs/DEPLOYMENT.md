@@ -158,6 +158,94 @@ cd /path/to/PINGUI/java
 
 Приклад systemd: `systemd/pingui-java.service.example`. ADR: [ADR_DAEMON.md](ADR_DAEMON.md).
 
+## Reverse proxy + TLS (P15-041)
+
+Java daemon слухає **лише `127.0.0.1`** для Prometheus (`--metrics-port`) і read-only REST (`--api-port`). TLS і автентифікація **в застосунку відсутні** (v1) — виставляйте їх на reverse proxy.
+
+**Приклад запуску daemon (localhost):**
+
+```bash
+cd /path/to/PINGUI/java
+./pingui-java.sh -- --daemon \
+  --config config/hosts.example.yaml \
+  --session-db data/ping.db \
+  --pid-file /tmp/pingui-java.pid \
+  --api-port 8080 \
+  --metrics-port 9090
+```
+
+| Внутрішній URL | Призначення |
+|----------------|-------------|
+| `http://127.0.0.1:8080/hosts` | Список цілей (JSON) |
+| `http://127.0.0.1:8080/routes/{host}` | Поточний маршрут |
+| `http://127.0.0.1:8080/openapi.json` | OpenAPI stub |
+| `http://127.0.0.1:9090/metrics` | Prometheus scrape |
+
+**nginx (TLS termination + optional Basic Auth):**
+
+```nginx
+# /etc/nginx/sites-available/pingui.conf
+upstream pingui_api {
+    server 127.0.0.1:8080;
+}
+upstream pingui_metrics {
+    server 127.0.0.1:9090;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name pingui.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/pingui.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/pingui.example.com/privkey.pem;
+
+    # Optional Basic Auth (uncomment after: htpasswd -c /etc/nginx/htpasswd/pingui operator)
+    # auth_basic           "PINGUI";
+    # auth_basic_user_file /etc/nginx/htpasswd/pingui;
+
+    location /metrics {
+        proxy_pass http://pingui_metrics;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        proxy_pass http://pingui_api;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+
+server {
+    listen 80;
+    server_name pingui.example.com;
+    return 301 https://$host$request_uri;
+}
+```
+
+Перевірка після `nginx -t && systemctl reload nginx`:
+
+```bash
+curl -fsS https://pingui.example.com/hosts
+curl -fsS https://pingui.example.com/metrics | head
+# With Basic Auth enabled:
+# curl -fsS -u operator:SECRET https://pingui.example.com/hosts
+```
+
+**Сертифікати (Let’s Encrypt):**
+
+```bash
+sudo certbot --nginx -d pingui.example.com
+```
+
+**Безпека:**
+
+- Не біндіть `--api-port` / `--metrics-port` на `0.0.0.0` — у коді лише loopback.
+- Для Prometheus у тій самій мережі часто достатньо scrape `127.0.0.1:9090` без публічного `/metrics`.
+- Basic Auth — мінімум; для NOC краще mTLS / SSO на edge (поза scope PINGUI v1).
+- ADR: [ADR_OBSERVABILITY.md](ADR_OBSERVABILITY.md).
+
 ## SQLite session persistence (Java / Python)
 
 | Що | Де |
