@@ -70,7 +70,7 @@ flowchart LR
 | Sink | Kind | Default | Notes |
 |------|------|---------|-------|
 | `SqliteTelemetrySink` | local samples+events | **off** | Schema v4; separate from P11 `host_session`; retention P16-022 |
-| `JsonlRotateSink` | local file | **off** | `telemetry.jsonl.%Y-%m-%d` |
+| `JsonlRotateSink` | local file | **off** | `telemetry.jsonl.yyyy-MM-dd` (+ `.N` size); P16-021 ✅ |
 | `SyslogSink` | remote events | **off** | RFC 5424 TCP; TLS optional; `events_only=true` by default (P16-033); MSG = single-line JSON |
 | `GelfSink` | remote events | **off** | Graylog; TCP preferred / UDP lab; `events_only=true` by default (P16-033) |
 | `LokiPushSink` | remote | **off** | P2 (P16-032); same `events_only` default |
