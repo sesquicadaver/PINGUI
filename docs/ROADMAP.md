@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P16-013** |
+| **Поточна задача** | **P16-014** |
 | **Фаза** | 16 — Телеметрія |
-| **DoD (коротко)** | Wire MonitorService → bus (RTT, loss, route_change, probe_error) |
+| **DoD (коротко)** | Metric names: `trace_duration_ms`, `target_reachable` (+ labels) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -62,7 +62,7 @@
 | 17 | **P16-010** | [x] | `MetricSample` + `TelemetryEvent` |
 | 18 | **P16-011** | [x] | `TelemetrySink` + `SinkRegistry` |
 | 19 | **P16-012** | [x] | `TelemetryBus` |
-| 20 | **P16-013** | [ ] | Wire MonitorService → bus |
+| 20 | **P16-013** | [x] | Wire MonitorService → bus |
 | 21 | **P16-014** | [ ] | Metric names (`trace_duration_ms`, …) |
 | 22 | **P16-020** | [ ] | `SqliteTelemetrySink` |
 | 23 | **P16-021** | [ ] | `JsonlRotateSink` |
@@ -582,7 +582,7 @@ flowchart TD
 | **P16-010** | [x] `MetricSample` + `TelemetryEvent` (host, hop, labels) | `telemetry/MetricSample.java`, `models.py` | Unit-тест serialize |
 | **P16-011** | [x] `TelemetrySink` interface + `SinkRegistry` | `telemetry/TelemetrySink.java` | register/unregister; no-op default |
 | **P16-012** | [x] `TelemetryBus` — async queue, batch flush, backpressure | `telemetry/TelemetryBus.java` | Queue max size; drop policy documented |
-| **P16-013** | [ ] Wire MonitorService → bus (RTT, loss, route_change, probe_error) | `MonitorService`, `worker.py` | Не блокує poll loop |
+| **P16-013** | [x] Wire MonitorService → bus (RTT, loss, route_change, probe_error) | `MonitorService`, `worker.py` | Не блокує poll loop |
 | **P16-014** | [ ] Метрики: `trace_duration_ms`, `target_reachable` | `telemetry/MetricNames.java` | Labels: profile, probe_mode, edition |
 
 ### 16.2 — Локальне збереження (P0)

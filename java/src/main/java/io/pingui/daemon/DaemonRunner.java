@@ -20,6 +20,8 @@ import io.pingui.persistence.SessionDatabase;
 import io.pingui.persistence.timeseries.TimeSeriesBackend;
 import io.pingui.persistence.timeseries.TimeSeriesBackends;
 import io.pingui.persistence.timeseries.TimeSeriesConfigException;
+import io.pingui.telemetry.SinkRegistry;
+import io.pingui.telemetry.TelemetryBus;
 import io.pingui.ui.HostViewRules;
 import io.pingui.ui.MonitorLifecycle;
 import java.io.IOException;
@@ -39,6 +41,8 @@ public final class DaemonRunner implements AutoCloseable {
     private ProfileDocument profileDocument;
     private SessionStore store;
     private MonitorService monitor;
+    private SinkRegistry telemetryRegistry;
+    private TelemetryBus telemetryBus;
     private MetricsHttpServer metricsServer;
     private ReadOnlyApiServer apiServer;
     private final CountDownLatch running = new CountDownLatch(1);
@@ -62,6 +66,7 @@ public final class DaemonRunner implements AutoCloseable {
         store = SessionStore.fromEntries(sessionHosts, openSessionDatabase(active), active.hostProbeMode());
         attachTimeSeries(store);
         monitor = createMonitor(active, sessionHosts);
+        attachTelemetryBus(monitor);
         startMetricsIfConfigured();
         startApiIfConfigured();
         DaemonPidFile.write(pidFile, ProcessHandle.current().pid());
@@ -108,6 +113,14 @@ public final class DaemonRunner implements AutoCloseable {
         if (monitor != null) {
             monitor.close();
             monitor = null;
+        }
+        if (telemetryBus != null) {
+            telemetryBus.close();
+            telemetryBus = null;
+        }
+        if (telemetryRegistry != null) {
+            telemetryRegistry.close();
+            telemetryRegistry = null;
         }
         if (store != null) {
             store.close();
@@ -162,6 +175,12 @@ public final class DaemonRunner implements AutoCloseable {
                         options.sessionDbPath(), profile.persistence().sessionDb(), Optional.empty())
                 .map(SessionDatabase::new)
                 .orElse(null);
+    }
+
+    private void attachTelemetryBus(MonitorService service) {
+        telemetryRegistry = new SinkRegistry();
+        telemetryBus = new TelemetryBus(telemetryRegistry);
+        service.setTelemetryBus(telemetryBus);
     }
 
     private void attachTimeSeries(SessionStore sessionStore) {

@@ -21,6 +21,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Monitor → bus (P16-013):** `MonitorService` / Python `MonitorLoop` offer RTT, hop loss, route_change, probe_error into the telemetry bus/emitter without blocking poll.
 - **Telemetry bus (P16-012):** `TelemetryBus` + `DropPolicy` — async queue, batch flush, non-blocking offer, `droppedCount`.
 - **Sink registry (P16-011):** `TelemetrySink` + `SinkRegistry` — register/unregister, `eventsOnly`, no-op default, isolated sink failures.
 - **Telemetry models (P16-010):** `MetricSample` / `TelemetryEvent` — Java `io.pingui.telemetry` + Python `models.py`; shared JSON (`kind`, host, hop/labels, ts).

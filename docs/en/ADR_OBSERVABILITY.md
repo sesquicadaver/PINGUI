@@ -84,7 +84,7 @@ Java P15-020 must mirror the Python API (`TimeSeriesBackend`), not invent a thir
 
 ### 5. Link to phase 16
 
-P15 adapters are **temporary direct** calls from the monitor (**dual-emit debt** until P16-013): MonitorService may update Prometheus gauges and push to a TS backend at the same time. Acceptable for v1, **not** the target topology.
+P15 adapters are **temporary direct** calls from the monitor (**dual-emit debt** until P16-051/052): MonitorService may update Prometheus gauges and push to a TS backend at the same time. Acceptable for v1, **not** the target topology. P16-013 only wires poll → TelemetryBus; sink migration comes later.
 
 After P16-011…013:
 

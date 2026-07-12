@@ -7,12 +7,19 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from pingui.config import MAX_HOSTS, ConfigError, validate_session_host
 from pingui.icmp.raw_socket import ProbeTransport
-from pingui.models import RouteSnapshot
+from pingui.models import (
+    TIMEOUT_IP,
+    MetricSample,
+    RouteSnapshot,
+    TelemetryEvent,
+)
 from pingui.monitor.polling import poll_host_route
+from pingui.telemetry_emit import NULL_TELEMETRY, TelemetryEmitter
 
 if TYPE_CHECKING:
     from pingui.monitor.session_store import SessionStore
@@ -51,6 +58,7 @@ class MonitorLoop:
         timeout: float = 0.5,
         transport: ProbeTransport | None = None,
         callbacks: MonitorCallbacks | None = None,
+        telemetry: TelemetryEmitter | None = None,
     ) -> None:
         self._store = session_store
         self._lock = threading.Lock()
@@ -61,11 +69,16 @@ class MonitorLoop:
         self._timeout = timeout
         self._transport = transport
         self._callbacks = callbacks or MonitorCallbacks()
+        self._telemetry: TelemetryEmitter = telemetry or NULL_TELEMETRY
         self._running = False
         self._last_routes: dict[str, list[str]] = {
             host: [] for host in self._hosts
         }
         self._thread: threading.Thread | None = None
+
+    def set_telemetry(self, telemetry: TelemetryEmitter | None) -> None:
+        """Optional telemetry emitter (P16-013); None resets to no-op."""
+        self._telemetry = telemetry or NULL_TELEMETRY
 
     def hosts(self) -> list[str]:
         if self._store is not None:
@@ -183,6 +196,7 @@ class MonitorLoop:
                     break
                 with self._lock:
                     previous_ips = list(self._last_routes.get(host, []))
+                started = time.perf_counter()
                 outcome = poll_host_route(
                     host,
                     previous_ips,
@@ -190,22 +204,107 @@ class MonitorLoop:
                     timeout=self._timeout,
                     transport=self._transport,
                 )
+                duration_ms = (time.perf_counter() - started) * 1000.0
                 if outcome.error is not None:
                     logger.warning("Probe failed for %s: %s", host, outcome.error)
+                    self._emit_probe_error(host, outcome.error)
                     if self._callbacks.on_probe_error is not None:
                         self._callbacks.on_probe_error(host, outcome.error)
                     continue
 
-                if outcome.route_changed and self._callbacks.on_route_changed is not None:
-                    self._callbacks.on_route_changed(
-                        host,
-                        outcome.old_ips,
-                        outcome.new_ips,
-                    )
+                if outcome.route_changed:
+                    self._emit_route_change(host, outcome.old_ips, outcome.new_ips)
+                    if self._callbacks.on_route_changed is not None:
+                        self._callbacks.on_route_changed(
+                            host,
+                            outcome.old_ips,
+                            outcome.new_ips,
+                        )
                 with self._lock:
                     self._last_routes[host] = outcome.current_ips
-                if outcome.snapshot is not None and self._callbacks.on_data_received is not None:
-                    self._callbacks.on_data_received(host, outcome.snapshot)
+                if outcome.snapshot is not None:
+                    self._emit_success_samples(host, outcome.snapshot, duration_ms)
+                    if self._callbacks.on_data_received is not None:
+                        self._callbacks.on_data_received(host, outcome.snapshot)
 
             if self._running:
                 time.sleep(self._interval)
+
+    def _emit_probe_error(self, host: str, message: str) -> None:
+        try:
+            self._telemetry.offer_event(
+                TelemetryEvent.probe_error(host, message, labels={"profile": "default"})
+            )
+        except Exception:  # noqa: BLE001 — never break poll on telemetry
+            logger.warning("Telemetry probe_error offer failed for %s", host, exc_info=True)
+
+    def _emit_route_change(self, host: str, old_ips: list[str], new_ips: list[str]) -> None:
+        try:
+            self._telemetry.offer_event(
+                TelemetryEvent.route_change(
+                    host,
+                    old_ips,
+                    new_ips,
+                    labels={"profile": "default"},
+                )
+            )
+        except Exception:  # noqa: BLE001
+            logger.warning("Telemetry route_change offer failed for %s", host, exc_info=True)
+
+    def _emit_success_samples(
+        self, host: str, snapshot: RouteSnapshot, duration_ms: float = 0.0
+    ) -> None:
+        ts = datetime.now(UTC)
+        labels = {"profile": "default", "probe_mode": "trace"}
+        try:
+            if snapshot.target_ip:
+                reachable = any(
+                    not n.is_timeout and n.ip != TIMEOUT_IP and n.ip == snapshot.target_ip
+                    for n in snapshot.nodes
+                )
+            else:
+                reachable = any(not n.is_timeout and n.ip != TIMEOUT_IP for n in snapshot.nodes)
+            self._telemetry.offer_sample(
+                MetricSample(
+                    name="pingui_target_reachable",
+                    value=1.0 if reachable else 0.0,
+                    host=host,
+                    hop=None,
+                    labels=labels,
+                    timestamp=ts,
+                )
+            )
+            self._telemetry.offer_sample(
+                MetricSample(
+                    name="pingui_trace_duration_ms",
+                    value=duration_ms,
+                    host=host,
+                    hop=None,
+                    labels=labels,
+                    timestamp=ts,
+                )
+            )
+            for node in snapshot.nodes:
+                loss = 0.0 if (not node.is_timeout and node.ping_ms is not None) else 100.0
+                self._telemetry.offer_sample(
+                    MetricSample(
+                        name="pingui_hop_loss_pct",
+                        value=loss,
+                        host=host,
+                        hop=node.hop,
+                        labels=labels,
+                        timestamp=ts,
+                    )
+                )
+                if node.ping_ms is not None and not node.is_timeout:
+                    self._telemetry.offer_sample(
+                        MetricSample.rtt_ms(
+                            host,
+                            node.hop,
+                            node.ping_ms,
+                            labels=labels,
+                            timestamp=ts,
+                        )
+                    )
+        except Exception:  # noqa: BLE001
+            logger.warning("Telemetry sample offer failed for %s", host, exc_info=True)

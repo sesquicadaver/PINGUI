@@ -61,7 +61,7 @@ flowchart LR
 | `MetricSample` / `TelemetryEvent` | Серіалізовані записи (host, hop, labels, ts) | P16-010 ✅ |
 | `TelemetrySink` + `SinkRegistry` | Pluggable writers; no-op default | P16-011 ✅ |
 | `TelemetryBus` | Async queue, batch flush, backpressure, drop policy | P16-012 ✅ |
-| Wire з MonitorService | Один emit; **не** блокує poll | P16-013 |
+| Wire з MonitorService | Один emit; **не** блокує poll | P16-013 ✅ |
 
 **Наслідки для poll loop:** emit у bus має бути non-blocking (offer у чергу). Overflow → drop + counter/log за політикою bus (документується в P16-012).
 

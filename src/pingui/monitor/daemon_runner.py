@@ -16,6 +16,7 @@ from pingui.persistence.events import PersistenceEventWriter
 from pingui.persistence.policy import PersistencePolicy
 from pingui.persistence.session_db import SessionDatabase
 from pingui.persistence.timeseries.base import TimeSeriesBackend
+from pingui.telemetry_emit import QueueTelemetryEmitter
 
 logger = logging.getLogger(__name__)
 
@@ -168,6 +169,7 @@ def run_headless_monitor(
         for host in hosts:
             store.set_enabled(host, True)
 
+    telemetry = QueueTelemetryEmitter()
     loop = MonitorLoop(
         session_store=store,
         interval_seconds=interval_seconds,
@@ -180,6 +182,7 @@ def run_headless_monitor(
             profile=profile,
             event_writer=event_writer,
         ),
+        telemetry=telemetry,
     )
 
     pid = PidFile(pid_file) if pid_file is not None else None
@@ -214,6 +217,7 @@ def run_headless_monitor(
     finally:
         loop.stop()
         loop.join(timeout=5.0)
+        telemetry.close()
         store.close()
         if pid is not None:
             pid.release()
