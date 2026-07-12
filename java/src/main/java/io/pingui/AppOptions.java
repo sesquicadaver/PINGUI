@@ -23,7 +23,8 @@ public record AppOptions(
         Optional<Path> exportDir,
         CliRunMode runMode,
         Path pidFilePath,
-        Optional<Integer> metricsPort) {
+        Optional<Integer> metricsPort,
+        Optional<Integer> apiPort) {
     public static AppOptions defaults() {
         return new AppOptions(
                 Path.of("config/hosts.example.yaml"),
@@ -43,6 +44,7 @@ public record AppOptions(
                 Optional.empty(),
                 CliRunMode.GUI,
                 defaultPidFile(),
+                Optional.empty(),
                 Optional.empty());
     }
 

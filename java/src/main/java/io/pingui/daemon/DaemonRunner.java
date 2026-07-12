@@ -2,6 +2,7 @@ package io.pingui.daemon;
 
 import io.pingui.AppOptions;
 import io.pingui.CliProfileOverrides;
+import io.pingui.api.ReadOnlyApiServer;
 import io.pingui.config.HostEntry;
 import io.pingui.config.ProfileDocument;
 import io.pingui.config.ProfilesConfig;
@@ -39,6 +40,7 @@ public final class DaemonRunner implements AutoCloseable {
     private SessionStore store;
     private MonitorService monitor;
     private MetricsHttpServer metricsServer;
+    private ReadOnlyApiServer apiServer;
     private final CountDownLatch running = new CountDownLatch(1);
     private volatile boolean closed;
 
@@ -61,6 +63,7 @@ public final class DaemonRunner implements AutoCloseable {
         attachTimeSeries(store);
         monitor = createMonitor(active, sessionHosts);
         startMetricsIfConfigured();
+        startApiIfConfigured();
         DaemonPidFile.write(pidFile, ProcessHandle.current().pid());
         Runtime.getRuntime().addShutdownHook(new Thread(this::closeQuietly, "pingui-daemon-shutdown"));
         LOG.info(
@@ -83,12 +86,21 @@ public final class DaemonRunner implements AutoCloseable {
         return Optional.ofNullable(metricsServer);
     }
 
+    /** Exposed for tests — read-only API when {@code apiPort} is set. */
+    public Optional<ReadOnlyApiServer> apiServer() {
+        return Optional.ofNullable(apiServer);
+    }
+
     @Override
     public void close() {
         if (closed) {
             return;
         }
         closed = true;
+        if (apiServer != null) {
+            apiServer.close();
+            apiServer = null;
+        }
         if (metricsServer != null) {
             metricsServer.close();
             metricsServer = null;
@@ -118,6 +130,14 @@ public final class DaemonRunner implements AutoCloseable {
         PrometheusExporter exporter = new PrometheusExporter();
         metricsServer = MetricsHttpServer.start(exporter, port.get());
         monitor.setPrometheusExporter(exporter);
+    }
+
+    private void startApiIfConfigured() throws IOException {
+        Optional<Integer> port = options.apiPort();
+        if (port.isEmpty()) {
+            return;
+        }
+        apiServer = ReadOnlyApiServer.start(store, port.get());
     }
 
     private void closeQuietly() {

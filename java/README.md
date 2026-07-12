@@ -87,6 +87,7 @@ gradlew.bat run        # Windows
 | `--daemon` | off | Headless `MonitorService` без JavaFX (NOC) |
 | `--pid-file` | `$TMP/pingui-java.pid` | PID-файл для `--daemon` / `--stop` / `--status` |
 | `--metrics-port` | off | Prometheus `GET /metrics` на `127.0.0.1:N` (лише з `--daemon`) |
+| `--api-port` | off | Read-only REST: `/hosts`, `/routes/{host}`, `/openapi.json` на `127.0.0.1:N` (daemon) |
 | `--ts-backend` | off | Time-series push: `influx` \| `timescale` (Python B-05 parity) |
 | `--influx-url` / `--influx-token` / `--influx-org` / `--influx-bucket` | env `INFLUXDB_*` | InfluxDB 2.x write (token не логується) |
 | `--timescale-dsn` | env `PINGUI_TIMESCALE_DSN` | PostgreSQL/Timescale JDBC або `postgresql://…` |
@@ -109,6 +110,8 @@ CLI **не затирає** поля профілю defaults (1.0 / 20 / 0.5 / a
 
 **Scheduled export (P15-030):** `./pingui-java.sh -- --session-db data/session.db --export-schedule daily --export-dir reports/` → `pingui-daily-YYYY-MM-DD.csv` + `.html` (UTC). Для cron; не тримає процес.
 
+**Read-only API (P15-040):** `./pingui-java.sh -- --daemon --api-port 8080` → `http://127.0.0.1:8080/hosts`, `/routes/{host}`, `/openapi.json`. Auth поза scope v1 (див. P15-041).
+
 ## GUI
 
 - **Про** / **Довідка** — меню з діалогами «Про PINGUI…» та «Довідка…» (F1); dual-stack IPv4/IPv6 literal
@@ -130,6 +133,7 @@ io.pingui
 ├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
 ├── persistence/     SessionDatabase, PersistenceEventWriter (P11); timeseries/ (P15-020)
 ├── observability/   PrometheusExporter, MetricsHttpServer (P15-010)
+├── api/             ReadOnlyApiServer (P15-040)
 ├── export/          SessionReportExporter (P11-030), ScheduledExport (P15-030)
 └── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,
                        MonitorLifecycle, ViewModeController, RouteGraphPresenter, GraphCanvas

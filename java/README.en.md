@@ -85,6 +85,7 @@ gradlew.bat run        # Windows
 | `--daemon` | off | Headless `MonitorService` without JavaFX (NOC) |
 | `--pid-file` | `$TMP/pingui-java.pid` | PID file for `--daemon` / `--stop` / `--status` |
 | `--metrics-port` | off | Prometheus `GET /metrics` on `127.0.0.1:N` (with `--daemon` only) |
+| `--api-port` | off | Read-only REST: `/hosts`, `/routes/{host}`, `/openapi.json` on `127.0.0.1:N` (daemon) |
 | `--ts-backend` | off | Time-series push: `influx` \| `timescale` (Python B-05 parity) |
 | `--influx-url` / `--influx-token` / `--influx-org` / `--influx-bucket` | env `INFLUXDB_*` | InfluxDB 2.x write (token never logged) |
 | `--timescale-dsn` | env `PINGUI_TIMESCALE_DSN` | PostgreSQL/Timescale JDBC or `postgresql://…` |
@@ -107,6 +108,8 @@ The CLI **does not overwrite** profile defaults (1.0 / 20 / 0.5 / auto) unless t
 
 **Scheduled export (P15-030):** `./pingui-java.sh -- --session-db data/session.db --export-schedule daily --export-dir reports/` → `pingui-daily-YYYY-MM-DD.csv` + `.html` (UTC). For cron; does not keep the process running.
 
+**Read-only API (P15-040):** `./pingui-java.sh -- --daemon --api-port 8080` → `http://127.0.0.1:8080/hosts`, `/routes/{host}`, `/openapi.json`. Auth out of scope for v1 (see P15-041).
+
 ## GUI
 
 - **About** / **Help** — menu with “About PINGUI…” and “Help…” dialogs (F1); dual-stack IPv4/IPv6 literals
@@ -128,6 +131,7 @@ io.pingui
 ├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
 ├── persistence/     SessionDatabase, PersistenceEventWriter (P11); timeseries/ (P15-020)
 ├── observability/   PrometheusExporter, MetricsHttpServer (P15-010)
+├── api/             ReadOnlyApiServer (P15-040)
 ├── export/          SessionReportExporter (P11-030), ScheduledExport (P15-030)
 └── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,
                        MonitorLifecycle, ViewModeController, RouteGraphPresenter, GraphCanvas

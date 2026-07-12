@@ -55,12 +55,14 @@ class DaemonRunnerTest {
                 Optional.empty(),
                 CliRunMode.DAEMON,
                 pidFile,
+                Optional.empty(),
                 Optional.empty());
 
         try (DaemonRunner runner = new DaemonRunner(options, pidFile)) {
             runner.start();
             assertTrue(DaemonPidFile.isRunning(pidFile));
             assertTrue(runner.metricsServer().isEmpty());
+            assertTrue(runner.apiServer().isEmpty());
         }
         assertTrue(Files.notExists(pidFile));
     }
@@ -104,11 +106,13 @@ class DaemonRunnerTest {
                 Optional.empty(),
                 CliRunMode.DAEMON,
                 pidFile,
-                Optional.of(port));
+                Optional.of(port),
+                Optional.empty());
 
         try (DaemonRunner runner = new DaemonRunner(options, pidFile)) {
             runner.start();
             assertTrue(runner.metricsServer().isPresent());
+            assertTrue(runner.apiServer().isEmpty());
             java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
             java.net.http.HttpResponse<String> response = client.send(
                     java.net.http.HttpRequest.newBuilder(java.net.URI.create("http://127.0.0.1:" + port + "/metrics"))
@@ -151,6 +155,7 @@ class DaemonRunnerTest {
                 Optional.empty(),
                 CliRunMode.DAEMON,
                 pidFile,
+                Optional.empty(),
                 Optional.empty());
 
         try (DaemonRunner runner = new DaemonRunner(options, pidFile)) {

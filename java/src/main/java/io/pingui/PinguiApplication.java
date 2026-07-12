@@ -139,6 +139,17 @@ public final class PinguiApplication extends Application {
             }
             metricsPort = Optional.of(port);
         }
+        Optional<Integer> apiPort = Optional.empty();
+        if (params.containsKey("api-port")) {
+            int port = parseRequiredInt(params.get("api-port"), "--api-port");
+            if (port < 1 || port > 65535) {
+                throw new IllegalArgumentException("--api-port must be 1..65535");
+            }
+            apiPort = Optional.of(port);
+        }
+        if (metricsPort.isPresent() && apiPort.isPresent() && metricsPort.get().equals(apiPort.get())) {
+            throw new IllegalArgumentException("--api-port and --metrics-port must differ");
+        }
         return new AppOptions(
                 config,
                 profileOverrides,
@@ -157,7 +168,8 @@ public final class PinguiApplication extends Application {
                 exportDir,
                 runMode,
                 pidFile,
-                metricsPort);
+                metricsPort,
+                apiPort);
     }
 
     private static CliTimeSeriesOverrides parseTimeSeriesOverrides(Map<String, String> params) {
@@ -452,6 +464,7 @@ public final class PinguiApplication extends Application {
                   --daemon            Headless monitor loop (no JavaFX)
                   --pid-file PATH     PID file for daemon/stop/status (default: $TMP/pingui-java.pid)
                   --metrics-port N    Prometheus /metrics on 127.0.0.1:N (daemon; off if omitted)
+                  --api-port N        Read-only REST API on 127.0.0.1:N (daemon; /hosts, /routes)
                   --ts-backend NAME   Time-series: influx | timescale (off if omitted)
                   --influx-url URL    InfluxDB URL (or INFLUXDB_URL)
                   --influx-token TOK  InfluxDB token (or INFLUXDB_TOKEN; never logged)

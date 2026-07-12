@@ -170,6 +170,19 @@ class PinguiApplicationTest {
     }
 
     @Test
+    void parseOptions_apiPort() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of("api-port", "8080"));
+        assertEquals(8080, options.apiPort().orElseThrow());
+    }
+
+    @Test
+    void parseOptions_apiPortMustDifferFromMetricsPort() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PinguiApplication.parseOptions(Map.of("api-port", "9090", "metrics-port", "9090")));
+    }
+
+    @Test
     void parseOptions_metricsPortRejectsOutOfRange() {
         assertThrows(IllegalArgumentException.class, () -> PinguiApplication.parseOptions(Map.of("metrics-port", "0")));
         assertThrows(

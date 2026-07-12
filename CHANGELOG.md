@@ -21,6 +21,7 @@
 
 ### Added
 
+- **Read-only REST API (P15-040):** `ReadOnlyApiServer` — `GET /hosts`, `GET /routes/{host}`, `GET /openapi.json` на `127.0.0.1` через `--api-port` (daemon; auth out of scope).
 - **Scheduled CSV/HTML export (P15-030):** `ScheduledExport` + CLI `--export-schedule hourly|daily|weekly` з `--export-dir` (cron one-shot, UTC stamps, CSV+HTML).
 - **InfluxDB/Timescale writer (P15-020):** Java `persistence/timeseries/` (Influx HTTP line protocol, Timescale JDBC) + CLI `--ts-backend` / `--influx-*` / `--timescale-dsn`; dual-emit via `SessionStore` (parity з Python B-05).
 - **CLI `--metrics-port` (P15-011):** `PinguiApplication.parseOptions` → `AppOptions.metricsPort`; daemon binds `127.0.0.1:N/metrics`.
