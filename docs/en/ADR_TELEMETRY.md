@@ -58,7 +58,7 @@ flowchart LR
 *Note:* `InfluxTelemetrySink` covers Influx **and** Timescale (wrapper over P15-020 / B-05).
 | Component | Role | Ticket |
 |-----------|------|--------|
-| `MetricSample` / `TelemetryEvent` | Serializable records (host, hop, labels, ts) | P16-010 |
+| `MetricSample` / `TelemetryEvent` | Serializable records (host, hop, labels, ts) | P16-010 ✅ |
 | `TelemetrySink` + `SinkRegistry` | Pluggable writers; no-op default | P16-011 |
 | `TelemetryBus` | Async queue, batch flush, backpressure, drop policy | P16-012 |
 | Wire from MonitorService | Single emit; **must not** block poll | P16-013 |

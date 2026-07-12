@@ -21,6 +21,7 @@
 
 ### Added
 
+- **Telemetry models (P16-010):** `MetricSample` / `TelemetryEvent` — Java `io.pingui.telemetry` + Python `models.py`; спільний JSON (`kind`, host, hop/labels, ts).
 - **LOG sinks SPIKE (P16-002):** `docs/SPIKE_LOG_SINKS.md` — порівняння syslog / GELF / Loki; v1 = syslog TCP + GELF; Loki P2.
 - **Telemetry ADR (P16-001):** `docs/ADR_TELEMETRY.md` — events vs samples vs aggregates; TelemetryBus → sinks; межі з P10/P15; dual-emit debt.
 - **API contract tests (P15-050):** exact JSON contracts for `GET /hosts` / `/routes/{host}` / OpenAPI / 404 / 405; DaemonRunner `--api-port` smoke; фаза 15 закрита.
