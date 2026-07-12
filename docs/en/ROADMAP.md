@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P16-011** |
+| **Current task** | **P16-012** |
 | **Phase** | 16 — Telemetry |
-| **DoD (short)** | `TelemetrySink` interface + `SinkRegistry` |
+| **DoD (short)** | `TelemetryBus` — async queue, batch flush, backpressure |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -60,7 +60,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 15 | **P16-001** | [x] | ADR telemetry |
 | 16 | **P16-002** | [x] | SPIKE LOG-server protocols |
 | 17 | **P16-010** | [x] | `MetricSample` + `TelemetryEvent` |
-| 18 | **P16-011** | [ ] | `TelemetrySink` + `SinkRegistry` |
+| 18 | **P16-011** | [x] | `TelemetrySink` + `SinkRegistry` |
 | 19 | **P16-012** | [ ] | `TelemetryBus` |
 | 20 | **P16-013** | [ ] | Wire MonitorService → bus |
 | 21 | **P16-014** | [ ] | Metric names (`trace_duration_ms`, …) |
@@ -580,7 +580,7 @@ flowchart TD
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
 | **P16-010** | [x] `MetricSample` + `TelemetryEvent` (host, hop, labels) | `telemetry/MetricSample.java`, `models.py` | Unit test serialize |
-| **P16-011** | [ ] `TelemetrySink` interface + `SinkRegistry` | `telemetry/TelemetrySink.java` | register/unregister; no-op default |
+| **P16-011** | [x] `TelemetrySink` interface + `SinkRegistry` | `telemetry/TelemetrySink.java` | register/unregister; no-op default |
 | **P16-012** | [ ] `TelemetryBus` — async queue, batch flush, backpressure | `telemetry/TelemetryBus.java` | Queue max size; drop policy documented |
 | **P16-013** | [ ] Wire MonitorService → bus (RTT, loss, route_change, probe_error) | `MonitorService`, `worker.py` | Does not block poll loop |
 | **P16-014** | [ ] Metrics: `trace_duration_ms`, `target_reachable` | `telemetry/MetricNames.java` | Labels: profile, probe_mode, edition |
