@@ -39,6 +39,7 @@ Module → unit test matrix. Update when adding features.
 | Read-only REST API (P15-040) | `api/ReadOnlyApiServer`, `DaemonRunner`, `AppOptions.apiPort` | `ReadOnlyApiServerTest`, `PinguiApplicationTest.parseOptions_apiPort*` |
 | Reverse proxy + TLS docs (P15-041) | `docs/DEPLOYMENT.md`, `docs/en/DEPLOYMENT.md` | `scripts/check_doc_parity.py` |
 | API contract tests (P15-050) | `api/ReadOnlyApiServer`, inline JSON string contracts | `ReadOnlyApiContractTest`, `JsonStringsTest`, `DaemonRunnerTest.startWithApiPortServesHosts` |
+| Telemetry ADR (P16-001) | `docs/ADR_TELEMETRY.md`, `docs/en/ADR_TELEMETRY.md` | Docs parity (`check_doc_parity.py`); bus → sinks; P10/P15 boundaries |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |

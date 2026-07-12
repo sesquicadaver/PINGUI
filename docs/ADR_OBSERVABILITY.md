@@ -94,7 +94,7 @@ P15 адаптери — **тимчасові прямі** виклики з mon
 
 **SQLite samples (P16-020):** майбутній `SqliteTelemetrySink` може зберігати `ping_sample` локально (default off / retention). Це **локальний архів**, не заміна Prometheus scrape і не Grafana TS datasource за замовчуванням. Межа з §2 («не писати hop-RTT у SQLite як Prometheus replacement») лишається в силі для P15 і для операторських dashboards.
 
-ADR P16-001 деталізує events vs samples vs aggregates і mapping імен метрик (узгодження з `pingui_*` / P16-014); цей ADR фіксує лише **межі P15**.
+ADR P16-001 ✅ деталізує events vs samples vs aggregates і mapping імен метрик (узгодження з `pingui_*` / P16-014); цей ADR фіксує межі P15.
 
 ### 6. Конфігурація (пріоритет)
 

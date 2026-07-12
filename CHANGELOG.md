@@ -21,6 +21,7 @@
 
 ### Added
 
+- **Telemetry ADR (P16-001):** `docs/ADR_TELEMETRY.md` — events vs samples vs aggregates; TelemetryBus → sinks; межі з P10/P15; dual-emit debt.
 - **API contract tests (P15-050):** exact JSON contracts for `GET /hosts` / `/routes/{host}` / OpenAPI / 404 / 405; DaemonRunner `--api-port` smoke; фаза 15 закрита.
 - **DEPLOYMENT reverse proxy + TLS (P15-041):** nginx HTTPS example перед localhost `--api-port` / `--metrics-port` (Basic Auth, certbot).
 - **Read-only REST API (P15-040):** `ReadOnlyApiServer` — `GET /hosts`, `GET /routes/{host}`, `GET /openapi.json` на `127.0.0.1` через `--api-port` (daemon; auth out of scope).

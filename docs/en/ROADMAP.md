@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P16-001** |
+| **Current task** | **P16-002** |
 | **Phase** | 16 — Telemetry |
-| **DoD (short)** | ADR: telemetry (events vs samples vs aggregates, sinks) |
+| **DoD (short)** | SPIKE: compare LOG-server protocols (syslog, GELF, Loki) |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -57,7 +57,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 12 | **P15-040** | [x] | REST read-only API |
 | 13 | **P15-041** | [x] | DEPLOYMENT § reverse proxy + TLS |
 | 14 | **P15-050** | [x] | LIVING_SPEC + contract tests API |
-| 15 | **P16-001** | [ ] | ADR telemetry |
+| 15 | **P16-001** | [x] | ADR telemetry |
 | 16 | **P16-002** | [ ] | SPIKE LOG-server protocols |
 | 17 | **P16-010** | [ ] | `MetricSample` + `TelemetryEvent` |
 | 18 | **P16-011** | [ ] | `TelemetrySink` + `SinkRegistry` |
@@ -572,7 +572,7 @@ flowchart TD
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **P16-001** | [ ] ADR: telemetry (events vs samples vs aggregates, sinks) | `docs/ADR_TELEMETRY.md` | Bus → local/remote diagram; boundaries with P10/P15 |
+| **P16-001** | [x] ADR: telemetry (events vs samples vs aggregates, sinks) | `docs/ADR_TELEMETRY.md` | Bus → local/remote diagram; boundaries with P10/P15 |
 | **P16-002** | [ ] SPIKE: LOG-server protocol comparison (syslog, GELF, Loki) | `docs/SPIKE_LOG_SINKS.md` | v1 recommendation: syslog TCP + GELF |
 
 ### 16.1 — Model and bus (P0)

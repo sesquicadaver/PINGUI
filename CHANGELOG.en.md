@@ -21,6 +21,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Telemetry ADR (P16-001):** `docs/ADR_TELEMETRY.md` — events vs samples vs aggregates; TelemetryBus → sinks; boundaries with P10/P15; dual-emit debt.
 - **API contract tests (P15-050):** exact JSON contracts for `GET /hosts` / `/routes/{host}` / OpenAPI / 404 / 405; DaemonRunner `--api-port` smoke; phase 15 closed.
 - **DEPLOYMENT reverse proxy + TLS (P15-041):** nginx HTTPS example in front of localhost `--api-port` / `--metrics-port` (Basic Auth, certbot).
 - **Read-only REST API (P15-040):** `ReadOnlyApiServer` — `GET /hosts`, `GET /routes/{host}`, `GET /openapi.json` on `127.0.0.1` via `--api-port` (daemon; auth out of scope).

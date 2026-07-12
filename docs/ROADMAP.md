@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P16-001** |
+| **Поточна задача** | **P16-002** |
 | **Фаза** | 16 — Телеметрія |
-| **DoD (коротко)** | ADR: telemetry (events vs samples vs aggregates, sinks) |
+| **DoD (коротко)** | SPIKE: порівняння LOG-server протоколів (syslog, GELF, Loki) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -57,7 +57,7 @@
 | 12 | **P15-040** | [x] | REST read-only API |
 | 13 | **P15-041** | [x] | DEPLOYMENT § reverse proxy + TLS |
 | 14 | **P15-050** | [x] | LIVING_SPEC + contract tests API |
-| 15 | **P16-001** | [ ] | ADR telemetry |
+| 15 | **P16-001** | [x] | ADR telemetry |
 | 16 | **P16-002** | [ ] | SPIKE LOG-server protocols |
 | 17 | **P16-010** | [ ] | `MetricSample` + `TelemetryEvent` |
 | 18 | **P16-011** | [ ] | `TelemetrySink` + `SinkRegistry` |
@@ -572,7 +572,7 @@ flowchart TD
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **P16-001** | [ ] ADR: telemetry (events vs samples vs aggregates, sinks) | `docs/ADR_TELEMETRY.md` | Діаграма bus → local/remote; межі з P10/P15 |
+| **P16-001** | [x] ADR: telemetry (events vs samples vs aggregates, sinks) | `docs/ADR_TELEMETRY.md` | Діаграма bus → local/remote; межі з P10/P15 |
 | **P16-002** | [ ] SPIKE: порівняння LOG-server протоколів (syslog, GELF, Loki) | `docs/SPIKE_LOG_SINKS.md` | Рекомендація v1: syslog TCP + GELF |
 
 ### 16.1 — Модель і шина (P0)
