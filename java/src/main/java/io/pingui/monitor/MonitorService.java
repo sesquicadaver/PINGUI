@@ -12,6 +12,7 @@ import io.pingui.probe.MtrProbe;
 import io.pingui.probe.ProbeMode;
 import io.pingui.probe.RouteProbe;
 import io.pingui.probe.RouteProbeFactory;
+import io.pingui.telemetry.MetricNames;
 import io.pingui.telemetry.MetricSample;
 import io.pingui.telemetry.TelemetryBus;
 import io.pingui.telemetry.TelemetryEvent;
@@ -557,11 +558,11 @@ public final class MonitorService implements AutoCloseable {
         Map<String, String> labels = telemetryLabels(probeMode);
         try {
             bus.offerSample(new MetricSample(
-                    "pingui_target_reachable", isTargetReachable(snapshot) ? 1.0 : 0.0, host, null, labels, ts));
-            bus.offerSample(new MetricSample("pingui_trace_duration_ms", durationMs, host, null, labels, ts));
+                    MetricNames.TARGET_REACHABLE, isTargetReachable(snapshot) ? 1.0 : 0.0, host, null, labels, ts));
+            bus.offerSample(new MetricSample(MetricNames.TRACE_DURATION_MS, durationMs, host, null, labels, ts));
             for (HopNode node : snapshot.nodes()) {
                 double lossPct = node.isReachable() && node.pingMs() != null ? 0.0 : 100.0;
-                bus.offerSample(new MetricSample("pingui_hop_loss_pct", lossPct, host, node.hop(), labels, ts));
+                bus.offerSample(new MetricSample(MetricNames.HOP_LOSS_PCT, lossPct, host, node.hop(), labels, ts));
                 if (node.pingMs() != null && node.isReachable()) {
                     bus.offerSample(MetricSample.rttMs(host, node.hop(), node.pingMs(), labels, ts));
                 }
@@ -597,7 +598,7 @@ public final class MonitorService implements AutoCloseable {
     }
 
     private Map<String, String> telemetryLabels(HostProbeMode probeMode) {
-        return Map.of("profile", alertProfileName, "probe_mode", probeMode.yamlValue());
+        return MetricNames.javaLabels(alertProfileName, probeMode.yamlValue());
     }
 
     private static boolean isFirstBaseline(List<String> previousIps, List<String> currentIps) {

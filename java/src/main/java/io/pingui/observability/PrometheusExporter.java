@@ -1,5 +1,6 @@
 package io.pingui.observability;
 
+import io.pingui.telemetry.MetricNames;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -53,9 +54,10 @@ public final class PrometheusExporter {
     /** Renders Prometheus text exposition format 0.0.4. */
     public String scrape() {
         StringBuilder out = new StringBuilder(512);
-        writeGaugeHeader(out, "pingui_rtt_ms", "Last known RTT in milliseconds");
+        writeGaugeHeader(out, MetricNames.RTT_MS, "Last known RTT in milliseconds");
         for (Map.Entry<RttKey, Double> entry : rttMs.entrySet()) {
-            out.append("pingui_rtt_ms{host=\"")
+            out.append(MetricNames.RTT_MS)
+                    .append("{host=\"")
                     .append(escapeLabel(entry.getKey().host()))
                     .append("\",hop=\"")
                     .append(entry.getKey().hop())
@@ -63,25 +65,28 @@ public final class PrometheusExporter {
                     .append(formatDouble(entry.getValue()))
                     .append('\n');
         }
-        writeCounterHeader(out, "pingui_route_change_total", "Detected route-change count");
+        writeCounterHeader(out, MetricNames.ROUTE_CHANGE_TOTAL, "Detected route-change count");
         for (Map.Entry<String, AtomicLong> entry : routeChangeTotal.entrySet()) {
-            out.append("pingui_route_change_total{host=\"")
+            out.append(MetricNames.ROUTE_CHANGE_TOTAL)
+                    .append("{host=\"")
                     .append(escapeLabel(entry.getKey()))
                     .append("\"} ")
                     .append(entry.getValue().get())
                     .append('\n');
         }
-        writeGaugeHeader(out, "pingui_target_reachable", "Target reachable when hop IP matches targetIp (1 or 0)");
+        writeGaugeHeader(out, MetricNames.TARGET_REACHABLE, "Target reachable when hop IP matches targetIp (1 or 0)");
         for (Map.Entry<String, Double> entry : targetReachable.entrySet()) {
-            out.append("pingui_target_reachable{host=\"")
+            out.append(MetricNames.TARGET_REACHABLE)
+                    .append("{host=\"")
                     .append(escapeLabel(entry.getKey()))
                     .append("\"} ")
                     .append(formatDouble(entry.getValue()))
                     .append('\n');
         }
-        writeGaugeHeader(out, "pingui_trace_duration_ms", "Last trace/mtr/ping duration in milliseconds");
+        writeGaugeHeader(out, MetricNames.TRACE_DURATION_MS, "Last trace/mtr/ping duration in milliseconds");
         for (Map.Entry<DurationKey, Double> entry : traceDurationMs.entrySet()) {
-            out.append("pingui_trace_duration_ms{host=\"")
+            out.append(MetricNames.TRACE_DURATION_MS)
+                    .append("{host=\"")
                     .append(escapeLabel(entry.getKey().host()))
                     .append("\",probe_mode=\"")
                     .append(escapeLabel(entry.getKey().probeMode()))

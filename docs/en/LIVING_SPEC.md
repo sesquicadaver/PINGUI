@@ -45,6 +45,7 @@ Module → unit test matrix. Update when adding features.
 | Sink registry (P16-011) | `TelemetrySink`, `SinkRegistry`, `NoOpTelemetrySink` | register/unregister; eventsOnly; isolated failures |
 | Telemetry bus (P16-012) | `TelemetryBus`, `DropPolicy` | async queue; batch flush; drop + `droppedCount` |
 | Monitor → bus (P16-013) | `MonitorService.setTelemetryBus`; `telemetry_emit.py` / `worker.py` | RTT/loss/route_change/probe_error offers; non-blocking |
+| Metric names (P16-014) | `telemetry/MetricNames.java`; `metric_names.py` | Canonical `pingui_*`; labels `profile`/`probe_mode`/`edition` |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |

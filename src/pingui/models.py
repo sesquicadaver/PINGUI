@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
+from pingui.metric_names import RTT_MS
+
 if TYPE_CHECKING:
     pass
 
@@ -238,7 +240,7 @@ class MetricSample:
     ) -> MetricSample:
         """Factory for ``pingui_rtt_ms`` hop samples."""
         return cls(
-            name="pingui_rtt_ms",
+            name=RTT_MS,
             value=rtt_ms,
             host=host,
             hop=hop,

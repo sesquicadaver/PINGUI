@@ -91,11 +91,12 @@ flowchart LR
 
 ### 5. Metric names (aligned with P15)
 
-Keep the `pingui_` prefix. P16-014 canonicalizes names/labels for the bus; the scrape minimum already exists:
+Keep the `pingui_` prefix. P16-014 ✅ canonicalizes names/labels for the bus (`MetricNames` / `metric_names.py`); the scrape minimum already exists:
 
 | Name | Class | Notes |
 |------|-------|-------|
-| `pingui_rtt_ms` | sample | labels: host, hop (+ profile/probe_mode on the bus) |
+| `pingui_rtt_ms` | sample | host/hop are sample fields; bus labels: profile, probe_mode, edition |
+| `pingui_hop_loss_pct` | sample | hop loss % |
 | `pingui_route_change_total` | derived from events | counter |
 | `pingui_target_reachable` | sample/gauge | |
 | `pingui_trace_duration_ms` | sample/gauge | |

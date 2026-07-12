@@ -91,11 +91,12 @@ flowchart LR
 
 ### 5. Імена метрик (узгодження з P15)
 
-Префікс `pingui_` зберігається. P16-014 канонізує імена/labels для bus; мінімум уже в scrape:
+Префікс `pingui_` зберігається. P16-014 ✅ канонізує імена/labels для bus (`MetricNames` / `metric_names.py`); мінімум уже в scrape:
 
 | Імʼя | Клас | Примітка |
 |------|------|----------|
-| `pingui_rtt_ms` | sample | labels: host, hop (+ profile/probe_mode у bus) |
+| `pingui_rtt_ms` | sample | host/hop — поля sample; bus labels: profile, probe_mode, edition |
+| `pingui_hop_loss_pct` | sample | hop loss % |
 | `pingui_route_change_total` | derived from events | counter |
 | `pingui_target_reachable` | sample/gauge | |
 | `pingui_trace_duration_ms` | sample/gauge | |

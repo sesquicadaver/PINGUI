@@ -12,6 +12,12 @@ from typing import TYPE_CHECKING
 
 from pingui.config import MAX_HOSTS, ConfigError, validate_session_host
 from pingui.icmp.raw_socket import ProbeTransport
+from pingui.metric_names import (
+    HOP_LOSS_PCT,
+    TARGET_REACHABLE,
+    TRACE_DURATION_MS,
+    python_labels,
+)
 from pingui.models import (
     TIMEOUT_IP,
     MetricSample,
@@ -255,7 +261,7 @@ class MonitorLoop:
         self, host: str, snapshot: RouteSnapshot, duration_ms: float = 0.0
     ) -> None:
         ts = datetime.now(UTC)
-        labels = {"profile": "default", "probe_mode": "trace"}
+        labels = python_labels("default", "trace")
         try:
             if snapshot.target_ip:
                 reachable = any(
@@ -266,7 +272,7 @@ class MonitorLoop:
                 reachable = any(not n.is_timeout and n.ip != TIMEOUT_IP for n in snapshot.nodes)
             self._telemetry.offer_sample(
                 MetricSample(
-                    name="pingui_target_reachable",
+                    name=TARGET_REACHABLE,
                     value=1.0 if reachable else 0.0,
                     host=host,
                     hop=None,
@@ -276,7 +282,7 @@ class MonitorLoop:
             )
             self._telemetry.offer_sample(
                 MetricSample(
-                    name="pingui_trace_duration_ms",
+                    name=TRACE_DURATION_MS,
                     value=duration_ms,
                     host=host,
                     hop=None,
@@ -288,7 +294,7 @@ class MonitorLoop:
                 loss = 0.0 if (not node.is_timeout and node.ping_ms is not None) else 100.0
                 self._telemetry.offer_sample(
                     MetricSample(
-                        name="pingui_hop_loss_pct",
+                        name=HOP_LOSS_PCT,
                         value=loss,
                         host=host,
                         hop=node.hop,

@@ -27,10 +27,10 @@ public record MetricSample(
         timestamp = Objects.requireNonNullElseGet(timestamp, Instant::now);
     }
 
-    /** Convenience factory for {@code pingui_rtt_ms} hop samples. */
+    /** Convenience factory for {@link MetricNames#RTT_MS} hop samples. */
     public static MetricSample rttMs(
             String host, int hop, double rttMs, Map<String, String> labels, Instant timestamp) {
-        return new MetricSample("pingui_rtt_ms", rttMs, host, hop, labels, timestamp);
+        return new MetricSample(MetricNames.RTT_MS, rttMs, host, hop, labels, timestamp);
     }
 
     public String toJson() {
