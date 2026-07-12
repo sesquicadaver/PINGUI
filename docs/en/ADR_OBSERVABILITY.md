@@ -105,7 +105,7 @@ ADR P16-001 will detail events vs samples vs aggregates and metric-name mapping 
 ## Consequences
 
 - **Docs:** this ADR is the gate before P15-010/P15-020; indexed in `docs/README.md`.
-- **Implementation:** P15-010 ✅ (`PrometheusExporter` / `MetricsHttpServer`); CLI `--metrics-port` — P15-011; TS write — P15-020.
+- **Implementation:** P15-010 ✅ (`PrometheusExporter` / `MetricsHttpServer`); P15-011 ✅ (`--metrics-port`); TS write — P15-020.
 - **Operators:** Grafana = scrape Prometheus **and/or** Influx/Timescale datasource; SQLite session is for GUI history, not dashboards.
 - **Do not build:** a single “observability blob” mixing alerts + SQLite + Prometheus remote_write.
 

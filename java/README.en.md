@@ -80,6 +80,11 @@ gradlew.bat run        # Windows
 | `--alert-rate-limit` | `10` | Max alerts per host / hour |
 | `--session-db` | off | SQLite session metrics + events (`host_session`, `persistence_event`); alternative — YAML `persistence.session_db` or GUI **Database…** |
 | `--export-report` | off | Export CSV/HTML from `--session-db` and exit (no GUI) |
+| `--daemon` | off | Headless `MonitorService` without JavaFX (NOC) |
+| `--pid-file` | `$TMP/pingui-java.pid` | PID file for `--daemon` / `--stop` / `--status` |
+| `--metrics-port` | off | Prometheus `GET /metrics` on `127.0.0.1:N` (with `--daemon` only) |
+| `--stop` | off | Stop daemon via PID file |
+| `--status` | off | Daemon status (running/stopped) |
 | `--no-persist-route-change` | off | Skip `route_change` events in SQLite |
 | `--no-persist-probe-error` | off | Skip `probe_error` events in SQLite |
 | `--geoip-hints` | `config/geoip_hints.yaml` | Offline CIDR→country |
@@ -91,7 +96,7 @@ gradlew.bat run        # Windows
 
 The CLI **does not overwrite** profile defaults (1.0 / 20 / 0.5 / auto) unless the corresponding flag is provided.
 
-**Prometheus (P15-010):** the daemon can listen on `http://127.0.0.1:<port>/metrics` when `AppOptions.metricsPort` is set (CLI `--metrics-port` — P15-011). Metrics: `pingui_rtt_ms`, `pingui_route_change_total`, `pingui_target_reachable`, `pingui_trace_duration_ms`.
+**Prometheus (P15-010/011):** `./pingui-java.sh -- --daemon --metrics-port 9090` → `http://127.0.0.1:9090/metrics`. Metrics: `pingui_rtt_ms`, `pingui_route_change_total`, `pingui_target_reachable`, `pingui_trace_duration_ms`. Without `--metrics-port` no listener starts.
 
 ## GUI
 

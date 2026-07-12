@@ -106,6 +106,14 @@ public final class PinguiApplication extends Application {
             }
             pidFile = Path.of(value.strip());
         }
+        Optional<Integer> metricsPort = Optional.empty();
+        if (params.containsKey("metrics-port")) {
+            int port = parseRequiredInt(params.get("metrics-port"), "--metrics-port");
+            if (port < 1 || port > 65535) {
+                throw new IllegalArgumentException("--metrics-port must be 1..65535");
+            }
+            metricsPort = Optional.of(port);
+        }
         return new AppOptions(
                 config,
                 profileOverrides,
@@ -121,7 +129,7 @@ public final class PinguiApplication extends Application {
                 exportReport,
                 runMode,
                 pidFile,
-                Optional.empty());
+                metricsPort);
     }
 
     private static CliPersistenceOverrides parsePersistenceOverrides(Map<String, String> params) {
@@ -368,6 +376,7 @@ public final class PinguiApplication extends Application {
                   --export-report PATH  Export CSV/HTML from --session-db and exit (no GUI)
                   --daemon            Headless monitor loop (no JavaFX)
                   --pid-file PATH     PID file for daemon/stop/status (default: $TMP/pingui-java.pid)
+                  --metrics-port N    Prometheus /metrics on 127.0.0.1:N (daemon; off if omitted)
                   --stop              Stop daemon using --pid-file
                   --status            Print daemon running/stopped
                   --no-persist-route-change  Disable route_change events in session DB

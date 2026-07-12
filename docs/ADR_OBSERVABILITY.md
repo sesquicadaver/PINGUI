@@ -105,7 +105,7 @@ ADR P16-001 деталізує events vs samples vs aggregates і mapping іме
 ## Наслідки
 
 - **Документація:** цей ADR — gate перед P15-010/P15-020; індекс у `docs/README.md`.
-- **Імплементація:** P15-010 ✅ (`PrometheusExporter` / `MetricsHttpServer`); CLI `--metrics-port` — P15-011; TS write — P15-020.
+- **Імплементація:** P15-010 ✅ (`PrometheusExporter` / `MetricsHttpServer`); P15-011 ✅ (`--metrics-port`); TS write — P15-020.
 - **Оператори:** Grafana = scrape Prometheus **і/або** Influx/Timescale datasource; SQLite session — для GUI history, не для dashboards.
 - **Не робити:** єдиний «observability blob», що змішує alerts + SQLite + Prometheus remote_write.
 

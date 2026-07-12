@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P15-011** |
+| **Поточна задача** | **P15-020** |
 | **Фаза** | 15 — Інтеграції для команд |
-| **DoD (коротко)** | CLI `--metrics-port` |
+| **DoD (коротко)** | InfluxDB/Timescale writer (Java parity) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -51,7 +51,7 @@
 | 6 | **PY-P11** | [x] | Python: YAML `persistence.events` + SQLite `persistence_event` |
 | 7 | **P15-001** | [x] | ADR observability boundaries |
 | 8 | **P15-010** | [x] | Prometheus `/metrics` (daemon) |
-| 9 | **P15-011** | [ ] | CLI `--metrics-port` |
+| 9 | **P15-011** | [x] | CLI `--metrics-port` |
 | 10 | **P15-020** | [ ] | InfluxDB/Timescale writer (Java parity) |
 | 11 | **P15-030** | [ ] | Scheduled CSV/HTML export |
 | 12 | **P15-040** | [ ] | REST read-only API |
@@ -547,7 +547,7 @@ flowchart TD
 |----|--------|-------|-----|
 | **P15-001** | [x] ADR: observability boundaries (metrics vs TS backend) | `docs/ADR_OBSERVABILITY.md` | Prometheus read; write → Influx optional |
 | **P15-010** | [x] Prometheus `/metrics` endpoint (daemon mode) | `observability/PrometheusExporter.java` | `pingui_rtt_ms`, `pingui_route_change_total` |
-| **P15-011** | [ ] CLI `--metrics-port 9090` | `DaemonRunner` | localhost bind default |
+| **P15-011** | [x] CLI `--metrics-port 9090` | `DaemonRunner` | localhost bind default |
 | **P15-020** | [ ] Java parity: InfluxDB/Timescale writer (як Python B-05) | `persistence/timeseries/` | Config parity з Python |
 | **P15-030** | [ ] Scheduled CSV/HTML export (cron-friendly CLI) | `export/ScheduledExport.java` | `--export-schedule daily` one-shot |
 | **P15-040** | [ ] REST read-only API: `GET /hosts`, `GET /routes/{host}` | `api/ReadOnlyApiServer.java` | OpenAPI stub; auth out of scope v1 |

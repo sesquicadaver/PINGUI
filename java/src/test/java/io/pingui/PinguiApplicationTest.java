@@ -122,6 +122,21 @@ class PinguiApplicationTest {
                 "pid-file", "/run/pingui/pingui-java.pid"));
         assertEquals(CliRunMode.DAEMON, options.runMode());
         assertEquals(Path.of("/run/pingui/pingui-java.pid"), options.pidFilePath());
+        assertTrue(options.metricsPort().isEmpty());
+    }
+
+    @Test
+    void parseOptions_metricsPort() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of("metrics-port", "9090"));
+        assertEquals(9090, options.metricsPort().orElseThrow());
+    }
+
+    @Test
+    void parseOptions_metricsPortRejectsOutOfRange() {
+        assertThrows(IllegalArgumentException.class, () -> PinguiApplication.parseOptions(Map.of("metrics-port", "0")));
+        assertThrows(
+                IllegalArgumentException.class, () -> PinguiApplication.parseOptions(Map.of("metrics-port", "70000")));
+        assertThrows(IllegalArgumentException.class, () -> PinguiApplication.parseOptions(Map.of("metrics-port", "")));
     }
 
     @Test

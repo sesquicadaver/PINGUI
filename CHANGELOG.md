@@ -21,6 +21,7 @@
 
 ### Added
 
+- **CLI `--metrics-port` (P15-011):** `PinguiApplication.parseOptions` → `AppOptions.metricsPort`; daemon binds `127.0.0.1:N/metrics`.
 - **Prometheus `/metrics` (P15-010):** `PrometheusExporter` + localhost `MetricsHttpServer`; daemon wire via `AppOptions.metricsPort` (CLI — P15-011); MonitorService updates `pingui_rtt_ms` / `route_change_total` / `target_reachable` / `trace_duration_ms`.
 - **Observability ADR (P15-001):** `docs/ADR_OBSERVABILITY.md` — Prometheus pull (`/metrics`) vs опційний push Influx/Timescale; межі з P10/P11/P16.
 - **Alerts ADR (P10-001):** `docs/ADR_ALERTS.md` — channels (webhook, desktop), `RouteChangeEvent` JSON, rate limit, failure policy.

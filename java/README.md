@@ -84,6 +84,7 @@ gradlew.bat run        # Windows
 | `--export-report` | off | Експорт CSV/HTML з `--session-db` і вихід (без GUI) |
 | `--daemon` | off | Headless `MonitorService` без JavaFX (NOC) |
 | `--pid-file` | `$TMP/pingui-java.pid` | PID-файл для `--daemon` / `--stop` / `--status` |
+| `--metrics-port` | off | Prometheus `GET /metrics` на `127.0.0.1:N` (лише з `--daemon`) |
 | `--stop` | off | Зупинити daemon за PID-файлом |
 | `--status` | off | Статус daemon (running/stopped) |
 | `--no-persist-route-change` | off | Не писати `route_change` у SQLite |
@@ -97,7 +98,7 @@ gradlew.bat run        # Windows
 
 CLI **не затирає** поля профілю defaults (1.0 / 20 / 0.5 / auto), якщо відповідний прапор не передано.
 
-**Prometheus (P15-010):** daemon може слухати `http://127.0.0.1:<port>/metrics` коли задано `AppOptions.metricsPort` (CLI `--metrics-port` — P15-011). Метрики: `pingui_rtt_ms`, `pingui_route_change_total`, `pingui_target_reachable`, `pingui_trace_duration_ms`.
+**Prometheus (P15-010/011):** `./pingui-java.sh -- --daemon --metrics-port 9090` → `http://127.0.0.1:9090/metrics`. Метрики: `pingui_rtt_ms`, `pingui_route_change_total`, `pingui_target_reachable`, `pingui_trace_duration_ms`. Без `--metrics-port` listener не стартує.
 
 ## GUI
 

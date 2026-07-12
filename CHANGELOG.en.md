@@ -21,6 +21,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **CLI `--metrics-port` (P15-011):** `PinguiApplication.parseOptions` → `AppOptions.metricsPort`; daemon binds `127.0.0.1:N/metrics`.
 - **Prometheus `/metrics` (P15-010):** `PrometheusExporter` + localhost `MetricsHttpServer`; daemon wire via `AppOptions.metricsPort` (CLI — P15-011); MonitorService updates `pingui_rtt_ms` / `route_change_total` / `target_reachable` / `trace_duration_ms`.
 - **Observability ADR (P15-001):** `docs/ADR_OBSERVABILITY.md` — Prometheus pull (`/metrics`) vs optional Influx/Timescale push; boundaries with P10/P11/P16.
 - **MTR probe (P13-010):** `MtrProbe` — per-hop state machine (DISCOVERING → MONITORING), one TTL per poll; `RoutePoller.pollHostMtr`.
