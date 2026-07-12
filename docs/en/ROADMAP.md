@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P16-002** |
+| **Current task** | **P16-010** |
 | **Phase** | 16 — Telemetry |
-| **DoD (short)** | SPIKE: compare LOG-server protocols (syslog, GELF, Loki) |
+| **DoD (short)** | `MetricSample` + `TelemetryEvent` (host, hop, labels) |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -58,7 +58,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 13 | **P15-041** | [x] | DEPLOYMENT § reverse proxy + TLS |
 | 14 | **P15-050** | [x] | LIVING_SPEC + contract tests API |
 | 15 | **P16-001** | [x] | ADR telemetry |
-| 16 | **P16-002** | [ ] | SPIKE LOG-server protocols |
+| 16 | **P16-002** | [x] | SPIKE LOG-server protocols |
 | 17 | **P16-010** | [ ] | `MetricSample` + `TelemetryEvent` |
 | 18 | **P16-011** | [ ] | `TelemetrySink` + `SinkRegistry` |
 | 19 | **P16-012** | [ ] | `TelemetryBus` |
@@ -573,7 +573,7 @@ flowchart TD
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
 | **P16-001** | [x] ADR: telemetry (events vs samples vs aggregates, sinks) | `docs/ADR_TELEMETRY.md` | Bus → local/remote diagram; boundaries with P10/P15 |
-| **P16-002** | [ ] SPIKE: LOG-server protocol comparison (syslog, GELF, Loki) | `docs/SPIKE_LOG_SINKS.md` | v1 recommendation: syslog TCP + GELF |
+| **P16-002** | [x] SPIKE: LOG-server protocol comparison (syslog, GELF, Loki) | `docs/SPIKE_LOG_SINKS.md` | v1 recommendation: syslog TCP + GELF |
 
 ### 16.1 — Model and bus (P0)
 
@@ -598,10 +598,10 @@ flowchart TD
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **P16-030** | [ ] `SyslogSink` — RFC 5424 TCP/TLS, structured data | `telemetry/SyslogSink.java` | Contract test with mock server |
-| **P16-031** | [ ] `GelfSink` — Graylog UDP/TCP | `telemetry/GelfSink.java` | route_change + probe_error events |
+| **P16-030** | [ ] `SyslogSink` — RFC 5424 TCP/TLS; MSG = single-line JSON; TCP framing canon | `telemetry/SyslogSink.java` | Contract test with mock server |
+| **P16-031** | [ ] `GelfSink` — Graylog TCP (prod) / UDP (lab); `events_only` parity; `\0` framing | `telemetry/GelfSink.java` | route_change + probe_error events |
 | **P16-032** | [ ] `LokiPushSink` — HTTP push (optional P2) | `telemetry/LokiPushSink.java` | labels: job=pingui, site |
-| **P16-033** | [ ] `events_only` mode for LOG sinks (no high-freq RTT) | `SinkConfig.java` | Default true for syslog |
+| **P16-033** | [ ] `events_only` mode for **all** remote LOG sinks (syslog, GELF, Loki) | `SinkConfig.java` | Default true; no high-freq RTT |
 | **P16-034** | [ ] 5m aggregates (avg/max RTT per hop) → LOG optional | `AggregateTelemetryJob.java` | YAML `log_aggregates: true` |
 
 ### 16.4 — Configuration (P0)
@@ -629,7 +629,7 @@ flowchart TD
 | **P16-061** | [ ] DEPLOYMENT § LOG-server, rsyslog, Graylog, retention | `docs/DEPLOYMENT.md` | nginx/TLS optional |
 | **P16-070** | [ ] LIVING_SPEC: telemetry bus + sinks | `docs/LIVING_SPEC.md` | Module → test matrix |
 | **P16-071** | [ ] CHECKLIST § telemetry smoke | `docs/CHECKLIST.md` | local sqlite + syslog event |
-| **P16-072** | [ ] Contract tests: mock syslog/gelf | `src/test/java/.../SyslogSinkTest.java` | CI green |
+| **P16-072** | [ ] Contract tests: mock syslog/gelf + shared field fixture | `src/test/java/.../SyslogSinkTest.java` | CI green |
 
 **Estimate:** 2–3 sprints. **Out of scope v1:** OpenTelemetry OTLP export (P2 ticket P16-080).
 

@@ -71,9 +71,9 @@ flowchart LR
 |------|-----|---------|----------|
 | `SqliteTelemetrySink` | local samples+events | **off** | Окремо від P11 `host_session`; retention P16-022 |
 | `JsonlRotateSink` | local file | **off** | `telemetry.jsonl.%Y-%m-%d` |
-| `SyslogSink` | remote events | **off** | RFC 5424; `events_only=true` за замовч. (P16-033) |
-| `GelfSink` | remote events | **off** | Graylog; events first |
-| `LokiPushSink` | remote | **off** | P2 (P16-032) |
+| `SyslogSink` | remote events | **off** | RFC 5424 TCP; TLS optional; `events_only=true` за замовч. (P16-033); MSG = single-line JSON |
+| `GelfSink` | remote events | **off** | Graylog; TCP preferred / UDP lab; `events_only=true` за замовч. (P16-033) |
+| `LokiPushSink` | remote | **off** | P2 (P16-032); той самий `events_only` default |
 | `PrometheusTelemetrySink` | in-process scrape state | via `--metrics-port` | Не remote_write (див. ADR_OBSERVABILITY) |
 | `InfluxTelemetrySink` | remote samples | via TS config | Обгортка B-05 / P15-020 |
 | Webhook as sink | remote events | via alerts config | P16-050 — один код emit, не другий HTTP клієнт |
@@ -120,7 +120,7 @@ flowchart LR
 
 ## Наслідки
 
-- **Документація:** цей ADR — gate перед P16-010+; SPIKE протоколів — P16-002.
+- **Документація:** цей ADR — gate перед P16-010+; SPIKE протоколів — P16-002 ✅ (`docs/SPIKE_LOG_SINKS.md`).
 - **Імплементація:** спочатку модель + bus (P16-010…013), потім local sinks, потім LOG, потім wrap P10/P15.
 - **Оператори:** syslog отримує рідкі events; high-freq RTT — лише TS/Prometheus/local archive.
 - **Не робити:** high-freq RTT у syslog; другий webhook-клієнт поруч із alerts; session SQLite як TS для Grafana.

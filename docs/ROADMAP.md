@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P16-002** |
+| **Поточна задача** | **P16-010** |
 | **Фаза** | 16 — Телеметрія |
-| **DoD (коротко)** | SPIKE: порівняння LOG-server протоколів (syslog, GELF, Loki) |
+| **DoD (коротко)** | `MetricSample` + `TelemetryEvent` (host, hop, labels) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -58,7 +58,7 @@
 | 13 | **P15-041** | [x] | DEPLOYMENT § reverse proxy + TLS |
 | 14 | **P15-050** | [x] | LIVING_SPEC + contract tests API |
 | 15 | **P16-001** | [x] | ADR telemetry |
-| 16 | **P16-002** | [ ] | SPIKE LOG-server protocols |
+| 16 | **P16-002** | [x] | SPIKE LOG-server protocols |
 | 17 | **P16-010** | [ ] | `MetricSample` + `TelemetryEvent` |
 | 18 | **P16-011** | [ ] | `TelemetrySink` + `SinkRegistry` |
 | 19 | **P16-012** | [ ] | `TelemetryBus` |
@@ -573,7 +573,7 @@ flowchart TD
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
 | **P16-001** | [x] ADR: telemetry (events vs samples vs aggregates, sinks) | `docs/ADR_TELEMETRY.md` | Діаграма bus → local/remote; межі з P10/P15 |
-| **P16-002** | [ ] SPIKE: порівняння LOG-server протоколів (syslog, GELF, Loki) | `docs/SPIKE_LOG_SINKS.md` | Рекомендація v1: syslog TCP + GELF |
+| **P16-002** | [x] SPIKE: порівняння LOG-server протоколів (syslog, GELF, Loki) | `docs/SPIKE_LOG_SINKS.md` | Рекомендація v1: syslog TCP + GELF |
 
 ### 16.1 — Модель і шина (P0)
 
@@ -598,10 +598,10 @@ flowchart TD
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **P16-030** | [ ] `SyslogSink` — RFC 5424 TCP/TLS, structured data | `telemetry/SyslogSink.java` | Contract test з mock server |
-| **P16-031** | [ ] `GelfSink` — Graylog UDP/TCP | `telemetry/GelfSink.java` | route_change + probe_error events |
+| **P16-030** | [ ] `SyslogSink` — RFC 5424 TCP/TLS; MSG = single-line JSON; TCP framing canon | `telemetry/SyslogSink.java` | Contract test з mock server |
+| **P16-031** | [ ] `GelfSink` — Graylog TCP (prod) / UDP (lab); `events_only` parity; `\0` framing | `telemetry/GelfSink.java` | route_change + probe_error events |
 | **P16-032** | [ ] `LokiPushSink` — HTTP push (опційно P2) | `telemetry/LokiPushSink.java` | labels: job=pingui, site |
-| **P16-033** | [ ] `events_only` mode для LOG-sink (без high-freq RTT) | `SinkConfig.java` | Default true для syslog |
+| **P16-033** | [ ] `events_only` mode для **усіх** remote LOG sinks (syslog, GELF, Loki) | `SinkConfig.java` | Default true; без high-freq RTT |
 | **P16-034** | [ ] 5m aggregates (avg/max RTT per hop) → LOG опційно | `AggregateTelemetryJob.java` | YAML `log_aggregates: true` |
 
 ### 16.4 — Конфігурація (P0)
@@ -629,7 +629,7 @@ flowchart TD
 | **P16-061** | [ ] DEPLOYMENT § LOG-server, rsyslog, Graylog, retention | `docs/DEPLOYMENT.md` | nginx/TLS optional |
 | **P16-070** | [ ] LIVING_SPEC: telemetry bus + sinks | `docs/LIVING_SPEC.md` | Матриця модуль → тест |
 | **P16-071** | [ ] CHECKLIST § telemetry smoke | `docs/CHECKLIST.md` | local sqlite + syslog event |
-| **P16-072** | [ ] Contract tests: mock syslog/gelf | `src/test/java/.../SyslogSinkTest.java` | CI green |
+| **P16-072** | [ ] Contract tests: mock syslog/gelf + shared field fixture | `src/test/java/.../SyslogSinkTest.java` | CI green |
 
 **Орієнтовно:** 2–3 sprint. **Поза scope v1:** OpenTelemetry OTLP export (P2 ticket P16-080).
 

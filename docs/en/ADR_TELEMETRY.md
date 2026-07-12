@@ -71,9 +71,9 @@ flowchart LR
 |------|------|---------|-------|
 | `SqliteTelemetrySink` | local samples+events | **off** | Separate from P11 `host_session`; retention P16-022 |
 | `JsonlRotateSink` | local file | **off** | `telemetry.jsonl.%Y-%m-%d` |
-| `SyslogSink` | remote events | **off** | RFC 5424; `events_only=true` by default (P16-033) |
-| `GelfSink` | remote events | **off** | Graylog; events first |
-| `LokiPushSink` | remote | **off** | P2 (P16-032) |
+| `SyslogSink` | remote events | **off** | RFC 5424 TCP; TLS optional; `events_only=true` by default (P16-033); MSG = single-line JSON |
+| `GelfSink` | remote events | **off** | Graylog; TCP preferred / UDP lab; `events_only=true` by default (P16-033) |
+| `LokiPushSink` | remote | **off** | P2 (P16-032); same `events_only` default |
 | `PrometheusTelemetrySink` | in-process scrape state | via `--metrics-port` | Not remote_write (see ADR_OBSERVABILITY) |
 | `InfluxTelemetrySink` | remote samples | via TS config | Wrapper over B-05 / P15-020 |
 | Webhook as sink | remote events | via alerts config | P16-050 — one emit path, not a second HTTP client |
@@ -120,7 +120,7 @@ Secrets (URL, token) must **not** be logged in plaintext (P16-042).
 
 ## Consequences
 
-- **Documentation:** this ADR gates P16-010+; protocol SPIKE is P16-002.
+- **Documentation:** this ADR gates P16-010+; protocol SPIKE is P16-002 ✅ (`docs/SPIKE_LOG_SINKS.md`).
 - **Implementation:** model + bus first (P16-010…013), then local sinks, then LOG, then P10/P15 wrappers.
 - **Operators:** syslog gets rare events; high-freq RTT only via TS/Prometheus/local archive.
 - **Do not:** high-freq RTT in syslog; a second webhook client beside alerts; session SQLite as TS for Grafana.

@@ -21,6 +21,7 @@
 | [ADR_TELEMETRY.md](ADR_TELEMETRY.md) | Розробник | Telemetry bus / events vs samples ADR (P16-001) |
 | [SPIKE_IPV6.md](SPIKE_IPV6.md) | Розробник | IPv6 scope (**planned**, фаза 9 V6-*) |
 | [SPIKE_PERSISTENCE.md](SPIKE_PERSISTENCE.md) | Розробник | SQLite session schema (фаза 11 P11-*) |
+| [SPIKE_LOG_SINKS.md](SPIKE_LOG_SINKS.md) | Розробник | LOG-server protocols SPIKE (P16-002) |
 | [CONFIGURATION.md](CONFIGURATION.md) | Розробник | YAML, CLI (Python) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Розробник | Шари Python |
 | [MODULES.md](MODULES.md) | Розробник | Довідник модулів |
