@@ -1,5 +1,6 @@
 package io.pingui;
 
+import io.pingui.export.ExportSchedulePeriod;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -18,6 +19,8 @@ public record AppOptions(
         int asnTimeoutMs,
         Optional<Path> sessionDbPath,
         Optional<Path> exportReportPath,
+        Optional<ExportSchedulePeriod> exportSchedule,
+        Optional<Path> exportDir,
         CliRunMode runMode,
         Path pidFilePath,
         Optional<Integer> metricsPort) {
@@ -34,6 +37,8 @@ public record AppOptions(
                 true,
                 Path.of("config/asn_hints.yaml"),
                 2000,
+                Optional.empty(),
+                Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 CliRunMode.GUI,

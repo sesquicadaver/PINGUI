@@ -116,6 +116,44 @@ class PinguiApplicationTest {
     }
 
     @Test
+    void parseOptions_exportScheduleDaily() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of(
+                "session-db", "data/ping.db",
+                "export-schedule", "daily",
+                "export-dir", "reports/out"));
+        assertEquals(
+                io.pingui.export.ExportSchedulePeriod.DAILY,
+                options.exportSchedule().orElseThrow());
+        assertEquals(Path.of("reports/out"), options.exportDir().orElseThrow());
+        assertEquals(CliRunMode.EXPORT, options.runMode());
+        assertTrue(options.exportReportPath().isEmpty());
+    }
+
+    @Test
+    void parseOptions_exportScheduleRejectsMutualWithReport() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PinguiApplication.parseOptions(Map.of(
+                        "export-report", "a.csv",
+                        "export-schedule", "daily",
+                        "export-dir", "out")));
+    }
+
+    @Test
+    void parseOptions_exportScheduleRequiresDir() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PinguiApplication.parseOptions(Map.of("export-schedule", "daily")));
+    }
+
+    @Test
+    void parseOptions_exportDirRequiresSchedule() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PinguiApplication.parseOptions(Map.of("export-dir", "reports/out")));
+    }
+
+    @Test
     void parseOptions_daemonAndPidFile() {
         AppOptions options = PinguiApplication.parseOptions(Map.of(
                 "daemon", "true",

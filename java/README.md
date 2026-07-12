@@ -82,6 +82,8 @@ gradlew.bat run        # Windows
 | `--alert-rate-limit` | `10` | Макс. алертів на host / годину |
 | `--session-db` | off | SQLite метрики сесії + події (`host_session`, `persistence_event`); альтернатива — YAML `persistence.session_db` або GUI «База даних…» |
 | `--export-report` | off | Експорт CSV/HTML з `--session-db` і вихід (без GUI) |
+| `--export-schedule` | off | Cron one-shot: `hourly` \| `daily` \| `weekly` (разом із `--export-dir`) |
+| `--export-dir` | off | Каталог для `--export-schedule` (пише CSV+HTML зі штампом UTC) |
 | `--daemon` | off | Headless `MonitorService` без JavaFX (NOC) |
 | `--pid-file` | `$TMP/pingui-java.pid` | PID-файл для `--daemon` / `--stop` / `--status` |
 | `--metrics-port` | off | Prometheus `GET /metrics` на `127.0.0.1:N` (лише з `--daemon`) |
@@ -105,6 +107,8 @@ CLI **не затирає** поля профілю defaults (1.0 / 20 / 0.5 / a
 
 **Time-series (P15-020):** `--ts-backend influx` (+ Influx flags/env) або `--ts-backend timescale --timescale-dsn …` — dual-emit RTT/route з `SessionStore` (GUI і daemon). Помилки write → WARN, poll не зупиняється.
 
+**Scheduled export (P15-030):** `./pingui-java.sh -- --session-db data/session.db --export-schedule daily --export-dir reports/` → `pingui-daily-YYYY-MM-DD.csv` + `.html` (UTC). Для cron; не тримає процес.
+
 ## GUI
 
 - **Про** / **Довідка** — меню з діалогами «Про PINGUI…» та «Довідка…» (F1); dual-stack IPv4/IPv6 literal
@@ -126,7 +130,7 @@ io.pingui
 ├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
 ├── persistence/     SessionDatabase, PersistenceEventWriter (P11); timeseries/ (P15-020)
 ├── observability/   PrometheusExporter, MetricsHttpServer (P15-010)
-├── export/          SessionReportExporter (P11-030)
+├── export/          SessionReportExporter (P11-030), ScheduledExport (P15-030)
 └── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,
                        MonitorLifecycle, ViewModeController, RouteGraphPresenter, GraphCanvas
 ```

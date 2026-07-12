@@ -5,6 +5,8 @@ import io.pingui.config.ProfileDocument;
 import io.pingui.config.ProfilesConfig;
 import io.pingui.daemon.DaemonPidFile;
 import io.pingui.daemon.DaemonRunner;
+import io.pingui.export.ExportSchedulePeriod;
+import io.pingui.export.ScheduledExport;
 import io.pingui.export.SessionReportExporter;
 import io.pingui.persistence.SessionDatabase;
 import io.pingui.probe.ProbeMode;
@@ -12,6 +14,7 @@ import io.pingui.ui.AppMenuDialogs;
 import io.pingui.ui.MainController;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -89,6 +92,27 @@ public final class PinguiApplication extends Application {
             }
             exportReport = Optional.of(Path.of(value.strip()));
         }
+        Optional<ExportSchedulePeriod> exportSchedule = Optional.empty();
+        if (params.containsKey("export-schedule")) {
+            exportSchedule = Optional.of(ExportSchedulePeriod.parse(params.get("export-schedule")));
+        }
+        Optional<Path> exportDir = Optional.empty();
+        if (params.containsKey("export-dir")) {
+            String value = params.get("export-dir");
+            if (value == null || value.isBlank()) {
+                throw new IllegalArgumentException("Missing value for --export-dir");
+            }
+            exportDir = Optional.of(Path.of(value.strip()));
+        }
+        if (exportReport.isPresent() && exportSchedule.isPresent()) {
+            throw new IllegalArgumentException("Use either --export-report or --export-schedule, not both");
+        }
+        if (exportSchedule.isPresent() && exportDir.isEmpty()) {
+            throw new IllegalArgumentException("--export-schedule requires --export-dir PATH");
+        }
+        if (exportDir.isPresent() && exportSchedule.isEmpty()) {
+            throw new IllegalArgumentException("--export-dir requires --export-schedule");
+        }
         CliRunMode runMode = CliRunMode.GUI;
         if (params.containsKey("daemon")) {
             runMode = CliRunMode.DAEMON;
@@ -96,7 +120,7 @@ public final class PinguiApplication extends Application {
             runMode = CliRunMode.STOP;
         } else if (params.containsKey("status")) {
             runMode = CliRunMode.STATUS;
-        } else if (exportReport.isPresent()) {
+        } else if (exportReport.isPresent() || exportSchedule.isPresent()) {
             runMode = CliRunMode.EXPORT;
         }
         Path pidFile = AppOptions.defaultPidFile();
@@ -129,6 +153,8 @@ public final class PinguiApplication extends Application {
                 asnTimeoutMs,
                 sessionDb,
                 exportReport,
+                exportSchedule,
+                exportDir,
                 runMode,
                 pidFile,
                 metricsPort);
@@ -266,7 +292,7 @@ public final class PinguiApplication extends Application {
         AppOptions options = parseOptions(params);
         switch (options.runMode()) {
             case EXPORT -> {
-                runExportReport(options);
+                runExport(options);
                 return;
             }
             case DAEMON -> {
@@ -311,6 +337,14 @@ public final class PinguiApplication extends Application {
         return params;
     }
 
+    private static void runExport(AppOptions options) {
+        if (options.exportSchedule().isPresent()) {
+            runScheduledExport(options);
+        } else {
+            runExportReport(options);
+        }
+    }
+
     private static void runExportReport(AppOptions options) {
         if (options.sessionDbPath().isEmpty()) {
             failCli("--export-report requires --session-db PATH");
@@ -326,6 +360,22 @@ public final class PinguiApplication extends Application {
             System.out.println("Session report written: " + reportPath.toAbsolutePath());
         } catch (IOException | RuntimeException ex) {
             failCli("Export failed: " + ex.getMessage());
+        }
+    }
+
+    private static void runScheduledExport(AppOptions options) {
+        if (options.sessionDbPath().isEmpty()) {
+            failCli("--export-schedule requires --session-db PATH");
+        }
+        Path exportDir = options.exportDir().orElseThrow();
+        ExportSchedulePeriod period = options.exportSchedule().orElseThrow();
+        try (SessionDatabase database =
+                new SessionDatabase(options.sessionDbPath().orElseThrow())) {
+            ScheduledExport.Result result = ScheduledExport.run(database, exportDir, period, Clock.systemUTC());
+            System.out.println("Scheduled CSV written: " + result.csvPath().toAbsolutePath());
+            System.out.println("Scheduled HTML written: " + result.htmlPath().toAbsolutePath());
+        } catch (IOException | RuntimeException ex) {
+            failCli("Scheduled export failed: " + ex.getMessage());
         }
     }
 
@@ -397,6 +447,8 @@ public final class PinguiApplication extends Application {
                   --alert-rate-limit N Max alerts per host per hour (default: 10)
                   --session-db PATH  SQLite session metrics + events (optional)
                   --export-report PATH  Export CSV/HTML from --session-db and exit (no GUI)
+                  --export-schedule P   Cron one-shot: hourly|daily|weekly (with --export-dir)
+                  --export-dir DIR      Output directory for --export-schedule (CSV+HTML stamped)
                   --daemon            Headless monitor loop (no JavaFX)
                   --pid-file PATH     PID file for daemon/stop/status (default: $TMP/pingui-java.pid)
                   --metrics-port N    Prometheus /metrics on 127.0.0.1:N (daemon; off if omitted)

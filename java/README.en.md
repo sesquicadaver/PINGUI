@@ -80,6 +80,8 @@ gradlew.bat run        # Windows
 | `--alert-rate-limit` | `10` | Max alerts per host / hour |
 | `--session-db` | off | SQLite session metrics + events (`host_session`, `persistence_event`); alternative — YAML `persistence.session_db` or GUI **Database…** |
 | `--export-report` | off | Export CSV/HTML from `--session-db` and exit (no GUI) |
+| `--export-schedule` | off | Cron one-shot: `hourly` \| `daily` \| `weekly` (with `--export-dir`) |
+| `--export-dir` | off | Directory for `--export-schedule` (writes stamped CSV+HTML) |
 | `--daemon` | off | Headless `MonitorService` without JavaFX (NOC) |
 | `--pid-file` | `$TMP/pingui-java.pid` | PID file for `--daemon` / `--stop` / `--status` |
 | `--metrics-port` | off | Prometheus `GET /metrics` on `127.0.0.1:N` (with `--daemon` only) |
@@ -103,6 +105,8 @@ The CLI **does not overwrite** profile defaults (1.0 / 20 / 0.5 / auto) unless t
 
 **Time-series (P15-020):** `--ts-backend influx` (+ Influx flags/env) or `--ts-backend timescale --timescale-dsn …` — dual-emit RTT/route from `SessionStore` (GUI and daemon). Write failures → WARN; poll continues.
 
+**Scheduled export (P15-030):** `./pingui-java.sh -- --session-db data/session.db --export-schedule daily --export-dir reports/` → `pingui-daily-YYYY-MM-DD.csv` + `.html` (UTC). For cron; does not keep the process running.
+
 ## GUI
 
 - **About** / **Help** — menu with “About PINGUI…” and “Help…” dialogs (F1); dual-stack IPv4/IPv6 literals
@@ -124,7 +128,7 @@ io.pingui
 ├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
 ├── persistence/     SessionDatabase, PersistenceEventWriter (P11); timeseries/ (P15-020)
 ├── observability/   PrometheusExporter, MetricsHttpServer (P15-010)
-├── export/          SessionReportExporter (P11-030)
+├── export/          SessionReportExporter (P11-030), ScheduledExport (P15-030)
 └── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,
                        MonitorLifecycle, ViewModeController, RouteGraphPresenter, GraphCanvas
 ```

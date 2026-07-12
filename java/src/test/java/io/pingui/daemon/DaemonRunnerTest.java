@@ -51,6 +51,8 @@ class DaemonRunnerTest {
                 2000,
                 Optional.empty(),
                 Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
                 CliRunMode.DAEMON,
                 pidFile,
                 Optional.empty());
@@ -98,6 +100,8 @@ class DaemonRunnerTest {
                 2000,
                 Optional.empty(),
                 Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
                 CliRunMode.DAEMON,
                 pidFile,
                 Optional.of(port));
@@ -141,6 +145,8 @@ class DaemonRunnerTest {
                 false,
                 Path.of("config/asn_hints.yaml"),
                 2000,
+                Optional.empty(),
+                Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 CliRunMode.DAEMON,
