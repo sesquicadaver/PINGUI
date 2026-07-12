@@ -83,6 +83,9 @@ gradlew.bat run        # Windows
 | `--daemon` | off | Headless `MonitorService` without JavaFX (NOC) |
 | `--pid-file` | `$TMP/pingui-java.pid` | PID file for `--daemon` / `--stop` / `--status` |
 | `--metrics-port` | off | Prometheus `GET /metrics` on `127.0.0.1:N` (with `--daemon` only) |
+| `--ts-backend` | off | Time-series push: `influx` \| `timescale` (Python B-05 parity) |
+| `--influx-url` / `--influx-token` / `--influx-org` / `--influx-bucket` | env `INFLUXDB_*` | InfluxDB 2.x write (token never logged) |
+| `--timescale-dsn` | env `PINGUI_TIMESCALE_DSN` | PostgreSQL/Timescale JDBC or `postgresql://…` |
 | `--stop` | off | Stop daemon via PID file |
 | `--status` | off | Daemon status (running/stopped) |
 | `--no-persist-route-change` | off | Skip `route_change` events in SQLite |
@@ -97,6 +100,8 @@ gradlew.bat run        # Windows
 The CLI **does not overwrite** profile defaults (1.0 / 20 / 0.5 / auto) unless the corresponding flag is provided.
 
 **Prometheus (P15-010/011):** `./pingui-java.sh -- --daemon --metrics-port 9090` → `http://127.0.0.1:9090/metrics`. Metrics: `pingui_rtt_ms`, `pingui_route_change_total`, `pingui_target_reachable`, `pingui_trace_duration_ms`. Without `--metrics-port` no listener starts.
+
+**Time-series (P15-020):** `--ts-backend influx` (+ Influx flags/env) or `--ts-backend timescale --timescale-dsn …` — dual-emit RTT/route from `SessionStore` (GUI and daemon). Write failures → WARN; poll continues.
 
 ## GUI
 
@@ -117,7 +122,7 @@ io.pingui
 ├── probe/           RouteProbeFactory, ProcessRouteProbe, TraceCommandBuilder,
                        UnixTraceOutputParser, WindowsTraceOutputParser, ProcessExpertPing
 ├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
-├── persistence/     SessionDatabase, PersistenceEventWriter (P11-010…011)
+├── persistence/     SessionDatabase, PersistenceEventWriter (P11); timeseries/ (P15-020)
 ├── observability/   PrometheusExporter, MetricsHttpServer (P15-010)
 ├── export/          SessionReportExporter (P11-030)
 └── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,

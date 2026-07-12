@@ -17,6 +17,8 @@ import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
 import io.pingui.persistence.PersistencePolicy;
+import io.pingui.persistence.timeseries.TimeSeriesBackends;
+import io.pingui.persistence.timeseries.TimeSeriesConfigException;
 import io.pingui.platform.PlatformCapabilities;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -111,6 +113,7 @@ public final class MainController {
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(active.hosts());
         this.store = SessionStore.fromEntries(
                 sessionHosts, openSessionDatabase(), profileDocument.active().hostProbeMode());
+        attachTimeSeries(store);
         this.monitor = createMonitor(active, sessionHosts);
         initCoordinators();
         hostListPresenter.rebuild(sessionHosts);
@@ -490,6 +493,17 @@ public final class MainController {
                 .orElse(null);
     }
 
+    private void attachTimeSeries(SessionStore sessionStore) {
+        try {
+            var backend = TimeSeriesBackends.create(options.timeSeriesOverrides());
+            if (backend != null) {
+                sessionStore.setTimeSeriesBackend(backend);
+            }
+        } catch (TimeSeriesConfigException ex) {
+            throw new IllegalArgumentException(ex.getMessage(), ex);
+        }
+    }
+
     private void reconnectPersistence(Optional<PersistencePolicy> policyOverride) {
         dismissEasterEgg();
         List<HostEntry> liveEntries = HostViewRules.entriesForConfig(store.toHostEntries());
@@ -497,6 +511,7 @@ public final class MainController {
         monitor.close();
         store.close();
         store = SessionStore.fromEntries(liveEntries, openSessionDatabase(), profile.hostProbeMode());
+        attachTimeSeries(store);
         sessionPersistenceOverride = policyOverride != null ? policyOverride : Optional.empty();
         monitor = createMonitor(profile, liveEntries);
         updateHistoryPanelVisibility();
@@ -530,6 +545,7 @@ public final class MainController {
         monitor.close();
         store.close();
         store = SessionStore.fromEntries(sessionHosts, openSessionDatabase(), profile.hostProbeMode());
+        attachTimeSeries(store);
         monitor = createMonitor(profile, sessionHosts);
         updateHistoryPanelVisibility();
         hostListPresenter.rebuild(sessionHosts);

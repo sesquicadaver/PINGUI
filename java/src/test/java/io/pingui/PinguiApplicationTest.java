@@ -140,6 +140,21 @@ class PinguiApplicationTest {
     }
 
     @Test
+    void parseOptions_timeSeriesFlags() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of(
+                "ts-backend", "influx",
+                "influx-url", "http://localhost:8086",
+                "influx-token", "tok",
+                "influx-org", "org",
+                "influx-bucket", "bucket"));
+        assertEquals("influx", options.timeSeriesOverrides().backend().orElseThrow());
+        assertEquals(
+                "http://localhost:8086",
+                options.timeSeriesOverrides().influxUrl().orElseThrow());
+        assertEquals("tok", options.timeSeriesOverrides().influxToken().orElseThrow());
+    }
+
+    @Test
     void parseOptions_stopAndStatus() {
         assertEquals(
                 CliRunMode.STOP,

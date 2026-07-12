@@ -59,6 +59,7 @@ public final class PinguiApplication extends Application {
         CliProfileOverrides profileOverrides = parseProfileOverrides(params);
         CliAlertOverrides alertOverrides = parseAlertOverrides(params);
         CliPersistenceOverrides persistenceOverrides = parsePersistenceOverrides(params);
+        CliTimeSeriesOverrides timeSeriesOverrides = parseTimeSeriesOverrides(params);
         boolean verbose = params.containsKey("verbose");
         boolean geoipEnabled = !params.containsKey("no-geoip");
         Path geoipHints =
@@ -119,6 +120,7 @@ public final class PinguiApplication extends Application {
                 profileOverrides,
                 alertOverrides,
                 persistenceOverrides,
+                timeSeriesOverrides,
                 verbose,
                 geoipEnabled,
                 geoipHints,
@@ -130,6 +132,27 @@ public final class PinguiApplication extends Application {
                 runMode,
                 pidFile,
                 metricsPort);
+    }
+
+    private static CliTimeSeriesOverrides parseTimeSeriesOverrides(Map<String, String> params) {
+        return new CliTimeSeriesOverrides(
+                optionalParam(params, "ts-backend"),
+                optionalParam(params, "influx-url"),
+                optionalParam(params, "influx-token"),
+                optionalParam(params, "influx-org"),
+                optionalParam(params, "influx-bucket"),
+                optionalParam(params, "timescale-dsn"));
+    }
+
+    private static Optional<String> optionalParam(Map<String, String> params, String key) {
+        if (!params.containsKey(key)) {
+            return Optional.empty();
+        }
+        String value = params.get(key);
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("Missing value for --" + key);
+        }
+        return Optional.of(value.strip());
     }
 
     private static CliPersistenceOverrides parsePersistenceOverrides(Map<String, String> params) {
@@ -377,6 +400,12 @@ public final class PinguiApplication extends Application {
                   --daemon            Headless monitor loop (no JavaFX)
                   --pid-file PATH     PID file for daemon/stop/status (default: $TMP/pingui-java.pid)
                   --metrics-port N    Prometheus /metrics on 127.0.0.1:N (daemon; off if omitted)
+                  --ts-backend NAME   Time-series: influx | timescale (off if omitted)
+                  --influx-url URL    InfluxDB URL (or INFLUXDB_URL)
+                  --influx-token TOK  InfluxDB token (or INFLUXDB_TOKEN; never logged)
+                  --influx-org ORG    InfluxDB org (or INFLUXDB_ORG)
+                  --influx-bucket B   InfluxDB bucket (or INFLUXDB_BUCKET)
+                  --timescale-dsn DSN PostgreSQL/Timescale DSN (or PINGUI_TIMESCALE_DSN)
                   --stop              Stop daemon using --pid-file
                   --status            Print daemon running/stopped
                   --no-persist-route-change  Disable route_change events in session DB

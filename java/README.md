@@ -85,6 +85,9 @@ gradlew.bat run        # Windows
 | `--daemon` | off | Headless `MonitorService` без JavaFX (NOC) |
 | `--pid-file` | `$TMP/pingui-java.pid` | PID-файл для `--daemon` / `--stop` / `--status` |
 | `--metrics-port` | off | Prometheus `GET /metrics` на `127.0.0.1:N` (лише з `--daemon`) |
+| `--ts-backend` | off | Time-series push: `influx` \| `timescale` (Python B-05 parity) |
+| `--influx-url` / `--influx-token` / `--influx-org` / `--influx-bucket` | env `INFLUXDB_*` | InfluxDB 2.x write (token не логується) |
+| `--timescale-dsn` | env `PINGUI_TIMESCALE_DSN` | PostgreSQL/Timescale JDBC або `postgresql://…` |
 | `--stop` | off | Зупинити daemon за PID-файлом |
 | `--status` | off | Статус daemon (running/stopped) |
 | `--no-persist-route-change` | off | Не писати `route_change` у SQLite |
@@ -99,6 +102,8 @@ gradlew.bat run        # Windows
 CLI **не затирає** поля профілю defaults (1.0 / 20 / 0.5 / auto), якщо відповідний прапор не передано.
 
 **Prometheus (P15-010/011):** `./pingui-java.sh -- --daemon --metrics-port 9090` → `http://127.0.0.1:9090/metrics`. Метрики: `pingui_rtt_ms`, `pingui_route_change_total`, `pingui_target_reachable`, `pingui_trace_duration_ms`. Без `--metrics-port` listener не стартує.
+
+**Time-series (P15-020):** `--ts-backend influx` (+ Influx flags/env) або `--ts-backend timescale --timescale-dsn …` — dual-emit RTT/route з `SessionStore` (GUI і daemon). Помилки write → WARN, poll не зупиняється.
 
 ## GUI
 
@@ -119,7 +124,7 @@ io.pingui
 ├── probe/           RouteProbeFactory, ProcessRouteProbe, TraceCommandBuilder,
                        UnixTraceOutputParser, WindowsTraceOutputParser, ProcessExpertPing
 ├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
-├── persistence/     SessionDatabase, PersistenceEventWriter (P11-010…011)
+├── persistence/     SessionDatabase, PersistenceEventWriter (P11); timeseries/ (P15-020)
 ├── observability/   PrometheusExporter, MetricsHttpServer (P15-010)
 ├── export/          SessionReportExporter (P11-030)
 └── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,

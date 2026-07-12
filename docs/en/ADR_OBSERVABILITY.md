@@ -31,7 +31,7 @@ Without an ADR it is easy to conflate scrape with push, or try to feed Grafana f
 | Path | Direction | Protocol | When | Ticket |
 |------|-----------|----------|------|--------|
 | **Prometheus** | **read / pull** | HTTP `GET /metrics` (text exposition) | Daemon mode; external scrape | P15-010, P15-011 |
-| **TS backend** | **write / push** | Influx line protocol / SQL insert | Optional when configured | P15-020 (Java); Python B-05 ✅ |
+| **TS backend** | **write / push** | Influx line protocol / SQL insert | Optional when configured | P15-020 ✅ (Java); Python B-05 ✅ |
 
 - Prometheus is **not** a write store for PINGUI in v1 (no `remote_write` client).
 - Influx/Timescale do **not** replace `/metrics`: Grafana may use **both** datasources independently.
@@ -105,7 +105,7 @@ ADR P16-001 will detail events vs samples vs aggregates and metric-name mapping 
 ## Consequences
 
 - **Docs:** this ADR is the gate before P15-010/P15-020; indexed in `docs/README.md`.
-- **Implementation:** P15-010 ✅ (`PrometheusExporter` / `MetricsHttpServer`); P15-011 ✅ (`--metrics-port`); TS write — P15-020.
+- **Implementation:** P15-010 ✅ (`PrometheusExporter` / `MetricsHttpServer`); P15-011 ✅ (`--metrics-port`); P15-020 ✅ (`persistence/timeseries/` + CLI `--ts-backend`).
 - **Operators:** Grafana = scrape Prometheus **and/or** Influx/Timescale datasource; SQLite session is for GUI history, not dashboards.
 - **Do not build:** a single “observability blob” mixing alerts + SQLite + Prometheus remote_write.
 
@@ -116,4 +116,4 @@ ADR P16-001 will detail events vs samples vs aggregates and metric-name mapping 
 - [ADR_DAEMON.md](ADR_DAEMON.md) — headless process hosting `/metrics`  
 - [SPIKE_PERSISTENCE.md](SPIKE_PERSISTENCE.md) — SQLite ≠ TS  
 - Python: `src/pingui/persistence/timeseries/`  
-- Java (planned): `observability/PrometheusExporter.java`, `persistence/timeseries/`
+- Java: `observability/PrometheusExporter.java`, `persistence/timeseries/` (P15-020 ✅)

@@ -16,6 +16,9 @@ import io.pingui.observability.MetricsHttpServer;
 import io.pingui.observability.PrometheusExporter;
 import io.pingui.persistence.PersistencePolicy;
 import io.pingui.persistence.SessionDatabase;
+import io.pingui.persistence.timeseries.TimeSeriesBackend;
+import io.pingui.persistence.timeseries.TimeSeriesBackends;
+import io.pingui.persistence.timeseries.TimeSeriesConfigException;
 import io.pingui.ui.HostViewRules;
 import io.pingui.ui.MonitorLifecycle;
 import java.io.IOException;
@@ -55,6 +58,7 @@ public final class DaemonRunner implements AutoCloseable {
         TracingProfile active = profileDocument.active();
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(active.hosts());
         store = SessionStore.fromEntries(sessionHosts, openSessionDatabase(active), active.hostProbeMode());
+        attachTimeSeries(store);
         monitor = createMonitor(active, sessionHosts);
         startMetricsIfConfigured();
         DaemonPidFile.write(pidFile, ProcessHandle.current().pid());
@@ -138,6 +142,18 @@ public final class DaemonRunner implements AutoCloseable {
                         options.sessionDbPath(), profile.persistence().sessionDb(), Optional.empty())
                 .map(SessionDatabase::new)
                 .orElse(null);
+    }
+
+    private void attachTimeSeries(SessionStore sessionStore) {
+        try {
+            TimeSeriesBackend backend = TimeSeriesBackends.create(options.timeSeriesOverrides());
+            if (backend != null) {
+                sessionStore.setTimeSeriesBackend(backend);
+                LOG.info("Time-series backend enabled");
+            }
+        } catch (TimeSeriesConfigException ex) {
+            throw new IllegalArgumentException(ex.getMessage(), ex);
+        }
     }
 
     private MonitorService createMonitor(TracingProfile profile, List<HostEntry> sessionHosts) {

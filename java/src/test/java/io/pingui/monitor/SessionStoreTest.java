@@ -216,4 +216,29 @@ class SessionStoreTest {
             assertEquals("10.0.0.1", loaded.getCurrentRoute().get(0).ip());
         }
     }
+
+    @Test
+    void forwardsRouteAndPingSamplesToTimeSeriesBackend() {
+        io.pingui.persistence.timeseries.MemoryTimeSeriesBackend backend =
+                new io.pingui.persistence.timeseries.MemoryTimeSeriesBackend();
+        SessionStore store = new SessionStore(List.of("8.8.8.8"));
+        store.setTimeSeriesBackend(backend);
+        RouteSnapshot first = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 4.0, false), new HopNode(2, "8.8.8.8", 8.0, false)));
+        RouteSnapshot second = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "9.9.9.9", 4.0, false), new HopNode(2, "8.8.8.8", 8.0, false)));
+        store.updateRoute("8.8.8.8", first);
+        store.appendPingSamples("8.8.8.8", first);
+        store.updateRoute("8.8.8.8", second);
+        assertEquals(2, backend.routeEvents().size());
+        assertFalse(backend.routeEvents().get(0).routeChanged());
+        assertTrue(backend.routeEvents().get(1).routeChanged());
+        assertEquals(2, backend.pingSamples().size());
+        assertEquals("10.0.0.1", backend.pingSamples().get(0).hopIp());
+        store.close();
+    }
 }

@@ -34,6 +34,7 @@
 | Observability boundaries (P15-001) | `docs/ADR_OBSERVABILITY.md`, `docs/en/ADR_OBSERVABILITY.md` | Docs parity (`check_doc_parity.py`); Prometheus pull vs TS push |
 | Prometheus `/metrics` (P15-010) | `PrometheusExporter`, `MetricsHttpServer`, `DaemonRunner`, `MonitorService` | `PrometheusExporterTest`, `MetricsHttpServerTest`, `DaemonRunnerTest.startWithMetricsPortServesPrometheus`, `MonitorServiceTest.updatesPrometheusExporterOnPollAndIsolatesFailures` |
 | CLI `--metrics-port` (P15-011) | `PinguiApplication.parseOptions`, `AppOptions.metricsPort` | `PinguiApplicationTest.parseOptions_metricsPort*` |
+| Influx/Timescale writer (P15-020) | `persistence/timeseries/*`, `CliTimeSeriesOverrides`, `SessionStore`, `DaemonRunner`, `MainController` | `TimeSeriesBackendsTest`, `SessionStoreTest.forwardsRouteAndPingSamplesToTimeSeriesBackend`, `PinguiApplicationTest.parseOptions_timeSeriesFlags` |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
