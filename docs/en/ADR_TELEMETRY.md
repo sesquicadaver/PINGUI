@@ -60,7 +60,7 @@ flowchart LR
 |-----------|------|--------|
 | `MetricSample` / `TelemetryEvent` | Serializable records (host, hop, labels, ts) | P16-010 ✅ |
 | `TelemetrySink` + `SinkRegistry` | Pluggable writers; no-op default | P16-011 ✅ |
-| `TelemetryBus` | Async queue, batch flush, backpressure, drop policy | P16-012 |
+| `TelemetryBus` | Async queue, batch flush, backpressure, drop policy | P16-012 ✅ |
 | Wire from MonitorService | Single emit; **must not** block poll | P16-013 |
 
 **Poll-loop consequence:** bus emit must be non-blocking (queue offer). Overflow → drop + counter/log per bus policy (documented in P16-012).
