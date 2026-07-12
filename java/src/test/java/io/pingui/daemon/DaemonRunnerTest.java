@@ -12,6 +12,7 @@ import io.pingui.CliRunMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.OptionalInt;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -56,6 +57,8 @@ class DaemonRunnerTest {
                 CliRunMode.DAEMON,
                 pidFile,
                 Optional.empty(),
+                Optional.empty(),
+                OptionalInt.empty(),
                 Optional.empty());
 
         try (DaemonRunner runner = new DaemonRunner(options, pidFile)) {
@@ -107,6 +110,8 @@ class DaemonRunnerTest {
                 CliRunMode.DAEMON,
                 pidFile,
                 Optional.of(port),
+                Optional.empty(),
+                OptionalInt.empty(),
                 Optional.empty());
 
         try (DaemonRunner runner = new DaemonRunner(options, pidFile)) {
@@ -164,7 +169,9 @@ class DaemonRunnerTest {
                 CliRunMode.DAEMON,
                 pidFile,
                 Optional.empty(),
-                Optional.of(port));
+                Optional.of(port),
+                OptionalInt.empty(),
+                Optional.empty());
 
         try (DaemonRunner runner = new DaemonRunner(options, pidFile)) {
             runner.start();
@@ -214,6 +221,8 @@ class DaemonRunnerTest {
                 CliRunMode.DAEMON,
                 pidFile,
                 Optional.empty(),
+                Optional.empty(),
+                OptionalInt.empty(),
                 Optional.empty());
 
         try (DaemonRunner runner = new DaemonRunner(options, pidFile)) {

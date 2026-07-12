@@ -48,6 +48,7 @@
 | Metric names (P16-014) | `telemetry/MetricNames.java`; `metric_names.py` | Канон `pingui_*`; labels `profile`/`probe_mode`/`edition` |
 | Sqlite telemetry sink (P16-020) | `persistence/SqliteTelemetrySink`; schema v4 | insert/query samples+events; default off |
 | JSONL rotate sink (P16-021) | `telemetry/JsonlRotateSink` | day + size rotate; `telemetry.jsonl.yyyy-MM-dd` |
+| Telemetry retention (P16-022) | `TelemetryRetentionJob`; CLI `--telemetry-retention` | purge SQLite + optional JSONL |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |

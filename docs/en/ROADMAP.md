@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P16-022** |
+| **Current task** | **P16-023** |
 | **Phase** | 16 — Telemetry |
-| **DoD (short)** | `retention_days` — purge old samples/events |
+| **DoD (short)** | Export from local store: `--telemetry-dump` (CSV/JSON) |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -66,7 +66,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 21 | **P16-014** | [x] | Metric names (`trace_duration_ms`, …) |
 | 22 | **P16-020** | [x] | `SqliteTelemetrySink` |
 | 23 | **P16-021** | [x] | `JsonlRotateSink` |
-| 24 | **P16-022** | [ ] | `retention_days` purge |
+| 24 | **P16-022** | [x] | `retention_days` purge |
 | 25 | **P16-023** | [ ] | `--telemetry-dump` |
 | 26 | **P16-030** | [ ] | `SyslogSink` |
 | 27 | **P16-031** | [ ] | `GelfSink` |
@@ -591,7 +591,7 @@ flowchart TD
 |----|------|-------|-----|
 | **P16-020** | [x] `SqliteTelemetrySink` — samples + events (P11 schema extension) | `persistence/SqliteTelemetrySink.java` | Migration v4; unit insert/query |
 | **P16-021** | [x] `JsonlRotateSink` — JSONL with size/day rotation | `telemetry/JsonlRotateSink.java` | `telemetry.jsonl.%Y-%m-%d` |
-| **P16-022** | [ ] `retention_days` — purge old samples/events | `TelemetryRetentionJob.java` | CLI `--telemetry-retention 30` |
+| **P16-022** | [x] `retention_days` — purge old samples/events | `TelemetryRetentionJob.java` | CLI `--telemetry-retention 30` |
 | **P16-023** | [ ] Export from local store: `--telemetry-dump` (CSV/JSON) | `export/TelemetryDump.java` | Cron-friendly one-shot |
 
 ### 16.3 — LOG-server export (P1)

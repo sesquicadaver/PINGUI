@@ -3,6 +3,7 @@ package io.pingui;
 import io.pingui.export.ExportSchedulePeriod;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 /** Runtime CLI options for the Java edition. */
 public record AppOptions(
@@ -24,7 +25,9 @@ public record AppOptions(
         CliRunMode runMode,
         Path pidFilePath,
         Optional<Integer> metricsPort,
-        Optional<Integer> apiPort) {
+        Optional<Integer> apiPort,
+        OptionalInt telemetryRetentionDays,
+        Optional<Path> telemetryJsonlDir) {
     public static AppOptions defaults() {
         return new AppOptions(
                 Path.of("config/hosts.example.yaml"),
@@ -45,6 +48,8 @@ public record AppOptions(
                 CliRunMode.GUI,
                 defaultPidFile(),
                 Optional.empty(),
+                Optional.empty(),
+                OptionalInt.empty(),
                 Optional.empty());
     }
 

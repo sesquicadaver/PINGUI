@@ -236,6 +236,23 @@ class PinguiApplicationTest {
     }
 
     @Test
+    void parseOptions_telemetryRetentionWithSessionDb() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of(
+                "session-db", "data/ping.db",
+                "telemetry-retention", "30"));
+        assertEquals(CliRunMode.TELEMETRY_RETENTION, options.runMode());
+        assertEquals(30, options.telemetryRetentionDays().orElseThrow());
+        assertEquals(Path.of("data/ping.db"), options.sessionDbPath().orElseThrow());
+    }
+
+    @Test
+    void parseOptions_telemetryRetentionRequiresStore() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PinguiApplication.parseOptions(Map.of("telemetry-retention", "7")));
+    }
+
+    @Test
     void parseOptions_asnTimeoutMustBePositive() {
         assertThrows(
                 IllegalArgumentException.class, () -> PinguiApplication.parseOptions(Map.of("asn-timeout-ms", "0")));

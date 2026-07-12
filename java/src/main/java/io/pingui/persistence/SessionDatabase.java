@@ -434,6 +434,39 @@ public final class SessionDatabase implements AutoCloseable {
         return countTable("telemetry_event");
     }
 
+    /**
+     * Deletes telemetry samples with {@code observed_at} strictly before {@code cutoff} (P16-022).
+     *
+     * @return number of deleted sample rows
+     */
+    public synchronized int deleteTelemetrySamplesBefore(Instant cutoff) {
+        Objects.requireNonNull(cutoff, "cutoff");
+        return deleteBefore("telemetry_sample", cutoff);
+    }
+
+    /**
+     * Deletes telemetry events with {@code observed_at} strictly before {@code cutoff} (P16-022).
+     *
+     * @return number of deleted event rows
+     */
+    public synchronized int deleteTelemetryEventsBefore(Instant cutoff) {
+        Objects.requireNonNull(cutoff, "cutoff");
+        return deleteBefore("telemetry_event", cutoff);
+    }
+
+    private int deleteBefore(String table, Instant cutoff) {
+        String iso = ISO_UTC.format(cutoff);
+        try (PreparedStatement ps = connection.prepareStatement("DELETE FROM " + table + " WHERE observed_at < ?")) {
+            ps.setString(1, iso);
+            int deleted = ps.executeUpdate();
+            connection.commit();
+            return deleted;
+        } catch (SQLException ex) {
+            rollbackQuietly();
+            throw new PersistenceException("Failed to purge " + table + " before " + iso, ex);
+        }
+    }
+
     private int countTable(String table) {
         try (PreparedStatement ps = connection.prepareStatement("SELECT COUNT(*) FROM " + table);
                 ResultSet rs = ps.executeQuery()) {

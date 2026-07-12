@@ -10,6 +10,7 @@ import io.pingui.export.ScheduledExport;
 import io.pingui.export.SessionReportExporter;
 import io.pingui.persistence.SessionDatabase;
 import io.pingui.probe.ProbeMode;
+import io.pingui.telemetry.TelemetryRetentionJob;
 import io.pingui.ui.AppMenuDialogs;
 import io.pingui.ui.MainController;
 import java.io.IOException;
@@ -113,24 +114,6 @@ public final class PinguiApplication extends Application {
         if (exportDir.isPresent() && exportSchedule.isEmpty()) {
             throw new IllegalArgumentException("--export-dir requires --export-schedule");
         }
-        CliRunMode runMode = CliRunMode.GUI;
-        if (params.containsKey("daemon")) {
-            runMode = CliRunMode.DAEMON;
-        } else if (params.containsKey("stop")) {
-            runMode = CliRunMode.STOP;
-        } else if (params.containsKey("status")) {
-            runMode = CliRunMode.STATUS;
-        } else if (exportReport.isPresent() || exportSchedule.isPresent()) {
-            runMode = CliRunMode.EXPORT;
-        }
-        Path pidFile = AppOptions.defaultPidFile();
-        if (params.containsKey("pid-file")) {
-            String value = params.get("pid-file");
-            if (value == null || value.isBlank()) {
-                throw new IllegalArgumentException("Missing value for --pid-file");
-            }
-            pidFile = Path.of(value.strip());
-        }
         Optional<Integer> metricsPort = Optional.empty();
         if (params.containsKey("metrics-port")) {
             int port = parseRequiredInt(params.get("metrics-port"), "--metrics-port");
@@ -149,6 +132,52 @@ public final class PinguiApplication extends Application {
         }
         if (metricsPort.isPresent() && apiPort.isPresent() && metricsPort.get().equals(apiPort.get())) {
             throw new IllegalArgumentException("--api-port and --metrics-port must differ");
+        }
+        OptionalInt telemetryRetention = OptionalInt.empty();
+        if (params.containsKey("telemetry-retention")) {
+            int days = parseRequiredInt(params.get("telemetry-retention"), "--telemetry-retention");
+            if (days < 1) {
+                throw new IllegalArgumentException("--telemetry-retention must be >= 1");
+            }
+            telemetryRetention = OptionalInt.of(days);
+        }
+        Optional<Path> telemetryJsonlDir = Optional.empty();
+        if (params.containsKey("telemetry-jsonl-dir")) {
+            String value = params.get("telemetry-jsonl-dir");
+            if (value == null || value.isBlank()) {
+                throw new IllegalArgumentException("Missing value for --telemetry-jsonl-dir");
+            }
+            telemetryJsonlDir = Optional.of(Path.of(value.strip()));
+        }
+        if (telemetryJsonlDir.isPresent() && telemetryRetention.isEmpty()) {
+            throw new IllegalArgumentException("--telemetry-jsonl-dir requires --telemetry-retention N");
+        }
+        if (telemetryRetention.isPresent() && sessionDb.isEmpty() && telemetryJsonlDir.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "--telemetry-retention requires --session-db PATH and/or --telemetry-jsonl-dir DIR");
+        }
+        if (telemetryRetention.isPresent() && (exportReport.isPresent() || exportSchedule.isPresent())) {
+            throw new IllegalArgumentException("Use either --telemetry-retention or export flags, not both");
+        }
+        CliRunMode runMode = CliRunMode.GUI;
+        if (params.containsKey("daemon")) {
+            runMode = CliRunMode.DAEMON;
+        } else if (params.containsKey("stop")) {
+            runMode = CliRunMode.STOP;
+        } else if (params.containsKey("status")) {
+            runMode = CliRunMode.STATUS;
+        } else if (telemetryRetention.isPresent()) {
+            runMode = CliRunMode.TELEMETRY_RETENTION;
+        } else if (exportReport.isPresent() || exportSchedule.isPresent()) {
+            runMode = CliRunMode.EXPORT;
+        }
+        Path pidFile = AppOptions.defaultPidFile();
+        if (params.containsKey("pid-file")) {
+            String value = params.get("pid-file");
+            if (value == null || value.isBlank()) {
+                throw new IllegalArgumentException("Missing value for --pid-file");
+            }
+            pidFile = Path.of(value.strip());
         }
         return new AppOptions(
                 config,
@@ -169,7 +198,9 @@ public final class PinguiApplication extends Application {
                 runMode,
                 pidFile,
                 metricsPort,
-                apiPort);
+                apiPort,
+                telemetryRetention,
+                telemetryJsonlDir);
     }
 
     private static CliTimeSeriesOverrides parseTimeSeriesOverrides(Map<String, String> params) {
@@ -307,6 +338,10 @@ public final class PinguiApplication extends Application {
                 runExport(options);
                 return;
             }
+            case TELEMETRY_RETENTION -> {
+                runTelemetryRetention(options);
+                return;
+            }
             case DAEMON -> {
                 runDaemon(options);
                 return;
@@ -391,6 +426,36 @@ public final class PinguiApplication extends Application {
         }
     }
 
+    private static void runTelemetryRetention(AppOptions options) {
+        int days = options.telemetryRetentionDays().orElseThrow();
+        Path jsonlDir = options.telemetryJsonlDir().orElse(null);
+        try {
+            if (options.sessionDbPath().isPresent()) {
+                try (SessionDatabase database =
+                        new SessionDatabase(options.sessionDbPath().orElseThrow())) {
+                    TelemetryRetentionJob.Result result =
+                            TelemetryRetentionJob.run(database, jsonlDir, days, Clock.systemUTC());
+                    printRetentionResult(result);
+                }
+            } else {
+                TelemetryRetentionJob.Result result =
+                        TelemetryRetentionJob.run(null, jsonlDir, days, Clock.systemUTC());
+                printRetentionResult(result);
+            }
+        } catch (RuntimeException ex) {
+            failCli("Telemetry retention failed: " + ex.getMessage());
+        }
+    }
+
+    private static void printRetentionResult(TelemetryRetentionJob.Result result) {
+        System.out.println("Telemetry retention: samples="
+                + result.samplesDeleted()
+                + " events="
+                + result.eventsDeleted()
+                + " jsonl_files="
+                + result.jsonlFilesDeleted());
+    }
+
     private static boolean isHtmlReport(Path path) {
         String name = path.getFileName().toString().toLowerCase();
         return name.endsWith(".html") || name.endsWith(".htm");
@@ -458,6 +523,8 @@ public final class PinguiApplication extends Application {
                   --desktop-alerts     Linux desktop notifications (notify-send)
                   --alert-rate-limit N Max alerts per host per hour (default: 10)
                   --session-db PATH  SQLite session metrics + events (optional)
+                  --telemetry-retention N  Purge telemetry older than N days and exit (cron)
+                  --telemetry-jsonl-dir DIR  Optional JSONL dir for --telemetry-retention
                   --export-report PATH  Export CSV/HTML from --session-db and exit (no GUI)
                   --export-schedule P   Cron one-shot: hourly|daily|weekly (with --export-dir)
                   --export-dir DIR      Output directory for --export-schedule (CSV+HTML stamped)

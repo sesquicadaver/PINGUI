@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P16-022** |
+| **Поточна задача** | **P16-023** |
 | **Фаза** | 16 — Телеметрія |
-| **DoD (коротко)** | `retention_days` — purge старих samples/events |
+| **DoD (коротко)** | Export з local store: `--telemetry-dump` (CSV/JSON) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -66,7 +66,7 @@
 | 21 | **P16-014** | [x] | Metric names (`trace_duration_ms`, …) |
 | 22 | **P16-020** | [x] | `SqliteTelemetrySink` |
 | 23 | **P16-021** | [x] | `JsonlRotateSink` |
-| 24 | **P16-022** | [ ] | `retention_days` purge |
+| 24 | **P16-022** | [x] | `retention_days` purge |
 | 25 | **P16-023** | [ ] | `--telemetry-dump` |
 | 26 | **P16-030** | [ ] | `SyslogSink` |
 | 27 | **P16-031** | [ ] | `GelfSink` |
@@ -591,7 +591,7 @@ flowchart TD
 |----|--------|-------|-----|
 | **P16-020** | [x] `SqliteTelemetrySink` — samples + events (розширення P11 schema) | `persistence/SqliteTelemetrySink.java` | Migration v4; unit insert/query |
 | **P16-021** | [x] `JsonlRotateSink` — JSONL з ротацією за розміром/днем | `telemetry/JsonlRotateSink.java` | `telemetry.jsonl.%Y-%m-%d` |
-| **P16-022** | [ ] `retention_days` — purge старих samples/events | `TelemetryRetentionJob.java` | CLI `--telemetry-retention 30` |
+| **P16-022** | [x] `retention_days` — purge старих samples/events | `TelemetryRetentionJob.java` | CLI `--telemetry-retention 30` |
 | **P16-023** | [ ] Export з local store: `--telemetry-dump` (CSV/JSON) | `export/TelemetryDump.java` | Cron-friendly one-shot |
 
 ### 16.3 — Відправка на LOG-server (P1)
