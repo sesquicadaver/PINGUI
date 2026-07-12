@@ -12,7 +12,7 @@ from typing import Any
 
 from pingui.models import HopNode, HopProbeStats, HostSessionData
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 
 def _hop_to_json(node: HopNode) -> dict[str, Any]:
@@ -144,6 +144,27 @@ class SessionDatabase:
             );
             CREATE INDEX IF NOT EXISTS idx_pe_host_type_time
                 ON persistence_event(host, event_type, observed_at);
+            CREATE TABLE IF NOT EXISTS telemetry_sample (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                value REAL NOT NULL,
+                host TEXT NOT NULL,
+                hop INTEGER,
+                payload_json TEXT NOT NULL,
+                observed_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_ts_host_time
+                ON telemetry_sample(host, observed_at);
+            CREATE TABLE IF NOT EXISTS telemetry_event (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event TEXT NOT NULL,
+                host TEXT NOT NULL,
+                message TEXT,
+                payload_json TEXT NOT NULL,
+                observed_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_te_host_time
+                ON telemetry_event(host, observed_at);
             """
         )
         row = self._conn.execute("SELECT version FROM schema_meta LIMIT 1").fetchone()
@@ -182,6 +203,34 @@ class SessionDatabase:
                 """
             )
             self._conn.execute("UPDATE schema_meta SET version = ?", (3,))
+            current_version = 3
+        if current_version < 4:
+            self._conn.executescript(
+                """
+                CREATE TABLE IF NOT EXISTS telemetry_sample (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    value REAL NOT NULL,
+                    host TEXT NOT NULL,
+                    hop INTEGER,
+                    payload_json TEXT NOT NULL,
+                    observed_at TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_ts_host_time
+                    ON telemetry_sample(host, observed_at);
+                CREATE TABLE IF NOT EXISTS telemetry_event (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event TEXT NOT NULL,
+                    host TEXT NOT NULL,
+                    message TEXT,
+                    payload_json TEXT NOT NULL,
+                    observed_at TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_te_host_time
+                    ON telemetry_event(host, observed_at);
+                """
+            )
+            self._conn.execute("UPDATE schema_meta SET version = ?", (4,))
 
     def insert_event(
         self,

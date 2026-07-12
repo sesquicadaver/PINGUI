@@ -92,7 +92,7 @@ After P16-011…013:
 - Influx/Timescale → `InfluxTelemetrySink` / wrapper (P16-052)
 - Single emit path via `TelemetryBus` (no dual HTTP/SQL from MonitorService)
 
-**SQLite samples (P16-020):** a future `SqliteTelemetrySink` may store `ping_sample` locally (default off / retention). That is a **local archive**, not a Prometheus scrape replacement and not the default Grafana TS datasource. The §2 boundary (“do not write hop-RTT into SQLite as a Prometheus replacement”) still applies for P15 and for operator dashboards.
+**SQLite samples (P16-020):** `SqliteTelemetrySink` stores samples/events in schema v4 (default off / retention P16-022). That is a **local archive**, not a Prometheus scrape replacement and not the default Grafana TS datasource. The §2 boundary (“do not write hop-RTT into SQLite as a Prometheus replacement”) still applies for P15 and for operator dashboards.
 
 ADR P16-001 ✅ details events vs samples vs aggregates and metric-name mapping (align with `pingui_*` / P16-014); this ADR fixes P15 boundaries.
 

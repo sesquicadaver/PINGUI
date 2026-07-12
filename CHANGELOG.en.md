@@ -21,6 +21,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Sqlite telemetry sink (P16-020):** `SqliteTelemetrySink` + schema v4 (`telemetry_sample` / `telemetry_event`); default off; unit insert/query.
 - **Metric names (P16-014):** `MetricNames` / `metric_names.py` — canonical `pingui_*` and bus labels `profile`/`probe_mode`/`edition` (Java + Python).
 - **Monitor → bus (P16-013):** `MonitorService` / Python `MonitorLoop` offer RTT, hop loss, route_change, probe_error into the telemetry bus/emitter without blocking poll.
 - **Telemetry bus (P16-012):** `TelemetryBus` + `DropPolicy` — async queue, batch flush, non-blocking offer, `droppedCount`.

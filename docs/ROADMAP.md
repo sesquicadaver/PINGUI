@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P16-020** |
+| **Поточна задача** | **P16-021** |
 | **Фаза** | 16 — Телеметрія |
-| **DoD (коротко)** | `SqliteTelemetrySink` — samples + events (розширення P11 schema) |
+| **DoD (коротко)** | `JsonlRotateSink` — JSONL з ротацією за розміром/днем |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -64,7 +64,7 @@
 | 19 | **P16-012** | [x] | `TelemetryBus` |
 | 20 | **P16-013** | [x] | Wire MonitorService → bus |
 | 21 | **P16-014** | [x] | Metric names (`trace_duration_ms`, …) |
-| 22 | **P16-020** | [ ] | `SqliteTelemetrySink` |
+| 22 | **P16-020** | [x] | `SqliteTelemetrySink` |
 | 23 | **P16-021** | [ ] | `JsonlRotateSink` |
 | 24 | **P16-022** | [ ] | `retention_days` purge |
 | 25 | **P16-023** | [ ] | `--telemetry-dump` |
@@ -589,7 +589,7 @@ flowchart TD
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **P16-020** | [ ] `SqliteTelemetrySink` — samples + events (розширення P11 schema) | `persistence/SqliteTelemetrySink.java` | Migration v2; unit insert/query |
+| **P16-020** | [x] `SqliteTelemetrySink` — samples + events (розширення P11 schema) | `persistence/SqliteTelemetrySink.java` | Migration v4; unit insert/query |
 | **P16-021** | [ ] `JsonlRotateSink` — JSONL з ротацією за розміром/днем | `telemetry/JsonlRotateSink.java` | `telemetry.jsonl.%Y-%m-%d` |
 | **P16-022** | [ ] `retention_days` — purge старих samples/events | `TelemetryRetentionJob.java` | CLI `--telemetry-retention 30` |
 | **P16-023** | [ ] Export з local store: `--telemetry-dump` (CSV/JSON) | `export/TelemetryDump.java` | Cron-friendly one-shot |

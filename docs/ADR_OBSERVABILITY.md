@@ -92,7 +92,7 @@ P15 адаптери — **тимчасові прямі** виклики з mon
 - Influx/Timescale → `InfluxTelemetrySink` / wrapper (P16-052)
 - Один emit шлях через `TelemetryBus` (без подвійного HTTP/SQL з MonitorService)
 
-**SQLite samples (P16-020):** майбутній `SqliteTelemetrySink` може зберігати `ping_sample` локально (default off / retention). Це **локальний архів**, не заміна Prometheus scrape і не Grafana TS datasource за замовчуванням. Межа з §2 («не писати hop-RTT у SQLite як Prometheus replacement») лишається в силі для P15 і для операторських dashboards.
+**SQLite samples (P16-020):** `SqliteTelemetrySink` зберігає samples/events у schema v4 (default off / retention P16-022). Це **локальний архів**, не заміна Prometheus scrape і не Grafana TS datasource за замовчуванням. Межа з §2 («не писати hop-RTT у SQLite як Prometheus replacement») лишається в силі для P15 і для операторських dashboards.
 
 ADR P16-001 ✅ деталізує events vs samples vs aggregates і mapping імен метрик (узгодження з `pingui_*` / P16-014); цей ADR фіксує межі P15.
 
