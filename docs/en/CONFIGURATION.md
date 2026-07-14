@@ -205,7 +205,7 @@ Webhook route alerts stay under `alerts.webhook` / `--alert-webhook` (P10); HTTP
 | `--asn-timeout-ms` | int | `2000` | Reserved for future whois fallback |
 | `--no-geo-map` | flag | off | Disable folium geo-map tab |
 
-Expert ping presets (Java GUI, P14-040): `config/ping_presets.yaml` beside the hosts config (or CWD `config/ping_presets.yaml`); otherwise the bundled resource. Exactly 4 presets (`mtu_probe`, `df`, `dscp`, `burst`); buttons in `PingExpertDialog` apply args and keep the current AF (`-4`/`-6`).
+Expert ping presets (Java GUI, P14-040 / P17-010): `config/ping_presets.yaml` beside the hosts config (or CWD `config/ping_presets.yaml`); otherwise the bundled resource. Exactly 4 presets (`mtu_probe`, `df`, `dscp`, `burst`). Required fields: `id`, `label`, `args`, `summary`, `expect`; optional `caution`. Buttons in `PingExpertDialog` apply args (keeping AF `-4`/`-6`) and show a status/tooltip with UX copy. Presets do **not** run an MTU sweep.
 
 ### Time-series (optional extra: `pip install -e ".[timeseries]"`)
 

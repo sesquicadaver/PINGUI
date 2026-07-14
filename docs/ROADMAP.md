@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **DONE** |
-| **Фаза** | 16 — Телеметрія (GUI) |
-| **DoD (коротко)** | Черга виконана (наступний ID відсутній) |
+| **Поточна задача** | **[P17-020](#фаза-17--expert-ping-presets--mtu-discovery-beta-p0p1)** |
+| **Фаза** | 17 — Expert ping / MTU |
+| **DoD (коротко)** | `MtuDiscovery` engine: sweep `-s`, stop ≥1% loss |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -91,6 +91,10 @@
 | 46 | **P16-092** | [x] | Повні sinks UI + redacted status + `log_aggregates` |
 | 47 | **P16-093** | [x] | Python: підключити YAML telemetry або явно «Java/daemon only» |
 | 48 | **P16-094** | [x] | Help/About + CHECKLIST GUI telemetry smoke |
+| 49 | **P17-010** | [x] | Expert preset UX: summary/expect/caution + статус Exten. |
+| 50 | **P17-020** | [ ] | `MtuDiscovery` engine (sweep `-s`, stop ≥1% loss) |
+| 51 | **P17-021** | [ ] | MTU wizard UI + Alert + apply to Expert |
+| 52 | **P17-030** | [ ] | Informational self-check DF/DSCP/Burst (P2) |
 
 **Закінчення черги:** оновити NEXT → `DONE` (немає відкритих ID).
 
@@ -653,6 +657,21 @@ flowchart TD
 | **P16-092** | [x] Повний UI sinks + статус | `TelemetrySettingsDialog` | syslog/GELF/Loki/OTLP, `log_aggregates`, `toRedactedString()` у діалозі |
 | **P16-093** | [x] Python GUI/docs: wire або «sinks = Java/daemon» | `__main__.py`, docs | Немає dead `_resolve_telemetry` у GUI без ефекту; чітка позиція в CONFIGURATION |
 | **P16-094** | [x] Help/About + CHECKLIST GUI smoke | `AppMenuDialogs`, `CHECKLIST` | Згадано persistence+telemetry; smoke: GUI + sqlite event |
+
+---
+
+## Фаза 17 — Expert ping presets + MTU discovery (`beta`, P0–P1)
+
+**Мета:** пресети Exten. інформативні; окремий керований MTU discovery (не плутати з `-M probe` як «автоперебір»).
+
+**Контекст:** кнопки пресетів лише мержать args у форму; poll робить `ping -c 1` з фіксованим `-s`. Очікування «перебір MTU → stop при loss → рекомендований MTU» = новий wizard (P17-020/021).
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P17-010** | [x] Preset UX copy + статус у Exten. | `PingPreset`, `ping_presets.yaml`, `PingExpertDialog`, docs | YAML `summary`/`expect`/`caution`; tooltip+status рядок; тести; USER_GUIDE note (пресет ≠ MTU wizard) |
+| **P17-020** | [ ] `MtuDiscovery` engine | `probe/MtuDiscovery*.java` | Sweep payload `-s` + `-M do`; N проб; stop при loss≥1%; unit recommended MTU |
+| **P17-021** | [ ] MTU wizard UI | `ui/MtuDiscoveryDialog`, HostList | Прогрес (поточне `-s`, loss%); Stop; Alert з max MTU; Apply → Expert args |
+| **P17-030** | [ ] Self-check DF/DSCP/Burst (P2) | Exten. / short ping batch | Короткий результат у Alert без повного wizard |
 
 ---
 

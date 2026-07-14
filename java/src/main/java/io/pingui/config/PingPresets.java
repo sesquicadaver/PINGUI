@@ -120,6 +120,9 @@ public final class PingPresets {
             }
             String id = stringField(entry, "id", source);
             String label = stringField(entry, "label", source);
+            String summary = requireNonBlankField(entry, "summary", source, id);
+            String expect = requireNonBlankField(entry, "expect", source, id);
+            String caution = optionalField(entry, "caution");
             Object rawArgs = entry.get("args");
             List<String> args = new ArrayList<>();
             if (rawArgs instanceof List<?> argList) {
@@ -133,7 +136,7 @@ public final class PingPresets {
                 throw new ConfigError(source + ": preset '" + id + "' args must be a list");
             }
             List<String> validated = PingExpertValidator.validateAndNormalize(args);
-            PingPreset preset = new PingPreset(id, label, validated);
+            PingPreset preset = new PingPreset(id, label, validated, summary, expect, caution);
             if (byId.put(id, preset) != null) {
                 throw new ConfigError(source + ": duplicate preset id '" + id + "'");
             }
@@ -149,6 +152,22 @@ public final class PingPresets {
         Object value = entry.get(key);
         if (value == null || String.valueOf(value).isBlank()) {
             throw new ConfigError(source + ": preset missing '" + key + "'");
+        }
+        return String.valueOf(value).strip();
+    }
+
+    private static String requireNonBlankField(Map<?, ?> entry, String key, String source, String id) {
+        Object value = entry.get(key);
+        if (value == null || String.valueOf(value).isBlank()) {
+            throw new ConfigError(source + ": preset '" + id + "' missing '" + key + "'");
+        }
+        return String.valueOf(value).strip();
+    }
+
+    private static String optionalField(Map<?, ?> entry, String key) {
+        Object value = entry.get(key);
+        if (value == null) {
+            return "";
         }
         return String.valueOf(value).strip();
     }

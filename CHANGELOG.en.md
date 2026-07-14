@@ -21,6 +21,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Expert preset UX (P17-010):** `ping_presets.yaml` `summary`/`expect`/`caution`; Exten. tooltip + status line; clarify preset ≠ MTU wizard. ROADMAP NEXT → P17-020.
 - **Help/About + GUI telemetry smoke (P16-094):** About/Help mention SQLite + Telemetry menu; CHECKLIST GUI smoke. ROADMAP NEXT → DONE.
 - **Python telemetry stance (P16-093):** validate `telemetry:` on start; LOG sinks = Java only; stderr note + CONFIGURATION. ROADMAP NEXT → P16-094.
 - **Full telemetry settings UI (P16-092):** dialog edits GELF/Loki/OTLP + `log_aggregates` and shows `toRedactedString()` status. ROADMAP NEXT → P16-093.

@@ -137,12 +137,16 @@ public final class PingExpertDialog {
 
         wireUiConstraints(host, addressFamily, flagChoices, textValues);
 
-        HBox presetsBar = buildPresetsBar(addressFamily, flagChoices, choiceValues, textValues);
+        Label presetStatus = new Label(
+                "Оберіть пресет — args застосуються до форми. MTU discovery (перебір) — окремий wizard (ще не в цьому діалозі).");
+        presetStatus.setWrapText(true);
+        presetStatus.setStyle("-fx-text-fill: #444;");
+        HBox presetsBar = buildPresetsBar(addressFamily, flagChoices, choiceValues, textValues, presetStatus);
 
         ScrollPane scroll = new ScrollPane(grid);
         scroll.setFitToWidth(true);
         scroll.setPrefViewportHeight(360);
-        VBox content = new VBox(8, chainCheck, presetsBar, scroll);
+        VBox content = new VBox(8, chainCheck, presetsBar, presetStatus, scroll);
         content.setPadding(new Insets(10));
         dialog.getDialogPane().setContent(content);
 
@@ -170,18 +174,20 @@ public final class PingExpertDialog {
             ComboBox<String> addressFamily,
             Map<String, ComboBox<String>> flagChoices,
             Map<String, ComboBox<String>> choiceValues,
-            Map<String, TextField> textValues) {
+            Map<String, TextField> textValues,
+            Label presetStatus) {
         HBox bar = new HBox(6);
         Label title = new Label("Presets:");
         title.setMinWidth(56);
         bar.getChildren().add(title);
         for (PingPreset preset : PingPresets.all()) {
             Button button = new Button(preset.label());
-            button.setTooltip(new Tooltip(String.join(" ", preset.args())));
+            button.setTooltip(new Tooltip(preset.tooltipText()));
             button.setOnAction(event -> {
                 List<String> current = collectArgs(addressFamily, flagChoices, choiceValues, textValues);
                 List<String> merged = PingPresets.mergeKeepingAddressFamily(current, preset.args());
                 applyArgsToForm(merged, addressFamily, flagChoices, choiceValues, textValues);
+                presetStatus.setText(preset.statusLine());
             });
             bar.getChildren().add(button);
         }

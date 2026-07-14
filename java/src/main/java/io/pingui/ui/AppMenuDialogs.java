@@ -121,6 +121,10 @@ public final class AppMenuDialogs {
                 • Телеметрія… — sinks (sqlite/jsonl/syslog/GELF/Loki/OTLP), events_only; Apply + «Зберегти».
                 • persistence.session_db ≠ telemetry.sqlite (різні ролі).
 
+                Expert ping (Linux)
+                • Експерт → Exten. — пресети підставляють прапорці ping(8); tooltip/status пояснюють ефект.
+                • «MTU probe» ≠ перебір MTU (окремий MTU wizard — у розробці).
+
                 Кнопки
                 • Додати / Змінити / Видалити — цілі в поточному профілі.
                 • Зберегти — запис усіх профілів у YAML (--config), включно з telemetry:.

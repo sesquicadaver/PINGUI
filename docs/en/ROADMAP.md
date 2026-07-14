@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **DONE** |
-| **Phase** | 16 — Telemetry (GUI) |
-| **DoD (short)** | Queue complete (no next ID) |
+| **Current task** | **[P17-020](#phase-17--expert-ping-presets--mtu-discovery-beta-p0p1)** |
+| **Phase** | 17 — Expert ping / MTU |
+| **DoD (short)** | `MtuDiscovery` engine: sweep `-s`, stop ≥1% loss |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -91,6 +91,10 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 46 | **P16-092** | [x] | Full sinks UI + redacted status + `log_aggregates` |
 | 47 | **P16-093** | [x] | Python: wire YAML telemetry or document “Java/daemon only” |
 | 48 | **P16-094** | [x] | Help/About + CHECKLIST GUI telemetry smoke |
+| 49 | **P17-010** | [x] | Expert preset UX: summary/expect/caution + Exten. status |
+| 50 | **P17-020** | [ ] | `MtuDiscovery` engine (sweep `-s`, stop ≥1% loss) |
+| 51 | **P17-021** | [ ] | MTU wizard UI + Alert + apply to Expert |
+| 52 | **P17-030** | [ ] | Informational self-check DF/DSCP/Burst (P2) |
 
 **End of queue:** set NEXT → `DONE` (no open IDs).
 
@@ -653,6 +657,21 @@ flowchart TD
 | **P16-092** | [x] Full sinks UI + status | `TelemetrySettingsDialog` | syslog/GELF/Loki/OTLP, `log_aggregates`, `toRedactedString()` in dialog |
 | **P16-093** | [x] Python GUI/docs: wire or “sinks = Java/daemon” | `__main__.py`, docs | No dead `_resolve_telemetry` in GUI path; clear CONFIGURATION stance |
 | **P16-094** | [x] Help/About + CHECKLIST GUI smoke | `AppMenuDialogs`, `CHECKLIST` | Mentions persistence+telemetry; smoke: GUI + sqlite event |
+
+---
+
+## Phase 17 — Expert ping presets + MTU discovery (`beta`, P0–P1)
+
+**Goal:** Exten. presets are informative; controlled MTU discovery is a separate wizard (not confused with `-M probe` as “auto search”).
+
+**Context:** Preset buttons only merge args into the form; each poll runs `ping -c 1` with a fixed `-s`. “Sweep MTU → stop on loss → recommended MTU” = new wizard (P17-020/021).
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **P17-010** | [x] Preset UX copy + Exten. status | `PingPreset`, `ping_presets.yaml`, `PingExpertDialog`, docs | YAML `summary`/`expect`/`caution`; tooltip+status line; tests; USER_GUIDE note (preset ≠ MTU wizard) |
+| **P17-020** | [ ] `MtuDiscovery` engine | `probe/MtuDiscovery*.java` | Sweep payload `-s` + `-M do`; N probes; stop at loss≥1%; unit recommended MTU |
+| **P17-021** | [ ] MTU wizard UI | `ui/MtuDiscoveryDialog`, HostList | Progress (current `-s`, loss%); Stop; Alert with max MTU; Apply → Expert args |
+| **P17-030** | [ ] Self-check DF/DSCP/Burst (P2) | Exten. / short ping batch | Short result Alert without full wizard |
 
 ---
 

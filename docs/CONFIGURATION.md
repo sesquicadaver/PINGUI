@@ -205,7 +205,7 @@ Webhook route alerts лишаються в `alerts.webhook` / `--alert-webhook` 
 | `--asn-timeout-ms` | int | `2000` | Зарезервовано під майбутній whois fallback |
 | `--no-geo-map` | flag | off | Вимкнути вкладку folium geo-map |
 
-Expert ping presets (Java GUI, P14-040): `config/ping_presets.yaml` поруч із hosts-конфігом (або CWD `config/ping_presets.yaml`); інакше bundled resource. Рівно 4 пресети (`mtu_probe`, `df`, `dscp`, `burst`); кнопки в `PingExpertDialog` підставляють args і зберігають поточний AF (`-4`/`-6`).
+Expert ping presets (Java GUI, P14-040 / P17-010): `config/ping_presets.yaml` поруч із hosts-конфігом (або CWD `config/ping_presets.yaml`); інакше bundled resource. Рівно 4 пресети (`mtu_probe`, `df`, `dscp`, `burst`). Обовʼязкові поля: `id`, `label`, `args`, `summary`, `expect`; опційно `caution`. Кнопки в `PingExpertDialog` підставляють args (збережений AF `-4`/`-6`) і показують status/tooltip з UX-копією. Пресети **не** запускають MTU sweep.
 
 ### Time-series (optional extra: `pip install -e ".[timeseries]"`)
 
