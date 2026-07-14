@@ -99,7 +99,10 @@ class RouteHistoryPresenterTest {
                 assertEquals(2, harness.historyList.getItems().size());
                 assertEquals(
                         selectedId,
-                        harness.historyList.getSelectionModel().getSelectedItem().id());
+                        harness.historyList
+                                .getSelectionModel()
+                                .getSelectedItem()
+                                .id());
             }
         });
     }
