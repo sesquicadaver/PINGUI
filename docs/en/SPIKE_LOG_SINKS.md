@@ -66,7 +66,7 @@ Out of this comparison (separate ADR/tickets): OTLP (P16-080), webhook alerts (P
 **Recommended v1 profile**
 
 - Transport: **TCP** (default); TLS optional (`--telemetry-syslog` / YAML).
-- TCP framing: lock in P16-030 (RFC 6587 octet-counting **or** trailing NL) — one canon for Java/Python.
+- TCP framing: **v1 canon = RFC 6587 non-transparent trailing NL** (P16-030 ✅); same canon for Java/Python.
 - Facility: `LOCAL0` (or config); severity: `NOTICE` for `route_change`, `WARNING` for `probe_error`.
 - MSG: **single-line JSON** (v1 canon); SD `[pingui@…]` optional later, not a P16-030 blocker.
 

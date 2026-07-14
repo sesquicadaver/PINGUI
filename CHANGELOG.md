@@ -21,6 +21,7 @@
 
 ### Added
 
+- **Syslog sink (P16-030):** `SyslogSink` — RFC 5424 over TCP (optional TLS); MSG = single-line event JSON; framing trailing NL; `eventsOnly`.
 - **Telemetry dump (P16-023):** `TelemetryDump` + CLI `--telemetry-dump PATH` (.csv/.json) from `--session-db`.
 - **Telemetry retention (P16-022):** `TelemetryRetentionJob` + CLI `--telemetry-retention N` (optional `--telemetry-jsonl-dir`); cron one-shot purge.
 - **JSONL rotate sink (P16-021):** `JsonlRotateSink` — UTC day files `telemetry.jsonl.yyyy-MM-dd` (+ `.N` on size); default off.

@@ -50,6 +50,7 @@ Module → unit test matrix. Update when adding features.
 | JSONL rotate sink (P16-021) | `telemetry/JsonlRotateSink` | day + size rotate; `telemetry.jsonl.yyyy-MM-dd` |
 | Telemetry retention (P16-022) | `TelemetryRetentionJob`; CLI `--telemetry-retention` | purge SQLite + optional JSONL |
 | Telemetry dump (P16-023) | `export/TelemetryDump`; CLI `--telemetry-dump` | CSV/JSON one-shot from session DB |
+| Syslog sink (P16-030) | `telemetry/SyslogSink` | RFC 5424 TCP + trailing NL; MSG JSON; `eventsOnly` |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |

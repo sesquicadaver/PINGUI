@@ -66,7 +66,7 @@
 **Рекомендований профіль v1**
 
 - Transport: **TCP** (default); TLS опційно (`--telemetry-syslog` / YAML).
-- TCP framing: зафіксувати в P16-030 (RFC 6587 octet-counting **або** trailing NL) — один канон для Java/Python.
+- TCP framing: **канон v1 = RFC 6587 non-transparent trailing NL** (P16-030 ✅); той самий канон для Java/Python.
 - Facility: `LOCAL0` (або конфіг); severity: `NOTICE` для `route_change`, `WARNING` для `probe_error`.
 - MSG: **single-line JSON** (канон v1); SD `[pingui@…]` — опційно пізніше, не блокер P16-030.
 
