@@ -73,7 +73,7 @@ flowchart LR
 | `JsonlRotateSink` | local file | **off** | `telemetry.jsonl.yyyy-MM-dd` (+ `.N` size); P16-021 ✅ |
 | `SyslogSink` | remote events | **off** | P16-030 ✅ RFC 5424 TCP; TLS optional; framing trailing NL; `events_only=true`; MSG = single-line JSON |
 | `GelfSink` | remote events | **off** | P16-031 ✅ GELF 1.1; TCP `\0` framing / UDP lab; `events_only=true` |
-| `LokiPushSink` | remote | **off** | P2 (P16-032); same `events_only` default |
+| `LokiPushSink` | remote | **off** | P16-032 ✅ HTTP `/loki/api/v1/push`; labels `job`/`site`/`host`; `events_only=true` |
 | `PrometheusTelemetrySink` | in-process scrape state | via `--metrics-port` | Not remote_write (see ADR_OBSERVABILITY) |
 | `InfluxTelemetrySink` | remote samples | via TS config | Wrapper over B-05 / P15-020 |
 | Webhook as sink | remote events | via alerts config | P16-050 — one emit path, not a second HTTP client |
