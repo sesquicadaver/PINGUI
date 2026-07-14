@@ -42,4 +42,5 @@ java/build/
 java/bin/
 java/out/
 /.cursor
-/.cursor
+/.cursor/rules
+*.mdc
