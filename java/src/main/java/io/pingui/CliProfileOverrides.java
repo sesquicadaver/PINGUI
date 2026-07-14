@@ -33,6 +33,7 @@ public record CliProfileOverrides(
                 profile.hosts(),
                 profile.alerts(),
                 profile.persistence(),
-                profile.maxConcurrentTraces());
+                profile.maxConcurrentTraces(),
+                profile.telemetry());
     }
 }

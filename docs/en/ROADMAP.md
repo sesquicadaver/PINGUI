@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P16-040** |
+| **Current task** | **P16-041** |
 | **Phase** | 16 — Telemetry |
-| **DoD (short)** | YAML section `telemetry:` (local + remote sinks) |
+| **DoD (short)** | CLI telemetry overrides (`--telemetry-syslog`, `--telemetry-jsonl`) |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -73,7 +73,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 28 | **P16-032** | [x] | `LokiPushSink` (P2) |
 | 29 | **P16-033** | [x] | `events_only` mode |
 | 30 | **P16-034** | [x] | 5m aggregates → LOG |
-| 31 | **P16-040** | [ ] | YAML `telemetry:` |
+| 31 | **P16-040** | [x] | YAML `telemetry:` |
 | 32 | **P16-041** | [ ] | CLI telemetry overrides |
 | 33 | **P16-042** | [ ] | Secret redaction |
 | 34 | **P16-043** | [ ] | Windows telemetry preset |
@@ -608,7 +608,7 @@ flowchart TD
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **P16-040** | [ ] YAML section `telemetry:` (local + remote sinks) | `ProfilesConfig`, `config.py` | Example in `hosts.example.yaml` |
+| **P16-040** | [x] YAML section `telemetry:` (local + remote sinks) | `ProfilesConfig`, `config.py` | Example in `hosts.example.yaml` |
 | **P16-041** | [ ] CLI: `--telemetry-syslog HOST:PORT`, `--telemetry-jsonl DIR` | `PinguiApplication`, `__main__.py` | Override profile |
 | **P16-042** | [ ] Secrets (URL, token) — no logging; mask in debug | `TelemetryConfig.java` | Unit test redaction |
 | **P16-043** | [ ] Windows preset: `events_only` + no high-freq jsonl | `config/hosts.windows.example.yaml` | CHECKLIST |

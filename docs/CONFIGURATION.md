@@ -119,6 +119,31 @@ profiles:
 
 За замовчуванням alerts вимкнено (`NoOp` dispatcher).
 
+### Телеметрія (P16-040)
+
+Секція `telemetry:` у профілі v2 (Java) або top-level (Python `load_telemetry_config`). За замовч. усі sinks **off**; `events_only: true`; `log_aggregates: false`. Приклад: `java/config/hosts.example.yaml`.
+
+```yaml
+telemetry:
+  events_only: true
+  log_aggregates: false
+  sqlite: data/telemetry.db
+  jsonl_dir: data/telemetry
+  syslog:
+    host: 127.0.0.1
+    port: 514
+    tls: false
+  gelf:
+    host: 127.0.0.1
+    port: 12201
+    transport: tcp   # tcp | udp
+  loki:
+    url: http://127.0.0.1:3100
+    site: default
+```
+
+CLI overrides — P16-041. Wire sinks у daemon — після P16-041+.
+
 ### GeoIP і карта
 
 | Опція | Тип | За замовч. | Опис |

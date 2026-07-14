@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P16-040** |
+| **Поточна задача** | **P16-041** |
 | **Фаза** | 16 — Телеметрія |
-| **DoD (коротко)** | YAML секція `telemetry:` (local + remote sinks) |
+| **DoD (коротко)** | CLI telemetry overrides (`--telemetry-syslog`, `--telemetry-jsonl`) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -73,7 +73,7 @@
 | 28 | **P16-032** | [x] | `LokiPushSink` (P2) |
 | 29 | **P16-033** | [x] | `events_only` mode |
 | 30 | **P16-034** | [x] | 5m aggregates → LOG |
-| 31 | **P16-040** | [ ] | YAML `telemetry:` |
+| 31 | **P16-040** | [x] | YAML `telemetry:` |
 | 32 | **P16-041** | [ ] | CLI telemetry overrides |
 | 33 | **P16-042** | [ ] | Secret redaction |
 | 34 | **P16-043** | [ ] | Windows telemetry preset |
@@ -608,7 +608,7 @@ flowchart TD
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **P16-040** | [ ] YAML секція `telemetry:` (local + remote sinks) | `ProfilesConfig`, `config.py` | Приклад у `hosts.example.yaml` |
+| **P16-040** | [x] YAML секція `telemetry:` (local + remote sinks) | `ProfilesConfig`, `config.py` | Приклад у `hosts.example.yaml` |
 | **P16-041** | [ ] CLI: `--telemetry-syslog HOST:PORT`, `--telemetry-jsonl DIR` | `PinguiApplication`, `__main__.py` | Override profile |
 | **P16-042** | [ ] Секрети (URL, token) — не логувати; mask у debug | `TelemetryConfig.java` | Unit-тест redaction |
 | **P16-043** | [ ] Windows preset: `events_only` + без jsonl high-freq | `config/hosts.windows.example.yaml` | CHECKLIST |

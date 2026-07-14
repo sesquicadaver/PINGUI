@@ -1,4 +1,5 @@
-# Список цілей для моніторингу (0–10 хостів, IPv4 або DNS)
+# Список цілей для моніторингу (0–10 хостів, IPv4 або DNS).
+# Java v2 profiles: see java/config/hosts.example.yaml (includes telemetry: example).
 hosts:
   - "8.8.8.8"
   - "1.1.1.1"
@@ -9,3 +10,20 @@ hosts:
   - "kernel.org"
   - "debian.org"
   - "ubuntu.com"
+
+# P16-040 — optional top-level telemetry (Python load_telemetry_config; Java prefers profile-level)
+# telemetry:
+#   events_only: true
+#   log_aggregates: false
+#   sqlite: data/telemetry.db
+#   jsonl_dir: data/telemetry
+#   syslog:
+#     host: 127.0.0.1
+#     port: 514
+#   gelf:
+#     host: 127.0.0.1
+#     port: 12201
+#     transport: tcp
+#   loki:
+#     url: http://127.0.0.1:3100
+#     site: default

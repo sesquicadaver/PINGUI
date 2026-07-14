@@ -16,3 +16,20 @@ profiles:
       - address: "kernel.org"
       - address: "debian.org"
       - address: "ubuntu.com"
+    # P16-040 — telemetry (all sinks off by default; uncomment to enable)
+    # telemetry:
+    #   events_only: true          # drop high-freq RTT from remote LOG sinks
+    #   log_aggregates: false      # optional 5m avg/max rtt_aggregate events
+    #   sqlite: data/telemetry.db
+    #   jsonl_dir: data/telemetry
+    #   syslog:
+    #     host: 127.0.0.1
+    #     port: 514
+    #     tls: false
+    #   gelf:
+    #     host: 127.0.0.1
+    #     port: 12201
+    #     transport: tcp
+    #   loki:
+    #     url: http://127.0.0.1:3100
+    #     site: default

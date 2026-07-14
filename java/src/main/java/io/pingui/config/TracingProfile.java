@@ -5,7 +5,7 @@ import io.pingui.probe.ProbeMode;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Named tracing session: poll settings, host list, alert channels, and persistence. */
+/** Named tracing session: poll settings, host list, alert channels, persistence, telemetry. */
 public record TracingProfile(
         double intervalSeconds,
         int maxHops,
@@ -15,7 +15,8 @@ public record TracingProfile(
         List<HostEntry> hosts,
         AlertConfig alerts,
         PersistenceConfig persistence,
-        int maxConcurrentTraces) {
+        int maxConcurrentTraces,
+        TelemetryConfig telemetry) {
     public TracingProfile {
         if (intervalSeconds <= 0) {
             throw new IllegalArgumentException("intervalSeconds must be positive");
@@ -34,6 +35,31 @@ public record TracingProfile(
         hosts = List.copyOf(hosts != null ? hosts : List.of());
         alerts = alerts != null ? alerts : AlertConfig.disabled();
         persistence = persistence != null ? persistence : PersistenceConfig.defaults();
+        telemetry = telemetry != null ? telemetry : TelemetryConfig.defaults();
+    }
+
+    /** Without explicit telemetry (defaults). */
+    public TracingProfile(
+            double intervalSeconds,
+            int maxHops,
+            double timeoutSeconds,
+            ProbeMode probeMode,
+            HostProbeMode hostProbeMode,
+            List<HostEntry> hosts,
+            AlertConfig alerts,
+            PersistenceConfig persistence,
+            int maxConcurrentTraces) {
+        this(
+                intervalSeconds,
+                maxHops,
+                timeoutSeconds,
+                probeMode,
+                hostProbeMode,
+                hosts,
+                alerts,
+                persistence,
+                maxConcurrentTraces,
+                TelemetryConfig.defaults());
     }
 
     /** Legacy constructor without explicit {@code hostProbeMode} (defaults to trace). */
@@ -54,7 +80,8 @@ public record TracingProfile(
                 hosts,
                 alerts,
                 persistence,
-                io.pingui.monitor.TraceConcurrencyLimiter.DEFAULT_MAX);
+                io.pingui.monitor.TraceConcurrencyLimiter.DEFAULT_MAX,
+                TelemetryConfig.defaults());
     }
 
     public static TracingProfile defaults(List<HostEntry> hosts) {
@@ -67,7 +94,8 @@ public record TracingProfile(
                 hosts,
                 AlertConfig.disabled(),
                 PersistenceConfig.defaults(),
-                io.pingui.monitor.TraceConcurrencyLimiter.DEFAULT_MAX);
+                io.pingui.monitor.TraceConcurrencyLimiter.DEFAULT_MAX,
+                TelemetryConfig.defaults());
     }
 
     public TracingProfile withHosts(List<HostEntry> newHosts) {
@@ -80,7 +108,8 @@ public record TracingProfile(
                 newHosts,
                 alerts,
                 persistence,
-                maxConcurrentTraces);
+                maxConcurrentTraces,
+                telemetry);
     }
 
     public TracingProfile withAlerts(AlertConfig newAlerts) {
@@ -93,7 +122,8 @@ public record TracingProfile(
                 hosts,
                 newAlerts,
                 persistence,
-                maxConcurrentTraces);
+                maxConcurrentTraces,
+                telemetry);
     }
 
     public TracingProfile withPersistence(PersistenceConfig newPersistence) {
@@ -106,7 +136,22 @@ public record TracingProfile(
                 hosts,
                 alerts,
                 newPersistence,
-                maxConcurrentTraces);
+                maxConcurrentTraces,
+                telemetry);
+    }
+
+    public TracingProfile withTelemetry(TelemetryConfig newTelemetry) {
+        return new TracingProfile(
+                intervalSeconds,
+                maxHops,
+                timeoutSeconds,
+                probeMode,
+                hostProbeMode,
+                hosts,
+                alerts,
+                persistence,
+                maxConcurrentTraces,
+                newTelemetry);
     }
 
     public List<String> hostAddresses() {

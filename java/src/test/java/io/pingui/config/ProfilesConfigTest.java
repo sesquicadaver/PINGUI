@@ -51,6 +51,87 @@ class ProfilesConfigTest {
     }
 
     @Test
+    void loadTelemetrySection() throws Exception {
+        Path path = tempDir.resolve("telemetry.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: noc
+                profiles:
+                  noc:
+                    hosts:
+                      - "8.8.8.8"
+                    telemetry:
+                      events_only: true
+                      log_aggregates: true
+                      sqlite: data/telemetry.db
+                      jsonl_dir: data/telemetry
+                      syslog:
+                        host: 127.0.0.1
+                        port: 1514
+                        tls: true
+                      gelf:
+                        host: 10.0.0.5
+                        port: 12201
+                        transport: udp
+                      loki:
+                        url: http://127.0.0.1:3100
+                        site: lab
+                """);
+        TelemetryConfig telemetry = ProfilesConfig.load(path).active().telemetry();
+        assertTrue(telemetry.eventsOnly());
+        assertTrue(telemetry.logAggregates());
+        assertEquals(Path.of("data/telemetry.db"), telemetry.sqlitePath().orElseThrow());
+        assertEquals(Path.of("data/telemetry"), telemetry.jsonlDir().orElseThrow());
+        assertEquals("127.0.0.1", telemetry.syslog().orElseThrow().host());
+        assertEquals(1514, telemetry.syslog().orElseThrow().port());
+        assertTrue(telemetry.syslog().orElseThrow().tls());
+        assertEquals(
+                io.pingui.telemetry.GelfSink.Transport.UDP,
+                telemetry.gelf().orElseThrow().transport());
+        assertEquals("lab", telemetry.loki().orElseThrow().site());
+        assertTrue(telemetry.toSinkConfig().eventsOnly());
+    }
+
+    @Test
+    void saveTelemetrySectionRoundTrip() throws Exception {
+        Path path = tempDir.resolve("telemetry-save.yaml");
+        TelemetryConfig telemetry = new TelemetryConfig(
+                false,
+                true,
+                Optional.of(Path.of("data/t.db")),
+                Optional.of(Path.of("data/jsonl")),
+                Optional.of(new TelemetryConfig.SyslogSinkConfig("syslog.example", 514, false)),
+                Optional.of(new TelemetryConfig.GelfSinkConfig(
+                        "gelf.example", 12201, io.pingui.telemetry.GelfSink.Transport.TCP)),
+                Optional.of(new TelemetryConfig.LokiSinkConfig("http://loki.example:3100", "noc")));
+        TracingProfile profile = TracingProfile.defaults(List.of(HostEntry.basic("8.8.8.8", false)))
+                .withTelemetry(telemetry);
+        ProfilesConfig.save(path, ProfileDocument.singleDefault(profile));
+        TelemetryConfig reloaded = ProfilesConfig.load(path).active().telemetry();
+        assertEquals(false, reloaded.eventsOnly());
+        assertTrue(reloaded.logAggregates());
+        assertEquals(Path.of("data/t.db"), reloaded.sqlitePath().orElseThrow());
+        assertEquals("syslog.example", reloaded.syslog().orElseThrow().host());
+        assertEquals("http://loki.example:3100", reloaded.loki().orElseThrow().url());
+    }
+
+    @Test
+    void loadTelemetryMissingDefaultsOff() throws Exception {
+        Path path = tempDir.resolve("no-telemetry.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    hosts:
+                      - "1.1.1.1"
+                """);
+        assertTrue(ProfilesConfig.load(path).active().telemetry().isDefault());
+    }
+
+    @Test
     void loadAlertsSection() throws Exception {
         Path path = tempDir.resolve("alerts.yaml");
         Files.writeString(
