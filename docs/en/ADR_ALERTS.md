@@ -106,7 +106,7 @@ The Java GUI keeps journal/route graph as-is; desktop alert is an optional chann
 
 ### 8. Future (not v1)
 
-- **P16-050:** `WebhookAlertDispatcher` becomes a `TelemetrySink` — single emit path, no duplicate HTTP.
+- **P16-050:** ✅ `WebhookTelemetrySink` + `WebhookAlertDispatcher` delegates HTTP — single emit path, no duplicate client.
 - YAML `alerts:` section with multiple sinks (phase 16).
 - Payload enrichment (ASN, geo, diff summary) — separate tickets, backward-compatible fields.
 

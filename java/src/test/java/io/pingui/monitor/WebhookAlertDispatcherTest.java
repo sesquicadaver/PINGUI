@@ -14,6 +14,13 @@ import org.junit.jupiter.api.Test;
 
 class WebhookAlertDispatcherTest {
     @Test
+    void dispatcherUsesSharedWebhookTelemetrySink() {
+        WebhookAlertDispatcher dispatcher = new WebhookAlertDispatcher("http://127.0.0.1/hook");
+        assertEquals("webhook", dispatcher.telemetrySink().id());
+        assertTrue(dispatcher.telemetrySink().eventsOnly());
+    }
+
+    @Test
     void postsRouteChangeJson() throws Exception {
         AtomicReference<String> body = new AtomicReference<>();
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);

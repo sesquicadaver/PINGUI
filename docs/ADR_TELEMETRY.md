@@ -76,13 +76,13 @@ flowchart LR
 | `LokiPushSink` | remote | **off** | P16-032 ✅ HTTP `/loki/api/v1/push`; labels `job`/`site`/`host`; `events_only` via `SinkConfig` (P16-033 ✅) |
 | `PrometheusTelemetrySink` | in-process scrape state | via `--metrics-port` | Не remote_write (див. ADR_OBSERVABILITY) |
 | `InfluxTelemetrySink` | remote samples | via TS config | Обгортка B-05 / P15-020 |
-| Webhook as sink | remote events | via alerts config | P16-050 — один код emit, не другий HTTP клієнт |
+| Webhook as sink | remote events | via alerts config | P16-050 ✅ — один код emit (`WebhookTelemetrySink`), не другий HTTP клієнт |
 
 ### 4. Межі з P10 і P15
 
 | Межа | Рішення |
 |------|---------|
-| **P10 alerts** | Лишаються **operator notify**. Telemetry **може** дублювати `route_change` як event у sinks, але UX-оповіщення не замінюється LOG. P16-050 рефакторить webhook у `TelemetrySink`, не змінює payload-контракт ADR_ALERTS. |
+| **P10 alerts** | Лишаються **operator notify**. Telemetry **може** дублювати `route_change` як event у sinks, але UX-оповіщення не замінюється LOG. P16-050 ✅ рефакторить webhook у `WebhookTelemetrySink`; `WebhookAlertDispatcher` делегує HTTP (payload ADR_ALERTS без змін). |
 | **P15 Prometheus** | Pull/scrape лишається. P16-051: exporter стає sink, що оновлює in-process gauges з bus. |
 | **P15 TS push** | P16-052: Influx/Timescale як sink з bus; dual-emit з MonitorService знімається після P16-013. |
 | **P11 session DB** | GUI history / policy events. **Не** Grafana datasource і не заміна telemetry archive. |
