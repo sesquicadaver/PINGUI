@@ -149,6 +149,7 @@ export PINGUI_JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64   # if needed
 - [ ] Save YAML → restart → target persists
 - [ ] Expert ON → **Exten.** → `-4 -s 128` → RTT updates
 - [ ] Expert ON → **MTU** (or Expert → **MTU wizard…**) → Start → Stop/finish → Alert with MTU → Apply → Expert args `-M do -s …`
+- [ ] Expert → Exten. → **Self-check** → Alert for DF/DSCP/Burst (loss%/RTT); Expert form unchanged
 
 ### jpackage (.deb)
 

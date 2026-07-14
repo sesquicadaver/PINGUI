@@ -149,6 +149,7 @@ export PINGUI_JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64   # за потреб
 - [ ] Зберегти YAML → перезапуск → ціль на місці
 - [ ] Expert ON → **Exten.** → `-4 -s 128` → RTT оновлюється
 - [ ] Expert ON → **MTU** (або Expert → **MTU wizard…**) → Старт → Stop/завершення → Alert з MTU → Apply → args `-M do -s …` у Expert
+- [ ] Expert → Exten. → **Self-check** → Alert DF/DSCP/Burst (loss%/RTT); форма Expert без змін
 
 ### jpackage (.deb)
 

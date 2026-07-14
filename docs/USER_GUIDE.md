@@ -131,7 +131,7 @@ cd java
 2. **Розширений вигляд** — граф + панель diff «було → стало» (Δ RTT) і **Історія змін** (24h / 7d); клік по події — replay маршруту на графі.
 3. **Теги** — кнопка **Теги** на хості; chips фільтра зверху списку (напр. `dc`, `vpn`, `customer-x`). Збережіть YAML (**Зберегти**).
 4. **Мітки hop** на графі (після IP): країна (GeoIP hints) → ASN (`asn_hints.yaml`) → rDNS (async PTR, TTL 5 хв). Офлайн-підказки: [CONFIGURATION.md](CONFIGURATION.md#geoip-і-карта).
-5. **Expert ping** — чекбокс **Експерт** → **Exten.** → пресети **MTU probe / DF / DSCP / Burst** з `ping_presets.yaml` (AF `-4`/`-6` зберігається). Кожен пресет лише підставляє прапорці `ping(8)` + показує summary/expect у діалозі. Перебір MTU — кнопка **MTU** у списку хостів або **MTU wizard…** у Expert (Apply → `-M do -s`); пресет «MTU probe» ≠ wizard.
+5. **Expert ping** — чекбокс **Експерт** → **Exten.** → пресети **MTU probe / DF / DSCP / Burst** з `ping_presets.yaml` (AF `-4`/`-6` зберігається). Кожен пресет лише підставляє прапорці `ping(8)` + показує summary/expect у діалозі. Перебір MTU — кнопка **MTU** / **MTU wizard…** (Apply → `-M do -s`). **Self-check** — короткий batch DF/DSCP/Burst → Alert (форма не змінюється).
 6. **Алерти** — webhook / desktop при зміні маршруту (`alerts:` у YAML або `--alert-webhook`). Rate limit на хост: [CONFIGURATION.md](CONFIGURATION.md).
 7. **Персистентність** — `--session-db` або **Налаштування → База даних…**; історія й `hop_stats` переживають рестарт. Export: `--export-report report.csv`.
 

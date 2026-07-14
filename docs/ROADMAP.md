@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **[P17-030](#фаза-17--expert-ping-presets--mtu-discovery-beta-p0p1)** |
-| **Фаза** | 17 — Expert ping / MTU |
-| **DoD (коротко)** | Informational self-check DF/DSCP/Burst (P2) |
+| **Поточна задача** | **DONE** |
+| **Фаза** | — |
+| **DoD (коротко)** | Черга виконання вичерпана (немає відкритих ID) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -94,7 +94,7 @@
 | 49 | **P17-010** | [x] | Expert preset UX: summary/expect/caution + статус Exten. |
 | 50 | **P17-020** | [x] | `MtuDiscovery` engine (sweep `-s`, stop ≥1% loss) |
 | 51 | **P17-021** | [x] | MTU wizard UI + Alert + apply to Expert |
-| 52 | **P17-030** | [ ] | Informational self-check DF/DSCP/Burst (P2) |
+| 52 | **P17-030** | [x] | Informational self-check DF/DSCP/Burst (P2) |
 
 **Закінчення черги:** оновити NEXT → `DONE` (немає відкритих ID).
 
@@ -671,7 +671,7 @@ flowchart TD
 | **P17-010** | [x] Preset UX copy + статус у Exten. | `PingPreset`, `ping_presets.yaml`, `PingExpertDialog`, docs | YAML `summary`/`expect`/`caution`; tooltip+status рядок; тести; USER_GUIDE note (пресет ≠ MTU wizard) |
 | **P17-020** | [x] `MtuDiscovery` engine | `probe/MtuDiscovery*.java` | Sweep payload `-s` + `-M do`; N проб; stop при loss≥1%; unit recommended MTU |
 | **P17-021** | [x] MTU wizard UI | `ui/MtuDiscoveryDialog`, HostList, `PingExpertDialog` | Прогрес (поточне `-s`, loss%); Stop; Alert з max MTU; Apply → Expert args |
-| **P17-030** | [ ] Self-check DF/DSCP/Burst (P2) | Exten. / short ping batch | Короткий результат у Alert без повного wizard |
+| **P17-030** | [x] Self-check DF/DSCP/Burst (P2) | `PresetSelfCheck`, `PresetSelfCheckUi`, Exten. | Короткий результат у Alert без повного wizard |
 
 ---
 

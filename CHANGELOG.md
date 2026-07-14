@@ -21,6 +21,7 @@
 
 ### Added
 
+- **Expert Self-check DF/DSCP/Burst (P17-030):** `PresetSelfCheck` + Exten. «Self-check» → короткий batch → Alert (без wizard). ROADMAP NEXT → **DONE**.
 - **MTU wizard UI (P17-021):** `MtuDiscoveryDialog` (progress / Stop / Alert / Apply → Expert `-M do -s`); HostList **MTU** + Expert «MTU wizard…». ROADMAP NEXT → P17-030.
 - **MtuDiscovery engine (P17-020):** ascending `-s` sweep (`min→start`) with `-M do`, stop at ≥1% loss, recommended MTU = last good payload + IP/ICMP overhead; `ProcessMtuProbeRunner`. ROADMAP NEXT → P17-021.
 - **Expert preset UX (P17-010):** `ping_presets.yaml` `summary`/`expect`/`caution`; Exten. tooltip + status line; clarify preset ≠ MTU wizard. ROADMAP NEXT → P17-020.

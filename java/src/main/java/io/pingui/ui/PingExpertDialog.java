@@ -139,12 +139,15 @@ public final class PingExpertDialog {
         wireUiConstraints(host, addressFamily, flagChoices, textValues);
 
         Label presetStatus = new Label(
-                "Оберіть пресет — args застосуються до форми. Перебір MTU — кнопка «MTU wizard…» (не пресет «MTU probe»).");
+                "Оберіть пресет — args у форму. «MTU wizard…» — перебір MTU; «Self-check» — короткий DF/DSCP/Burst batch (Alert).");
         presetStatus.setWrapText(true);
         presetStatus.setStyle("-fx-text-fill: #444;");
         HBox presetsBar = buildPresetsBar(addressFamily, flagChoices, choiceValues, textValues, presetStatus);
         Button mtuWizardButton = new Button("MTU wizard…");
         mtuWizardButton.setTooltip(new Tooltip("Ascending -s sweep with -M do; Apply підставляє -s/-M у форму"));
+        Button selfCheckButton = new Button("Self-check");
+        selfCheckButton.setTooltip(
+                new Tooltip("Короткий ping batch для пресетів DF / DSCP / Burst → Alert (без зміни форми)"));
         mtuWizardButton.setOnAction(event -> {
             boolean ipv6 = AF_IPV6.equals(addressFamily.getValue());
             Window owner = dialog.getDialogPane().getScene() != null
@@ -159,7 +162,18 @@ public final class PingExpertDialog {
                 presetStatus.setText("MTU wizard: MTU≈" + mtu + " → форма: " + result.expertArgs());
             });
         });
-        HBox wizardBar = new HBox(6, mtuWizardButton);
+        selfCheckButton.setOnAction(event -> {
+            boolean ipv6 = AF_IPV6.equals(addressFamily.getValue());
+            Window owner = dialog.getDialogPane().getScene() != null
+                    ? dialog.getDialogPane().getScene().getWindow()
+                    : null;
+            PresetSelfCheckUi.runAsync(owner, host, ipv6, busy -> {
+                selfCheckButton.setDisable(busy);
+                mtuWizardButton.setDisable(busy);
+                presetStatus.setText(busy ? "Self-check DF/DSCP/Burst…" : "Self-check завершено (див. Alert).");
+            });
+        });
+        HBox wizardBar = new HBox(6, mtuWizardButton, selfCheckButton);
 
         ScrollPane scroll = new ScrollPane(grid);
         scroll.setFitToWidth(true);

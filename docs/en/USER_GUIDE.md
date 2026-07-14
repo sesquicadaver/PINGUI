@@ -131,7 +131,7 @@ ICMP / raw permissions: see [DEPLOYMENT.md](DEPLOYMENT.md) and `./scripts/check_
 2. **Extended view** — graph + diff panel “was → now” (Δ RTT) and **Route history** (24h / 7d); click an event to replay the route on the graph.
 3. **Tags** — **Tags** button on the host; filter chips above the list (e.g. `dc`, `vpn`, `customer-x`). Save YAML (**Save**).
 4. **Hop labels** on the graph (after IP): country (GeoIP hints) → ASN (`asn_hints.yaml`) → rDNS (async PTR, 5 min TTL). Offline hints: [CONFIGURATION.md](CONFIGURATION.md#geoip-and-map).
-5. **Expert ping** — **Expert** checkbox → **Exten.** → presets **MTU probe / DF / DSCP / Burst** from `ping_presets.yaml` (AF `-4`/`-6` is kept). Each preset only fills `ping(8)` flags and shows summary/expect in the dialog. MTU sweep — host-list **MTU** or Expert **MTU wizard…** (Apply → `-M do -s`); the «MTU probe» preset is not the wizard.
+5. **Expert ping** — **Expert** checkbox → **Exten.** → presets **MTU probe / DF / DSCP / Burst** from `ping_presets.yaml` (AF `-4`/`-6` is kept). Each preset only fills `ping(8)` flags and shows summary/expect in the dialog. MTU sweep — host-list **MTU** or Expert **MTU wizard…** (Apply → `-M do -s`). **Self-check** — short DF/DSCP/Burst batch → Alert (form unchanged).
 6. **Alerts** — webhook / desktop on route change (`alerts:` in YAML or `--alert-webhook`). Per-host rate limit: [CONFIGURATION.md](CONFIGURATION.md).
 7. **Persistence** — `--session-db` or **Settings → Database…**; history and `hop_stats` survive restart. Export: `--export-report report.csv`.
 

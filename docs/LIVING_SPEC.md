@@ -75,6 +75,7 @@
 | Expert preset UX copy (P17-010) | `PingPreset`, `PingPresets`, `ping_presets.yaml`, `PingExpertDialog` | `PingPresetTest`, `PingPresetsTest` |
 | MtuDiscovery engine (P17-020) | `MtuDiscovery`, `MtuDiscoveryConfig`, `ProcessMtuProbeRunner` | `MtuDiscoveryTest`, `ProcessMtuProbeRunnerTest` |
 | MTU wizard UI (P17-021) | `MtuDiscoveryDialog`, `HostListPresenter`, `PingExpertDialog` | `MtuDiscoveryDialogTest`, `MtuDiscoveryTest` (progress) |
+| Expert Self-check DF/DSCP/Burst (P17-030) | `PresetSelfCheck`, `PresetSelfCheckUi`, `PingExpertDialog` | `PresetSelfCheckTest`, `PresetSelfCheckUiTest` |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |

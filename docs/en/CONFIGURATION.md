@@ -209,6 +209,8 @@ Expert ping presets (Java GUI, P14-040 / P17-010): `config/ping_presets.yaml` be
 
 MTU discovery engine (P17-020, API): `MtuDiscovery` + `ProcessMtuProbeRunner` — linear ascending `-s` sweep (`min → start`) with `-M do`, N probes per size, stop when loss% ≥ threshold (default 1%), `recommendedMtu = last_good_payload + 28` (IPv4) / `+ 48` (IPv6). GUI wizard (P17-021): `MtuDiscoveryDialog` — HostList **MTU** / Expert «MTU wizard…»; Apply → `-M do -s <payload>` (the «MTU probe» preset stays separate).
 
+Expert Self-check (P17-030): `PresetSelfCheck` — 3× `ping -c 1` for presets `df` / `dscp` / `burst` (AF from the form); Exten. «Self-check» → Alert with loss%/avgRTT; does not change Expert form.
+
 ### Time-series (optional extra: `pip install -e ".[timeseries]"`)
 
 | Option | Type | Default | Description |

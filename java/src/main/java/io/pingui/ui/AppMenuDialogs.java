@@ -122,8 +122,9 @@ public final class AppMenuDialogs {
                 • persistence.session_db ≠ telemetry.sqlite (різні ролі).
 
                 Expert ping (Linux)
-                • Експерт → Exten. / MTU — пресети та MTU wizard; tooltip/status пояснюють ефект.
+                • Експерт → Exten. / MTU — пресети, MTU wizard і Self-check (DF/DSCP/Burst → Alert).
                 • «MTU probe» пресет ≠ перебір MTU: кнопка MTU / «MTU wizard…» (sweep -s + -M do → Apply).
+                • Self-check — короткий batch пресетів DF/DSCP/Burst; не змінює форму Expert.
 
                 Кнопки
                 • Додати / Змінити / Видалити — цілі в поточному профілі.
