@@ -20,9 +20,9 @@ import javax.net.ssl.SSLSocketFactory;
  * Remote RFC 5424 syslog sink over TCP (P16-030 / ADR_TELEMETRY / SPIKE_LOG_SINKS).
  *
  * <p>MSG is single-line {@link TelemetryEvent#toJson()}. TCP framing is RFC 6587
- * <em>non-transparent</em> (trailing {@code \n}). {@link #eventsOnly()} is {@code true} by default.
- * TLS is optional via {@link SSLSocketFactory}. Failures are logged; methods never throw into the
- * poll / bus path.
+ * <em>non-transparent</em> (trailing {@code \n}). {@link #eventsOnly()} comes from
+ * {@link SinkConfig} (default {@code true}). TLS is optional via {@link SSLSocketFactory}. Failures
+ * are logged; methods never throw into the poll / bus path.
  */
 public final class SyslogSink implements TelemetrySink {
     public static final String ID = "syslog";
@@ -44,6 +44,7 @@ public final class SyslogSink implements TelemetrySink {
     private final String hostname;
     private final SocketFactory socketFactory;
     private final Clock clock;
+    private final boolean eventsOnly;
 
     private final Object lock = new Object();
     private Socket socket;
@@ -54,7 +55,11 @@ public final class SyslogSink implements TelemetrySink {
     }
 
     public SyslogSink(String host, int port, boolean tls) {
-        this(host, port, tls, "pingui", detectHostname(), socketFactoryFor(tls), Clock.systemUTC());
+        this(host, port, tls, SinkConfig.defaults());
+    }
+
+    public SyslogSink(String host, int port, boolean tls, SinkConfig sinkConfig) {
+        this(host, port, tls, "pingui", detectHostname(), socketFactoryFor(tls), Clock.systemUTC(), sinkConfig);
     }
 
     /**
@@ -71,6 +76,18 @@ public final class SyslogSink implements TelemetrySink {
             String hostname,
             SocketFactory socketFactory,
             Clock clock) {
+        this(host, port, tls, appName, hostname, socketFactory, clock, SinkConfig.defaults());
+    }
+
+    public SyslogSink(
+            String host,
+            int port,
+            boolean tls,
+            String appName,
+            String hostname,
+            SocketFactory socketFactory,
+            Clock clock,
+            SinkConfig sinkConfig) {
         this.host = Objects.requireNonNull(host, "host");
         if (host.isBlank()) {
             throw new IllegalArgumentException("host must be non-blank");
@@ -84,6 +101,7 @@ public final class SyslogSink implements TelemetrySink {
         this.hostname = requireToken(hostname, "hostname");
         this.socketFactory = Objects.requireNonNull(socketFactory, "socketFactory");
         this.clock = Objects.requireNonNull(clock, "clock");
+        this.eventsOnly = SinkConfig.require(sinkConfig).eventsOnly();
     }
 
     @Override
@@ -93,12 +111,15 @@ public final class SyslogSink implements TelemetrySink {
 
     @Override
     public boolean eventsOnly() {
-        return true;
+        return eventsOnly;
     }
 
     @Override
     public void onSample(MetricSample sample) {
-        // intentionally empty: events_only — high-freq samples never leave this sink
+        if (eventsOnly || sample == null) {
+            return;
+        }
+        writeLine(formatSampleMessage(sample));
     }
 
     @Override
@@ -106,8 +127,11 @@ public final class SyslogSink implements TelemetrySink {
         if (event == null) {
             return;
         }
+        writeLine(formatMessage(event));
+    }
+
+    private void writeLine(String line) {
         try {
-            String line = formatMessage(event);
             byte[] bytes = (line + "\n").getBytes(StandardCharsets.UTF_8);
             synchronized (lock) {
                 ensureConnected();
@@ -127,10 +151,18 @@ public final class SyslogSink implements TelemetrySink {
 
     /** Formats one RFC 5424 line without the trailing NL (package-visible for tests). */
     String formatMessage(TelemetryEvent event) {
-        int severity = severityFor(event.event());
+        return formatSyslog(severityFor(event.event()), event.timestamp(), event.toJson());
+    }
+
+    /** Sample MSG path when {@code events_only=false} (lab). Package-visible for tests. */
+    String formatSampleMessage(MetricSample sample) {
+        return formatSyslog(SEVERITY_NOTICE, sample.timestamp(), sample.toJson());
+    }
+
+    private String formatSyslog(int severity, Instant timestamp, String jsonMsg) {
         int pri = FACILITY_LOCAL0 * 8 + severity;
-        Instant ts = event.timestamp() != null ? event.timestamp() : clock.instant();
-        String msg = event.toJson();
+        Instant ts = timestamp != null ? timestamp : clock.instant();
+        String msg = jsonMsg;
         if (msg.indexOf('\n') >= 0 || msg.indexOf('\r') >= 0) {
             msg = msg.replace("\r", "").replace("\n", " ");
         }

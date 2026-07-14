@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P16-033** |
+| **Поточна задача** | **P16-034** |
 | **Фаза** | 16 — Телеметрія |
-| **DoD (коротко)** | `events_only` mode для remote LOG sinks |
+| **DoD (коротко)** | 5m aggregates → LOG опційно |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -71,7 +71,7 @@
 | 26 | **P16-030** | [x] | `SyslogSink` |
 | 27 | **P16-031** | [x] | `GelfSink` |
 | 28 | **P16-032** | [x] | `LokiPushSink` (P2) |
-| 29 | **P16-033** | [ ] | `events_only` mode |
+| 29 | **P16-033** | [x] | `events_only` mode |
 | 30 | **P16-034** | [ ] | 5m aggregates → LOG |
 | 31 | **P16-040** | [ ] | YAML `telemetry:` |
 | 32 | **P16-041** | [ ] | CLI telemetry overrides |
@@ -601,7 +601,7 @@ flowchart TD
 | **P16-030** | [x] `SyslogSink` — RFC 5424 TCP/TLS; MSG = single-line JSON; TCP framing canon | `telemetry/SyslogSink.java` | Contract test з mock server |
 | **P16-031** | [x] `GelfSink` — Graylog TCP (prod) / UDP (lab); `events_only` parity; `\0` framing | `telemetry/GelfSink.java` | route_change + probe_error events |
 | **P16-032** | [x] `LokiPushSink` — HTTP push (опційно P2) | `telemetry/LokiPushSink.java` | labels: job=pingui, site |
-| **P16-033** | [ ] `events_only` mode для **усіх** remote LOG sinks (syslog, GELF, Loki) | `SinkConfig.java` | Default true; без high-freq RTT |
+| **P16-033** | [x] `events_only` mode для **усіх** remote LOG sinks (syslog, GELF, Loki) | `SinkConfig.java` | Default true; без high-freq RTT |
 | **P16-034** | [ ] 5m aggregates (avg/max RTT per hop) → LOG опційно | `AggregateTelemetryJob.java` | YAML `log_aggregates: true` |
 
 ### 16.4 — Конфігурація (P0)

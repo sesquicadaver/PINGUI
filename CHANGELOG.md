@@ -21,6 +21,7 @@
 
 ### Added
 
+- **events_only LOG policy (P16-033):** `SinkConfig` — shared `events_only` (default true) for syslog/GELF/Loki; sample wire only when opted out.
 - **Loki push sink (P16-032):** `LokiPushSink` — HTTP `/loki/api/v1/push`; labels `job=pingui`/`site`/`host`; line = event JSON; `eventsOnly`.
 - **GELF sink (P16-031):** `GelfSink` — GELF 1.1 JSON; TCP `\0` framing (prod) / UDP (lab); `eventsOnly`.
 - **Syslog sink (P16-030):** `SyslogSink` — RFC 5424 over TCP (optional TLS); MSG = single-line event JSON; framing trailing NL; `eventsOnly`.

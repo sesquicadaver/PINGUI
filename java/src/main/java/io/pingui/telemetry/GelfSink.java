@@ -22,8 +22,8 @@ import javax.net.SocketFactory;
  * Remote GELF 1.1 sink (P16-031 / ADR_TELEMETRY / SPIKE_LOG_SINKS).
  *
  * <p>TCP (production) frames JSON with a trailing NUL ({@code \0}). UDP (lab) sends a single
- * datagram without chunking. {@link #eventsOnly()} is {@code true}. Failures are logged; methods
- * never throw into the poll / bus path.
+ * datagram without chunking. {@link #eventsOnly()} comes from {@link SinkConfig} (default
+ * {@code true}). Failures are logged; methods never throw into the poll / bus path.
  */
 public final class GelfSink implements TelemetrySink {
     public static final String ID = "gelf";
@@ -43,6 +43,7 @@ public final class GelfSink implements TelemetrySink {
     private final SocketFactory socketFactory;
     private final Supplier<DatagramSocket> datagramSocketSupplier;
     private final Clock clock;
+    private final boolean eventsOnly;
 
     private final Object lock = new Object();
     private Socket tcpSocket;
@@ -53,6 +54,10 @@ public final class GelfSink implements TelemetrySink {
     }
 
     public GelfSink(String host, int port, Transport transport) {
+        this(host, port, transport, SinkConfig.defaults());
+    }
+
+    public GelfSink(String host, int port, Transport transport, SinkConfig sinkConfig) {
         this(
                 host,
                 port,
@@ -60,7 +65,8 @@ public final class GelfSink implements TelemetrySink {
                 detectHostname(),
                 SocketFactory.getDefault(),
                 GelfSink::newDatagramSocket,
-                Clock.systemUTC());
+                Clock.systemUTC(),
+                sinkConfig);
     }
 
     private static DatagramSocket newDatagramSocket() {
@@ -80,6 +86,18 @@ public final class GelfSink implements TelemetrySink {
             SocketFactory socketFactory,
             Supplier<DatagramSocket> datagramSocketSupplier,
             Clock clock) {
+        this(host, port, transport, sourceHost, socketFactory, datagramSocketSupplier, clock, SinkConfig.defaults());
+    }
+
+    public GelfSink(
+            String host,
+            int port,
+            Transport transport,
+            String sourceHost,
+            SocketFactory socketFactory,
+            Supplier<DatagramSocket> datagramSocketSupplier,
+            Clock clock,
+            SinkConfig sinkConfig) {
         this.host = requireNonBlank(host, "host");
         if (port < 1 || port > 65535) {
             throw new IllegalArgumentException("port must be 1..65535");
@@ -90,6 +108,7 @@ public final class GelfSink implements TelemetrySink {
         this.socketFactory = Objects.requireNonNull(socketFactory, "socketFactory");
         this.datagramSocketSupplier = Objects.requireNonNull(datagramSocketSupplier, "datagramSocketSupplier");
         this.clock = Objects.requireNonNull(clock, "clock");
+        this.eventsOnly = SinkConfig.require(sinkConfig).eventsOnly();
     }
 
     @Override
@@ -99,12 +118,15 @@ public final class GelfSink implements TelemetrySink {
 
     @Override
     public boolean eventsOnly() {
-        return true;
+        return eventsOnly;
     }
 
     @Override
     public void onSample(MetricSample sample) {
-        // intentionally empty: events_only — high-freq samples never leave this sink
+        if (eventsOnly || sample == null) {
+            return;
+        }
+        sendPayload(formatSamplePayload(sample));
     }
 
     @Override
@@ -112,8 +134,12 @@ public final class GelfSink implements TelemetrySink {
         if (event == null) {
             return;
         }
+        sendPayload(formatPayload(event));
+    }
+
+    private void sendPayload(String json) {
         try {
-            byte[] payload = formatPayload(event).getBytes(StandardCharsets.UTF_8);
+            byte[] payload = json.getBytes(StandardCharsets.UTF_8);
             if (transport == Transport.TCP) {
                 sendTcp(payload);
             } else {
@@ -156,6 +182,30 @@ public final class GelfSink implements TelemetrySink {
             sb.append(",\"_new_ips\":").append(TelemetryJson.stringArray(event.newIps()));
         }
         append(sb, "_payload", event.toJson(), false);
+        sb.append('}');
+        return sb.toString();
+    }
+
+    /** Sample GELF when {@code events_only=false} (lab). Package-visible for tests. */
+    String formatSamplePayload(MetricSample sample) {
+        Instant ts = sample.timestamp() != null ? sample.timestamp() : clock.instant();
+        StringBuilder sb = new StringBuilder(256);
+        sb.append('{');
+        append(sb, "version", "1.1", true);
+        append(sb, "host", sample.host(), false);
+        append(sb, "short_message", sample.name(), false);
+        sb.append(",\"timestamp\":").append(formatEpochSeconds(ts));
+        sb.append(",\"level\":").append(SyslogSink.SEVERITY_NOTICE);
+        append(sb, "_metric", sample.name(), false);
+        append(sb, "_source", sourceHost, false);
+        sb.append(",\"_value\":").append(Double.toString(sample.value()));
+        if (sample.hop() != null) {
+            sb.append(",\"_hop\":").append(sample.hop());
+        }
+        for (Map.Entry<String, String> label : sample.labels().entrySet()) {
+            append(sb, additionalKey(label.getKey()), label.getValue(), false);
+        }
+        append(sb, "_payload", sample.toJson(), false);
         sb.append('}');
         return sb.toString();
     }

@@ -14,10 +14,11 @@ import java.util.logging.Logger;
 /**
  * Remote Grafana Loki push sink (P16-032 / ADR_TELEMETRY / SPIKE_LOG_SINKS).
  *
- * <p>POSTs one event per request to {@code /loki/api/v1/push}. Stream labels are a fixed low-cardinality
- * set: {@code job=pingui}, {@code site}, {@code host}. The log line is {@link TelemetryEvent#toJson()}.
- * {@link #eventsOnly()} is {@code true}. Failures are logged; methods never throw into the poll / bus
- * path.
+ * <p>POSTs one event per request to {@code /loki/api/v1/push}. Stream labels are a fixed
+ * low-cardinality set: {@code job=pingui}, {@code site}, {@code host}. The log line is
+ * {@link TelemetryEvent#toJson()} (or {@link MetricSample#toJson()} when {@code events_only=false}).
+ * {@link #eventsOnly()} comes from {@link SinkConfig} (default {@code true}). Failures are logged;
+ * methods never throw into the poll / bus path.
  */
 public final class LokiPushSink implements TelemetrySink {
     public static final String ID = "loki";
@@ -30,13 +31,19 @@ public final class LokiPushSink implements TelemetrySink {
     private final String site;
     private final HttpClient httpClient;
     private final Duration timeout;
+    private final boolean eventsOnly;
 
     public LokiPushSink(String pushUrl, String site) {
+        this(pushUrl, site, SinkConfig.defaults());
+    }
+
+    public LokiPushSink(String pushUrl, String site, SinkConfig sinkConfig) {
         this(
                 pushUrl,
                 site,
                 HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build(),
-                Duration.ofSeconds(10));
+                Duration.ofSeconds(10),
+                sinkConfig);
     }
 
     /**
@@ -46,6 +53,10 @@ public final class LokiPushSink implements TelemetrySink {
      * @param site operator site label (non-blank)
      */
     public LokiPushSink(String pushUrl, String site, HttpClient httpClient, Duration timeout) {
+        this(pushUrl, site, httpClient, timeout, SinkConfig.defaults());
+    }
+
+    public LokiPushSink(String pushUrl, String site, HttpClient httpClient, Duration timeout, SinkConfig sinkConfig) {
         this.pushUri = URI.create(normalizePushUrl(pushUrl));
         this.site = requireNonBlank(site, "site");
         this.httpClient = Objects.requireNonNull(httpClient, "httpClient");
@@ -53,6 +64,7 @@ public final class LokiPushSink implements TelemetrySink {
         if (timeout.isNegative() || timeout.isZero()) {
             throw new IllegalArgumentException("timeout must be positive");
         }
+        this.eventsOnly = SinkConfig.require(sinkConfig).eventsOnly();
     }
 
     @Override
@@ -62,12 +74,15 @@ public final class LokiPushSink implements TelemetrySink {
 
     @Override
     public boolean eventsOnly() {
-        return true;
+        return eventsOnly;
     }
 
     @Override
     public void onSample(MetricSample sample) {
-        // intentionally empty: events_only — high-freq samples never leave this sink
+        if (eventsOnly || sample == null) {
+            return;
+        }
+        postBody(formatSamplePushBody(sample));
     }
 
     @Override
@@ -75,8 +90,11 @@ public final class LokiPushSink implements TelemetrySink {
         if (event == null) {
             return;
         }
+        postBody(formatPushBody(event));
+    }
+
+    private void postBody(String body) {
         try {
-            String body = formatPushBody(event);
             HttpRequest request = HttpRequest.newBuilder(pushUri)
                     .timeout(timeout)
                     .header("Content-Type", "application/json")
@@ -98,14 +116,24 @@ public final class LokiPushSink implements TelemetrySink {
     /** Builds one Loki push JSON body. Package-visible for tests. */
     String formatPushBody(TelemetryEvent event) {
         Instant ts = event.timestamp() != null ? event.timestamp() : Instant.now();
+        return formatPush(event.host(), ts, event.toJson());
+    }
+
+    /** Sample push body when {@code events_only=false} (lab). Package-visible for tests. */
+    String formatSamplePushBody(MetricSample sample) {
+        Instant ts = sample.timestamp() != null ? sample.timestamp() : Instant.now();
+        return formatPush(sample.host(), ts, sample.toJson());
+    }
+
+    private String formatPush(String hostLabel, Instant ts, String line) {
         String ns = nanosString(ts);
         StringBuilder sb = new StringBuilder(256);
         sb.append("{\"streams\":[{\"stream\":{");
         sb.append(TelemetryJson.quote("job")).append(':').append(TelemetryJson.quote(JOB));
         sb.append(',').append(TelemetryJson.quote("site")).append(':').append(TelemetryJson.quote(site));
-        sb.append(',').append(TelemetryJson.quote("host")).append(':').append(TelemetryJson.quote(event.host()));
+        sb.append(',').append(TelemetryJson.quote("host")).append(':').append(TelemetryJson.quote(hostLabel));
         sb.append("},\"values\":[[");
-        sb.append(TelemetryJson.quote(ns)).append(',').append(TelemetryJson.quote(event.toJson()));
+        sb.append(TelemetryJson.quote(ns)).append(',').append(TelemetryJson.quote(line));
         sb.append("]]}]}");
         return sb.toString();
     }
