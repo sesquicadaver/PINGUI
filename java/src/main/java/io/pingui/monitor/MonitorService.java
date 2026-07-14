@@ -407,12 +407,14 @@ public final class MonitorService implements AutoCloseable {
         }
         List<String> previousIps;
         HostProbeMode probeMode;
+        HostProbeMode mappedAtStart;
         synchronized (lock) {
             if (!hosts.contains(host)) {
                 return;
             }
             previousIps = List.copyOf(lastRoutes.getOrDefault(host, List.of()));
             probeMode = resolveProbeMode(host);
+            mappedAtStart = probeModes.getOrDefault(host, profileProbeMode);
             lastPollAt.put(host, Instant.now());
         }
         long startedNanos = System.nanoTime();
@@ -427,15 +429,16 @@ public final class MonitorService implements AutoCloseable {
         if (current == null || !isKnownHost(host)) {
             return;
         }
-        // Discard outcomes if mode changed mid-flight. Check both resolver (SessionStore) and
-        // the local map so a half-updated toggle (monitor vs session order) cannot apply TRACE.
+        // Discard if resolver or local map changed mid-flight (half-updated Ping only toggle).
+        // Compare each to its start snapshot — not to each other — so PingOnlyResolver may
+        // override while the map still holds TRACE.
         synchronized (lock) {
             if (!hosts.contains(host)) {
                 return;
             }
             HostProbeMode resolved = resolveProbeMode(host);
             HostProbeMode mapped = probeModes.getOrDefault(host, profileProbeMode);
-            if (resolved != probeMode || mapped != probeMode) {
+            if (resolved != probeMode || mapped != mappedAtStart) {
                 return;
             }
         }

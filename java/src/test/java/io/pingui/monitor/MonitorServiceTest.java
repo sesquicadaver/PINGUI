@@ -526,7 +526,8 @@ class MonitorServiceTest {
 
     @Test
     void discardsStaleTraceWhenMonitorFlippedBeforeSessionResolver() throws Exception {
-        // Production wires store::getProbeMode; flipping only the monitor must still drop TRACE.
+        // Production resolver = store::getProbeMode. If only the monitor map flips mid-flight,
+        // the in-flight TRACE must still be dropped (resolver still TRACE until session update).
         SessionStore session = new SessionStore(List.of("8.8.8.8"));
         session.setEnabled("8.8.8.8", true);
         RouteSnapshot multiHop = new RouteSnapshot(
@@ -567,6 +568,8 @@ class MonitorServiceTest {
         service.addHost("8.8.8.8", true, HostProbeMode.TRACE);
         assertTrue(probeStarted.await(3, TimeUnit.SECONDS));
         service.setHostPingOnly("8.8.8.8", true);
+        // Prevent a later TRACE poll (resolver still TRACE) from masking the discard assertion.
+        service.setHostEnabled("8.8.8.8", false);
         releaseProbe.countDown();
         Thread.sleep(400);
         assertEquals(0, multiHopReceived.get(), "resolver lag behind monitor must not apply TRACE");

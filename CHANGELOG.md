@@ -16,6 +16,8 @@
 ### Fixed
 
 - **Ping only toggle (P18-010):** mode switch clears hopStats/pingHistory; mid-flight TRACE discarded after toggle; UI `syncMetrics` — no false 100% loss. ROADMAP NEXT → DONE.
+- **MonitorService stale-mode discard:** compare resolver/map to start-of-poll snapshots (not to each other) so `PingOnlyResolver` override still applies when the local map stays TRACE.
+- **Python CI (mypy):** remove unused `type: ignore` on `daemon_runner` `telemetry.close()` — emitter is always `QueueTelemetryEmitter`.
 - **RouteHistoryPresenterTest:** фіксовані timestamps `2026-07-09` виходили за 24h lookback — тести використовують відносний `Instant.now()`.
 - **Java UI:** додавання другого хоста більше не перемикає фільтр «Ціль» в «Історії змін» на новий хост — історія лишається для поточної цілі.
 - **CI:** GitHub Actions оновлено на Node.js 24 (`checkout@v6`, `setup-java@v5`, `setup-python@v6`) — прибирає deprecation Node 20.
