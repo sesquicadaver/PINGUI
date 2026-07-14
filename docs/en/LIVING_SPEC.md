@@ -76,6 +76,7 @@ Module → unit test matrix. Update when adding features.
 | MtuDiscovery engine (P17-020) | `MtuDiscovery`, `MtuDiscoveryConfig`, `ProcessMtuProbeRunner` | `MtuDiscoveryTest`, `ProcessMtuProbeRunnerTest` |
 | MTU wizard UI (P17-021) | `MtuDiscoveryDialog`, `HostListPresenter`, `PingExpertDialog` | `MtuDiscoveryDialogTest`, `MtuDiscoveryTest` (progress) |
 | Expert Self-check DF/DSCP/Burst (P17-030) | `PresetSelfCheck`, `PresetSelfCheckUi`, `PingExpertDialog` | `PresetSelfCheckTest`, `PresetSelfCheckUiTest` |
+| Ping only toggle stats (P18-010) | `SessionStore.setProbeMode`, `MonitorService.pollHostOnce`, `HostListPresenter` | `SessionStoreTest.setProbeModeClearsHopStatsAndPingHistory`, `MonitorServiceTest.discardsStaleTraceOutcomeAfterPingOnlyToggle`, `MonitorServiceTest.discardsStaleTraceWhenMonitorFlippedBeforeSessionResolver` |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |

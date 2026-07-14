@@ -427,6 +427,18 @@ public final class MonitorService implements AutoCloseable {
         if (current == null || !isKnownHost(host)) {
             return;
         }
+        // Discard outcomes if mode changed mid-flight. Check both resolver (SessionStore) and
+        // the local map so a half-updated toggle (monitor vs session order) cannot apply TRACE.
+        synchronized (lock) {
+            if (!hosts.contains(host)) {
+                return;
+            }
+            HostProbeMode resolved = resolveProbeMode(host);
+            HostProbeMode mapped = probeModes.getOrDefault(host, profileProbeMode);
+            if (resolved != probeMode || mapped != probeMode) {
+                return;
+            }
+        }
         if (outcome.error() != null) {
             PersistenceEventWriter events = persistenceEvents;
             if (events != null) {

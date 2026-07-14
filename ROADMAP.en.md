@@ -38,7 +38,8 @@ Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#e
 | **14** | Pro GUI (diff, tags, ASN/rDNS, presets) | ✅ |
 | **15** | Integrations (Prometheus, REST API, export) | ✅ |
 | **16** | Telemetry + LOG-server | ✅ (GUI P16-090…094) |
-| **17** | Expert ping / MTU discovery | ✅ **DONE** (queue exhausted) |
+| **17** | Expert ping / MTU discovery | ✅ |
+| **18** | Probe mode stability | ✅ **DONE** (queue exhausted) |
 
 ---
 

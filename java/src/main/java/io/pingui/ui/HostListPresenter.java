@@ -425,8 +425,9 @@ final class HostListPresenter {
     private void onTogglePingOnly(HostItem item, boolean pingOnly) {
         try {
             SessionStore session = store.get();
-            monitor.get().setHostPingOnly(item.getHost(), pingOnly);
+            // Session first: resolver (store::getProbeMode) matches intended mode before monitor flips.
             session.setPingOnly(item.getHost(), pingOnly);
+            monitor.get().setHostPingOnly(item.getHost(), pingOnly);
             if (pingOnly) {
                 PingExpertEntry expert = session.getPingExpert(item.getHost());
                 if (expert.applyToChain()) {
@@ -436,6 +437,7 @@ final class HostListPresenter {
             updatingList = true;
             item.pingOnlyProperty().set(pingOnly);
             updatingList = false;
+            syncMetrics(item);
             hostList.refresh();
             clearHistoryReplay.run();
             redrawRoute.run();
@@ -445,6 +447,7 @@ final class HostListPresenter {
             updatingList = true;
             item.pingOnlyProperty().set(store.get().isPingOnly(item.getHost()));
             updatingList = false;
+            syncMetrics(item);
         }
     }
 

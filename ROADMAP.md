@@ -38,7 +38,8 @@
 | **14** | GUI для профі (diff, теги, ASN/rDNS, presets) | ✅ |
 | **15** | Інтеграції (Prometheus, REST API, export) | ✅ |
 | **16** | Телеметрія + LOG-server | ✅ (GUI P16-090…094) |
-| **17** | Expert ping / MTU discovery | ✅ **DONE** (черга вичерпана) |
+| **17** | Expert ping / MTU discovery | ✅ |
+| **18** | Стабільність режимів probe | ✅ **DONE** (черга вичерпана) |
 
 ---
 

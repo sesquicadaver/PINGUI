@@ -146,6 +146,37 @@ class SessionStoreTest {
     }
 
     @Test
+    void setProbeModeClearsHopStatsAndPingHistory() {
+        SessionStore store = new SessionStore(List.of("h"));
+        store.setEnabled("h", true);
+        RouteSnapshot multiHop = new RouteSnapshot(
+                "h",
+                "8.8.8.8",
+                List.of(
+                        new HopNode(1, "10.0.0.1", 2.0, false),
+                        new HopNode(2, "8.8.8.8", 20.0, false),
+                        Models.timeout(3)));
+        store.updateRoute("h", multiHop);
+        store.appendPingSamples("h", multiHop);
+        assertFalse(store.get("h").getHopStats().isEmpty());
+        assertFalse(store.get("h").getPingHistory().isEmpty());
+        assertNotNull(store.targetStats("h"));
+
+        store.setPingOnly("h", true);
+        assertTrue(store.get("h").getHopStats().isEmpty());
+        assertTrue(store.get("h").getPingHistory().isEmpty());
+        assertNull(store.targetStats("h"));
+
+        RouteSnapshot pingOnly = new RouteSnapshot("h", "h", List.of(new HopNode(1, "h", 12.0, false)));
+        store.updateRoute("h", pingOnly);
+        store.appendPingSamples("h", pingOnly);
+        HostTargetStats stats = store.targetStats("h");
+        assertNotNull(stats);
+        assertEquals(0.0, stats.lossPct(), 1e-9);
+        assertEquals(12.0, stats.avgMs(), 1e-9);
+    }
+
+    @Test
     void loadHostEntriesPreservesTags() {
         HostEntry tagged =
                 new HostEntry("8.8.8.8", true, false, PingExpertEntry.empty(), null, null, List.of("dc", "vpn"));

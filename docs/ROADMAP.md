@@ -96,8 +96,9 @@
 | 50 | **P17-020** | [x] | `MtuDiscovery` engine (sweep `-s`, stop ≥1% loss) |
 | 51 | **P17-021** | [x] | MTU wizard UI + Alert + apply to Expert |
 | 52 | **P17-030** | [x] | Informational self-check DF/DSCP/Burst (P2) |
+| 53 | **P18-010** | [x] | Ping only toggle: reset stats + discard stale poll |
 
-**Стан черги:** закрита — **NEXT = DONE** (немає відкритих ID). Нові задачі — лише явне розширення черги + оновлення NEXT.
+**Стан черги:** закрита — **NEXT = DONE**. Нові задачі — лише явне розширення черги + оновлення NEXT.
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -673,6 +674,16 @@ flowchart TD
 | **P17-020** | [x] `MtuDiscovery` engine | `probe/MtuDiscovery*.java` | Sweep payload `-s` + `-M do`; N проб; stop при loss≥1%; unit recommended MTU |
 | **P17-021** | [x] MTU wizard UI | `ui/MtuDiscoveryDialog`, HostList, `PingExpertDialog` | Прогрес (поточне `-s`, loss%); Stop; Alert з max MTU; Apply → Expert args |
 | **P17-030** | [x] Self-check DF/DSCP/Burst (P2) | `PresetSelfCheck`, `PresetSelfCheckUi`, Exten. | Короткий результат у Alert без повного wizard |
+
+---
+
+## Фаза 18 — Стабільність режимів probe (`beta`) ✅ DONE
+
+**Мета:** перемикання probe mode не спотворює loss/RTT цілі.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P18-010** | [x] Ping only toggle stats | `SessionStore`, `MonitorService`, `HostListPresenter` | Clear hopStats/pingHistory; discard stale mid-flight poll; syncMetrics після toggle |
 
 ---
 

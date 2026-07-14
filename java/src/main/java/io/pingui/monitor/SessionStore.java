@@ -163,6 +163,9 @@ public final class SessionStore implements AutoCloseable {
         session.setCurrentRoute(List.of());
         session.setPreviousRoute(List.of());
         session.getLastKnownByHop().clear();
+        // Mode switch changes terminal hop identity (trace N ↔ ping_only 1); drop probe series.
+        session.getHopStats().clear();
+        session.getPingHistory().clear();
         persist(host);
     }
 

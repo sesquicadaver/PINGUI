@@ -24,7 +24,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 |------|----------|
 | **Current task** | **DONE** |
 | **Phase** | — |
-| **DoD (short)** | Execution queue exhausted (no open IDs) |
+| **DoD (short)** | Execution queue exhausted (no open IDs; P18-010 closed) |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -96,8 +96,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 50 | **P17-020** | [x] | `MtuDiscovery` engine (sweep `-s`, stop ≥1% loss) |
 | 51 | **P17-021** | [x] | MTU wizard UI + Alert + apply to Expert |
 | 52 | **P17-030** | [x] | Informational self-check DF/DSCP/Burst (P2) |
+| 53 | **P18-010** | [x] | Ping only toggle: reset stats + discard stale poll |
 
-**Queue status:** closed — **NEXT = DONE** (no open IDs). New work requires an explicit queue extension + NEXT update.
+**Queue status:** closed — **NEXT = DONE**. New work requires an explicit queue extension + NEXT update.
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -673,6 +674,16 @@ flowchart TD
 | **P17-020** | [x] `MtuDiscovery` engine | `probe/MtuDiscovery*.java` | Sweep payload `-s` + `-M do`; N probes; stop at loss≥1%; unit recommended MTU |
 | **P17-021** | [x] MTU wizard UI | `ui/MtuDiscoveryDialog`, HostList, `PingExpertDialog` | Progress (current `-s`, loss%); Stop; Alert with max MTU; Apply → Expert args |
 | **P17-030** | [x] Self-check DF/DSCP/Burst (P2) | `PresetSelfCheck`, `PresetSelfCheckUi`, Exten. | Short result Alert without full wizard |
+
+---
+
+## Phase 18 — Probe mode stability (`beta`) ✅ DONE
+
+**Goal:** switching probe mode must not distort target loss/RTT.
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **P18-010** | [x] Ping only toggle stats | `SessionStore`, `MonitorService`, `HostListPresenter` | Clear hopStats/pingHistory; discard stale mid-flight poll; syncMetrics after toggle |
 
 ---
 

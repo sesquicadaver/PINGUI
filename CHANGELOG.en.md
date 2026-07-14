@@ -15,6 +15,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Ping only toggle (P18-010):** mode switch clears hopStats/pingHistory; mid-flight TRACE discarded after toggle; UI `syncMetrics` — no false 100% loss. ROADMAP NEXT → DONE.
 - **RouteHistoryPresenterTest:** fixed `2026-07-09` timestamps fell outside the 24h lookback — tests now use relative `Instant.now()`.
 - **Java UI:** adding a second host no longer switches the route-history target filter to the new host — history stays on the current target.
 - **CI:** GitHub Actions upgraded to Node.js 24 (`checkout@v6`, `setup-java@v5`, `setup-python@v6`) — removes Node 20 deprecation warnings.
