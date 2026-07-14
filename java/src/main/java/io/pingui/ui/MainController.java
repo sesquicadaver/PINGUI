@@ -514,7 +514,7 @@ public final class MainController {
         String sinks = telemetry != null && !telemetry.registeredIds().isEmpty()
                 ? String.join(", ", telemetry.registeredIds())
                 : "немає активних sinks";
-        appendLog("Телеметрія оновлена: " + sinks + " (YAML — кнопкою «Зберегти»)");
+        appendLog("Телеметрія оновлена: " + sinks + " — " + result.telemetry().toRedactedString());
         statusLabel.setText("Телеметрія: " + sinks);
     }
 

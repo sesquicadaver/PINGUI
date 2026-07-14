@@ -69,7 +69,7 @@ Module → unit test matrix. Update when adding features.
 | Syslog/GELF field contract (P16-072) | `SyslogSink`, `GelfSink`; `TelemetryLogFieldFixture` | `SyslogGelfContractTest` (mock TCP + shared fields) |
 | OTLP/HTTP export (P16-080) | `OtlpHttpTelemetrySink`; `TelemetryConfig.otlp` | `OtlpHttpTelemetrySinkTest`; Profiles/CLI otlp |
 | GUI telemetry bus wire (P16-090) | `TelemetryAttachment`, `MainController`, `DaemonRunner` | `TelemetryAttachmentTest`; `DaemonRunnerTest.startRegistersSqliteAndSyslogFromTelemetryConfig` |
-| Telemetry settings dialog (P16-091) | `TelemetrySettingsDialog`, `MainController` | `TelemetrySettingsDialogTest` |
+| Telemetry settings dialog (P16-091/092) | `TelemetrySettingsDialog`, `MainController` | `TelemetrySettingsDialogTest` |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
