@@ -1,6 +1,7 @@
 package io.pingui.monitor;
 
 import io.pingui.config.PingExpertEntry;
+import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.persistence.PersistenceEventWriter;
 import io.pingui.persistence.PersistencePolicy;
@@ -10,6 +11,10 @@ import io.pingui.probe.MtrProbe;
 import io.pingui.probe.ProbeMode;
 import io.pingui.probe.RouteProbe;
 import io.pingui.probe.RouteProbeFactory;
+import io.pingui.telemetry.MetricNames;
+import io.pingui.telemetry.MetricSample;
+import io.pingui.telemetry.TelemetryBus;
+import io.pingui.telemetry.TelemetryEvent;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -92,6 +97,7 @@ public final class MonitorService implements AutoCloseable {
     private final PersistencePolicyHolder persistencePolicy = new PersistencePolicyHolder();
     private final BurstSchedulePolicy burstPolicy = new BurstSchedulePolicy();
     private final TraceConcurrencyLimiter traceLimiter;
+    private volatile TelemetryBus telemetryBus;
 
     public MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds) {
         this(intervalSeconds, maxHops, timeoutSeconds, ProbeMode.AUTO);
@@ -196,6 +202,11 @@ public final class MonitorService implements AutoCloseable {
 
     public void setPersistenceEventWriter(PersistenceEventWriter persistenceEvents) {
         this.persistenceEvents = persistenceEvents;
+    }
+
+    /** Optional telemetry bus (P16-013); null disables offers. Must not block poll. */
+    public void setTelemetryBus(TelemetryBus telemetryBus) {
+        this.telemetryBus = telemetryBus;
     }
 
     public PersistencePolicyHolder persistencePolicy() {
@@ -404,12 +415,14 @@ public final class MonitorService implements AutoCloseable {
             probeMode = resolveProbeMode(host);
             lastPollAt.put(host, Instant.now());
         }
+        long startedNanos = System.nanoTime();
         HostPollOutcome outcome =
                 switch (probeMode) {
                     case PING_ONLY -> poller.pollHostPingOnly(host, previousIps, timeoutSeconds, resolveExpert(host));
                     case MTR -> poller.pollHostMtr(host, previousIps, maxHops, timeoutSeconds);
                     case TRACE -> poller.pollHostRoute(host, previousIps, maxHops, timeoutSeconds);
                 };
+        double durationMs = (System.nanoTime() - startedNanos) / 1_000_000.0;
         Listener current = listener;
         if (current == null || !isKnownHost(host)) {
             return;
@@ -423,6 +436,7 @@ public final class MonitorService implements AutoCloseable {
                     LOG.warn("Persistence probe_error failed for {}: {}", host, ex.getMessage());
                 }
             }
+            offerTelemetryFailure(host, outcome.error(), probeMode, durationMs);
             current.onProbeError(host, outcome.error());
             return;
         }
@@ -441,18 +455,97 @@ public final class MonitorService implements AutoCloseable {
                     snapshot = defaultTargetPingEnricher.enrich(snapshot, timeoutSeconds);
                 }
             }
+            offerTelemetrySuccess(host, probeMode, snapshot, durationMs);
             current.onDataReceived(host, snapshot);
         }
         if (outcome.routeChanged() && BurstSchedulePolicy.shouldArmBurst(outcome.oldIps(), outcome.newIps())) {
             burstPolicy.onRouteChange(host, Instant.now());
         }
         if (outcome.routeChanged()) {
+            offerTelemetryRouteChange(host, outcome.oldIps(), outcome.newIps(), probeMode);
             current.onRouteChanged(host, outcome.oldIps(), outcome.newIps());
             dispatchRouteChangeAlert(host, outcome.oldIps(), outcome.newIps());
         } else if (isFirstBaseline(previousIps, outcome.currentIps())) {
             persistBaselineRouteChange(host, outcome.currentIps());
+            offerTelemetryRouteChange(host, List.of(), outcome.currentIps(), probeMode);
             current.onRouteChanged(host, List.of(), outcome.currentIps());
         }
+    }
+
+    /** Target reachable when a hop IP matches {@code targetIp}, else any reachable hop. */
+    static boolean isTargetReachable(RouteSnapshot snapshot) {
+        String targetIp = snapshot.targetIp();
+        if (targetIp != null && !targetIp.isBlank()) {
+            for (var node : snapshot.nodes()) {
+                if (node.isReachable() && targetIp.equals(node.ip())) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        for (var node : snapshot.nodes()) {
+            if (node.isReachable()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void offerTelemetrySuccess(
+            String host, HostProbeMode probeMode, RouteSnapshot snapshot, double durationMs) {
+        TelemetryBus bus = telemetryBus;
+        if (bus == null) {
+            return;
+        }
+        Instant ts = Instant.now();
+        Map<String, String> labels = telemetryLabels(probeMode);
+        try {
+            bus.offerSample(new MetricSample(
+                    MetricNames.TARGET_REACHABLE, isTargetReachable(snapshot) ? 1.0 : 0.0, host, null, labels, ts));
+            bus.offerSample(new MetricSample(MetricNames.TRACE_DURATION_MS, durationMs, host, null, labels, ts));
+            for (HopNode node : snapshot.nodes()) {
+                double lossPct = node.isReachable() && node.pingMs() != null ? 0.0 : 100.0;
+                bus.offerSample(new MetricSample(MetricNames.HOP_LOSS_PCT, lossPct, host, node.hop(), labels, ts));
+                if (node.pingMs() != null && node.isReachable()) {
+                    bus.offerSample(MetricSample.rttMs(host, node.hop(), node.pingMs(), labels, ts));
+                }
+            }
+        } catch (RuntimeException ex) {
+            LOG.warn("Telemetry sample offer failed for {}: {}", host, ex.getMessage());
+        }
+    }
+
+    private void offerTelemetryFailure(String host, String message, HostProbeMode probeMode, double durationMs) {
+        TelemetryBus bus = telemetryBus;
+        if (bus == null) {
+            return;
+        }
+        Instant ts = Instant.now();
+        Map<String, String> labels = telemetryLabels(probeMode);
+        try {
+            // No TARGET_REACHABLE sample: probe_error sets unreachable without clearHostRtt (P15 parity).
+            bus.offerSample(new MetricSample(MetricNames.TRACE_DURATION_MS, durationMs, host, null, labels, ts));
+            bus.offerEvent(TelemetryEvent.probeError(host, message, labels, ts));
+        } catch (RuntimeException ex) {
+            LOG.warn("Telemetry failure offer failed for {}: {}", host, ex.getMessage());
+        }
+    }
+
+    private void offerTelemetryRouteChange(
+            String host, List<String> oldIps, List<String> newIps, HostProbeMode probeMode) {
+        TelemetryBus bus = telemetryBus;
+        if (bus == null) {
+            return;
+        }
+        try {
+            bus.offerEvent(TelemetryEvent.routeChange(host, oldIps, newIps, telemetryLabels(probeMode), Instant.now()));
+        } catch (RuntimeException ex) {
+            LOG.warn("Telemetry route_change offer failed for {}: {}", host, ex.getMessage());
+        }
+    }
+
+    private Map<String, String> telemetryLabels(HostProbeMode probeMode) {
+        return MetricNames.javaLabels(alertProfileName, probeMode.yamlValue());
     }
 
     private static boolean isFirstBaseline(List<String> previousIps, List<String> currentIps) {

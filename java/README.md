@@ -82,8 +82,15 @@ gradlew.bat run        # Windows
 | `--alert-rate-limit` | `10` | Макс. алертів на host / годину |
 | `--session-db` | off | SQLite метрики сесії + події (`host_session`, `persistence_event`); альтернатива — YAML `persistence.session_db` або GUI «База даних…» |
 | `--export-report` | off | Експорт CSV/HTML з `--session-db` і вихід (без GUI) |
+| `--export-schedule` | off | Cron one-shot: `hourly` \| `daily` \| `weekly` (разом із `--export-dir`) |
+| `--export-dir` | off | Каталог для `--export-schedule` (пише CSV+HTML зі штампом UTC) |
 | `--daemon` | off | Headless `MonitorService` без JavaFX (NOC) |
 | `--pid-file` | `$TMP/pingui-java.pid` | PID-файл для `--daemon` / `--stop` / `--status` |
+| `--metrics-port` | off | Prometheus `GET /metrics` на `127.0.0.1:N` (лише з `--daemon`) |
+| `--api-port` | off | Read-only REST: `/hosts`, `/routes/{host}`, `/openapi.json` на `127.0.0.1:N` (daemon) |
+| `--ts-backend` | off | Time-series push: `influx` \| `timescale` (Python B-05 parity) |
+| `--influx-url` / `--influx-token` / `--influx-org` / `--influx-bucket` | env `INFLUXDB_*` | InfluxDB 2.x write (token не логується) |
+| `--timescale-dsn` | env `PINGUI_TIMESCALE_DSN` | PostgreSQL/Timescale JDBC або `postgresql://…` |
 | `--stop` | off | Зупинити daemon за PID-файлом |
 | `--status` | off | Статус daemon (running/stopped) |
 | `--no-persist-route-change` | off | Не писати `route_change` у SQLite |
@@ -96,6 +103,14 @@ gradlew.bat run        # Windows
 | `--verbose` | off | Debug-лог |
 
 CLI **не затирає** поля профілю defaults (1.0 / 20 / 0.5 / auto), якщо відповідний прапор не передано.
+
+**Prometheus (P15-010/011):** `./pingui-java.sh -- --daemon --metrics-port 9090` → `http://127.0.0.1:9090/metrics`. Метрики: `pingui_rtt_ms`, `pingui_route_change_total`, `pingui_target_reachable`, `pingui_trace_duration_ms`. Без `--metrics-port` listener не стартує.
+
+**Time-series (P15-020):** `--ts-backend influx` (+ Influx flags/env) або `--ts-backend timescale --timescale-dsn …` — dual-emit RTT/route з `SessionStore` (GUI і daemon). Помилки write → WARN, poll не зупиняється.
+
+**Scheduled export (P15-030):** `./pingui-java.sh -- --session-db data/session.db --export-schedule daily --export-dir reports/` → `pingui-daily-YYYY-MM-DD.csv` + `.html` (UTC). Для cron; не тримає процес.
+
+**Read-only API (P15-040):** `./pingui-java.sh -- --daemon --api-port 8080` → `http://127.0.0.1:8080/hosts`, `/routes/{host}`, `/openapi.json`. Auth поза scope v1 — див. [DEPLOYMENT § reverse proxy + TLS](../docs/DEPLOYMENT.md#reverse-proxy--tls-p15-041).
 
 ## GUI
 
@@ -116,8 +131,10 @@ io.pingui
 ├── probe/           RouteProbeFactory, ProcessRouteProbe, TraceCommandBuilder,
                        UnixTraceOutputParser, WindowsTraceOutputParser, ProcessExpertPing
 ├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
-├── persistence/     SessionDatabase, PersistenceEventWriter (P11-010…011)
-├── export/          SessionReportExporter (P11-030)
+├── persistence/     SessionDatabase, PersistenceEventWriter (P11); timeseries/ (P15-020)
+├── observability/   PrometheusExporter, PrometheusTelemetrySink (P16-051), MetricsHttpServer (P15-010)
+├── api/             ReadOnlyApiServer (P15-040)
+├── export/          SessionReportExporter (P11-030), ScheduledExport (P15-030)
 └── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,
                        MonitorLifecycle, ViewModeController, RouteGraphPresenter, GraphCanvas
 ```

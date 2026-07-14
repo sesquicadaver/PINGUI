@@ -193,9 +193,9 @@ CREATE INDEX idx_pe_host_type_time ON persistence_event(host, event_type, observ
 
 Write after `onRouteChanged` / `onProbeError` if `activePolicy.allows(type)`.
 
-### v3 — telemetry (P16-020)
+### v4 — telemetry (P16-020)
 
-Separate migration; does not block P11.
+`telemetry_sample`, `telemetry_event` — schema_meta **v4** (separate migration after P11 v3); does not block GUI history.
 
 ---
 

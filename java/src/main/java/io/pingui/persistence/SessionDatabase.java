@@ -2,6 +2,8 @@ package io.pingui.persistence;
 
 import io.pingui.model.Models.HostSessionData;
 import io.pingui.monitor.RouteChangeEvent;
+import io.pingui.telemetry.MetricSample;
+import io.pingui.telemetry.TelemetryEvent;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -18,14 +20,14 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * SQLite persistence for per-host session metrics (P11-010).
+ * SQLite persistence for per-host session metrics (P11-010) and telemetry archive (P16-020).
  *
- * <p>Schema parity with Python {@code session_db.py} (v2 {@code host_session}) plus v3
- * {@code persistence_event} for discrete timeline events.
+ * <p>Schema parity with Python {@code session_db.py}: v2 {@code host_session}, v3
+ * {@code persistence_event}, v4 {@code telemetry_sample}/{@code telemetry_event}.
  */
 public final class SessionDatabase implements AutoCloseable {
-    /** Python {@code SCHEMA_VERSION}; Java adds {@code persistence_event} at v3. */
-    public static final int SCHEMA_VERSION = 3;
+    /** Shared with Python {@code SCHEMA_VERSION} (v4 = telemetry tables). */
+    public static final int SCHEMA_VERSION = 4;
 
     private static final DateTimeFormatter ISO_UTC = DateTimeFormatter.ISO_INSTANT.withZone(ZoneOffset.UTC);
 
@@ -321,6 +323,195 @@ public final class SessionDatabase implements AutoCloseable {
         }
     }
 
+    /**
+     * Appends one telemetry sample row (P16-020). No FK to {@code host_session}.
+     */
+    public synchronized void insertTelemetrySample(MetricSample sample) {
+        Objects.requireNonNull(sample, "sample");
+        try (PreparedStatement ps = connection.prepareStatement(
+                """
+                INSERT INTO telemetry_sample(name, value, host, hop, payload_json, observed_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """)) {
+            ps.setString(1, sample.name());
+            ps.setDouble(2, sample.value());
+            ps.setString(3, sample.host());
+            if (sample.hop() == null) {
+                ps.setObject(4, null);
+            } else {
+                ps.setInt(4, sample.hop());
+            }
+            ps.setString(5, sample.toJson());
+            ps.setString(6, ISO_UTC.format(sample.timestamp()));
+            ps.executeUpdate();
+            connection.commit();
+        } catch (SQLException ex) {
+            rollbackQuietly();
+            throw new PersistenceException("Failed to insert telemetry sample for " + sample.host(), ex);
+        }
+    }
+
+    /** Appends one telemetry event row (P16-020). */
+    public synchronized void insertTelemetryEvent(TelemetryEvent event) {
+        Objects.requireNonNull(event, "event");
+        try (PreparedStatement ps = connection.prepareStatement(
+                """
+                INSERT INTO telemetry_event(event, host, message, payload_json, observed_at)
+                VALUES (?, ?, ?, ?, ?)
+                """)) {
+            ps.setString(1, event.event());
+            ps.setString(2, event.host());
+            ps.setString(3, event.message());
+            ps.setString(4, event.toJson());
+            ps.setString(5, ISO_UTC.format(event.timestamp()));
+            ps.executeUpdate();
+            connection.commit();
+        } catch (SQLException ex) {
+            rollbackQuietly();
+            throw new PersistenceException("Failed to insert telemetry event for " + event.host(), ex);
+        }
+    }
+
+    /** Newest-first sample payloads for {@code host} (tests / diagnostics / dump). */
+    public synchronized List<MetricSample> listTelemetrySamples(String host, int limit) {
+        Objects.requireNonNull(host, "host");
+        if (limit < 1) {
+            throw new IllegalArgumentException("limit must be >= 1");
+        }
+        try (PreparedStatement ps = connection.prepareStatement(
+                """
+                SELECT payload_json FROM telemetry_sample
+                WHERE host = ?
+                ORDER BY observed_at DESC, id DESC
+                LIMIT ?
+                """)) {
+            ps.setString(1, host);
+            ps.setInt(2, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                List<MetricSample> rows = new ArrayList<>();
+                while (rs.next()) {
+                    rows.add(MetricSample.fromJson(rs.getString(1)));
+                }
+                return List.copyOf(rows);
+            }
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to list telemetry samples for " + host, ex);
+        }
+    }
+
+    /** Newest-first event payloads for {@code host}. */
+    public synchronized List<TelemetryEvent> listTelemetryEvents(String host, int limit) {
+        Objects.requireNonNull(host, "host");
+        if (limit < 1) {
+            throw new IllegalArgumentException("limit must be >= 1");
+        }
+        try (PreparedStatement ps = connection.prepareStatement(
+                """
+                SELECT payload_json FROM telemetry_event
+                WHERE host = ?
+                ORDER BY observed_at DESC, id DESC
+                LIMIT ?
+                """)) {
+            ps.setString(1, host);
+            ps.setInt(2, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                List<TelemetryEvent> rows = new ArrayList<>();
+                while (rs.next()) {
+                    rows.add(TelemetryEvent.fromJson(rs.getString(1)));
+                }
+                return List.copyOf(rows);
+            }
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to list telemetry events for " + host, ex);
+        }
+    }
+
+    /** Oldest-first sample payloads for full archive dump (P16-023). */
+    public synchronized List<MetricSample> listAllTelemetrySamples() {
+        try (PreparedStatement ps = connection.prepareStatement(
+                        """
+                SELECT payload_json FROM telemetry_sample
+                ORDER BY observed_at ASC, id ASC
+                """);
+                ResultSet rs = ps.executeQuery()) {
+            List<MetricSample> rows = new ArrayList<>();
+            while (rs.next()) {
+                rows.add(MetricSample.fromJson(rs.getString(1)));
+            }
+            return List.copyOf(rows);
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to list all telemetry samples", ex);
+        }
+    }
+
+    /** Oldest-first event payloads for full archive dump (P16-023). */
+    public synchronized List<TelemetryEvent> listAllTelemetryEvents() {
+        try (PreparedStatement ps = connection.prepareStatement(
+                        """
+                SELECT payload_json FROM telemetry_event
+                ORDER BY observed_at ASC, id ASC
+                """);
+                ResultSet rs = ps.executeQuery()) {
+            List<TelemetryEvent> rows = new ArrayList<>();
+            while (rs.next()) {
+                rows.add(TelemetryEvent.fromJson(rs.getString(1)));
+            }
+            return List.copyOf(rows);
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to list all telemetry events", ex);
+        }
+    }
+
+    public synchronized int countTelemetrySamples() {
+        return countTable("telemetry_sample");
+    }
+
+    public synchronized int countTelemetryEvents() {
+        return countTable("telemetry_event");
+    }
+
+    /**
+     * Deletes telemetry samples with {@code observed_at} strictly before {@code cutoff} (P16-022).
+     *
+     * @return number of deleted sample rows
+     */
+    public synchronized int deleteTelemetrySamplesBefore(Instant cutoff) {
+        Objects.requireNonNull(cutoff, "cutoff");
+        return deleteBefore("telemetry_sample", cutoff);
+    }
+
+    /**
+     * Deletes telemetry events with {@code observed_at} strictly before {@code cutoff} (P16-022).
+     *
+     * @return number of deleted event rows
+     */
+    public synchronized int deleteTelemetryEventsBefore(Instant cutoff) {
+        Objects.requireNonNull(cutoff, "cutoff");
+        return deleteBefore("telemetry_event", cutoff);
+    }
+
+    private int deleteBefore(String table, Instant cutoff) {
+        String iso = ISO_UTC.format(cutoff);
+        try (PreparedStatement ps = connection.prepareStatement("DELETE FROM " + table + " WHERE observed_at < ?")) {
+            ps.setString(1, iso);
+            int deleted = ps.executeUpdate();
+            connection.commit();
+            return deleted;
+        } catch (SQLException ex) {
+            rollbackQuietly();
+            throw new PersistenceException("Failed to purge " + table + " before " + iso, ex);
+        }
+    }
+
+    private int countTable(String table) {
+        try (PreparedStatement ps = connection.prepareStatement("SELECT COUNT(*) FROM " + table);
+                ResultSet rs = ps.executeQuery()) {
+            return rs.next() ? rs.getInt(1) : 0;
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to count " + table, ex);
+        }
+    }
+
     @Override
     public synchronized void close() {
         try {
@@ -368,10 +559,47 @@ public final class SessionDatabase implements AutoCloseable {
                     CREATE INDEX IF NOT EXISTS idx_pe_host_type_time
                         ON persistence_event(host, event_type, observed_at)
                     """);
+            createTelemetryTables(statement);
         }
         int currentVersion = readOrSeedSchemaVersion();
         migrateSchema(currentVersion);
         connection.commit();
+    }
+
+    private static void createTelemetryTables(Statement statement) throws SQLException {
+        statement.execute(
+                """
+                CREATE TABLE IF NOT EXISTS telemetry_sample (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    value REAL NOT NULL,
+                    host TEXT NOT NULL,
+                    hop INTEGER,
+                    payload_json TEXT NOT NULL,
+                    observed_at TEXT NOT NULL
+                )
+                """);
+        statement.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_ts_host_time
+                    ON telemetry_sample(host, observed_at)
+                """);
+        statement.execute(
+                """
+                CREATE TABLE IF NOT EXISTS telemetry_event (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event TEXT NOT NULL,
+                    host TEXT NOT NULL,
+                    message TEXT,
+                    payload_json TEXT NOT NULL,
+                    observed_at TEXT NOT NULL
+                )
+                """);
+        statement.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_te_host_time
+                    ON telemetry_event(host, observed_at)
+                """);
     }
 
     private int readOrSeedSchemaVersion() throws SQLException {
@@ -421,6 +649,13 @@ public final class SessionDatabase implements AutoCloseable {
                         """);
             }
             setSchemaVersion(3);
+            currentVersion = 3;
+        }
+        if (currentVersion < 4) {
+            try (Statement statement = connection.createStatement()) {
+                createTelemetryTables(statement);
+            }
+            setSchemaVersion(4);
         }
     }
 

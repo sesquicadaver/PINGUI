@@ -227,6 +227,79 @@ class MonitorServiceTest {
     }
 
     @Test
+    void updatesPrometheusViaTelemetrySinkOnPoll() throws Exception {
+        RouteSnapshot reachable = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "8.8.8.8", 10.0, false)));
+        RouteSnapshot unreachableTarget = new RouteSnapshot(
+                "8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "*", null, true)));
+        AtomicInteger probeCalls = new AtomicInteger();
+        RouteProbe probe = (targetHost, maxHops, timeoutSeconds) -> {
+            int call = probeCalls.getAndIncrement();
+            if (call == 0) {
+                return reachable;
+            }
+            if (call == 1) {
+                return unreachableTarget;
+            }
+            throw new java.io.IOException("probe down");
+        };
+        io.pingui.observability.PrometheusExporter exporter = new io.pingui.observability.PrometheusExporter();
+        io.pingui.telemetry.SinkRegistry registry = new io.pingui.telemetry.SinkRegistry();
+        registry.register(new io.pingui.observability.PrometheusTelemetrySink(exporter));
+        CountDownLatch first = new CountDownLatch(1);
+        CountDownLatch second = new CountDownLatch(1);
+        CountDownLatch error = new CountDownLatch(1);
+        MonitorService service = new MonitorService(0.05, 20, 0.5, probe);
+        try (io.pingui.telemetry.TelemetryBus bus = new io.pingui.telemetry.TelemetryBus(
+                registry, 256, io.pingui.telemetry.DropPolicy.DROP_OLDEST, 64, java.time.Duration.ofMillis(10))) {
+            service.setTelemetryBus(bus);
+            service.setListener(new MonitorService.Listener() {
+                @Override
+                public void onDataReceived(String host, RouteSnapshot snap) {
+                    if (first.getCount() > 0) {
+                        first.countDown();
+                    } else {
+                        second.countDown();
+                    }
+                }
+
+                @Override
+                public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
+
+                @Override
+                public void onProbeError(String host, String message) {
+                    error.countDown();
+                }
+            });
+            service.addHost("8.8.8.8", true);
+            assertTrue(first.await(5, TimeUnit.SECONDS));
+            assertTrue(awaitScrape(exporter, "pingui_target_reachable{host=\"8.8.8.8\"} 1.0", 3_000));
+            assertTrue(awaitScrape(exporter, "pingui_rtt_ms{host=\"8.8.8.8\",hop=\"2\"} 10.0", 3_000));
+            assertTrue(second.await(5, TimeUnit.SECONDS));
+            assertTrue(awaitScrape(exporter, "pingui_target_reachable{host=\"8.8.8.8\"} 0.0", 3_000));
+            assertTrue(error.await(5, TimeUnit.SECONDS));
+            assertTrue(awaitScrape(exporter, "pingui_target_reachable{host=\"8.8.8.8\"} 0.0", 3_000));
+            service.close();
+        }
+        registry.close();
+    }
+
+    private static boolean awaitScrape(
+            io.pingui.observability.PrometheusExporter exporter, String needle, long timeoutMs)
+            throws InterruptedException {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        while (System.currentTimeMillis() < deadline) {
+            if (exporter.scrape().contains(needle)) {
+                return true;
+            }
+            Thread.sleep(20);
+        }
+        return false;
+    }
+
+    @Test
     void limitsConcurrentTracePolls() throws Exception {
         AtomicInteger concurrent = new AtomicInteger();
         AtomicInteger maxConcurrent = new AtomicInteger();

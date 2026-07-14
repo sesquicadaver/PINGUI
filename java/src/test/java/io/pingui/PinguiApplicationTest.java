@@ -85,6 +85,52 @@ class PinguiApplicationTest {
     }
 
     @Test
+    void parseOptions_telemetrySyslogAndJsonlOverrideProfile() {
+        AppOptions options = PinguiApplication.parseOptions(
+                Map.of("telemetry-syslog", "127.0.0.1:1514", "telemetry-jsonl", "data/telemetry"));
+        assertEquals(
+                "127.0.0.1", options.telemetryOverrides().syslog().orElseThrow().host());
+        assertEquals(1514, options.telemetryOverrides().syslog().orElseThrow().port());
+        assertEquals(
+                Path.of("data/telemetry"),
+                options.telemetryOverrides().jsonlDir().orElseThrow());
+
+        io.pingui.config.TelemetryConfig yaml =
+                io.pingui.config.TelemetryConfig.defaults().withEventsOnly(true).withLogAggregates(true);
+        io.pingui.config.TelemetryConfig merged = options.telemetryOverrides().applyTo(yaml);
+        assertTrue(merged.eventsOnly());
+        assertTrue(merged.logAggregates());
+        assertEquals("127.0.0.1", merged.syslog().orElseThrow().host());
+        assertEquals(Path.of("data/telemetry"), merged.jsonlDir().orElseThrow());
+    }
+
+    @Test
+    void parseOptions_telemetrySyslogIpv6() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of("telemetry-syslog", "[::1]:514"));
+        assertEquals("::1", options.telemetryOverrides().syslog().orElseThrow().host());
+        assertEquals(514, options.telemetryOverrides().syslog().orElseThrow().port());
+    }
+
+    @Test
+    void parseOptions_telemetryOtlpOverrideProfile() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of("telemetry-otlp", "http://127.0.0.1:4318"));
+        assertEquals(
+                "http://127.0.0.1:4318",
+                options.telemetryOverrides().otlp().orElseThrow().endpoint());
+        io.pingui.config.TelemetryConfig merged =
+                options.telemetryOverrides().applyTo(io.pingui.config.TelemetryConfig.defaults());
+        assertEquals("http://127.0.0.1:4318", merged.otlp().orElseThrow().endpoint());
+        assertEquals("pingui", merged.otlp().orElseThrow().serviceName());
+    }
+
+    @Test
+    void parseOptions_telemetrySyslogInvalid() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PinguiApplication.parseOptions(Map.of("telemetry-syslog", "nosport")));
+    }
+
+    @Test
     void parseOptions_alertWebhookOverride() {
         AppOptions options = PinguiApplication.parseOptions(Map.of("alert-webhook", "https://hooks.example.com/x"));
         assertEquals(
@@ -116,12 +162,93 @@ class PinguiApplicationTest {
     }
 
     @Test
+    void parseOptions_exportScheduleDaily() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of(
+                "session-db", "data/ping.db",
+                "export-schedule", "daily",
+                "export-dir", "reports/out"));
+        assertEquals(
+                io.pingui.export.ExportSchedulePeriod.DAILY,
+                options.exportSchedule().orElseThrow());
+        assertEquals(Path.of("reports/out"), options.exportDir().orElseThrow());
+        assertEquals(CliRunMode.EXPORT, options.runMode());
+        assertTrue(options.exportReportPath().isEmpty());
+    }
+
+    @Test
+    void parseOptions_exportScheduleRejectsMutualWithReport() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PinguiApplication.parseOptions(Map.of(
+                        "export-report", "a.csv",
+                        "export-schedule", "daily",
+                        "export-dir", "out")));
+    }
+
+    @Test
+    void parseOptions_exportScheduleRequiresDir() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PinguiApplication.parseOptions(Map.of("export-schedule", "daily")));
+    }
+
+    @Test
+    void parseOptions_exportDirRequiresSchedule() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PinguiApplication.parseOptions(Map.of("export-dir", "reports/out")));
+    }
+
+    @Test
     void parseOptions_daemonAndPidFile() {
         AppOptions options = PinguiApplication.parseOptions(Map.of(
                 "daemon", "true",
                 "pid-file", "/run/pingui/pingui-java.pid"));
         assertEquals(CliRunMode.DAEMON, options.runMode());
         assertEquals(Path.of("/run/pingui/pingui-java.pid"), options.pidFilePath());
+        assertTrue(options.metricsPort().isEmpty());
+    }
+
+    @Test
+    void parseOptions_metricsPort() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of("metrics-port", "9090"));
+        assertEquals(9090, options.metricsPort().orElseThrow());
+    }
+
+    @Test
+    void parseOptions_apiPort() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of("api-port", "8080"));
+        assertEquals(8080, options.apiPort().orElseThrow());
+    }
+
+    @Test
+    void parseOptions_apiPortMustDifferFromMetricsPort() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PinguiApplication.parseOptions(Map.of("api-port", "9090", "metrics-port", "9090")));
+    }
+
+    @Test
+    void parseOptions_metricsPortRejectsOutOfRange() {
+        assertThrows(IllegalArgumentException.class, () -> PinguiApplication.parseOptions(Map.of("metrics-port", "0")));
+        assertThrows(
+                IllegalArgumentException.class, () -> PinguiApplication.parseOptions(Map.of("metrics-port", "70000")));
+        assertThrows(IllegalArgumentException.class, () -> PinguiApplication.parseOptions(Map.of("metrics-port", "")));
+    }
+
+    @Test
+    void parseOptions_timeSeriesFlags() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of(
+                "ts-backend", "influx",
+                "influx-url", "http://localhost:8086",
+                "influx-token", "tok",
+                "influx-org", "org",
+                "influx-bucket", "bucket"));
+        assertEquals("influx", options.timeSeriesOverrides().backend().orElseThrow());
+        assertEquals(
+                "http://localhost:8086",
+                options.timeSeriesOverrides().influxUrl().orElseThrow());
+        assertEquals("tok", options.timeSeriesOverrides().influxToken().orElseThrow());
     }
 
     @Test
@@ -152,6 +279,39 @@ class PinguiApplicationTest {
         assertTrue(custom.asnEnabled());
         assertEquals(Path.of("config/custom-asn.yaml"), custom.asnHintsPath());
         assertEquals(1500, custom.asnTimeoutMs());
+    }
+
+    @Test
+    void parseOptions_telemetryRetentionWithSessionDb() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of(
+                "session-db", "data/ping.db",
+                "telemetry-retention", "30"));
+        assertEquals(CliRunMode.TELEMETRY_RETENTION, options.runMode());
+        assertEquals(30, options.telemetryRetentionDays().orElseThrow());
+        assertEquals(Path.of("data/ping.db"), options.sessionDbPath().orElseThrow());
+    }
+
+    @Test
+    void parseOptions_telemetryRetentionRequiresStore() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PinguiApplication.parseOptions(Map.of("telemetry-retention", "7")));
+    }
+
+    @Test
+    void parseOptions_telemetryDumpRequiresSessionDb() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PinguiApplication.parseOptions(Map.of("telemetry-dump", "out.json")));
+    }
+
+    @Test
+    void parseOptions_telemetryDumpWithSessionDb() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of(
+                "session-db", "data/ping.db",
+                "telemetry-dump", "out/telem.json"));
+        assertEquals(CliRunMode.TELEMETRY_DUMP, options.runMode());
+        assertEquals(Path.of("out/telem.json"), options.telemetryDumpPath().orElseThrow());
     }
 
     @Test

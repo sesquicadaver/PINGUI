@@ -158,6 +158,194 @@ In YAML set `enabled: true` for targets (daemon has no UI checkboxes).
 
 systemd example: `systemd/pingui-java.service.example`. ADR: [ADR_DAEMON.md](ADR_DAEMON.md).
 
+## Reverse proxy + TLS (P15-041)
+
+The Java daemon binds **`127.0.0.1` only** for Prometheus (`--metrics-port`) and the read-only REST API (`--api-port`). TLS and authentication are **not implemented in-app** (v1) — terminate them at a reverse proxy.
+
+**Example daemon (localhost):**
+
+```bash
+cd /path/to/PINGUI/java
+./pingui-java.sh -- --daemon \
+  --config config/hosts.example.yaml \
+  --session-db data/ping.db \
+  --pid-file /tmp/pingui-java.pid \
+  --api-port 8080 \
+  --metrics-port 9090
+```
+
+| Internal URL | Purpose |
+|--------------|---------|
+| `http://127.0.0.1:8080/hosts` | Host list (JSON) |
+| `http://127.0.0.1:8080/routes/{host}` | Current route |
+| `http://127.0.0.1:8080/openapi.json` | OpenAPI stub |
+| `http://127.0.0.1:9090/metrics` | Prometheus scrape |
+
+**nginx (TLS termination + optional Basic Auth):**
+
+```nginx
+# /etc/nginx/sites-available/pingui.conf
+upstream pingui_api {
+    server 127.0.0.1:8080;
+}
+upstream pingui_metrics {
+    server 127.0.0.1:9090;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name pingui.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/pingui.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/pingui.example.com/privkey.pem;
+
+    # Optional Basic Auth (uncomment after: htpasswd -c /etc/nginx/htpasswd/pingui operator)
+    # auth_basic           "PINGUI";
+    # auth_basic_user_file /etc/nginx/htpasswd/pingui;
+
+    location /metrics {
+        proxy_pass http://pingui_metrics;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        proxy_pass http://pingui_api;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+
+server {
+    listen 80;
+    server_name pingui.example.com;
+    return 301 https://$host$request_uri;
+}
+```
+
+Verify after `nginx -t && systemctl reload nginx`:
+
+```bash
+curl -fsS https://pingui.example.com/hosts
+curl -fsS https://pingui.example.com/metrics | head
+# With Basic Auth enabled:
+# curl -fsS -u operator:SECRET https://pingui.example.com/hosts
+```
+
+**Certificates (Let’s Encrypt):**
+
+```bash
+sudo certbot --nginx -d pingui.example.com
+```
+
+**Security:**
+
+- Do not bind `--api-port` / `--metrics-port` to `0.0.0.0` — the code listens on loopback only.
+- For Prometheus on the same host, scraping `127.0.0.1:9090` without a public `/metrics` is often enough.
+- Basic Auth is a minimum; NOC edges usually prefer mTLS / SSO (out of PINGUI v1 scope).
+- ADR: [ADR_OBSERVABILITY.md](ADR_OBSERVABILITY.md).
+
+## LOG-server (P16-061)
+
+Telemetry **events** (`route_change`, `probe_error`, optional `rtt_aggregate`) can be sent to an external LOG stack. High-freq hop-RTT does **not** go to syslog/GELF/Loki when `events_only: true` (default). Full field table: [CONFIGURATION.md § Telemetry](CONFIGURATION.md#telemetry-p16-040052). SPIKE: [SPIKE_LOG_SINKS.md](SPIKE_LOG_SINKS.md). ADR: [ADR_TELEMETRY.md](ADR_TELEMETRY.md).
+
+**Principle:** *events* → LOG-server; *samples* → SQLite/JSONL / Influx / Prometheus scrape.
+
+### Daemon → remote sinks (example)
+
+```yaml
+# v2 profile fragment
+telemetry:
+  events_only: true
+  log_aggregates: false
+  syslog:
+    host: 127.0.0.1
+    port: 1514
+    tls: false          # optional true (syslog TCP+TLS)
+  gelf:
+    host: 127.0.0.1
+    port: 12201
+    transport: tcp      # tcp for prod; udp lab only
+  # loki:               # optional (P16-032)
+  #   url: http://127.0.0.1:3100
+  #   site: noc
+```
+
+```bash
+cd /path/to/PINGUI/java
+./pingui-java.sh -- --daemon \
+  --config config/hosts.example.yaml \
+  --session-db data/ping.db \
+  --pid-file /tmp/pingui-java.pid \
+  --telemetry-syslog 127.0.0.1:1514
+```
+
+CLI `--telemetry-syslog` / `--telemetry-jsonl` overrides YAML. Windows: do not enable `jsonl_dir` for hop-RTT — see `hosts.windows.example.yaml` (P16-043).
+
+### rsyslog (TCP RFC 5424)
+
+PINGUI `SyslogSink`: TCP, trailing-NL framing, MSG = one-line JSON event.
+
+```bash
+# /etc/rsyslog.d/30-pingui.conf
+module(load="imtcp")
+input(type="imtcp" port="1514")
+
+template(name="PinguiJson" type="string" string="%msg%\n")
+if $syslogfacility-text == 'local0' then {
+  action(type="omfile" file="/var/log/pingui/events.log" template="PinguiJson")
+  stop
+}
+```
+
+```bash
+sudo mkdir -p /var/log/pingui
+sudo systemctl restart rsyslog
+# After a daemon route_change, inspect /var/log/pingui/events.log
+```
+
+TLS (optional): terminate on rsyslog (`imtcp` + `StreamDriver`) or stunnel/nginx stream in front of `syslog.host`; set `telemetry.syslog.tls: true` when the sink speaks TLS directly.
+
+### Graylog (GELF TCP)
+
+`GelfSink`: GELF 1.1 JSON, TCP `\0` framing (prod). UDP is lab-only.
+
+1. Graylog → System → Inputs → **GELF TCP** (port `12201` or custom).
+2. YAML: `telemetry.gelf.host` / `port` / `transport: tcp`.
+3. Index/stream: filter `short_message` ∈ {`route_change`, `probe_error`} or `_event`.
+
+Do not use GELF UDP in production (loss without chunking in v1).
+
+### Grafana Loki (optional)
+
+`LokiPushSink` — HTTP `POST /loki/api/v1/push`; labels `job=pingui`, `site`, `host`. Keep `events_only: true`. URL secrets are redacted in logs (P16-042).
+
+### Local telemetry + retention
+
+| Path | Config | Retention |
+|------|--------|-----------|
+| SQLite telemetry tables | `telemetry.sqlite` + `--session-db` | `--telemetry-retention N` |
+| JSONL files | `telemetry.jsonl_dir` / `--telemetry-jsonl` | `--telemetry-retention N --telemetry-jsonl-dir DIR` |
+| Dump | — | `--telemetry-dump out.csv` (requires `--session-db`) |
+
+```bash
+# cron (daily): purge samples/events older than 30 days
+cd /path/to/PINGUI/java
+./pingui-java.sh -- --session-db /var/lib/pingui/ping.db \
+  --telemetry-retention 30 \
+  --telemetry-jsonl-dir /var/lib/pingui/telemetry
+```
+
+Session persistence (`host_session` / `persistence_event`) is a separate layer; see § SQLite below (P11-050).
+
+### LOG security
+
+- By default **do not** send hop-RTT to LOG (`events_only: true`).
+- Do not log plaintext tokens/query strings in webhook/Loki URLs.
+- Remote LOG is **outbound** from the PINGUI host; inbound TLS for Prometheus/API is § Reverse proxy (P15-041) — do not mix channels.
+- Firewall: allow only TCP to rsyslog/Graylog ports from the NOC host.
+
 ## SQLite session persistence (Java / Python)
 
 | What | Where |
@@ -191,6 +379,8 @@ Schema details: [SPIKE_PERSISTENCE.md](../SPIKE_PERSISTENCE.md).
 | `dbind-WARNING` / `accessibility bus` | Harmless without a11y; do not run via `sudo`; or `NO_AT_BRIDGE=1` (default in `pingui-java.sh`) |
 | IPv6 trace “no hops” | `traceroute -6` on PATH; raw cap **not** required for v6 literal |
 | Raw ICMP v4 “permission denied” | `setcap cap_net_raw+ep` on JDK binary (see § Raw ICMP) |
+| No events in rsyslog/Graylog | Enable `telemetry.syslog`/`gelf` or `--telemetry-syslog`; `enabled: true` on host; check TCP port / `events_only` |
+| LOG flooded with RTT | Restore `events_only: true`; do not enable `jsonl_dir` on Windows for high-freq |
 
 ## Development
 

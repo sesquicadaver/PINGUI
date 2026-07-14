@@ -3,6 +3,9 @@
 # tracert is slow (3 probes/hop, 1–4+ min per target at 20 hops).
 # Recommended on Windows: ping_only + interval >= 60 s.
 #
+# Telemetry (P16-043): events_only=true; no jsonl_dir / sqlite high-freq RTT sinks.
+# Do not enable jsonl_dir on Windows for hop-RTT sample spam.
+#
 # Usage (from java/):
 #   ./pingui-java.sh --config config/hosts.windows.example.yaml
 #   ./pingui-java.bat --config config/hosts.windows.example.yaml
@@ -15,6 +18,15 @@ profiles:
     timeout: 0.5
     probe: process
     probe_mode: ping_only
+    telemetry:
+      events_only: true
+      log_aggregates: false
+      # No sqlite / jsonl_dir — avoid high-freq hop-RTT on Windows.
+      # Optional remote LOG (events only) — uncomment and set host:
+      # syslog:
+      #   host: 127.0.0.1
+      #   port: 514
+      #   tls: false
     hosts:
       - address: "8.8.8.8"
         enabled: true

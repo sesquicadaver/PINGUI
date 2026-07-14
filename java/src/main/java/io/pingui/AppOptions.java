@@ -1,7 +1,9 @@
 package io.pingui;
 
+import io.pingui.export.ExportSchedulePeriod;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 /** Runtime CLI options for the Java edition. */
 public record AppOptions(
@@ -9,6 +11,8 @@ public record AppOptions(
         CliProfileOverrides profileOverrides,
         CliAlertOverrides alertOverrides,
         CliPersistenceOverrides persistenceOverrides,
+        CliTelemetryOverrides telemetryOverrides,
+        CliTimeSeriesOverrides timeSeriesOverrides,
         boolean verbose,
         boolean geoipEnabled,
         Path geoipHintsPath,
@@ -17,14 +21,23 @@ public record AppOptions(
         int asnTimeoutMs,
         Optional<Path> sessionDbPath,
         Optional<Path> exportReportPath,
+        Optional<ExportSchedulePeriod> exportSchedule,
+        Optional<Path> exportDir,
         CliRunMode runMode,
-        Path pidFilePath) {
+        Path pidFilePath,
+        Optional<Integer> metricsPort,
+        Optional<Integer> apiPort,
+        OptionalInt telemetryRetentionDays,
+        Optional<Path> telemetryJsonlDir,
+        Optional<Path> telemetryDumpPath) {
     public static AppOptions defaults() {
         return new AppOptions(
                 Path.of("config/hosts.example.yaml"),
                 CliProfileOverrides.none(),
                 CliAlertOverrides.none(),
                 CliPersistenceOverrides.none(),
+                CliTelemetryOverrides.none(),
+                CliTimeSeriesOverrides.none(),
                 false,
                 true,
                 Path.of("config/geoip_hints.yaml"),
@@ -33,8 +46,15 @@ public record AppOptions(
                 2000,
                 Optional.empty(),
                 Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
                 CliRunMode.GUI,
-                defaultPidFile());
+                defaultPidFile(),
+                Optional.empty(),
+                Optional.empty(),
+                OptionalInt.empty(),
+                Optional.empty(),
+                Optional.empty());
     }
 
     public static Path defaultPidFile() {

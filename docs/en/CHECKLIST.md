@@ -10,6 +10,15 @@ Python edition and tests are in **both** branch trees; ROADMAP work lands on **`
 
 Details: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 
+### Java daemon smoke (P12)
+
+- [ ] `./pingui-java.sh -- --daemon --config config/hosts.example.yaml --session-db data/ping.db --pid-file /tmp/pingui-java.pid` (hosts `enabled: true` in YAML)
+- [ ] `./pingui-java.sh -- --status --pid-file /tmp/pingui-java.pid` → `running pid=…`
+- [ ] `sqlite3 data/ping.db "SELECT host FROM host_session;"` — rows after poll
+- [ ] `./pingui-java.sh -- --daemon --alert-webhook URL …` — route change → POST (webhook log)
+- [ ] `--api-port 8080` / `--metrics-port 9090`: `curl http://127.0.0.1:8080/hosts` and `curl http://127.0.0.1:9090/metrics`; TLS — see [DEPLOYMENT § reverse proxy](DEPLOYMENT.md#reverse-proxy--tls-p15-041)
+- [ ] `./pingui-java.sh -- --stop --pid-file /tmp/pingui-java.pid`
+
 ### Python daemon smoke
 
 - [ ] `./pingui.sh --deploy` — venv + doc parity
@@ -64,6 +73,29 @@ Details: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 - [ ] `./pingui-java.sh --alert-webhook http://127.0.0.1:9/hook` — starts without crash (unreachable webhook → WARNING)
 - [ ] `./pingui-java.sh --desktop-alerts` — GUI + `notify-send` on route change (requires `libnotify-bin`)
 - [ ] YAML `alerts.webhook` / `alert_webhook` in profile — route change → POST without CLI override
+
+### Java telemetry smoke (P16-071)
+
+Sink fields: [CONFIGURATION § Telemetry](CONFIGURATION.md#telemetry-p16-040052). LOG-server: [DEPLOYMENT § LOG-server](DEPLOYMENT.md#log-server-p16-061). Unit coverage: `TelemetrySinkInstallerTest`, `DaemonRunnerTest.startRegistersSqliteAndSyslogFromTelemetryConfig`, `SqliteTelemetrySinkTest`, `SyslogSinkTest`.
+
+**Prepare a profile** (copy of `java/config/hosts.example.yaml` or a temp YAML): host `enabled: true`; in the profile:
+
+```yaml
+telemetry:
+  events_only: true
+  sqlite: data/telemetry.db
+  syslog:
+    host: 127.0.0.1
+    port: 1514
+    tls: false
+```
+
+- [ ] CI: `cd java && ./gradlew test --tests io.pingui.TelemetrySinkInstallerTest --tests io.pingui.daemon.DaemonRunnerTest.startRegistersSqliteAndSyslogFromTelemetryConfig` — green
+- [ ] Terminal A (mock syslog TCP): `nc -l 1514 | tee /tmp/pingui-syslog.log` (or rsyslog from DEPLOYMENT)
+- [ ] Terminal B: `./pingui-java.sh -- --daemon --config <yaml> --session-db data/ping.db --pid-file /tmp/pingui-java.pid` (or CLI override `--telemetry-syslog 127.0.0.1:1514`)
+- [ ] After first poll (baseline route_change): `sqlite3 data/telemetry.db "SELECT event, host FROM telemetry_event LIMIT 5;"` — has `route_change` (or `probe_error`)
+- [ ] In `/tmp/pingui-syslog.log` — RFC 5424 line with JSON `"event":"route_change"` (or `probe_error`); **no** hop-RTT sample flood when `events_only: true`
+- [ ] `./pingui-java.sh -- --stop --pid-file /tmp/pingui-java.pid`
 
 ---
 
@@ -129,7 +161,7 @@ ls build/dist/*.deb
 
 ## Windows 11+
 
-> ⚠ **Warning:** Windows is **not recommended** for intensive route monitoring. `tracert` runs 3 probes per hop with long timeouts; one trace to 20 hops can take **1–4+ minutes**. Expert ping unavailable. For practical use: **Ping only** in the GUI or starter preset `config/hosts.windows.example.yaml` (`probe_mode: ping_only`, `interval: 60`). Recommended platform — **Linux**. [DEPLOYMENT.md#os-recommendation](DEPLOYMENT.md#os-recommendation)
+> ⚠ **Warning:** Windows is **not recommended** for intensive route monitoring. `tracert` runs 3 probes per hop with long timeouts; one trace to 20 hops can take **1–4+ minutes**. Expert ping unavailable. For practical use: **Ping only** in the GUI or starter preset `config/hosts.windows.example.yaml` (`probe_mode: ping_only`, `interval: 60`; telemetry P16-043: `events_only: true`, **no** `jsonl_dir`). Recommended platform — **Linux**. [DEPLOYMENT.md#os-recommendation](DEPLOYMENT.md#os-recommendation)
 
 ### Preflight
 
@@ -174,9 +206,10 @@ pingui-java.bat --config config/hosts.windows.example.yaml
 
 ### Smoke test
 
-- [ ] Start with `config/hosts.windows.example.yaml` (P13-040 preset)
+- [ ] Start with `config/hosts.windows.example.yaml` (P13-040 + P16-043 preset)
 - [ ] Target `8.8.8.8`, checkbox enabled
 - [ ] **Ping only** ON (preset) → RTT within a few seconds (no wait for full trace)
+- [ ] Telemetry: YAML has `events_only: true`, no `jsonl_dir` / high-freq sqlite (no hop-RTT JSONL)
 - [ ] Or trace OFF + ping only OFF: first trace — **up to 4 min** (normal for `tracert`)
 - [ ] Simple / Extended — metrics and graph
 - [ ] YAML save/load

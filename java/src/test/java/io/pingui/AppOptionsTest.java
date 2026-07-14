@@ -21,5 +21,6 @@ class AppOptionsTest {
         assertEquals(2000, options.asnTimeoutMs());
         assertEquals(CliRunMode.GUI, options.runMode());
         assertEquals(AppOptions.defaultPidFile(), options.pidFilePath());
+        assertTrue(options.metricsPort().isEmpty());
     }
 }

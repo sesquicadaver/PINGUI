@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P15-001** |
-| **Phase** | 15 — Team integrations |
-| **DoD (short)** | ADR observability boundaries |
+| **Current task** | **DONE** |
+| **Phase** | 16 — Telemetry |
+| **DoD (short)** | Queue complete (no next ID) |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -49,43 +49,43 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 4 | **P14-040** | [x] | Expert ping presets (4 buttons + `ping_presets.yaml`) |
 | 5 | **P14-050** | [x] | USER_GUIDE § pro / NOC workflow |
 | 6 | **PY-P11** | [x] | Python: YAML `persistence.events` + SQLite `persistence_event` |
-| 7 | **P15-001** | [ ] | ADR observability boundaries |
-| 8 | **P15-010** | [ ] | Prometheus `/metrics` (daemon) |
-| 9 | **P15-011** | [ ] | CLI `--metrics-port` |
-| 10 | **P15-020** | [ ] | InfluxDB/Timescale writer (Java parity) |
-| 11 | **P15-030** | [ ] | Scheduled CSV/HTML export |
-| 12 | **P15-040** | [ ] | REST read-only API |
-| 13 | **P15-041** | [ ] | DEPLOYMENT § reverse proxy + TLS |
-| 14 | **P15-050** | [ ] | LIVING_SPEC + contract tests API |
-| 15 | **P16-001** | [ ] | ADR telemetry |
-| 16 | **P16-002** | [ ] | SPIKE LOG-server protocols |
-| 17 | **P16-010** | [ ] | `MetricSample` + `TelemetryEvent` |
-| 18 | **P16-011** | [ ] | `TelemetrySink` + `SinkRegistry` |
-| 19 | **P16-012** | [ ] | `TelemetryBus` |
-| 20 | **P16-013** | [ ] | Wire MonitorService → bus |
-| 21 | **P16-014** | [ ] | Metric names (`trace_duration_ms`, …) |
-| 22 | **P16-020** | [ ] | `SqliteTelemetrySink` |
-| 23 | **P16-021** | [ ] | `JsonlRotateSink` |
-| 24 | **P16-022** | [ ] | `retention_days` purge |
-| 25 | **P16-023** | [ ] | `--telemetry-dump` |
-| 26 | **P16-030** | [ ] | `SyslogSink` |
-| 27 | **P16-031** | [ ] | `GelfSink` |
-| 28 | **P16-032** | [ ] | `LokiPushSink` (P2) |
-| 29 | **P16-033** | [ ] | `events_only` mode |
-| 30 | **P16-034** | [ ] | 5m aggregates → LOG |
-| 31 | **P16-040** | [ ] | YAML `telemetry:` |
-| 32 | **P16-041** | [ ] | CLI telemetry overrides |
-| 33 | **P16-042** | [ ] | Secret redaction |
-| 34 | **P16-043** | [ ] | Windows telemetry preset |
-| 35 | **P16-050** | [ ] | Webhook as `TelemetrySink` |
-| 36 | **P16-051** | [ ] | Prometheus as sink |
-| 37 | **P16-052** | [ ] | Python Influx sink wrapper |
-| 38 | **P16-060** | [ ] | CONFIGURATION § telemetry |
-| 39 | **P16-061** | [ ] | DEPLOYMENT § LOG-server |
-| 40 | **P16-070** | [ ] | LIVING_SPEC telemetry matrix |
-| 41 | **P16-071** | [ ] | CHECKLIST telemetry smoke |
-| 42 | **P16-072** | [ ] | Contract tests syslog/gelf |
-| 43 | **P16-080** | [ ] | OTLP export (P2) |
+| 7 | **P15-001** | [x] | ADR observability boundaries |
+| 8 | **P15-010** | [x] | Prometheus `/metrics` (daemon) |
+| 9 | **P15-011** | [x] | CLI `--metrics-port` |
+| 10 | **P15-020** | [x] | InfluxDB/Timescale writer (Java parity) |
+| 11 | **P15-030** | [x] | Scheduled CSV/HTML export |
+| 12 | **P15-040** | [x] | REST read-only API |
+| 13 | **P15-041** | [x] | DEPLOYMENT § reverse proxy + TLS |
+| 14 | **P15-050** | [x] | LIVING_SPEC + contract tests API |
+| 15 | **P16-001** | [x] | ADR telemetry |
+| 16 | **P16-002** | [x] | SPIKE LOG-server protocols |
+| 17 | **P16-010** | [x] | `MetricSample` + `TelemetryEvent` |
+| 18 | **P16-011** | [x] | `TelemetrySink` + `SinkRegistry` |
+| 19 | **P16-012** | [x] | `TelemetryBus` |
+| 20 | **P16-013** | [x] | Wire MonitorService → bus |
+| 21 | **P16-014** | [x] | Metric names (`trace_duration_ms`, …) |
+| 22 | **P16-020** | [x] | `SqliteTelemetrySink` |
+| 23 | **P16-021** | [x] | `JsonlRotateSink` |
+| 24 | **P16-022** | [x] | `retention_days` purge |
+| 25 | **P16-023** | [x] | `--telemetry-dump` |
+| 26 | **P16-030** | [x] | `SyslogSink` |
+| 27 | **P16-031** | [x] | `GelfSink` |
+| 28 | **P16-032** | [x] | `LokiPushSink` (P2) |
+| 29 | **P16-033** | [x] | `events_only` mode |
+| 30 | **P16-034** | [x] | 5m aggregates → LOG |
+| 31 | **P16-040** | [x] | YAML `telemetry:` |
+| 32 | **P16-041** | [x] | CLI telemetry overrides |
+| 33 | **P16-042** | [x] | Secret redaction |
+| 34 | **P16-043** | [x] | Windows telemetry preset |
+| 35 | **P16-050** | [x] | Webhook as `TelemetrySink` |
+| 36 | **P16-051** | [x] | Prometheus as sink |
+| 37 | **P16-052** | [x] | Python Influx sink wrapper |
+| 38 | **P16-060** | [x] | CONFIGURATION § telemetry |
+| 39 | **P16-061** | [x] | DEPLOYMENT § LOG-server |
+| 40 | **P16-070** | [x] | LIVING_SPEC telemetry matrix |
+| 41 | **P16-071** | [x] | CHECKLIST telemetry smoke |
+| 42 | **P16-072** | [x] | Contract tests syslog/gelf |
+| 43 | **P16-080** | [x] | OTLP export (P2) |
 
 **End of queue:** set NEXT → `DONE` (no open IDs).
 
@@ -545,14 +545,14 @@ flowchart TD
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **P15-001** | [ ] ADR: observability boundaries (metrics vs TS backend) | `docs/ADR_OBSERVABILITY.md` | Prometheus read; Influx write optional |
-| **P15-010** | [ ] Prometheus `/metrics` endpoint (daemon mode) | `observability/PrometheusExporter.java` | `pingui_rtt_ms`, `pingui_route_change_total` |
-| **P15-011** | [ ] CLI `--metrics-port 9090` | `DaemonRunner` | localhost bind default |
-| **P15-020** | [ ] Java parity: InfluxDB/Timescale writer (Python B-05) | `persistence/timeseries/` | Config parity with Python |
-| **P15-030** | [ ] Scheduled CSV/HTML export (cron-friendly CLI) | `export/ScheduledExport.java` | `--export-schedule daily` one-shot |
-| **P15-040** | [ ] REST read-only API: `GET /hosts`, `GET /routes/{host}` | `api/ReadOnlyApiServer.java` | OpenAPI stub; auth out of scope v1 |
-| **P15-041** | [ ] DEPLOYMENT § reverse proxy + TLS | `docs/DEPLOYMENT.md` | nginx example |
-| **P15-050** | [ ] LIVING_SPEC + API contract tests | `docs/LIVING_SPEC.md` | Mock HTTP tests |
+| **P15-001** | [x] ADR: observability boundaries (metrics vs TS backend) | `docs/ADR_OBSERVABILITY.md` | Prometheus read; Influx write optional |
+| **P15-010** | [x] Prometheus `/metrics` endpoint (daemon mode) | `observability/PrometheusExporter.java` | `pingui_rtt_ms`, `pingui_route_change_total` |
+| **P15-011** | [x] CLI `--metrics-port 9090` | `DaemonRunner` | localhost bind default |
+| **P15-020** | [x] Java parity: InfluxDB/Timescale writer (Python B-05) | `persistence/timeseries/` | Config parity with Python |
+| **P15-030** | [x] Scheduled CSV/HTML export (cron-friendly CLI) | `export/ScheduledExport.java` | `--export-schedule daily` one-shot |
+| **P15-040** | [x] REST read-only API: `GET /hosts`, `GET /routes/{host}` | `api/ReadOnlyApiServer.java` | OpenAPI stub; auth out of scope v1 |
+| **P15-041** | [x] DEPLOYMENT § reverse proxy + TLS | `docs/DEPLOYMENT.md` | nginx example |
+| **P15-050** | [x] LIVING_SPEC + API contract tests | `docs/LIVING_SPEC.md` | Mock HTTP tests |
 
 **Estimate:** 2–3 sprints. **Out of scope:** full Zabbix/NMS replacement.
 
@@ -572,70 +572,70 @@ flowchart TD
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **P16-001** | [ ] ADR: telemetry (events vs samples vs aggregates, sinks) | `docs/ADR_TELEMETRY.md` | Bus → local/remote diagram; boundaries with P10/P15 |
-| **P16-002** | [ ] SPIKE: LOG-server protocol comparison (syslog, GELF, Loki) | `docs/SPIKE_LOG_SINKS.md` | v1 recommendation: syslog TCP + GELF |
+| **P16-001** | [x] ADR: telemetry (events vs samples vs aggregates, sinks) | `docs/ADR_TELEMETRY.md` | Bus → local/remote diagram; boundaries with P10/P15 |
+| **P16-002** | [x] SPIKE: LOG-server protocol comparison (syslog, GELF, Loki) | `docs/SPIKE_LOG_SINKS.md` | v1 recommendation: syslog TCP + GELF |
 
 ### 16.1 — Model and bus (P0)
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **P16-010** | [ ] `MetricSample` + `TelemetryEvent` (host, hop, labels) | `telemetry/MetricSample.java`, `models.py` | Unit test serialize |
-| **P16-011** | [ ] `TelemetrySink` interface + `SinkRegistry` | `telemetry/TelemetrySink.java` | register/unregister; no-op default |
-| **P16-012** | [ ] `TelemetryBus` — async queue, batch flush, backpressure | `telemetry/TelemetryBus.java` | Queue max size; drop policy documented |
-| **P16-013** | [ ] Wire MonitorService → bus (RTT, loss, route_change, probe_error) | `MonitorService`, `worker.py` | Does not block poll loop |
-| **P16-014** | [ ] Metrics: `trace_duration_ms`, `target_reachable` | `telemetry/MetricNames.java` | Labels: profile, probe_mode, edition |
+| **P16-010** | [x] `MetricSample` + `TelemetryEvent` (host, hop, labels) | `telemetry/MetricSample.java`, `models.py` | Unit test serialize |
+| **P16-011** | [x] `TelemetrySink` interface + `SinkRegistry` | `telemetry/TelemetrySink.java` | register/unregister; no-op default |
+| **P16-012** | [x] `TelemetryBus` — async queue, batch flush, backpressure | `telemetry/TelemetryBus.java` | Queue max size; drop policy documented |
+| **P16-013** | [x] Wire MonitorService → bus (RTT, loss, route_change, probe_error) | `MonitorService`, `worker.py` | Does not block poll loop |
+| **P16-014** | [x] Metrics: `trace_duration_ms`, `target_reachable` | `telemetry/MetricNames.java` | Labels: profile, probe_mode, edition |
 
 ### 16.2 — Local storage (P0)
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **P16-020** | [ ] `SqliteTelemetrySink` — samples + events (P11 schema extension) | `persistence/SqliteTelemetrySink.java` | Migration v2; unit insert/query |
-| **P16-021** | [ ] `JsonlRotateSink` — JSONL with size/day rotation | `telemetry/JsonlRotateSink.java` | `telemetry.jsonl.%Y-%m-%d` |
-| **P16-022** | [ ] `retention_days` — purge old samples/events | `TelemetryRetentionJob.java` | CLI `--telemetry-retention 30` |
-| **P16-023** | [ ] Export from local store: `--telemetry-dump` (CSV/JSON) | `export/TelemetryDump.java` | Cron-friendly one-shot |
+| **P16-020** | [x] `SqliteTelemetrySink` — samples + events (P11 schema extension) | `persistence/SqliteTelemetrySink.java` | Migration v4; unit insert/query |
+| **P16-021** | [x] `JsonlRotateSink` — JSONL with size/day rotation | `telemetry/JsonlRotateSink.java` | `telemetry.jsonl.%Y-%m-%d` |
+| **P16-022** | [x] `retention_days` — purge old samples/events | `TelemetryRetentionJob.java` | CLI `--telemetry-retention 30` |
+| **P16-023** | [x] Export from local store: `--telemetry-dump` (CSV/JSON) | `export/TelemetryDump.java` | Cron-friendly one-shot |
 
 ### 16.3 — LOG-server export (P1)
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **P16-030** | [ ] `SyslogSink` — RFC 5424 TCP/TLS, structured data | `telemetry/SyslogSink.java` | Contract test with mock server |
-| **P16-031** | [ ] `GelfSink` — Graylog UDP/TCP | `telemetry/GelfSink.java` | route_change + probe_error events |
-| **P16-032** | [ ] `LokiPushSink` — HTTP push (optional P2) | `telemetry/LokiPushSink.java` | labels: job=pingui, site |
-| **P16-033** | [ ] `events_only` mode for LOG sinks (no high-freq RTT) | `SinkConfig.java` | Default true for syslog |
-| **P16-034** | [ ] 5m aggregates (avg/max RTT per hop) → LOG optional | `AggregateTelemetryJob.java` | YAML `log_aggregates: true` |
+| **P16-030** | [x] `SyslogSink` — RFC 5424 TCP/TLS; MSG = single-line JSON; TCP framing canon | `telemetry/SyslogSink.java` | Contract test with mock server |
+| **P16-031** | [x] `GelfSink` — Graylog TCP (prod) / UDP (lab); `events_only` parity; `\0` framing | `telemetry/GelfSink.java` | route_change + probe_error events |
+| **P16-032** | [x] `LokiPushSink` — HTTP push (optional P2) | `telemetry/LokiPushSink.java` | labels: job=pingui, site |
+| **P16-033** | [x] `events_only` mode for **all** remote LOG sinks (syslog, GELF, Loki) | `SinkConfig.java` | Default true; no high-freq RTT |
+| **P16-034** | [x] 5m aggregates (avg/max RTT per hop) → LOG optional | `AggregateTelemetryJob.java` | YAML `log_aggregates: true` |
 
 ### 16.4 — Configuration (P0)
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **P16-040** | [ ] YAML section `telemetry:` (local + remote sinks) | `ProfilesConfig`, `config.py` | Example in `hosts.example.yaml` |
-| **P16-041** | [ ] CLI: `--telemetry-syslog HOST:PORT`, `--telemetry-jsonl DIR` | `PinguiApplication`, `__main__.py` | Override profile |
-| **P16-042** | [ ] Secrets (URL, token) — no logging; mask in debug | `TelemetryConfig.java` | Unit test redaction |
-| **P16-043** | [ ] Windows preset: `events_only` + no high-freq jsonl | `config/hosts.windows.example.yaml` | CHECKLIST |
+| **P16-040** | [x] YAML section `telemetry:` (local + remote sinks) | `ProfilesConfig`, `config.py` | Example in `hosts.example.yaml` |
+| **P16-041** | [x] CLI: `--telemetry-syslog HOST:PORT`, `--telemetry-jsonl DIR` | `PinguiApplication`, `__main__.py` | Override profile |
+| **P16-042** | [x] Secrets (URL, token) — no logging; mask in debug | `TelemetryConfig.java` | Unit test redaction |
+| **P16-043** | [x] Windows preset: `events_only` + no high-freq jsonl | `config/hosts.windows.example.yaml` | CHECKLIST |
 
 ### 16.5 — Integration with P10/P15 (P1)
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **P16-050** | [ ] P10 webhook — implement as `TelemetrySink` (no duplicate code) | `WebhookAlertDispatcher` → `telemetry/` | Single emit path |
-| **P16-051** | [ ] P15 Prometheus — `PrometheusTelemetrySink` | `observability/PrometheusExporter.java` | Scrape from daemon |
-| **P16-052** | [ ] Python B-05 Influx — `InfluxTelemetrySink` wrapper | `persistence/timeseries/influx.py` | Config parity |
+| **P16-050** | [x] P10 webhook — implement as `TelemetrySink` (no duplicate code) | `WebhookAlertDispatcher` → `telemetry/` | Single emit path |
+| **P16-051** | [x] P15 Prometheus — `PrometheusTelemetrySink` | `observability/PrometheusExporter.java` | Scrape from daemon |
+| **P16-052** | [x] Python B-05 Influx — `InfluxTelemetrySink` wrapper | `persistence/timeseries/influx.py` | Config parity |
 
 ### 16.6 — Docs / QA (P0)
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **P16-060** | [ ] CONFIGURATION § telemetry | `docs/CONFIGURATION.md`, `docs/en/CONFIGURATION.md` | Full field table |
-| **P16-061** | [ ] DEPLOYMENT § LOG-server, rsyslog, Graylog, retention | `docs/DEPLOYMENT.md` | nginx/TLS optional |
-| **P16-070** | [ ] LIVING_SPEC: telemetry bus + sinks | `docs/LIVING_SPEC.md` | Module → test matrix |
-| **P16-071** | [ ] CHECKLIST § telemetry smoke | `docs/CHECKLIST.md` | local sqlite + syslog event |
-| **P16-072** | [ ] Contract tests: mock syslog/gelf | `src/test/java/.../SyslogSinkTest.java` | CI green |
+| **P16-060** | [x] CONFIGURATION § telemetry | `docs/CONFIGURATION.md`, `docs/en/CONFIGURATION.md` | Full field table |
+| **P16-061** | [x] DEPLOYMENT § LOG-server, rsyslog, Graylog, retention | `docs/DEPLOYMENT.md` | nginx/TLS optional |
+| **P16-070** | [x] LIVING_SPEC: telemetry bus + sinks | `docs/LIVING_SPEC.md` | Module → test matrix |
+| **P16-071** | [x] CHECKLIST § telemetry smoke | `docs/CHECKLIST.md` | local sqlite + syslog event |
+| **P16-072** | [x] Contract tests: mock syslog/gelf + shared field fixture | `SyslogGelfContractTest`, `TelemetryLogFieldFixture` | CI green |
 
-**Estimate:** 2–3 sprints. **Out of scope v1:** OpenTelemetry OTLP export (P2 ticket P16-080).
+**Estimate:** 2–3 sprints. Optional P2 OTLP landed as **P16-080**.
 
 | ID | Task | Priority |
 |----|------|----------|
-| **P16-080** | [ ] OTLP logs/metrics export | P2 |
+| **P16-080** | [x] OTLP logs/metrics export | P2 |
 
 ---
 

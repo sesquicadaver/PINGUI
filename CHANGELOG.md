@@ -21,6 +21,43 @@
 
 ### Added
 
+- **OTLP/HTTP export (P16-080):** `OtlpHttpTelemetrySink` posts OTLP JSON to `/v1/logs` and `/v1/metrics` (no OTel SDK); YAML `telemetry.otlp` + `--telemetry-otlp`; ROADMAP NEXT → DONE.
+- **Syslog/GELF contract tests (P16-072):** `TelemetryLogFieldFixture` + `SyslogGelfContractTest` — mock TCP, shared event fields across RFC 5424 MSG and GELF `_payload`.
+- **Telemetry CHECKLIST smoke + daemon sink wiring (P16-071):** `TelemetrySinkInstaller` registers sqlite/jsonl/syslog/gelf/loki from YAML; CHECKLIST § Java telemetry smoke (local DB + syslog event).
+- **LIVING_SPEC telemetry matrix (P16-070):** concrete `*Test` classes for bus/sinks P16-010…052; Phase 16 overview; Python telemetry rows; stale P15-010 test name fixed.
+- **DEPLOYMENT § LOG-server (P16-061):** rsyslog TCP, Graylog GELF, optional Loki, local telemetry retention cron; troubleshooting.
+- **CONFIGURATION § telemetry (P16-060):** full YAML/CLI field tables for `telemetry:` sinks, retention/dump/metrics-port, Windows preset note.
+- **InfluxTelemetrySink (P16-052):** Python bus wrapper over B-05 Influx/Timescale; daemon/GUI write TS via `QueueTelemetryEmitter` (no SessionStore dual-emit).
+- **Prometheus as TelemetrySink (P16-051):** `PrometheusTelemetrySink` updates scrape gauges from the bus; daemon registers on `--metrics-port`; MonitorService Prometheus dual-emit removed.
+- **Webhook as TelemetrySink (P16-050):** `WebhookTelemetrySink` owns HTTP POST; `WebhookAlertDispatcher` delegates (ADR_ALERTS JSON unchanged).
+- **Windows telemetry preset (P16-043):** `hosts.windows.example.yaml` — explicit `telemetry.events_only: true`, no `jsonl_dir`/sqlite high-freq; CHECKLIST smoke.
+- **Telemetry secret redaction (P16-042):** `TelemetryConfig.redactUrl` / `redactSecret` / `toRedactedString` (+ Python parity); Loki logs use shared URL redaction.
+- **CLI telemetry overrides (P16-041):** `--telemetry-syslog HOST:PORT` / `--telemetry-jsonl DIR` override profile `TelemetryConfig` (Java + Python); distinct from `--telemetry-jsonl-dir` retention.
+- **YAML telemetry (P16-040):** `TelemetryConfig` + `ProfilesConfig` / `telemetry_config.py` — `telemetry:` (events_only, log_aggregates, sqlite, jsonl_dir, syslog/gelf/loki); examples in `hosts.example.yaml`.
+- **RTT aggregates → LOG (P16-034):** `AggregateTelemetryJob` — 5m avg/max RTT per hop as `rtt_aggregate` events; default off (`log_aggregates`); YAML wire in P16-040.
+- **events_only LOG policy (P16-033):** `SinkConfig` — shared `events_only` (default true) for syslog/GELF/Loki; sample wire only when opted out.
+- **Loki push sink (P16-032):** `LokiPushSink` — HTTP `/loki/api/v1/push`; labels `job=pingui`/`site`/`host`; line = event JSON; `eventsOnly`.
+- **GELF sink (P16-031):** `GelfSink` — GELF 1.1 JSON; TCP `\0` framing (prod) / UDP (lab); `eventsOnly`.
+- **Syslog sink (P16-030):** `SyslogSink` — RFC 5424 over TCP (optional TLS); MSG = single-line event JSON; framing trailing NL; `eventsOnly`.
+- **Telemetry dump (P16-023):** `TelemetryDump` + CLI `--telemetry-dump PATH` (.csv/.json) from `--session-db`.
+- **Telemetry retention (P16-022):** `TelemetryRetentionJob` + CLI `--telemetry-retention N` (optional `--telemetry-jsonl-dir`); cron one-shot purge.
+- **JSONL rotate sink (P16-021):** `JsonlRotateSink` — UTC day files `telemetry.jsonl.yyyy-MM-dd` (+ `.N` on size); default off.
+- **Sqlite telemetry sink (P16-020):** `SqliteTelemetrySink` + schema v4 (`telemetry_sample` / `telemetry_event`); default off; unit insert/query.
+- **Metric names (P16-014):** `MetricNames` / `metric_names.py` — канон `pingui_*` і bus labels `profile`/`probe_mode`/`edition` (Java + Python).
+- **Monitor → bus (P16-013):** `MonitorService` / Python `MonitorLoop` offer RTT, hop loss, route_change, probe_error into telemetry bus/emitter without blocking poll.
+- **Telemetry bus (P16-012):** `TelemetryBus` + `DropPolicy` — async queue, batch flush, non-blocking offer, `droppedCount`.
+- **Sink registry (P16-011):** `TelemetrySink` + `SinkRegistry` — register/unregister, `eventsOnly`, no-op default, ізоляція помилок sink.
+- **Telemetry models (P16-010):** `MetricSample` / `TelemetryEvent` — Java `io.pingui.telemetry` + Python `models.py`; спільний JSON (`kind`, host, hop/labels, ts).
+- **LOG sinks SPIKE (P16-002):** `docs/SPIKE_LOG_SINKS.md` — порівняння syslog / GELF / Loki; v1 = syslog TCP + GELF; Loki P2.
+- **Telemetry ADR (P16-001):** `docs/ADR_TELEMETRY.md` — events vs samples vs aggregates; TelemetryBus → sinks; межі з P10/P15; dual-emit debt.
+- **API contract tests (P15-050):** exact JSON contracts for `GET /hosts` / `/routes/{host}` / OpenAPI / 404 / 405; DaemonRunner `--api-port` smoke; фаза 15 закрита.
+- **DEPLOYMENT reverse proxy + TLS (P15-041):** nginx HTTPS example перед localhost `--api-port` / `--metrics-port` (Basic Auth, certbot).
+- **Read-only REST API (P15-040):** `ReadOnlyApiServer` — `GET /hosts`, `GET /routes/{host}`, `GET /openapi.json` на `127.0.0.1` через `--api-port` (daemon; auth out of scope).
+- **Scheduled CSV/HTML export (P15-030):** `ScheduledExport` + CLI `--export-schedule hourly|daily|weekly` з `--export-dir` (cron one-shot, UTC stamps, CSV+HTML).
+- **InfluxDB/Timescale writer (P15-020):** Java `persistence/timeseries/` (Influx HTTP line protocol, Timescale JDBC) + CLI `--ts-backend` / `--influx-*` / `--timescale-dsn`; dual-emit via `SessionStore` (parity з Python B-05).
+- **CLI `--metrics-port` (P15-011):** `PinguiApplication.parseOptions` → `AppOptions.metricsPort`; daemon binds `127.0.0.1:N/metrics`.
+- **Prometheus `/metrics` (P15-010):** `PrometheusExporter` + localhost `MetricsHttpServer`; daemon wire via `AppOptions.metricsPort` (CLI — P15-011); MonitorService updates `pingui_rtt_ms` / `route_change_total` / `target_reachable` / `trace_duration_ms`.
+- **Observability ADR (P15-001):** `docs/ADR_OBSERVABILITY.md` — Prometheus pull (`/metrics`) vs опційний push Influx/Timescale; межі з P10/P11/P16.
 - **Alerts ADR (P10-001):** `docs/ADR_ALERTS.md` — channels (webhook, desktop), `RouteChangeEvent` JSON, rate limit, failure policy.
 - **Java alerts foundation (P10-010…011):** `RouteChangeEvent`, `AlertDispatcher`, dispatch from `MonitorService` on route change.
 - **Java alerts pipeline (P10-020…050):** webhook POST, desktop `notify-send`, YAML `alerts:` + CLI overrides, per-host rate limit, `RouteChangeNotifier`, tests and CHECKLIST smoke.

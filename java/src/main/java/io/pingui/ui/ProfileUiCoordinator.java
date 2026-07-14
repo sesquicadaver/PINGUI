@@ -58,7 +58,8 @@ final class ProfileUiCoordinator {
                         hosts,
                         current.alerts(),
                         current.persistence(),
-                        current.maxConcurrentTraces()));
+                        current.maxConcurrentTraces(),
+                        current.telemetry()));
     }
 
     void refreshCombo() {

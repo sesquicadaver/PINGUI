@@ -4,6 +4,8 @@ package io.pingui;
 public enum CliRunMode {
     GUI,
     EXPORT,
+    TELEMETRY_RETENTION,
+    TELEMETRY_DUMP,
     DAEMON,
     STOP,
     STATUS

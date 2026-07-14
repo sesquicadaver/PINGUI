@@ -78,10 +78,10 @@ persistence:
         load_persistence_config(path)
 
 
-def test_schema_v3_and_event_writer(tmp_path: Path) -> None:
+def test_schema_v4_and_event_writer(tmp_path: Path) -> None:
     db_path = tmp_path / "session.db"
     db = SessionDatabase(db_path)
-    assert SCHEMA_VERSION == 3
+    assert SCHEMA_VERSION == 4
     writer = PersistenceEventWriter(db, PersistencePolicy(True, True))
     event = RouteChangeEvent.from_route_change("8.8.8.8", [], ["1.1.1.1"])
     writer.write_route_change(event)

@@ -16,6 +16,8 @@ from pingui.persistence.events import PersistenceEventWriter
 from pingui.persistence.policy import PersistencePolicy
 from pingui.persistence.session_db import SessionDatabase
 from pingui.persistence.timeseries.base import TimeSeriesBackend
+from pingui.persistence.timeseries.influx_telemetry_sink import InfluxTelemetrySink
+from pingui.telemetry_emit import QueueTelemetryEmitter, TelemetryEmitter
 
 logger = logging.getLogger(__name__)
 
@@ -163,10 +165,23 @@ def run_headless_monitor(
     event_writer = (
         PersistenceEventWriter(session_db, persistence_policy) if session_db is not None else None
     )
-    store = SessionStore(hosts, session_db=session_db, timeseries=timeseries_backend)
+    # P16-052: TS writes via telemetry sink only (no SessionStore dual-emit).
+    store = SessionStore(hosts, session_db=session_db, timeseries=None)
     if enable_all_hosts:
         for host in hosts:
             store.set_enabled(host, True)
+
+    ts_sink: InfluxTelemetrySink | None = None
+    telemetry: TelemetryEmitter
+    if timeseries_backend is not None:
+        ts_sink = InfluxTelemetrySink(timeseries_backend)
+        telemetry = QueueTelemetryEmitter(
+            on_sample=ts_sink.on_sample,
+            on_event=ts_sink.on_event,
+        )
+        logger.info("Time-series telemetry sink enabled (id=%s)", ts_sink.id)
+    else:
+        telemetry = QueueTelemetryEmitter()
 
     loop = MonitorLoop(
         session_store=store,
@@ -180,6 +195,7 @@ def run_headless_monitor(
             profile=profile,
             event_writer=event_writer,
         ),
+        telemetry=telemetry,
     )
 
     pid = PidFile(pid_file) if pid_file is not None else None
@@ -214,6 +230,10 @@ def run_headless_monitor(
     finally:
         loop.stop()
         loop.join(timeout=5.0)
+        if hasattr(telemetry, "close"):
+            telemetry.close()  # type: ignore[union-attr]
+        if ts_sink is not None:
+            ts_sink.close()
         store.close()
         if pid is not None:
             pid.release()

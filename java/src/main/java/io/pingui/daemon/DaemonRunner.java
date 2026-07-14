@@ -2,18 +2,30 @@ package io.pingui.daemon;
 
 import io.pingui.AppOptions;
 import io.pingui.CliProfileOverrides;
+import io.pingui.CliTelemetryOverrides;
+import io.pingui.TelemetrySinkInstaller;
+import io.pingui.api.ReadOnlyApiServer;
 import io.pingui.config.HostEntry;
 import io.pingui.config.ProfileDocument;
 import io.pingui.config.ProfilesConfig;
 import io.pingui.config.SessionDbResolver;
+import io.pingui.config.TelemetryConfig;
 import io.pingui.config.TracingProfile;
 import io.pingui.geoip.AsnLookup;
 import io.pingui.geoip.GeoCountry;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
+import io.pingui.observability.MetricsHttpServer;
+import io.pingui.observability.PrometheusExporter;
+import io.pingui.observability.PrometheusTelemetrySink;
 import io.pingui.persistence.PersistencePolicy;
 import io.pingui.persistence.SessionDatabase;
+import io.pingui.persistence.timeseries.TimeSeriesBackend;
+import io.pingui.persistence.timeseries.TimeSeriesBackends;
+import io.pingui.persistence.timeseries.TimeSeriesConfigException;
+import io.pingui.telemetry.SinkRegistry;
+import io.pingui.telemetry.TelemetryBus;
 import io.pingui.ui.HostViewRules;
 import io.pingui.ui.MonitorLifecycle;
 import java.io.IOException;
@@ -33,6 +45,11 @@ public final class DaemonRunner implements AutoCloseable {
     private ProfileDocument profileDocument;
     private SessionStore store;
     private MonitorService monitor;
+    private SinkRegistry telemetryRegistry;
+    private TelemetryBus telemetryBus;
+    private TelemetrySinkInstaller.Result telemetryInstall;
+    private MetricsHttpServer metricsServer;
+    private ReadOnlyApiServer apiServer;
     private final CountDownLatch running = new CountDownLatch(1);
     private volatile boolean closed;
 
@@ -52,7 +69,11 @@ public final class DaemonRunner implements AutoCloseable {
         TracingProfile active = profileDocument.active();
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(active.hosts());
         store = SessionStore.fromEntries(sessionHosts, openSessionDatabase(active), active.hostProbeMode());
+        attachTimeSeries(store);
         monitor = createMonitor(active, sessionHosts);
+        attachTelemetryBus(monitor);
+        startMetricsIfConfigured();
+        startApiIfConfigured();
         DaemonPidFile.write(pidFile, ProcessHandle.current().pid());
         Runtime.getRuntime().addShutdownHook(new Thread(this::closeQuietly, "pingui-daemon-shutdown"));
         LOG.info(
@@ -70,15 +91,50 @@ public final class DaemonRunner implements AutoCloseable {
         running.await();
     }
 
+    /** Exposed for tests — metrics HTTP server when {@code metricsPort} is set. */
+    public Optional<MetricsHttpServer> metricsServer() {
+        return Optional.ofNullable(metricsServer);
+    }
+
+    /** Exposed for tests — read-only API when {@code apiPort} is set. */
+    public Optional<ReadOnlyApiServer> apiServer() {
+        return Optional.ofNullable(apiServer);
+    }
+
+    /** Exposed for tests — telemetry sink registry when bus is attached. */
+    public Optional<SinkRegistry> telemetryRegistry() {
+        return Optional.ofNullable(telemetryRegistry);
+    }
+
     @Override
     public void close() {
         if (closed) {
             return;
         }
         closed = true;
+        if (apiServer != null) {
+            apiServer.close();
+            apiServer = null;
+        }
+        if (metricsServer != null) {
+            metricsServer.close();
+            metricsServer = null;
+        }
         if (monitor != null) {
             monitor.close();
             monitor = null;
+        }
+        if (telemetryBus != null) {
+            telemetryBus.close();
+            telemetryBus = null;
+        }
+        if (telemetryRegistry != null) {
+            telemetryRegistry.close();
+            telemetryRegistry = null;
+        }
+        if (telemetryInstall != null) {
+            telemetryInstall.closeOwned();
+            telemetryInstall = null;
         }
         if (store != null) {
             store.close();
@@ -93,6 +149,29 @@ public final class DaemonRunner implements AutoCloseable {
         LOG.info("PINGUI daemon stopped");
     }
 
+    private void startMetricsIfConfigured() throws IOException {
+        Optional<Integer> port = options.metricsPort();
+        if (port.isEmpty()) {
+            return;
+        }
+        PrometheusExporter exporter = new PrometheusExporter();
+        metricsServer = MetricsHttpServer.start(exporter, port.get());
+        if (telemetryRegistry != null) {
+            telemetryRegistry.register(new PrometheusTelemetrySink(exporter));
+            LOG.info("Prometheus telemetry sink registered (scrape :{})", port.get());
+        } else {
+            LOG.warn("Metrics port set but telemetry registry missing — scrape empty until bus wired");
+        }
+    }
+
+    private void startApiIfConfigured() throws IOException {
+        Optional<Integer> port = options.apiPort();
+        if (port.isEmpty()) {
+            return;
+        }
+        apiServer = ReadOnlyApiServer.start(store, port.get());
+    }
+
     private void closeQuietly() {
         try {
             close();
@@ -102,12 +181,15 @@ public final class DaemonRunner implements AutoCloseable {
     }
 
     private void applyCliOverridesToActiveProfile() {
-        CliProfileOverrides overrides = options.profileOverrides();
-        if (overrides.isEmpty()) {
+        CliProfileOverrides profileOverrides = options.profileOverrides();
+        CliTelemetryOverrides telemetryOverrides = options.telemetryOverrides();
+        if (profileOverrides.isEmpty() && telemetryOverrides.isEmpty()) {
             return;
         }
         TracingProfile active = profileDocument.active();
-        profileDocument.putProfile(profileDocument.activeProfile(), overrides.applyTo(active));
+        TracingProfile merged = profileOverrides.applyTo(active);
+        merged = merged.withTelemetry(telemetryOverrides.applyTo(merged.telemetry()));
+        profileDocument.putProfile(profileDocument.activeProfile(), merged);
     }
 
     private SessionDatabase openSessionDatabase(TracingProfile profile) {
@@ -115,6 +197,29 @@ public final class DaemonRunner implements AutoCloseable {
                         options.sessionDbPath(), profile.persistence().sessionDb(), Optional.empty())
                 .map(SessionDatabase::new)
                 .orElse(null);
+    }
+
+    private void attachTelemetryBus(MonitorService service) {
+        telemetryRegistry = new SinkRegistry();
+        TelemetryConfig telemetry =
+                profileDocument != null ? profileDocument.active().telemetry() : TelemetryConfig.defaults();
+        Optional<SessionDatabase> sessionDb =
+                store != null && store.database() != null ? Optional.of(store.database()) : Optional.empty();
+        telemetryInstall = TelemetrySinkInstaller.install(telemetryRegistry, telemetry, sessionDb);
+        telemetryBus = new TelemetryBus(telemetryRegistry);
+        service.setTelemetryBus(telemetryBus);
+    }
+
+    private void attachTimeSeries(SessionStore sessionStore) {
+        try {
+            TimeSeriesBackend backend = TimeSeriesBackends.create(options.timeSeriesOverrides());
+            if (backend != null) {
+                sessionStore.setTimeSeriesBackend(backend);
+                LOG.info("Time-series backend enabled");
+            }
+        } catch (TimeSeriesConfigException ex) {
+            throw new IllegalArgumentException(ex.getMessage(), ex);
+        }
     }
 
     private MonitorService createMonitor(TracingProfile profile, List<HostEntry> sessionHosts) {

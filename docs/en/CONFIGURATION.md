@@ -119,6 +119,77 @@ profiles:
 
 Alerts are disabled by default (`NoOp` dispatcher).
 
+### Telemetry (P16-040…052, P16-080)
+
+Profile-level `telemetry:` (Java v2) or top-level (Python `load_telemetry_config`). Priority: **CLI > YAML > defaults**. Default: all sinks **off**; `events_only: true`; `log_aggregates: false`. ADR: [ADR_TELEMETRY.md](ADR_TELEMETRY.md). Example: `java/config/hosts.example.yaml`. Windows preset: `config/hosts.windows.example.yaml` (P16-043: `events_only`, no `jsonl_dir`).
+
+```yaml
+profiles:
+  noc:
+    hosts:
+      - "8.8.8.8"
+    telemetry:
+      events_only: true
+      log_aggregates: false
+      sqlite: data/telemetry.db
+      jsonl_dir: data/telemetry
+      syslog:
+        host: 127.0.0.1
+        port: 514
+        tls: false
+      gelf:
+        host: 127.0.0.1
+        port: 12201
+        transport: tcp   # tcp | udp
+      loki:
+        url: http://127.0.0.1:3100
+        site: default
+      otlp:                         # P16-080 OTLP/HTTP JSON (Collector :4318)
+        endpoint: http://127.0.0.1:4318
+        service_name: pingui
+```
+
+#### YAML `telemetry:` — fields
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `events_only` | bool | `true` | Remote LOG sinks (syslog/GELF/Loki/OTLP logs) accept events only; no high-freq RTT samples |
+| `log_aggregates` | bool | `false` | Optional 5m avg/max RTT as `rtt_aggregate` events (P16-034) |
+| `sqlite` | Path | — (off) | Local `SqliteTelemetrySink` (schema v4) |
+| `jsonl_dir` | Path | — (off) | `JsonlRotateSink` directory (`telemetry.jsonl.yyyy-MM-dd`) |
+| `syslog.host` | str | — | RFC 5424 TCP syslog |
+| `syslog.port` | int | `514` | 1…65535 |
+| `syslog.tls` | bool | `false` | TLS on syslog TCP |
+| `gelf.host` | str | — | Graylog GELF |
+| `gelf.port` | int | `12201` | 1…65535 |
+| `gelf.transport` | `tcp` \| `udp` | `tcp` | TCP `\0` framing (prod) / UDP (lab) |
+| `loki.url` | URL | — | Base or full `/loki/api/v1/push` |
+| `loki.site` | str | — | Label `site` (with `job=pingui`, `host`) |
+| `otlp.endpoint` | URL | — | OTLP/HTTP base (appends `/v1/logs`, `/v1/metrics`) |
+| `otlp.service_name` | str | `pingui` | Resource attribute `service.name` |
+
+Presence of a sink block (`sqlite` / `jsonl_dir` / `syslog` / `gelf` / `loki` / `otlp`) **enables** that sink in the config model. Secrets in URLs/tokens are **not** logged in plaintext (P16-042: `TelemetryConfig.redactUrl` / `redactSecret`). OTLP: events → logs; samples → metrics only when `events_only: false` (Java `OtlpHttpTelemetrySink`).
+
+#### Telemetry CLI (Java + Python)
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--telemetry-syslog` | `HOST:PORT` or `[IPv6]:PORT` | — | Override `telemetry.syslog` (tls=false) |
+| `--telemetry-jsonl` | Path | — | Override `telemetry.jsonl_dir` (not retention) |
+| `--telemetry-otlp` | URL | — | Override `telemetry.otlp.endpoint` (service_name=`pingui`) |
+
+#### One-shot / scrape CLI (mostly Java)
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--telemetry-retention` | int ≥ 1 | — | Cron: purge SQLite (± JSONL) older than N days and exit |
+| `--telemetry-jsonl-dir` | Path | — | JSONL dir only for `--telemetry-retention` |
+| `--telemetry-dump` | Path `.csv`/`.json` | — | Dump telemetry from `--session-db` and exit |
+| `--metrics-port` | int | — (off) | Daemon: Prometheus scrape `127.0.0.1:N` → `PrometheusTelemetrySink` (P16-051) |
+
+Time-series push (`--ts-backend influx|timescale` + Influx/Timescale flags/env) is a separate channel; in Python (P16-052) it goes through `InfluxTelemetrySink` on the telemetry bus. See Time-series below.
+
+Webhook route alerts stay under `alerts.webhook` / `--alert-webhook` (P10); HTTP emit is `WebhookTelemetrySink` (P16-050), ADR_ALERTS payload unchanged.
 ### GeoIP and map
 
 | Option | Type | Default | Description |
@@ -142,6 +213,8 @@ Expert ping presets (Java GUI, P14-040): `config/ping_presets.yaml` beside the h
 | `--influx-org` | str | env `INFLUXDB_ORG` | Org |
 | `--influx-bucket` | str | env `INFLUXDB_BUCKET` | Bucket |
 | `--timescale-dsn` | str | env `PINGUI_TIMESCALE_DSN` | PostgreSQL/Timescale DSN |
+
+Python (P16-052): `--ts-backend` attaches `InfluxTelemetrySink` to the telemetry bus (no SessionStore dual-emit). Java still uses SessionStore dual-emit until a separate wire.
 
 Validation: `--interval`, `--timeout` > 0; `--max-hops` ≥ 1.
 

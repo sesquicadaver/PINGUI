@@ -10,18 +10,25 @@ import io.pingui.model.Models.HopStatsSummary;
 import io.pingui.model.Models.HostSessionData;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.persistence.SessionDatabase;
+import io.pingui.persistence.timeseries.PingSample;
+import io.pingui.persistence.timeseries.RouteEvent;
+import io.pingui.persistence.timeseries.TimeSeriesBackend;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalDouble;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** In-memory session storage for route and ping metrics; optional SQLite persistence (P11-011). */
 public final class SessionStore implements AutoCloseable {
+    private static final Logger LOG = LoggerFactory.getLogger(SessionStore.class);
     public static final int MAX_PING_SAMPLES = 50;
 
     private final Map<String, HostSessionData> data = new LinkedHashMap<>();
     private SessionDatabase database;
+    private TimeSeriesBackend timeseries;
 
     public SessionStore(List<String> hosts) {
         this(hosts, null);
@@ -55,6 +62,15 @@ public final class SessionStore implements AutoCloseable {
 
     public SessionDatabase database() {
         return database;
+    }
+
+    /** Optional Influx/Timescale writer (P15-020); null disables push. */
+    public void setTimeSeriesBackend(TimeSeriesBackend timeseries) {
+        this.timeseries = timeseries;
+    }
+
+    public TimeSeriesBackend timeSeriesBackend() {
+        return timeseries;
     }
 
     public List<String> hosts() {
@@ -221,19 +237,22 @@ public final class SessionStore implements AutoCloseable {
         HostSessionData session = get(host);
         List<String> oldIps = routeIps(session.getCurrentRoute());
         List<String> newIps = snapshot.routeIps();
-        if (!session.getCurrentRoute().isEmpty() && !oldIps.equals(newIps)) {
+        boolean routeChanged = !session.getCurrentRoute().isEmpty() && !oldIps.equals(newIps);
+        if (routeChanged) {
             session.setPreviousRoute(
                     RouteHistory.routeWithLastKnownIps(session.getCurrentRoute(), session.getLastKnownByHop()));
         }
         RouteHistory.recordLastKnown(session.getLastKnownByHop(), snapshot.nodes());
         session.setCurrentRoute(snapshot.nodes());
         persist(host);
+        writeRouteEvent(host, newIps, routeChanged, snapshot);
     }
 
     public void appendPingSamples(String host, RouteSnapshot snapshot) {
         recordHopProbes(host, snapshot);
         Map<String, List<Double>> history = get(host).getPingHistory();
         boolean changed = false;
+        List<PingSample> newSamples = new ArrayList<>();
         for (HopNode node : snapshot.nodes()) {
             if (!node.isReachable() || node.pingMs() == null) {
                 continue;
@@ -244,9 +263,11 @@ public final class SessionStore implements AutoCloseable {
                 samples.subList(0, samples.size() - MAX_PING_SAMPLES).clear();
             }
             changed = true;
+            newSamples.add(new PingSample(host, node.hop(), node.ip(), node.pingMs(), snapshot.timestamp()));
         }
         if (changed) {
             persist(host);
+            writePingSamples(newSamples);
         }
     }
 
@@ -295,6 +316,14 @@ public final class SessionStore implements AutoCloseable {
 
     @Override
     public void close() {
+        if (timeseries != null) {
+            try {
+                timeseries.close();
+            } catch (RuntimeException ex) {
+                LOG.warn("Time-series backend close failed: {}", ex.getMessage());
+            }
+            timeseries = null;
+        }
         if (database == null) {
             return;
         }
@@ -303,6 +332,30 @@ public final class SessionStore implements AutoCloseable {
         }
         database.close();
         database = null;
+    }
+
+    private void writePingSamples(List<PingSample> samples) {
+        TimeSeriesBackend backend = timeseries;
+        if (backend == null || samples.isEmpty()) {
+            return;
+        }
+        try {
+            backend.writePingSamples(samples);
+        } catch (RuntimeException ex) {
+            LOG.warn("Time-series ping write failed: {}", ex.getMessage());
+        }
+    }
+
+    private void writeRouteEvent(String host, List<String> routeIps, boolean routeChanged, RouteSnapshot snapshot) {
+        TimeSeriesBackend backend = timeseries;
+        if (backend == null) {
+            return;
+        }
+        try {
+            backend.writeRouteEvent(new RouteEvent(host, routeIps, routeChanged, snapshot.timestamp()));
+        } catch (RuntimeException ex) {
+            LOG.warn("Time-series route write failed: {}", ex.getMessage());
+        }
     }
 
     private void recordHopProbes(String host, RouteSnapshot snapshot) {

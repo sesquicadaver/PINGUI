@@ -33,6 +33,8 @@ from pingui.persistence.events import PersistenceEventWriter
 from pingui.persistence.policy import PersistencePolicy
 from pingui.persistence.session_db import SessionDatabase
 from pingui.persistence.timeseries.base import TimeSeriesBackend
+from pingui.persistence.timeseries.influx_telemetry_sink import InfluxTelemetrySink
+from pingui.telemetry_emit import QueueTelemetryEmitter
 from pingui.ui.graph_canvas import GraphCanvas
 from pingui.ui.map_view import RouteMapView
 
@@ -68,10 +70,20 @@ class MainWindow(QMainWindow):
             else None
         )
 
+        # P16-052: TS via telemetry sink; SessionStore no longer dual-emits.
+        self._ts_sink: InfluxTelemetrySink | None = None
+        self._telemetry: QueueTelemetryEmitter | None = None
+        if timeseries_backend is not None:
+            self._ts_sink = InfluxTelemetrySink(timeseries_backend)
+            self._telemetry = QueueTelemetryEmitter(
+                on_sample=self._ts_sink.on_sample,
+                on_event=self._ts_sink.on_event,
+            )
+
         self._store = SessionStore(
             hosts,
             session_db=self._session_db,
-            timeseries=timeseries_backend,
+            timeseries=None,
         )
         self._alert_dispatcher = alert_dispatcher
         self._last_update: datetime | None = None
@@ -141,6 +153,7 @@ class MainWindow(QMainWindow):
             interval_seconds=interval_seconds,
             max_hops=max_hops,
             timeout=timeout,
+            telemetry=self._telemetry,
         )
         self._worker.data_received.connect(self._on_data_received)
         self._worker.route_changed.connect(self._on_route_changed)
@@ -403,6 +416,12 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event: QCloseEvent | None) -> None:
         self._worker.stop()
         self._worker.wait(5000)
+        if self._telemetry is not None:
+            self._telemetry.close()
+            self._telemetry = None
+        if self._ts_sink is not None:
+            self._ts_sink.close()
+            self._ts_sink = None
         self._store.close()
         if event is not None:
             event.accept()

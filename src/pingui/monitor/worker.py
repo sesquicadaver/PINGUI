@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from pingui.monitor.monitor_loop import MonitorCallbacks, MonitorLoop
+from pingui.telemetry_emit import NULL_TELEMETRY, TelemetryEmitter
 
 if TYPE_CHECKING:
     from pingui.icmp.raw_socket import ProbeTransport
@@ -36,6 +37,7 @@ class LightweightMonitorWorker(QThread):
         transport: ProbeTransport | None = None,
         *,
         session_store: SessionStore | None = None,
+        telemetry: TelemetryEmitter | None = None,
     ) -> None:
         super().__init__()
         self._loop = MonitorLoop(
@@ -50,7 +52,12 @@ class LightweightMonitorWorker(QThread):
                 on_route_changed=self._on_route_changed,
                 on_probe_error=self._on_probe_error,
             ),
+            telemetry=telemetry or NULL_TELEMETRY,
         )
+
+    def set_telemetry(self, telemetry: TelemetryEmitter | None) -> None:
+        """Forward optional telemetry emitter to the underlying loop (P16-013)."""
+        self._loop.set_telemetry(telemetry)
 
     def _on_data_received(self, host: str, snapshot: object) -> None:
         self.data_received.emit(host, snapshot)

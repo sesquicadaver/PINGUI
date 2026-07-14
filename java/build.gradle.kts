@@ -28,6 +28,7 @@ dependencies {
     implementation("net.java.dev.jna:jna:5.15.0")
     implementation("net.java.dev.jna:jna-platform:5.15.0")
     implementation("org.xerial:sqlite-jdbc:3.47.2.0")
+    implementation("org.postgresql:postgresql:42.7.4")
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
 }
 
