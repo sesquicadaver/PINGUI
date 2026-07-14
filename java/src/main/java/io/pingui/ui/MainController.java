@@ -402,8 +402,10 @@ public final class MainController {
 
         MenuItem databaseItem = new MenuItem("База даних…");
         databaseItem.setOnAction(e -> onPersistenceSettings());
+        MenuItem telemetryItem = new MenuItem("Телеметрія…");
+        telemetryItem.setOnAction(e -> onTelemetrySettings());
         Menu settingsMenu = new Menu("Налаштування");
-        settingsMenu.getItems().add(databaseItem);
+        settingsMenu.getItems().addAll(databaseItem, telemetryItem);
 
         MenuBar menuBar = new MenuBar(aboutMenu, settingsMenu, helpMenu);
         menuBar.setUseSystemMenuBar(true);
@@ -495,6 +497,25 @@ public final class MainController {
             monitor.setPendingPersistencePolicy(result.policy());
         }
         appendLog("Політика persistence оновлена (з наступного poll-циклу)");
+    }
+
+    private void onTelemetrySettings() {
+        TelemetrySettingsDialog.show(
+                dialogOwner(),
+                profileDocument.active().telemetry(),
+                options.telemetryOverrides(),
+                this::handleTelemetrySettings);
+    }
+
+    private void handleTelemetrySettings(TelemetrySettingsDialog.Result result) {
+        TracingProfile active = profileDocument.active();
+        profileDocument.putProfile(profileDocument.activeProfile(), active.withTelemetry(result.telemetry()));
+        attachTelemetry(monitor);
+        String sinks = telemetry != null && !telemetry.registeredIds().isEmpty()
+                ? String.join(", ", telemetry.registeredIds())
+                : "немає активних sinks";
+        appendLog("Телеметрія оновлена: " + sinks + " (YAML — кнопкою «Зберегти»)");
+        statusLabel.setText("Телеметрія: " + sinks);
     }
 
     private void notifyPersistenceConnected(Path dbPath) {

@@ -21,7 +21,9 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **OTLP/HTTP export (P16-080):** `OtlpHttpTelemetrySink` posts OTLP JSON to `/v1/logs` and `/v1/metrics` (no OTel SDK); YAML `telemetry.otlp` + `--telemetry-otlp`; ROADMAP NEXT → DONE.
+- **Telemetry settings dialog (P16-091):** Menu “Settings → Telemetry…” — `events_only`, sqlite, jsonl, syslog(+TLS); Apply → profile + re-wire bus; CLI locks honored. ROADMAP NEXT → P16-092.
+- **GUI telemetry bus (P16-090):** `TelemetryAttachment` — shared sink install + bus for JavaFX `MainController` and `DaemonRunner` (close: monitor → attachment → store).
+- **OTLP/HTTP export (P16-080):** `OtlpHttpTelemetrySink` posts OTLP JSON to `/v1/logs` and `/v1/metrics` (no OTel SDK); YAML `telemetry.otlp` + `--telemetry-otlp`.
 - **Syslog/GELF contract tests (P16-072):** `TelemetryLogFieldFixture` + `SyslogGelfContractTest` — mock TCP, shared event fields across RFC 5424 MSG and GELF `_payload`.
 - **Telemetry CHECKLIST smoke + daemon sink wiring (P16-071):** `TelemetrySinkInstaller` registers sqlite/jsonl/syslog/gelf/loki from YAML; CHECKLIST § Java telemetry smoke (local DB + syslog event).
 - **LIVING_SPEC telemetry matrix (P16-070):** concrete `*Test` classes for bus/sinks P16-010…052; Phase 16 overview; Python telemetry rows; stale P15-010 test name fixed.

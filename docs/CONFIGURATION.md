@@ -119,9 +119,11 @@ profiles:
 
 За замовчуванням alerts вимкнено (`NoOp` dispatcher).
 
-### Телеметрія (P16-040…052, P16-080)
+### Телеметрія (P16-040…052, P16-080, P16-090…091)
 
 Секція `telemetry:` у профілі v2 (Java) або top-level (Python `load_telemetry_config`). Пріоритет: **CLI > YAML > defaults**. За замовч. усі sinks **off**; `events_only: true`; `log_aggregates: false`. ADR: [ADR_TELEMETRY.md](ADR_TELEMETRY.md). Приклад: `java/config/hosts.example.yaml`. Windows-пресет: `config/hosts.windows.example.yaml` (P16-043: `events_only` без `jsonl_dir`).
+
+**Java GUI (P16-090/091):** sinks працюють у desktop через `TelemetryAttachment`. Меню **Налаштування → Телеметрія…** редагує `events_only`, `sqlite`, `jsonl_dir`, `syslog` (+ TLS); GELF/Loki/OTLP/`log_aggregates` поки лише YAML (P16-092). Apply оновлює активний профіль і re-wire bus; запис на диск — кнопка «Зберегти». CLI `--telemetry-syslog` / `--telemetry-jsonl` блокують відповідні поля.
 
 ```yaml
 profiles:

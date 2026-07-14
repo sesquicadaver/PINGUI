@@ -119,9 +119,11 @@ profiles:
 
 Alerts are disabled by default (`NoOp` dispatcher).
 
-### Telemetry (P16-040…052, P16-080)
+### Telemetry (P16-040…052, P16-080, P16-090…091)
 
 Profile-level `telemetry:` (Java v2) or top-level (Python `load_telemetry_config`). Priority: **CLI > YAML > defaults**. Default: all sinks **off**; `events_only: true`; `log_aggregates: false`. ADR: [ADR_TELEMETRY.md](ADR_TELEMETRY.md). Example: `java/config/hosts.example.yaml`. Windows preset: `config/hosts.windows.example.yaml` (P16-043: `events_only`, no `jsonl_dir`).
+
+**Java GUI (P16-090/091):** desktop sinks via `TelemetryAttachment`. Menu **Settings → Telemetry…** edits `events_only`, `sqlite`, `jsonl_dir`, `syslog` (+ TLS); GELF/Loki/OTLP/`log_aggregates` remain YAML-only until P16-092. Apply updates the active profile and re-wires the bus; disk write uses main-window **Save**. CLI `--telemetry-syslog` / `--telemetry-jsonl` lock the matching fields.
 
 ```yaml
 profiles:

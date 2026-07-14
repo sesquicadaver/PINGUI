@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **[P16-091](#фаза-16--телеметрія-метрики-мережі--log-server-beta--main-p0p1)** |
+| **Поточна задача** | **[P16-092](#фаза-16--телеметрія-метрики-мережі--log-server-beta--main-p0p1)** |
 | **Фаза** | 16 — Телеметрія (GUI) |
-| **DoD (коротко)** | Меню «Телеметрія…» — мінімальний діалог → YAML + re-wire |
+| **DoD (коротко)** | Повний UI sinks + redacted status + `log_aggregates` |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -87,7 +87,7 @@
 | 42 | **P16-072** | [x] | Contract tests syslog/gelf |
 | 43 | **P16-080** | [x] | OTLP export (P2) |
 | 44 | **P16-090** | [x] | GUI: wire `TelemetryBus` / sinks (parity daemon) |
-| 45 | **P16-091** | [ ] | Меню «Телеметрія…» — мінімальний `TelemetrySettingsDialog` |
+| 45 | **P16-091** | [x] | Меню «Телеметрія…» — мінімальний `TelemetrySettingsDialog` |
 | 46 | **P16-092** | [ ] | Повні sinks UI + redacted status + `log_aggregates` |
 | 47 | **P16-093** | [ ] | Python: підключити YAML telemetry або явно «Java/daemon only» |
 | 48 | **P16-094** | [ ] | Help/About + CHECKLIST GUI telemetry smoke |
@@ -649,7 +649,7 @@ flowchart TD
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
 | **P16-090** | [x] Wire `TelemetryBus` у Java GUI (спільний attach з daemon) | `TelemetryAttachment`, `MainController`, `DaemonRunner` | При непорожньому `telemetry:` GUI реєструє sinks; close order: monitor → bus → store; unit + daemon regression |
-| **P16-091** | [ ] Меню «Налаштування → Телеметрія…» (мінімум) | `TelemetrySettingsDialog`, `MainController` | `events_only`, local sqlite/jsonl, один remote (syslog); Apply → профіль YAML + re-wire bus |
+| **P16-091** | [x] Меню «Налаштування → Телеметрія…» (мінімум) | `TelemetrySettingsDialog`, `MainController` | `events_only`, local sqlite/jsonl, один remote (syslog); Apply → профіль YAML + re-wire bus |
 | **P16-092** | [ ] Повний UI sinks + статус | `TelemetrySettingsDialog` | syslog/GELF/Loki/OTLP, `log_aggregates`, `toRedactedString()` у діалозі |
 | **P16-093** | [ ] Python GUI/docs: wire або «sinks = Java/daemon» | `__main__.py`, docs | Немає dead `_resolve_telemetry` у GUI без ефекту; чітка позиція в CONFIGURATION |
 | **P16-094** | [ ] Help/About + CHECKLIST GUI smoke | `AppMenuDialogs`, `CHECKLIST` | Згадано persistence+telemetry; smoke: GUI + sqlite event |
