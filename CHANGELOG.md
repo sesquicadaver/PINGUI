@@ -21,6 +21,7 @@
 
 ### Added
 
+- **RTT aggregates → LOG (P16-034):** `AggregateTelemetryJob` — 5m avg/max RTT per hop as `rtt_aggregate` events; default off (`log_aggregates`); YAML wire in P16-040.
 - **events_only LOG policy (P16-033):** `SinkConfig` — shared `events_only` (default true) for syslog/GELF/Loki; sample wire only when opted out.
 - **Loki push sink (P16-032):** `LokiPushSink` — HTTP `/loki/api/v1/push`; labels `job=pingui`/`site`/`host`; line = event JSON; `eventsOnly`.
 - **GELF sink (P16-031):** `GelfSink` — GELF 1.1 JSON; TCP `\0` framing (prod) / UDP (lab); `eventsOnly`.

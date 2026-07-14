@@ -35,7 +35,7 @@ NOC потребує ще: **локальний архів** samples/events і *
 |------|----------|---------|-----------|
 | **Events** | `route_change`, `probe_error`, (опційно) `daemon_start` | Рідко | LOG-server (syslog/GELF); local event store; alerts лишаються окремим notify |
 | **Samples** | RTT per hop, loss/jitter snapshot, `trace_duration_ms`, `target_reachable` | Висока (кожний poll) | TS / Prometheus / local SQLite-or-JSONL; **не** syslog за замовчуванням |
-| **Aggregates** | avg/max RTT за 5 хв на hop | Низька | Опційно в LOG (`log_aggregates`); або лише local |
+| **Aggregates** | avg/max RTT за 5 хв на hop | Низька | Опційно в LOG (`log_aggregates`); P16-034 ✅ `AggregateTelemetryJob` → `rtt_aggregate` |
 
 **Правило:** *events → LOG*; *samples → TS / scrape / local archive*; *aggregates → LOG лише якщо явно увімкнено*.
 

@@ -24,6 +24,8 @@ public record TelemetryEvent(
     public static final String ROUTE_CHANGE = "route_change";
     public static final String PROBE_ERROR = "probe_error";
     public static final String DAEMON_START = "daemon_start";
+    /** 5m (or custom-window) avg/max RTT per hop for optional LOG (P16-034). */
+    public static final String RTT_AGGREGATE = "rtt_aggregate";
 
     public TelemetryEvent {
         event = TelemetryJson.requireNonBlank(event, "event");
@@ -43,6 +45,16 @@ public record TelemetryEvent(
     public static TelemetryEvent probeError(
             String host, String message, Map<String, String> labels, Instant timestamp) {
         return new TelemetryEvent(PROBE_ERROR, host, labels, message, List.of(), List.of(), timestamp);
+    }
+
+    /**
+     * Builds an RTT aggregate event for LOG sinks (P16-034).
+     *
+     * @param message JSON payload from {@link AggregateTelemetryJob} (hop/avg/max/count/window)
+     */
+    public static TelemetryEvent rttAggregate(
+            String host, String message, Map<String, String> labels, Instant timestamp) {
+        return new TelemetryEvent(RTT_AGGREGATE, host, labels, message, List.of(), List.of(), timestamp);
     }
 
     public String toJson() {

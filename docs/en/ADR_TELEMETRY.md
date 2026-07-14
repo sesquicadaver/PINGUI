@@ -35,7 +35,7 @@ NOC still needs a **local archive** of samples/events and **LOG-server export** 
 |-------|----------|-----------|------------|
 | **Events** | `route_change`, `probe_error`, (optional) `daemon_start` | Rare | LOG-server (syslog/GELF); local event store; alerts remain separate notify |
 | **Samples** | RTT per hop, loss/jitter snapshot, `trace_duration_ms`, `target_reachable` | High (each poll) | TS / Prometheus / local SQLite-or-JSONL; **not** syslog by default |
-| **Aggregates** | avg/max RTT per hop over 5 min | Low | Optionally to LOG (`log_aggregates`); or local only |
+| **Aggregates** | avg/max RTT per hop over 5 min | Low | Optionally to LOG (`log_aggregates`); P16-034 ✅ `AggregateTelemetryJob` → `rtt_aggregate` |
 
 **Rule:** *events → LOG*; *samples → TS / scrape / local archive*; *aggregates → LOG only when explicitly enabled*.
 

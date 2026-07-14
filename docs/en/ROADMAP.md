@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P16-034** |
+| **Current task** | **P16-040** |
 | **Phase** | 16 — Telemetry |
-| **DoD (short)** | 5m aggregates → LOG optional |
+| **DoD (short)** | YAML section `telemetry:` (local + remote sinks) |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -72,7 +72,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 27 | **P16-031** | [x] | `GelfSink` |
 | 28 | **P16-032** | [x] | `LokiPushSink` (P2) |
 | 29 | **P16-033** | [x] | `events_only` mode |
-| 30 | **P16-034** | [ ] | 5m aggregates → LOG |
+| 30 | **P16-034** | [x] | 5m aggregates → LOG |
 | 31 | **P16-040** | [ ] | YAML `telemetry:` |
 | 32 | **P16-041** | [ ] | CLI telemetry overrides |
 | 33 | **P16-042** | [ ] | Secret redaction |
@@ -602,7 +602,7 @@ flowchart TD
 | **P16-031** | [x] `GelfSink` — Graylog TCP (prod) / UDP (lab); `events_only` parity; `\0` framing | `telemetry/GelfSink.java` | route_change + probe_error events |
 | **P16-032** | [x] `LokiPushSink` — HTTP push (optional P2) | `telemetry/LokiPushSink.java` | labels: job=pingui, site |
 | **P16-033** | [x] `events_only` mode for **all** remote LOG sinks (syslog, GELF, Loki) | `SinkConfig.java` | Default true; no high-freq RTT |
-| **P16-034** | [ ] 5m aggregates (avg/max RTT per hop) → LOG optional | `AggregateTelemetryJob.java` | YAML `log_aggregates: true` |
+| **P16-034** | [x] 5m aggregates (avg/max RTT per hop) → LOG optional | `AggregateTelemetryJob.java` | YAML `log_aggregates: true` |
 
 ### 16.4 — Configuration (P0)
 

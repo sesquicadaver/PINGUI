@@ -54,6 +54,7 @@ Module → unit test matrix. Update when adding features.
 | GELF sink (P16-031) | `telemetry/GelfSink` | GELF 1.1 TCP `\0` / UDP lab; `eventsOnly` |
 | Loki push sink (P16-032) | `telemetry/LokiPushSink` | HTTP `/loki/api/v1/push`; labels `job`/`site`/`host`; `eventsOnly` |
 | events_only LOG policy (P16-033) | `telemetry/SinkConfig` | default true; shared by syslog/GELF/Loki |
+| RTT aggregates → LOG (P16-034) | `telemetry/AggregateTelemetryJob` | 5m avg/max per hop; `rtt_aggregate`; default off |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
