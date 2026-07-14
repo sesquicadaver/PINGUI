@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P16-043** |
+| **Поточна задача** | **P16-050** |
 | **Фаза** | 16 — Телеметрія |
-| **DoD (коротко)** | Windows preset: `events_only` + без jsonl high-freq |
+| **DoD (коротко)** | Webhook as `TelemetrySink` |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -76,7 +76,7 @@
 | 31 | **P16-040** | [x] | YAML `telemetry:` |
 | 32 | **P16-041** | [x] | CLI telemetry overrides |
 | 33 | **P16-042** | [x] | Secret redaction |
-| 34 | **P16-043** | [ ] | Windows telemetry preset |
+| 34 | **P16-043** | [x] | Windows telemetry preset |
 | 35 | **P16-050** | [ ] | Webhook as `TelemetrySink` |
 | 36 | **P16-051** | [ ] | Prometheus as sink |
 | 37 | **P16-052** | [ ] | Python Influx sink wrapper |
@@ -611,7 +611,7 @@ flowchart TD
 | **P16-040** | [x] YAML секція `telemetry:` (local + remote sinks) | `ProfilesConfig`, `config.py` | Приклад у `hosts.example.yaml` |
 | **P16-041** | [x] CLI: `--telemetry-syslog HOST:PORT`, `--telemetry-jsonl DIR` | `PinguiApplication`, `__main__.py` | Override profile |
 | **P16-042** | [x] Секрети (URL, token) — не логувати; mask у debug | `TelemetryConfig.java` | Unit-тест redaction |
-| **P16-043** | [ ] Windows preset: `events_only` + без jsonl high-freq | `config/hosts.windows.example.yaml` | CHECKLIST |
+| **P16-043** | [x] Windows preset: `events_only` + без jsonl high-freq | `config/hosts.windows.example.yaml` | CHECKLIST |
 
 ### 16.5 — Інтеграція з P10/P15 (P1)
 

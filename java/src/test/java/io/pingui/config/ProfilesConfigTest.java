@@ -376,6 +376,12 @@ class ProfilesConfigTest {
         assertEquals(60.0, profile.intervalSeconds());
         assertEquals(HostProbeMode.PING_ONLY, profile.hostProbeMode());
         assertTrue(profile.hosts().stream().anyMatch(h -> h.address().equals("8.8.8.8") && h.enabled()));
+        // P16-043: Windows telemetry preset — events_only, no high-freq jsonl/sqlite
+        TelemetryConfig telemetry = profile.telemetry();
+        assertTrue(telemetry.eventsOnly());
+        assertEquals(false, telemetry.logAggregates());
+        assertTrue(telemetry.jsonlDir().isEmpty());
+        assertTrue(telemetry.sqlitePath().isEmpty());
     }
 
     @Test

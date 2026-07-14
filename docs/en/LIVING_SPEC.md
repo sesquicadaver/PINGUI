@@ -22,7 +22,7 @@ Module → unit test matrix. Update when adding features.
 | Smart poll interval (P13-020) | `HostPollSchedule`, `MonitorService`, `HostEntry`, `SessionStore` | `HostPollScheduleTest`, `HostEntryTest.effectiveIntervalUsesModeDefaultsAndOverride`, `ProfilesConfigTest.loadHostIntervalOverride`, `MonitorServiceTest.pollsHostsOnIndependentSchedules` |
 | Burst on route change (P13-021) | `BurstSchedulePolicy`, `MonitorService` | `BurstSchedulePolicyTest`, `MonitorServiceTest.acceleratesPollingAfterRouteChange` |
 | Trace concurrency cap (P13-030) | `TraceConcurrencyLimiter`, `TracingProfile`, `MonitorService` | `TraceConcurrencyLimiterTest`, `ProfilesConfigTest.loadMaxConcurrentTraces`, `MonitorServiceTest.limitsConcurrentTracePolls`, `MonitorServiceTest.pingOnlyPollsWhileTraceSlotExhausted` |
-| Windows preset YAML (P13-040) | `config/hosts.windows.example.yaml`, `ProfilesConfig` | `ProfilesConfigTest.loadWindowsExamplePreset` |
+| Windows preset YAML (P13-040 / P16-043) | `config/hosts.windows.example.yaml`, `ProfilesConfig` | `ProfilesConfigTest.loadWindowsExamplePreset` |
 | MTR vs trace docs (P13-050) | `docs/JAVA.md`, `docs/ADR_PROBE_MODES.md` | Docs parity (`check_doc_parity.py`); § probe_mode + MTR limitations in JAVA.md |
 | Route diff panel (P14-010) | `RouteDiff`, `RouteDiffPresenter`, `RouteGraphPresenter`, `GraphCanvas` | `RouteDiffTest`, `RouteDiffPresenterTest`, `RouteGraphPresenterTest.liveRedrawShowsDiffAgainstPreviousRoute` |
 | Host tags YAML (P14-020) | `HostTags`, `HostEntry`, `ProfilesConfig`, `HostItem`, `MainController` | `HostTagsTest`, `HostEntryTest.withTagsPreservesOtherFields`, `ProfilesConfigTest.loadHostTagsRoundTrip` |
@@ -58,6 +58,7 @@ Module → unit test matrix. Update when adding features.
 | YAML telemetry (P16-040) | `config/TelemetryConfig`; `ProfilesConfig`; `telemetry_config.py` | local+remote sinks; hosts.example |
 | CLI telemetry overrides (P16-041) | `CliTelemetryOverrides`; `PinguiApplication`; `__main__.py` | `--telemetry-syslog`, `--telemetry-jsonl` |
 | Telemetry secret redaction (P16-042) | `TelemetryConfig.redactUrl` / `toRedactedString` | no plaintext URL/token in logs |
+| Windows telemetry preset (P16-043) | `hosts.windows.example.yaml` `telemetry:` | `events_only`; no jsonl; `ProfilesConfigTest.loadWindowsExamplePreset` |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |

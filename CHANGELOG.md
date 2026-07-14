@@ -21,6 +21,7 @@
 
 ### Added
 
+- **Windows telemetry preset (P16-043):** `hosts.windows.example.yaml` — explicit `telemetry.events_only: true`, no `jsonl_dir`/sqlite high-freq; CHECKLIST smoke.
 - **Telemetry secret redaction (P16-042):** `TelemetryConfig.redactUrl` / `redactSecret` / `toRedactedString` (+ Python parity); Loki logs use shared URL redaction.
 - **CLI telemetry overrides (P16-041):** `--telemetry-syslog HOST:PORT` / `--telemetry-jsonl DIR` override profile `TelemetryConfig` (Java + Python); distinct from `--telemetry-jsonl-dir` retention.
 - **YAML telemetry (P16-040):** `TelemetryConfig` + `ProfilesConfig` / `telemetry_config.py` — `telemetry:` (events_only, log_aggregates, sqlite, jsonl_dir, syslog/gelf/loki); examples in `hosts.example.yaml`.
