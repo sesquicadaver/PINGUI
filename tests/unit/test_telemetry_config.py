@@ -7,7 +7,12 @@ from pathlib import Path
 import pytest
 
 from pingui.config import ConfigError
-from pingui.telemetry_config import TelemetryConfig, load_telemetry_config
+from pingui.telemetry_config import (
+    TelemetryConfig,
+    apply_cli_overrides,
+    load_telemetry_config,
+    parse_syslog_host_port,
+)
 
 
 def test_missing_file_defaults(tmp_path: Path) -> None:
@@ -84,6 +89,25 @@ telemetry:
     )
     with pytest.raises(ConfigError, match="transport"):
         load_telemetry_config(path)
+
+
+def test_apply_cli_overrides_syslog_and_jsonl() -> None:
+    base = TelemetryConfig.defaults()
+    cfg = apply_cli_overrides(base, syslog="127.0.0.1:1514", jsonl_dir="data/telemetry")
+    assert cfg.syslog is not None and cfg.syslog.host == "127.0.0.1" and cfg.syslog.port == 1514
+    assert cfg.jsonl_dir == Path("data/telemetry")
+    assert cfg.events_only is True
+
+
+def test_parse_syslog_ipv6() -> None:
+    sink = parse_syslog_host_port("[::1]:514")
+    assert sink.host == "::1"
+    assert sink.port == 514
+
+
+def test_parse_syslog_invalid() -> None:
+    with pytest.raises(ConfigError, match="HOST:PORT"):
+        parse_syslog_host_port("nosport")
 
 
 def test_defaults_dataclass() -> None:

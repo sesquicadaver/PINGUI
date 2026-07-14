@@ -142,7 +142,7 @@ telemetry:
     site: default
 ```
 
-CLI overrides — P16-041. Daemon sink wire — after P16-041+.
+CLI overrides — P16-041 (`--telemetry-syslog HOST:PORT`, `--telemetry-jsonl DIR`; distinct from `--telemetry-jsonl-dir` for retention). Daemon sink wire — after P16-041+.
 
 ### GeoIP and map
 

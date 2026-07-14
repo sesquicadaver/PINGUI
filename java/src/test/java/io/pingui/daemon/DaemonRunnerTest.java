@@ -9,6 +9,7 @@ import io.pingui.CliAlertOverrides;
 import io.pingui.CliPersistenceOverrides;
 import io.pingui.CliProfileOverrides;
 import io.pingui.CliRunMode;
+import io.pingui.CliTelemetryOverrides;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -43,6 +44,7 @@ class DaemonRunnerTest {
                 CliProfileOverrides.none(),
                 CliAlertOverrides.none(),
                 CliPersistenceOverrides.none(),
+                CliTelemetryOverrides.none(),
                 io.pingui.CliTimeSeriesOverrides.none(),
                 false,
                 false,
@@ -97,6 +99,7 @@ class DaemonRunnerTest {
                 CliProfileOverrides.none(),
                 CliAlertOverrides.none(),
                 CliPersistenceOverrides.none(),
+                CliTelemetryOverrides.none(),
                 io.pingui.CliTimeSeriesOverrides.none(),
                 false,
                 false,
@@ -157,6 +160,7 @@ class DaemonRunnerTest {
                 CliProfileOverrides.none(),
                 CliAlertOverrides.none(),
                 CliPersistenceOverrides.none(),
+                CliTelemetryOverrides.none(),
                 io.pingui.CliTimeSeriesOverrides.none(),
                 false,
                 false,
@@ -210,6 +214,7 @@ class DaemonRunnerTest {
                 CliProfileOverrides.none(),
                 CliAlertOverrides.none(),
                 CliPersistenceOverrides.none(),
+                CliTelemetryOverrides.none(),
                 io.pingui.CliTimeSeriesOverrides.none(),
                 false,
                 false,

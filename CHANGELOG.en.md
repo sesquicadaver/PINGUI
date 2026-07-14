@@ -21,6 +21,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **CLI telemetry overrides (P16-041):** `--telemetry-syslog HOST:PORT` / `--telemetry-jsonl DIR` override profile `TelemetryConfig` (Java + Python); distinct from `--telemetry-jsonl-dir` retention.
 - **YAML telemetry (P16-040):** `TelemetryConfig` + `ProfilesConfig` / `telemetry_config.py` — `telemetry:` (events_only, log_aggregates, sqlite, jsonl_dir, syslog/gelf/loki); examples in `hosts.example.yaml`.
 - **RTT aggregates → LOG (P16-034):** `AggregateTelemetryJob` — 5m avg/max RTT per hop as `rtt_aggregate` events; default off (`log_aggregates`); YAML wire in P16-040.
 - **events_only LOG policy (P16-033):** `SinkConfig` — shared `events_only` (default true) for syslog/GELF/Loki; sample wire only when opted out.

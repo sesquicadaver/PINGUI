@@ -85,6 +85,40 @@ class PinguiApplicationTest {
     }
 
     @Test
+    void parseOptions_telemetrySyslogAndJsonlOverrideProfile() {
+        AppOptions options = PinguiApplication.parseOptions(
+                Map.of("telemetry-syslog", "127.0.0.1:1514", "telemetry-jsonl", "data/telemetry"));
+        assertEquals(
+                "127.0.0.1", options.telemetryOverrides().syslog().orElseThrow().host());
+        assertEquals(1514, options.telemetryOverrides().syslog().orElseThrow().port());
+        assertEquals(
+                Path.of("data/telemetry"),
+                options.telemetryOverrides().jsonlDir().orElseThrow());
+
+        io.pingui.config.TelemetryConfig yaml =
+                io.pingui.config.TelemetryConfig.defaults().withEventsOnly(true).withLogAggregates(true);
+        io.pingui.config.TelemetryConfig merged = options.telemetryOverrides().applyTo(yaml);
+        assertTrue(merged.eventsOnly());
+        assertTrue(merged.logAggregates());
+        assertEquals("127.0.0.1", merged.syslog().orElseThrow().host());
+        assertEquals(Path.of("data/telemetry"), merged.jsonlDir().orElseThrow());
+    }
+
+    @Test
+    void parseOptions_telemetrySyslogIpv6() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of("telemetry-syslog", "[::1]:514"));
+        assertEquals("::1", options.telemetryOverrides().syslog().orElseThrow().host());
+        assertEquals(514, options.telemetryOverrides().syslog().orElseThrow().port());
+    }
+
+    @Test
+    void parseOptions_telemetrySyslogInvalid() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PinguiApplication.parseOptions(Map.of("telemetry-syslog", "nosport")));
+    }
+
+    @Test
     void parseOptions_alertWebhookOverride() {
         AppOptions options = PinguiApplication.parseOptions(Map.of("alert-webhook", "https://hooks.example.com/x"));
         assertEquals(

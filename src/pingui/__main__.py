@@ -27,6 +27,7 @@ from pingui.persistence.policy import (
     load_persistence_config,
     resolve_session_db_path,
 )
+from pingui.telemetry_config import apply_cli_overrides, load_telemetry_config
 from pingui.persistence.session_db import SessionDatabase
 from pingui.persistence.timeseries.base import TimeSeriesBackend, TimeSeriesConfigError
 from pingui.persistence.timeseries.factory import create_timeseries_backend
@@ -70,6 +71,17 @@ def _add_monitor_args(parser: argparse.ArgumentParser) -> None:
         type=Path,
         default=None,
         help="Optional SQLite path to persist routes/ping between sessions",
+    )
+    parser.add_argument(
+        "--telemetry-syslog",
+        default=None,
+        help="Override telemetry syslog sink as HOST:PORT or [IPv6]:PORT",
+    )
+    parser.add_argument(
+        "--telemetry-jsonl",
+        type=Path,
+        default=None,
+        help="Override telemetry JSONL directory (profile telemetry.jsonl_dir)",
     )
     parser.add_argument(
         "--no-persist-route-change",
@@ -325,12 +337,22 @@ def _resolve_persistence(args: argparse.Namespace) -> tuple[Path | None, Persist
     return session_db, policy
 
 
+def _resolve_telemetry(args: argparse.Namespace):
+    """Return TelemetryConfig with CLI overrides over YAML (P16-041)."""
+    return apply_cli_overrides(
+        load_telemetry_config(args.config),
+        syslog=getattr(args, "telemetry_syslog", None),
+        jsonl_dir=getattr(args, "telemetry_jsonl", None),
+    )
+
+
 def _run_gui(args: argparse.Namespace, hosts: list[str]) -> int:
     geo_err = _configure_geoip(args)
     if geo_err is not None:
         return geo_err
     try:
         session_db_path, policy = _resolve_persistence(args)
+        _resolve_telemetry(args)
     except ConfigError as exc:
         print(f"Config error: {exc}", file=sys.stderr)
         return 1
@@ -358,6 +380,7 @@ def _run_headless(args: argparse.Namespace, hosts: list[str], *, pid_file: Path 
         return icmp_err
     try:
         session_db_path, policy = _resolve_persistence(args)
+        _resolve_telemetry(args)
     except ConfigError as exc:
         print(f"Config error: {exc}", file=sys.stderr)
         return 1

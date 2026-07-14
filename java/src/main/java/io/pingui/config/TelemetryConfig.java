@@ -12,7 +12,7 @@ import java.util.Optional;
  *
  * <p>Default: all local/remote sinks off, {@code events_only=true}, {@code log_aggregates=false}.
  * Presence of {@code sqlite}/{@code jsonl_dir}/syslog/gelf/loki entries enables that sink in the
- * config model. Daemon assembly and CLI overrides are later tickets (P16-041+).
+ * config model. CLI overrides: P16-041; secret redaction: P16-042; daemon sink assembly follows.
  */
 public record TelemetryConfig(
         boolean eventsOnly,

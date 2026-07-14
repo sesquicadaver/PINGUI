@@ -2,6 +2,7 @@ package io.pingui.daemon;
 
 import io.pingui.AppOptions;
 import io.pingui.CliProfileOverrides;
+import io.pingui.CliTelemetryOverrides;
 import io.pingui.api.ReadOnlyApiServer;
 import io.pingui.config.HostEntry;
 import io.pingui.config.ProfileDocument;
@@ -162,12 +163,15 @@ public final class DaemonRunner implements AutoCloseable {
     }
 
     private void applyCliOverridesToActiveProfile() {
-        CliProfileOverrides overrides = options.profileOverrides();
-        if (overrides.isEmpty()) {
+        CliProfileOverrides profileOverrides = options.profileOverrides();
+        CliTelemetryOverrides telemetryOverrides = options.telemetryOverrides();
+        if (profileOverrides.isEmpty() && telemetryOverrides.isEmpty()) {
             return;
         }
         TracingProfile active = profileDocument.active();
-        profileDocument.putProfile(profileDocument.activeProfile(), overrides.applyTo(active));
+        TracingProfile merged = profileOverrides.applyTo(active);
+        merged = merged.withTelemetry(telemetryOverrides.applyTo(merged.telemetry()));
+        profileDocument.putProfile(profileDocument.activeProfile(), merged);
     }
 
     private SessionDatabase openSessionDatabase(TracingProfile profile) {

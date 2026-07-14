@@ -64,6 +64,7 @@ public final class PinguiApplication extends Application {
         CliProfileOverrides profileOverrides = parseProfileOverrides(params);
         CliAlertOverrides alertOverrides = parseAlertOverrides(params);
         CliPersistenceOverrides persistenceOverrides = parsePersistenceOverrides(params);
+        CliTelemetryOverrides telemetryOverrides = parseTelemetryOverrides(params);
         CliTimeSeriesOverrides timeSeriesOverrides = parseTimeSeriesOverrides(params);
         boolean verbose = params.containsKey("verbose");
         boolean geoipEnabled = !params.containsKey("no-geoip");
@@ -202,6 +203,7 @@ public final class PinguiApplication extends Application {
                 profileOverrides,
                 alertOverrides,
                 persistenceOverrides,
+                telemetryOverrides,
                 timeSeriesOverrides,
                 verbose,
                 geoipEnabled,
@@ -220,6 +222,22 @@ public final class PinguiApplication extends Application {
                 telemetryRetention,
                 telemetryJsonlDir,
                 telemetryDump);
+    }
+
+    private static CliTelemetryOverrides parseTelemetryOverrides(Map<String, String> params) {
+        Optional<io.pingui.config.TelemetryConfig.SyslogSinkConfig> syslog = Optional.empty();
+        if (params.containsKey("telemetry-syslog")) {
+            syslog = Optional.of(CliTelemetryOverrides.parseSyslogHostPort(params.get("telemetry-syslog")));
+        }
+        Optional<Path> jsonlDir = Optional.empty();
+        if (params.containsKey("telemetry-jsonl")) {
+            String value = params.get("telemetry-jsonl");
+            if (value == null || value.isBlank()) {
+                throw new IllegalArgumentException("Missing value for --telemetry-jsonl");
+            }
+            jsonlDir = Optional.of(Path.of(value.strip()));
+        }
+        return new CliTelemetryOverrides(syslog, jsonlDir);
     }
 
     private static CliTimeSeriesOverrides parseTimeSeriesOverrides(Map<String, String> params) {
@@ -560,6 +578,8 @@ public final class PinguiApplication extends Application {
                   --desktop-alerts     Linux desktop notifications (notify-send)
                   --alert-rate-limit N Max alerts per host per hour (default: 10)
                   --session-db PATH  SQLite session metrics + events (optional)
+                  --telemetry-syslog HOST:PORT  Override telemetry syslog sink (profile)
+                  --telemetry-jsonl DIR         Override telemetry JSONL directory (profile)
                   --telemetry-retention N  Purge telemetry older than N days and exit (cron)
                   --telemetry-jsonl-dir DIR  Optional JSONL dir for --telemetry-retention
                   --telemetry-dump PATH     Dump SQLite telemetry to .csv/.json and exit

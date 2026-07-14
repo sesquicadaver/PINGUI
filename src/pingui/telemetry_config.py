@@ -64,6 +64,68 @@ class TelemetryConfig:
         )
 
 
+def apply_cli_overrides(
+    config: TelemetryConfig,
+    *,
+    syslog: str | None = None,
+    jsonl_dir: Path | str | None = None,
+) -> TelemetryConfig:
+    """Apply CLI ``--telemetry-syslog`` / ``--telemetry-jsonl`` over YAML config."""
+    next_syslog = config.syslog
+    if syslog is not None:
+        next_syslog = parse_syslog_host_port(syslog)
+    next_jsonl = config.jsonl_dir
+    if jsonl_dir is not None:
+        path = Path(jsonl_dir)
+        if not str(path).strip():
+            msg = "--telemetry-jsonl must be a non-empty path"
+            raise ConfigError(msg)
+        next_jsonl = path
+    return TelemetryConfig(
+        events_only=config.events_only,
+        log_aggregates=config.log_aggregates,
+        sqlite=config.sqlite,
+        jsonl_dir=next_jsonl,
+        syslog=next_syslog,
+        gelf=config.gelf,
+        loki=config.loki,
+    )
+
+
+def parse_syslog_host_port(raw: str) -> SyslogSinkConfig:
+    """Parse ``HOST:PORT`` or ``[IPv6]:PORT`` for ``--telemetry-syslog``."""
+    if not isinstance(raw, str) or not raw.strip():
+        msg = "Missing value for --telemetry-syslog"
+        raise ConfigError(msg)
+    value = raw.strip()
+    if value.startswith("["):
+        close = value.find("]")
+        if close < 2 or close + 1 >= len(value) or value[close + 1] != ":":
+            msg = "--telemetry-syslog must be HOST:PORT or [IPv6]:PORT"
+            raise ConfigError(msg)
+        host = value[1:close]
+        port_part = value[close + 2 :]
+    else:
+        colon = value.rfind(":")
+        if colon <= 0 or colon == len(value) - 1:
+            msg = "--telemetry-syslog must be HOST:PORT or [IPv6]:PORT"
+            raise ConfigError(msg)
+        host = value[:colon]
+        port_part = value[colon + 1 :]
+    if not host.strip() or not port_part.strip():
+        msg = "--telemetry-syslog must be HOST:PORT or [IPv6]:PORT"
+        raise ConfigError(msg)
+    try:
+        port = int(port_part)
+    except ValueError as exc:
+        msg = "--telemetry-syslog port must be an integer"
+        raise ConfigError(msg) from exc
+    if port < 1 or port > 65535:
+        msg = "--telemetry-syslog port must be 1..65535"
+        raise ConfigError(msg)
+    return SyslogSinkConfig(host=host.strip(), port=port, tls=False)
+
+
 def load_telemetry_config(path: Path | str) -> TelemetryConfig:
     """Load ``telemetry:`` from active profile, else top-level; missing → defaults."""
     config_path = Path(path)
