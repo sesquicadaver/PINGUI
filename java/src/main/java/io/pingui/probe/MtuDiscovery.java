@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 /**
  * Controlled ICMP payload sweep to estimate max workable size (P17-020).
@@ -28,12 +29,18 @@ public final class MtuDiscovery {
      * Runs the ascending sweep until loss threshold, max payload, or cancel.
      *
      * @param cancel returns true to abort (checked between probe attempts)
+     * @param onStep optional per-size progress sink (may be invoked off the FX thread)
      */
-    public MtuDiscoveryResult discover(String target, MtuDiscoveryConfig config, BooleanSupplier cancel)
+    public MtuDiscoveryResult discover(
+            String target,
+            MtuDiscoveryConfig config,
+            BooleanSupplier cancel,
+            Consumer<MtuDiscoveryResult.MtuProbeStep> onStep)
             throws IOException {
         Objects.requireNonNull(target, "target");
         Objects.requireNonNull(config, "config");
         BooleanSupplier stop = cancel != null ? cancel : () -> false;
+        Consumer<MtuDiscoveryResult.MtuProbeStep> progress = onStep != null ? onStep : step -> {};
         if (target.isBlank()) {
             throw new IllegalArgumentException("target must be non-blank");
         }
@@ -66,7 +73,10 @@ public final class MtuDiscovery {
             }
             double lossPct = sent == 0 ? 100.0 : (100.0 * lost) / sent;
             boolean overThreshold = lossPct + 1e-9 >= config.lossThresholdPct();
-            steps.add(new MtuDiscoveryResult.MtuProbeStep(payload, sent, lost, lossPct, overThreshold));
+            MtuDiscoveryResult.MtuProbeStep step =
+                    new MtuDiscoveryResult.MtuProbeStep(payload, sent, lost, lossPct, overThreshold);
+            steps.add(step);
+            progress.accept(step);
             if (cancelled) {
                 break;
             }
@@ -83,8 +93,14 @@ public final class MtuDiscovery {
         return new MtuDiscoveryResult(maxGood, mtu, steps, stoppedOnLoss, cancelled);
     }
 
+    /** Runs the sweep with cancel support and no progress sink. */
+    public MtuDiscoveryResult discover(String target, MtuDiscoveryConfig config, BooleanSupplier cancel)
+            throws IOException {
+        return discover(target, config, cancel, null);
+    }
+
     /** Convenience: no cancel. */
     public MtuDiscoveryResult discover(String target, MtuDiscoveryConfig config) throws IOException {
-        return discover(target, config, () -> false);
+        return discover(target, config, () -> false, null);
     }
 }

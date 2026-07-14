@@ -28,6 +28,7 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.stage.Window;
 
 /** Host list CRUD, tag filter chips, toggles, and row metrics in the main window. */
 final class HostListPresenter {
@@ -124,8 +125,12 @@ final class HostListPresenter {
         });
         syncListHeight();
         refreshTagChips();
-        hostList.setCellFactory(list ->
-                new HostListCell(this::onToggleEnabled, this::onTogglePingOnly, expertMode, this::onOpenExpertPing));
+        hostList.setCellFactory(list -> new HostListCell(
+                this::onToggleEnabled,
+                this::onTogglePingOnly,
+                expertMode,
+                this::onOpenExpertPing,
+                this::onOpenMtuWizard));
     }
 
     void rebuild(List<HostEntry> entries) {
@@ -458,5 +463,27 @@ final class HostListPresenter {
         } catch (ConfigError ex) {
             appendLog.accept(ex.getMessage());
         }
+    }
+
+    private void onOpenMtuWizard(HostItem item, Void ignored) {
+        SessionStore session = store.get();
+        PingExpertEntry current = session.getPingExpert(item.getHost());
+        boolean ipv6 = MtuDiscoveryDialog.ipv6FromExpertArgs(current.args());
+        Window owner = hostList.getScene() != null ? hostList.getScene().getWindow() : null;
+        MtuDiscoveryDialog.show(owner, item.getHost(), ipv6, current.args(), result -> {
+            try {
+                boolean applyToChain = !item.isPingOnly() && current.applyToChain();
+                PingExpertEntry next = new PingExpertEntry(applyToChain, result.expertArgs());
+                session.setPingExpert(item.getHost(), next);
+                item.setExpertConfigured(next.isConfigured());
+                hostList.refresh();
+                String mtu = result.discovery().recommendedMtu().isPresent()
+                        ? Integer.toString(result.discovery().recommendedMtu().getAsInt())
+                        : "?";
+                appendLog.accept("MTU wizard [" + item.getHost() + "]: MTU≈" + mtu + " → " + next.args());
+            } catch (ConfigError ex) {
+                appendLog.accept(ex.getMessage());
+            }
+        });
     }
 }

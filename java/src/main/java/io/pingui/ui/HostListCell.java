@@ -9,6 +9,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
@@ -17,21 +18,23 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
-/** Host list row: enable, Ping only, optional Exten., name, metrics, RTT color fill. */
+/** Host list row: enable, Ping only, optional Exten./MTU, name, metrics, RTT color fill. */
 final class HostListCell extends ListCell<HostItem> {
     private final CheckBox checkBox = new CheckBox();
     private final CheckBox pingOnlyCheck = new CheckBox("Ping only");
     private final Button extenButton = new Button("Exten.");
+    private final Button mtuButton = new Button("MTU");
     private final Label hostLabel = new Label();
     private final Label tagsLabel = new Label();
     private final Label metricsLabel = new Label();
-    private final HBox hostRow = new HBox(6, extenButton, hostLabel);
+    private final HBox hostRow = new HBox(6, extenButton, mtuButton, hostLabel);
     private final VBox textBox = new VBox(2, hostRow, tagsLabel, metricsLabel);
     private final HBox root = new HBox(8, checkBox, textBox, pingOnlyCheck);
     private final BiConsumer<HostItem, Boolean> onEnabledChanged;
     private final BiConsumer<HostItem, Boolean> onPingOnlyChanged;
     private final BooleanProperty expertMode;
     private final BiConsumer<HostItem, Void> onExpertOpen;
+    private final BiConsumer<HostItem, Void> onMtuWizardOpen;
     private HostItem boundItem;
     private ChangeListener<String> rowColorListener;
     private ChangeListener<Boolean> expertConfiguredListener;
@@ -42,18 +45,28 @@ final class HostListCell extends ListCell<HostItem> {
             BiConsumer<HostItem, Boolean> onEnabledChanged,
             BiConsumer<HostItem, Boolean> onPingOnlyChanged,
             BooleanProperty expertMode,
-            BiConsumer<HostItem, Void> onExpertOpen) {
+            BiConsumer<HostItem, Void> onExpertOpen,
+            BiConsumer<HostItem, Void> onMtuWizardOpen) {
         this.onEnabledChanged = onEnabledChanged;
         this.onPingOnlyChanged = onPingOnlyChanged;
         this.expertMode = expertMode;
         this.onExpertOpen = onExpertOpen;
+        this.onMtuWizardOpen = onMtuWizardOpen;
         extenButton.setMinWidth(56);
+        mtuButton.setMinWidth(48);
+        mtuButton.setTooltip(new Tooltip("MTU discovery wizard (−s sweep + −M do)"));
         pingOnlyCheck.setStyle("-fx-font-size: 10px;");
         pingOnlyCheck.setMinWidth(72);
         extenButton.setOnAction(e -> {
             HostItem item = getItem();
             if (item != null) {
                 onExpertOpen.accept(item, null);
+            }
+        });
+        mtuButton.setOnAction(e -> {
+            HostItem item = getItem();
+            if (item != null) {
+                onMtuWizardOpen.accept(item, null);
             }
         });
         metricsLabel.setStyle("-fx-font-family: monospace; -fx-font-size: 10px;");
@@ -113,6 +126,8 @@ final class HostListCell extends ListCell<HostItem> {
         boolean show = expertMode.get() && item != null && !HostViewRules.matches(item.getHost());
         extenButton.setVisible(show);
         extenButton.setManaged(show);
+        mtuButton.setVisible(show);
+        mtuButton.setManaged(show);
     }
 
     private void styleExtenButton(boolean configured) {

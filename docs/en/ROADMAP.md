@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **[P17-021](#phase-17--expert-ping-presets--mtu-discovery-beta-p0p1)** |
+| **Current task** | **[P17-030](#phase-17--expert-ping-presets--mtu-discovery-beta-p0p1)** |
 | **Phase** | 17 — Expert ping / MTU |
-| **DoD (short)** | MTU wizard UI + Alert + apply to Expert |
+| **DoD (short)** | Informational self-check DF/DSCP/Burst (P2) |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -93,7 +93,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 48 | **P16-094** | [x] | Help/About + CHECKLIST GUI telemetry smoke |
 | 49 | **P17-010** | [x] | Expert preset UX: summary/expect/caution + Exten. status |
 | 50 | **P17-020** | [x] | `MtuDiscovery` engine (sweep `-s`, stop ≥1% loss) |
-| 51 | **P17-021** | [ ] | MTU wizard UI + Alert + apply to Expert |
+| 51 | **P17-021** | [x] | MTU wizard UI + Alert + apply to Expert |
 | 52 | **P17-030** | [ ] | Informational self-check DF/DSCP/Burst (P2) |
 
 **End of queue:** set NEXT → `DONE` (no open IDs).
@@ -670,7 +670,7 @@ flowchart TD
 |----|------|-------|-----|
 | **P17-010** | [x] Preset UX copy + Exten. status | `PingPreset`, `ping_presets.yaml`, `PingExpertDialog`, docs | YAML `summary`/`expect`/`caution`; tooltip+status line; tests; USER_GUIDE note (preset ≠ MTU wizard) |
 | **P17-020** | [x] `MtuDiscovery` engine | `probe/MtuDiscovery*.java` | Sweep payload `-s` + `-M do`; N probes; stop at loss≥1%; unit recommended MTU |
-| **P17-021** | [ ] MTU wizard UI | `ui/MtuDiscoveryDialog`, HostList | Progress (current `-s`, loss%); Stop; Alert with max MTU; Apply → Expert args |
+| **P17-021** | [x] MTU wizard UI | `ui/MtuDiscoveryDialog`, HostList, `PingExpertDialog` | Progress (current `-s`, loss%); Stop; Alert with max MTU; Apply → Expert args |
 | **P17-030** | [ ] Self-check DF/DSCP/Burst (P2) | Exten. / short ping batch | Short result Alert without full wizard |
 
 ---

@@ -32,6 +32,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.stage.Window;
 
 /** Dialog for per-host expert ping flags (iputils ping). */
 public final class PingExpertDialog {
@@ -138,15 +139,32 @@ public final class PingExpertDialog {
         wireUiConstraints(host, addressFamily, flagChoices, textValues);
 
         Label presetStatus = new Label(
-                "Оберіть пресет — args застосуються до форми. MTU discovery (перебір) — окремий wizard (ще не в цьому діалозі).");
+                "Оберіть пресет — args застосуються до форми. Перебір MTU — кнопка «MTU wizard…» (не пресет «MTU probe»).");
         presetStatus.setWrapText(true);
         presetStatus.setStyle("-fx-text-fill: #444;");
         HBox presetsBar = buildPresetsBar(addressFamily, flagChoices, choiceValues, textValues, presetStatus);
+        Button mtuWizardButton = new Button("MTU wizard…");
+        mtuWizardButton.setTooltip(new Tooltip("Ascending -s sweep with -M do; Apply підставляє -s/-M у форму"));
+        mtuWizardButton.setOnAction(event -> {
+            boolean ipv6 = AF_IPV6.equals(addressFamily.getValue());
+            Window owner = dialog.getDialogPane().getScene() != null
+                    ? dialog.getDialogPane().getScene().getWindow()
+                    : null;
+            List<String> currentFormArgs = collectArgs(addressFamily, flagChoices, choiceValues, textValues);
+            MtuDiscoveryDialog.show(owner, host, ipv6, currentFormArgs, result -> {
+                applyArgsToForm(result.expertArgs(), addressFamily, flagChoices, choiceValues, textValues);
+                String mtu = result.discovery().recommendedMtu().isPresent()
+                        ? Integer.toString(result.discovery().recommendedMtu().getAsInt())
+                        : "?";
+                presetStatus.setText("MTU wizard: MTU≈" + mtu + " → форма: " + result.expertArgs());
+            });
+        });
+        HBox wizardBar = new HBox(6, mtuWizardButton);
 
         ScrollPane scroll = new ScrollPane(grid);
         scroll.setFitToWidth(true);
         scroll.setPrefViewportHeight(360);
-        VBox content = new VBox(8, chainCheck, presetsBar, presetStatus, scroll);
+        VBox content = new VBox(8, chainCheck, presetsBar, wizardBar, presetStatus, scroll);
         content.setPadding(new Insets(10));
         dialog.getDialogPane().setContent(content);
 

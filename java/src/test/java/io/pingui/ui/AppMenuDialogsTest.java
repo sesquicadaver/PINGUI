@@ -21,5 +21,7 @@ class AppMenuDialogsTest {
         assertTrue(help.contains("persistence.session_db"));
         assertTrue(help.contains("telemetry.sqlite"));
         assertTrue(help.contains("--telemetry-syslog"));
+        assertTrue(help.contains("MTU wizard"));
+        assertFalse(help.contains("у розробці"));
     }
 }

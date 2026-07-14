@@ -148,6 +148,7 @@ export PINGUI_JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64   # if needed
 - [ ] Extended: graph + change log
 - [ ] Save YAML → restart → target persists
 - [ ] Expert ON → **Exten.** → `-4 -s 128` → RTT updates
+- [ ] Expert ON → **MTU** (or Expert → **MTU wizard…**) → Start → Stop/finish → Alert with MTU → Apply → Expert args `-M do -s …`
 
 ### jpackage (.deb)
 
@@ -269,6 +270,7 @@ chmod +x pingui-java.sh gradlew
 4. Simple: RTT/loss; Extended: graph
 5. Save config → restart
 6. **Linux only:** Expert → Exten. → `-4 -s 128`
+7. **Linux only:** Expert → **MTU** → wizard Start/Apply (not the «MTU probe» preset)
 
 ---
 

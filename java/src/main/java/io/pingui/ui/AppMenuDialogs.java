@@ -122,8 +122,8 @@ public final class AppMenuDialogs {
                 • persistence.session_db ≠ telemetry.sqlite (різні ролі).
 
                 Expert ping (Linux)
-                • Експерт → Exten. — пресети підставляють прапорці ping(8); tooltip/status пояснюють ефект.
-                • «MTU probe» ≠ перебір MTU (окремий MTU wizard — у розробці).
+                • Експерт → Exten. / MTU — пресети та MTU wizard; tooltip/status пояснюють ефект.
+                • «MTU probe» пресет ≠ перебір MTU: кнопка MTU / «MTU wizard…» (sweep -s + -M do → Apply).
 
                 Кнопки
                 • Додати / Змінити / Видалити — цілі в поточному профілі.

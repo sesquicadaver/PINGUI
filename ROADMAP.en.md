@@ -8,7 +8,7 @@
 
 | Field | Value |
 |------|----------|
-| **Current task** | **[P17-021](docs/en/ROADMAP.md#next--single-source-of-truth)** |
+| **Current task** | **[P17-030](docs/en/ROADMAP.md#next--single-source-of-truth)** |
 | **Rule** | `/autopilot` with no args = this ID. **Do not ask** “which item?”. |
 
 Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear).
@@ -38,7 +38,7 @@ Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#e
 | **14** | Pro GUI (diff, tags, ASN/rDNS, presets) | ✅ |
 | **15** | Integrations (Prometheus, REST API, export) | ✅ |
 | **16** | Telemetry + LOG-server | ✅ (GUI P16-090…094) |
-| **17** | Expert ping / MTU discovery | 🔄 **NEXT → P17-021** |
+| **17** | Expert ping / MTU discovery | 🔄 **NEXT → P17-030** |
 
 ---
 

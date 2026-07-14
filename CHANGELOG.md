@@ -21,6 +21,7 @@
 
 ### Added
 
+- **MTU wizard UI (P17-021):** `MtuDiscoveryDialog` (progress / Stop / Alert / Apply → Expert `-M do -s`); HostList **MTU** + Expert «MTU wizard…». ROADMAP NEXT → P17-030.
 - **MtuDiscovery engine (P17-020):** ascending `-s` sweep (`min→start`) with `-M do`, stop at ≥1% loss, recommended MTU = last good payload + IP/ICMP overhead; `ProcessMtuProbeRunner`. ROADMAP NEXT → P17-021.
 - **Expert preset UX (P17-010):** `ping_presets.yaml` `summary`/`expect`/`caution`; Exten. tooltip + status line; clarify preset ≠ MTU wizard. ROADMAP NEXT → P17-020.
 - **Help/About + GUI telemetry smoke (P16-094):** About/Help mention SQLite + Telemetry menu; CHECKLIST GUI smoke. ROADMAP NEXT → DONE.

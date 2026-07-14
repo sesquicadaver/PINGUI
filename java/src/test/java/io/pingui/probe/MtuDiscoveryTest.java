@@ -75,6 +75,17 @@ class MtuDiscoveryTest {
     }
 
     @Test
+    void progressCallbackReceivesEachCompletedSize() throws Exception {
+        MtuDiscoveryConfig config = new MtuDiscoveryConfig(80, 48, 16, 1, 1.0, false, 0.5);
+        MtuProbeRunner runner = (target, payload, ipv6, timeout) -> payload <= 64;
+        java.util.List<Integer> seen = new java.util.ArrayList<>();
+        MtuDiscoveryResult result =
+                new MtuDiscovery(runner).discover("h", config, () -> false, step -> seen.add(step.payloadBytes()));
+        assertEquals(java.util.List.of(48, 64, 80), seen);
+        assertEquals(64, result.maxGoodPayload().orElseThrow());
+    }
+
+    @Test
     void cancelAbortsBetweenSizes() throws Exception {
         MtuDiscoveryConfig config = new MtuDiscoveryConfig(96, 48, 16, 2, 1.0, false, 0.5);
         AtomicInteger calls = new AtomicInteger();
