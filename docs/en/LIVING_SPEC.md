@@ -62,6 +62,7 @@ Module → unit test matrix. Update when adding features.
 | Webhook as TelemetrySink (P16-050) | `WebhookTelemetrySink`; `WebhookAlertDispatcher` | `WebhookTelemetrySinkTest`; `WebhookAlertDispatcherTest` |
 | Prometheus as TelemetrySink (P16-051) | `PrometheusTelemetrySink`; `DaemonRunner` | `PrometheusTelemetrySinkTest`; `MonitorServiceTest.updatesPrometheusViaTelemetrySinkOnPoll` |
 | Influx/Timescale TelemetrySink (P16-052) | `InfluxTelemetrySink`; Python daemon/GUI | `test_influx_telemetry_sink.py` |
+| CONFIGURATION telemetry (P16-060) | `docs/CONFIGURATION.md` § telemetry | Full YAML/CLI field tables; docs parity |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
