@@ -21,6 +21,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Syslog/GELF contract tests (P16-072):** `TelemetryLogFieldFixture` + `SyslogGelfContractTest` — mock TCP, shared event fields across RFC 5424 MSG and GELF `_payload`.
 - **Telemetry CHECKLIST smoke + daemon sink wiring (P16-071):** `TelemetrySinkInstaller` registers sqlite/jsonl/syslog/gelf/loki from YAML; CHECKLIST § Java telemetry smoke (local DB + syslog event).
 - **LIVING_SPEC telemetry matrix (P16-070):** concrete `*Test` classes for bus/sinks P16-010…052; Phase 16 overview; Python telemetry rows; stale P15-010 test name fixed.
 - **DEPLOYMENT § LOG-server (P16-061):** rsyslog TCP, Graylog GELF, optional Loki, local telemetry retention cron; troubleshooting.

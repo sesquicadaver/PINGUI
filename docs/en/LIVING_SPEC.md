@@ -66,6 +66,7 @@ Module → unit test matrix. Update when adding features.
 | DEPLOYMENT LOG-server (P16-061) | `docs/DEPLOYMENT.md` § LOG-server | rsyslog/Graylog/Loki + retention; docs parity |
 | LIVING_SPEC telemetry matrix (P16-070) | this document § phase 16 | Bus → sinks → tests matrix below |
 | Daemon sink wiring + CHECKLIST smoke (P16-071) | `TelemetrySinkInstaller`, `DaemonRunner`; `docs/CHECKLIST.md` | `TelemetrySinkInstallerTest`, `DaemonRunnerTest.startRegistersSqliteAndSyslogFromTelemetryConfig` |
+| Syslog/GELF field contract (P16-072) | `SyslogSink`, `GelfSink`; `TelemetryLogFieldFixture` | `SyslogGelfContractTest` (mock TCP + shared fields) |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
@@ -102,7 +103,7 @@ Flow: **Monitor / jobs** → `TelemetryBus` → `SinkRegistry` → sinks. Promet
 | Bus / registry | `TelemetryBus`, `DropPolicy`, `SinkRegistry`, `NoOpTelemetrySink` | `TelemetryBusTest`, `SinkRegistryTest` |
 | Poll wiring | `MonitorService.setTelemetryBus` | `MonitorServiceTelemetryTest` (+ `test_monitor_telemetry.py`) |
 | Local sinks | `SqliteTelemetrySink`, `JsonlRotateSink`, `TelemetryRetentionJob`, `TelemetryDump` | `SqliteTelemetrySinkTest`, `JsonlRotateSinkTest`, `TelemetryRetentionJobTest`, `TelemetryDumpTest` |
-| LOG sinks | `SyslogSink`, `GelfSink`, `LokiPushSink`, `SinkConfig`, `AggregateTelemetryJob` | `SyslogSinkTest`, `GelfSinkTest`, `LokiPushSinkTest`, `SinkConfigTest`, `AggregateTelemetryJobTest` |
+| LOG sinks | `SyslogSink`, `GelfSink`, `LokiPushSink`, `SinkConfig`, `AggregateTelemetryJob` | `SyslogSinkTest`, `GelfSinkTest`, `LokiPushSinkTest`, `SinkConfigTest`, `AggregateTelemetryJobTest`, `SyslogGelfContractTest` |
 | Config / CLI | `TelemetryConfig`, `ProfilesConfig`, `CliTelemetryOverrides` | `ProfilesConfigTest.loadTelemetry*`, `PinguiApplicationTest.parseOptions_telemetry*`, `TelemetryConfigRedactionTest` (+ `test_telemetry_config.py`) |
 | Bridge sinks | `WebhookTelemetrySink`, `PrometheusTelemetrySink`, `InfluxTelemetrySink` | `WebhookTelemetrySinkTest`, `PrometheusTelemetrySinkTest`, `test_influx_telemetry_sink.py`; `MonitorServiceTest.updatesPrometheusViaTelemetrySinkOnPoll` |
 | Docs | CONFIGURATION § telemetry, DEPLOYMENT § LOG-server | `scripts/check_doc_parity.py` |

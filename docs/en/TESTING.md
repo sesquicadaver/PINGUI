@@ -103,6 +103,8 @@ JaCoCo gate ≥80% instruction coverage (JavaFX UI and `ProcessRouteProbe.trace`
 
 Trace fixtures: `java/src/test/resources/trace/` — v4 regression: `ProcessRouteProbeTest.v4FixturesRemainGreen`.
 
+LOG sink contract (P16-072): `SyslogGelfContractTest` + `TelemetryLogFieldFixture` — mock TCP syslog/GELF, shared event fields.
+
 CI: `.github/workflows/java-ci.yml`.
 
 ## Import Graph
