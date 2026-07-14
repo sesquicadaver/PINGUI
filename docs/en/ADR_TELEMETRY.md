@@ -109,7 +109,7 @@ New sample fields (loss/jitter) are added via P16-010 without changing this ADRâ
 2. YAML `telemetry:` on the active profile (P16-040)  
 3. Default: **all sinks off** (zero remote IO)
 
-Secrets (URL, token) must **not** be logged in plaintext (P16-042).
+Secrets (URL, token) must **not** be logged in plaintext (P16-042 âœ… `TelemetryConfig.redactUrl` / `redactSecret` / `toRedactedString`).
 
 ### 7. Failure policy
 

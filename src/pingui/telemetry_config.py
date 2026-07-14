@@ -63,6 +63,53 @@ class TelemetryConfig:
             and self.loki is None
         )
 
+    def redacted_summary(self) -> str:
+        """Debug-safe summary without credentials or query secrets (P16-042)."""
+        parts = [
+            f"events_only={self.events_only}",
+            f"log_aggregates={self.log_aggregates}",
+        ]
+        if self.sqlite is not None:
+            parts.append(f"sqlite={self.sqlite}")
+        if self.jsonl_dir is not None:
+            parts.append(f"jsonl_dir={self.jsonl_dir}")
+        if self.syslog is not None:
+            tls = "(tls)" if self.syslog.tls else ""
+            parts.append(f"syslog={self.syslog.host}:{self.syslog.port}{tls}")
+        if self.gelf is not None:
+            parts.append(f"gelf={self.gelf.host}:{self.gelf.port}/{self.gelf.transport}")
+        if self.loki is not None:
+            parts.append(f"loki={redact_url(self.loki.url)} site={self.loki.site}")
+        return "TelemetryConfig{" + ", ".join(parts) + "}"
+
+
+def redact_url(url: str | None) -> str:
+    """Log-safe URL: scheme + host[:port] + path; strips userinfo and query."""
+    if url is None or not str(url).strip():
+        return ""
+    from urllib.parse import urlsplit, urlunsplit
+
+    try:
+        parts = urlsplit(str(url).strip())
+    except ValueError:
+        return "<invalid-url>"
+    host = parts.hostname or "unknown"
+    netloc = host
+    if parts.port is not None:
+        netloc = f"{host}:{parts.port}"
+    scheme = parts.scheme or "http"
+    return urlunsplit((scheme, netloc, parts.path or "", "", ""))
+
+
+def redact_secret(secret: str | None) -> str:
+    """Mask a bearer/token/password for debug logs. Never returns the full secret."""
+    if secret is None or not str(secret).strip():
+        return ""
+    value = str(secret).strip()
+    if len(value) <= 4:
+        return "****"
+    return f"{value[:2]}…****"
+
 
 def apply_cli_overrides(
     config: TelemetryConfig,

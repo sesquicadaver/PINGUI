@@ -1,5 +1,6 @@
 package io.pingui.telemetry;
 
+import io.pingui.config.TelemetryConfig;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -162,14 +163,7 @@ public final class LokiPushSink implements TelemetrySink {
     }
 
     private String redactedUri() {
-        String scheme = pushUri.getScheme() == null ? "http" : pushUri.getScheme();
-        String host = pushUri.getHost() == null ? "unknown" : pushUri.getHost();
-        int port = pushUri.getPort();
-        String path = pushUri.getPath() == null ? "" : pushUri.getPath();
-        if (port > 0) {
-            return scheme + "://" + host + ":" + port + path;
-        }
-        return scheme + "://" + host + path;
+        return TelemetryConfig.redactUrl(pushUri.toString());
     }
 
     private static String requireNonBlank(String value, String field) {

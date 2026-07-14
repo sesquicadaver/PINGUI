@@ -2,6 +2,8 @@ package io.pingui.config;
 
 import io.pingui.telemetry.GelfSink;
 import io.pingui.telemetry.SinkConfig;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Objects;
@@ -12,7 +14,8 @@ import java.util.Optional;
  *
  * <p>Default: all local/remote sinks off, {@code events_only=true}, {@code log_aggregates=false}.
  * Presence of {@code sqlite}/{@code jsonl_dir}/syslog/gelf/loki entries enables that sink in the
- * config model. CLI overrides: P16-041; secret redaction: P16-042; daemon sink assembly follows.
+ * config model. CLI overrides: P16-041. Secret redaction for logs: {@link #redactUrl(String)},
+ * {@link #redactSecret(String)}, {@link #toRedactedString()} (P16-042).
  */
 public record TelemetryConfig(
         boolean eventsOnly,
@@ -56,6 +59,70 @@ public record TelemetryConfig(
 
     public TelemetryConfig withLogAggregates(boolean logAggregates) {
         return new TelemetryConfig(eventsOnly, logAggregates, sqlitePath, jsonlDir, syslog, gelf, loki);
+    }
+
+    /**
+     * Log-safe URL: scheme + host[:port] + path; strips userinfo and query (P16-042).
+     *
+     * @return empty string for null/blank; {@code <invalid-url>} when unparsable
+     */
+    public static String redactUrl(String url) {
+        if (url == null || url.isBlank()) {
+            return "";
+        }
+        try {
+            URI uri = new URI(url.strip());
+            String scheme = uri.getScheme() != null ? uri.getScheme() : "http";
+            String host = uri.getHost() != null ? uri.getHost() : "unknown";
+            int port = uri.getPort();
+            String path = uri.getRawPath() != null ? uri.getRawPath() : "";
+            if (port > 0) {
+                return scheme + "://" + host + ":" + port + path;
+            }
+            return scheme + "://" + host + path;
+        } catch (URISyntaxException ex) {
+            return "<invalid-url>";
+        }
+    }
+
+    /**
+     * Masks a bearer/token/password for debug logs (P16-042). Never returns the full secret.
+     */
+    public static String redactSecret(String secret) {
+        if (secret == null || secret.isBlank()) {
+            return "";
+        }
+        String value = secret.strip();
+        if (value.length() <= 4) {
+            return "****";
+        }
+        return value.substring(0, 2) + "…" + "****";
+    }
+
+    /** Debug-safe summary: sink endpoints without credentials or query secrets. */
+    public String toRedactedString() {
+        StringBuilder sb = new StringBuilder(128);
+        sb.append("TelemetryConfig{eventsOnly=")
+                .append(eventsOnly)
+                .append(", logAggregates=")
+                .append(logAggregates);
+        sqlitePath.ifPresent(path -> sb.append(", sqlite=").append(path));
+        jsonlDir.ifPresent(path -> sb.append(", jsonlDir=").append(path));
+        syslog.ifPresent(s -> sb.append(", syslog=")
+                .append(s.host())
+                .append(':')
+                .append(s.port())
+                .append(s.tls() ? "(tls)" : ""));
+        gelf.ifPresent(g -> sb.append(", gelf=")
+                .append(g.host())
+                .append(':')
+                .append(g.port())
+                .append('/')
+                .append(g.transport().name().toLowerCase(Locale.ROOT)));
+        loki.ifPresent(l ->
+                sb.append(", loki=").append(redactUrl(l.url())).append(" site=").append(l.site()));
+        sb.append('}');
+        return sb.toString();
     }
 
     /** Syslog remote endpoint from YAML {@code telemetry.syslog}. */

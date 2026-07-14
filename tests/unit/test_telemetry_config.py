@@ -8,10 +8,14 @@ import pytest
 
 from pingui.config import ConfigError
 from pingui.telemetry_config import (
+    LokiSinkConfig,
+    SyslogSinkConfig,
     TelemetryConfig,
     apply_cli_overrides,
     load_telemetry_config,
     parse_syslog_host_port,
+    redact_secret,
+    redact_url,
 )
 
 
@@ -112,3 +116,36 @@ def test_parse_syslog_invalid() -> None:
 
 def test_defaults_dataclass() -> None:
     assert TelemetryConfig.defaults().is_default()
+
+
+def test_redact_url_strips_credentials_and_query() -> None:
+    assert (
+        redact_url("https://user:pass@hooks.example.com/path?token=abc")
+        == "https://hooks.example.com/path"
+    )
+    assert redact_url("http://token:secret@127.0.0.1:3100/push?api_key=x") == "http://127.0.0.1:3100/push"
+    assert redact_url("  ") == ""
+
+
+def test_redact_secret_masks() -> None:
+    assert redact_secret(None) == ""
+    assert redact_secret("ab") == "****"
+    masked = redact_secret("super-secret-token")
+    assert masked.startswith("su")
+    assert masked.endswith("****")
+    assert "secret-token" not in masked
+
+
+def test_redacted_summary_hides_loki_secrets() -> None:
+    cfg = TelemetryConfig(
+        loki=LokiSinkConfig(
+            url="https://token:secret@loki.example:3100/loki/api/v1/push?orgId=1",
+            site="noc",
+        ),
+        syslog=SyslogSinkConfig(host="syslog.example", port=514, tls=True),
+    )
+    summary = cfg.redacted_summary()
+    assert "syslog=syslog.example:514(tls)" in summary
+    assert "loki=https://loki.example:3100/loki/api/v1/push" in summary
+    assert "token:secret" not in summary
+    assert "orgId=1" not in summary

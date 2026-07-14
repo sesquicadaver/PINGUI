@@ -57,6 +57,7 @@ Module → unit test matrix. Update when adding features.
 | RTT aggregates → LOG (P16-034) | `telemetry/AggregateTelemetryJob` | 5m avg/max per hop; `rtt_aggregate`; default off |
 | YAML telemetry (P16-040) | `config/TelemetryConfig`; `ProfilesConfig`; `telemetry_config.py` | local+remote sinks; hosts.example |
 | CLI telemetry overrides (P16-041) | `CliTelemetryOverrides`; `PinguiApplication`; `__main__.py` | `--telemetry-syslog`, `--telemetry-jsonl` |
+| Telemetry secret redaction (P16-042) | `TelemetryConfig.redactUrl` / `toRedactedString` | no plaintext URL/token in logs |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |

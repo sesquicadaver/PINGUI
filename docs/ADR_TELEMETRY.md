@@ -109,7 +109,7 @@ flowchart LR
 2. YAML `telemetry:` активного профілю (P16-040)  
 3. Default: **усі sinks off** (zero remote IO)
 
-Секрети (URL, token) — **не** логувати plaintext (P16-042).
+Секрети (URL, token) — **не** логувати plaintext (P16-042 ✅ `TelemetryConfig.redactUrl` / `redactSecret` / `toRedactedString`).
 
 ### 7. Failure policy
 
