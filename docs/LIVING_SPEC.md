@@ -60,6 +60,7 @@
 | Telemetry secret redaction (P16-042) | `TelemetryConfig.redactUrl` / `toRedactedString` | no plaintext URL/token in logs |
 | Windows telemetry preset (P16-043) | `hosts.windows.example.yaml` `telemetry:` | `events_only`; no jsonl; `ProfilesConfigTest.loadWindowsExamplePreset` |
 | Webhook as TelemetrySink (P16-050) | `WebhookTelemetrySink`; `WebhookAlertDispatcher` | `WebhookTelemetrySinkTest`; `WebhookAlertDispatcherTest` |
+| Prometheus as TelemetrySink (P16-051) | `PrometheusTelemetrySink`; `DaemonRunner` | `PrometheusTelemetrySinkTest`; `MonitorServiceTest.updatesPrometheusViaTelemetrySinkOnPoll` |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |

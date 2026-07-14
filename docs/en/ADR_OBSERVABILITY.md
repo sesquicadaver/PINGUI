@@ -84,11 +84,11 @@ Java P15-020 must mirror the Python API (`TimeSeriesBackend`), not invent a thir
 
 ### 5. Link to phase 16
 
-P15 adapters are **temporary direct** calls from the monitor (**dual-emit debt** until P16-051/052): MonitorService may update Prometheus gauges and push to a TS backend at the same time. Acceptable for v1, **not** the target topology. P16-013 only wires poll → TelemetryBus; sink migration comes later.
+P15 adapters are **temporary direct** calls from the monitor (**dual-emit debt** until P16-051/052): MonitorService may update Prometheus gauges **directly** and push to a TS backend. P16-051 ✅ removed Prometheus dual-emit (`PrometheusTelemetrySink` from bus). TS dual-emit remains until P16-052. P16-013 wired poll → TelemetryBus.
 
 After P16-011…013:
 
-- `PrometheusExporter` → `PrometheusTelemetrySink` (P16-051) — **in-process scrape state-holder**, not a Prometheus `remote_write` / push client
+- `PrometheusExporter` → `PrometheusTelemetrySink` (P16-051 ✅) — **in-process scrape state-holder**, not a Prometheus `remote_write` / push client
 - Influx/Timescale → `InfluxTelemetrySink` / wrapper (P16-052)
 - Single emit path via `TelemetryBus` (no dual HTTP/SQL from MonitorService)
 

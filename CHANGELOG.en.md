@@ -21,6 +21,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Prometheus as TelemetrySink (P16-051):** `PrometheusTelemetrySink` updates scrape gauges from the bus; daemon registers on `--metrics-port`; MonitorService Prometheus dual-emit removed.
 - **Webhook as TelemetrySink (P16-050):** `WebhookTelemetrySink` owns HTTP POST; `WebhookAlertDispatcher` delegates (ADR_ALERTS JSON unchanged).
 - **Windows telemetry preset (P16-043):** `hosts.windows.example.yaml` — explicit `telemetry.events_only: true`, no `jsonl_dir`/sqlite high-freq; CHECKLIST smoke.
 - **Telemetry secret redaction (P16-042):** `TelemetryConfig.redactUrl` / `redactSecret` / `toRedactedString` (+ Python parity); Loki logs use shared URL redaction.

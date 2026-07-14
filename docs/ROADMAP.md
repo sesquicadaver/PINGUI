@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P16-051** |
+| **Поточна задача** | **P16-052** |
 | **Фаза** | 16 — Телеметрія |
-| **DoD (коротко)** | Prometheus as sink |
+| **DoD (коротко)** | Python Influx sink wrapper |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -78,7 +78,7 @@
 | 33 | **P16-042** | [x] | Secret redaction |
 | 34 | **P16-043** | [x] | Windows telemetry preset |
 | 35 | **P16-050** | [x] | Webhook as `TelemetrySink` |
-| 36 | **P16-051** | [ ] | Prometheus as sink |
+| 36 | **P16-051** | [x] | Prometheus as sink |
 | 37 | **P16-052** | [ ] | Python Influx sink wrapper |
 | 38 | **P16-060** | [ ] | CONFIGURATION § telemetry |
 | 39 | **P16-061** | [ ] | DEPLOYMENT § LOG-server |
@@ -618,7 +618,7 @@ flowchart TD
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
 | **P16-050** | [x] P10 webhook — реалізація як `TelemetrySink` (не дубль коду) | `WebhookAlertDispatcher` → `telemetry/` | Один шлях emit |
-| **P16-051** | [ ] P15 Prometheus — `PrometheusTelemetrySink` implements sink | `observability/PrometheusExporter.java` | Scrape з daemon |
+| **P16-051** | [x] P15 Prometheus — `PrometheusTelemetrySink` implements sink | `observability/PrometheusExporter.java` | Scrape з daemon |
 | **P16-052** | [ ] Python B-05 Influx — `InfluxTelemetrySink` wrapper | `persistence/timeseries/influx.py` | Config parity |
 
 ### 16.6 — Docs / QA (P0)

@@ -74,7 +74,7 @@ flowchart LR
 | `SyslogSink` | remote events | **off** | P16-030 ✅ RFC 5424 TCP; TLS optional; framing trailing NL; MSG = single-line JSON; `events_only` via `SinkConfig` (P16-033 ✅ default true) |
 | `GelfSink` | remote events | **off** | P16-031 ✅ GELF 1.1; TCP `\0` framing / UDP lab; `events_only` via `SinkConfig` (P16-033 ✅) |
 | `LokiPushSink` | remote | **off** | P16-032 ✅ HTTP `/loki/api/v1/push`; labels `job`/`site`/`host`; `events_only` via `SinkConfig` (P16-033 ✅) |
-| `PrometheusTelemetrySink` | in-process scrape state | via `--metrics-port` | Not remote_write (see ADR_OBSERVABILITY) |
+| `PrometheusTelemetrySink` | in-process scrape state | via `--metrics-port` | P16-051 ✅ — `PrometheusExporter` wrapper from bus; not remote_write |
 | `InfluxTelemetrySink` | remote samples | via TS config | Wrapper over B-05 / P15-020 |
 | Webhook as sink | remote events | via alerts config | P16-050 ✅ — one emit path (`WebhookTelemetrySink`), not a second HTTP client |
 
@@ -83,7 +83,7 @@ flowchart LR
 | Boundary | Decision |
 |----------|----------|
 | **P10 alerts** | Remain **operator notify**. Telemetry **may** mirror `route_change` as an event to sinks, but LOG does not replace UX notify. P16-050 ✅ refactors webhook into `WebhookTelemetrySink`; `WebhookAlertDispatcher` delegates HTTP (ADR_ALERTS payload unchanged). |
-| **P15 Prometheus** | Pull/scrape remains. P16-051: exporter becomes a sink that updates in-process gauges from the bus. |
+| **P15 Prometheus** | Pull/scrape remains. P16-051 ✅: `PrometheusTelemetrySink` updates in-process gauges from the bus (`DaemonRunner` registers on `--metrics-port`). |
 | **P15 TS push** | P16-052: Influx/Timescale as a bus sink; MonitorService dual-emit removed after P16-013. |
 | **P11 session DB** | GUI history / policy events. **Not** a Grafana datasource and not a telemetry archive replacement. |
 | **REST API** | Read snapshot; not the telemetry bus. |

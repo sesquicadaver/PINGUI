@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P16-051** |
+| **Current task** | **P16-052** |
 | **Phase** | 16 — Telemetry |
-| **DoD (short)** | Prometheus as sink |
+| **DoD (short)** | Python Influx sink wrapper |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -78,7 +78,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 33 | **P16-042** | [x] | Secret redaction |
 | 34 | **P16-043** | [x] | Windows telemetry preset |
 | 35 | **P16-050** | [x] | Webhook as `TelemetrySink` |
-| 36 | **P16-051** | [ ] | Prometheus as sink |
+| 36 | **P16-051** | [x] | Prometheus as sink |
 | 37 | **P16-052** | [ ] | Python Influx sink wrapper |
 | 38 | **P16-060** | [ ] | CONFIGURATION § telemetry |
 | 39 | **P16-061** | [ ] | DEPLOYMENT § LOG-server |
@@ -618,7 +618,7 @@ flowchart TD
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
 | **P16-050** | [x] P10 webhook — implement as `TelemetrySink` (no duplicate code) | `WebhookAlertDispatcher` → `telemetry/` | Single emit path |
-| **P16-051** | [ ] P15 Prometheus — `PrometheusTelemetrySink` | `observability/PrometheusExporter.java` | Scrape from daemon |
+| **P16-051** | [x] P15 Prometheus — `PrometheusTelemetrySink` | `observability/PrometheusExporter.java` | Scrape from daemon |
 | **P16-052** | [ ] Python B-05 Influx — `InfluxTelemetrySink` wrapper | `persistence/timeseries/influx.py` | Config parity |
 
 ### 16.6 — Docs / QA (P0)

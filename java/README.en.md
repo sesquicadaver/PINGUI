@@ -130,7 +130,7 @@ io.pingui
                        UnixTraceOutputParser, WindowsTraceOutputParser, ProcessExpertPing
 ├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
 ├── persistence/     SessionDatabase, PersistenceEventWriter (P11); timeseries/ (P15-020)
-├── observability/   PrometheusExporter, MetricsHttpServer (P15-010)
+├── observability/   PrometheusExporter, PrometheusTelemetrySink (P16-051), MetricsHttpServer (P15-010)
 ├── api/             ReadOnlyApiServer (P15-040)
 ├── export/          SessionReportExporter (P11-030), ScheduledExport (P15-030)
 └── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,

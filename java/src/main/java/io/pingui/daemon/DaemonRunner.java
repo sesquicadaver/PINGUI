@@ -16,6 +16,7 @@ import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
 import io.pingui.observability.MetricsHttpServer;
 import io.pingui.observability.PrometheusExporter;
+import io.pingui.observability.PrometheusTelemetrySink;
 import io.pingui.persistence.PersistencePolicy;
 import io.pingui.persistence.SessionDatabase;
 import io.pingui.persistence.timeseries.TimeSeriesBackend;
@@ -143,7 +144,12 @@ public final class DaemonRunner implements AutoCloseable {
         }
         PrometheusExporter exporter = new PrometheusExporter();
         metricsServer = MetricsHttpServer.start(exporter, port.get());
-        monitor.setPrometheusExporter(exporter);
+        if (telemetryRegistry != null) {
+            telemetryRegistry.register(new PrometheusTelemetrySink(exporter));
+            LOG.info("Prometheus telemetry sink registered (scrape :{})", port.get());
+        } else {
+            LOG.warn("Metrics port set but telemetry registry missing — scrape empty until bus wired");
+        }
     }
 
     private void startApiIfConfigured() throws IOException {

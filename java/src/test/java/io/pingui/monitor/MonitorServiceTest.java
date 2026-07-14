@@ -227,7 +227,7 @@ class MonitorServiceTest {
     }
 
     @Test
-    void updatesPrometheusExporterOnPollAndIsolatesFailures() throws Exception {
+    void updatesPrometheusViaTelemetrySinkOnPoll() throws Exception {
         RouteSnapshot reachable = new RouteSnapshot(
                 "8.8.8.8",
                 "8.8.8.8",
@@ -246,38 +246,56 @@ class MonitorServiceTest {
             throw new java.io.IOException("probe down");
         };
         io.pingui.observability.PrometheusExporter exporter = new io.pingui.observability.PrometheusExporter();
+        io.pingui.telemetry.SinkRegistry registry = new io.pingui.telemetry.SinkRegistry();
+        registry.register(new io.pingui.observability.PrometheusTelemetrySink(exporter));
         CountDownLatch first = new CountDownLatch(1);
         CountDownLatch second = new CountDownLatch(1);
         CountDownLatch error = new CountDownLatch(1);
         MonitorService service = new MonitorService(0.05, 20, 0.5, probe);
-        service.setPrometheusExporter(exporter);
-        service.setListener(new MonitorService.Listener() {
-            @Override
-            public void onDataReceived(String host, RouteSnapshot snap) {
-                if (first.getCount() > 0) {
-                    first.countDown();
-                } else {
-                    second.countDown();
+        try (io.pingui.telemetry.TelemetryBus bus = new io.pingui.telemetry.TelemetryBus(
+                registry, 256, io.pingui.telemetry.DropPolicy.DROP_OLDEST, 64, java.time.Duration.ofMillis(10))) {
+            service.setTelemetryBus(bus);
+            service.setListener(new MonitorService.Listener() {
+                @Override
+                public void onDataReceived(String host, RouteSnapshot snap) {
+                    if (first.getCount() > 0) {
+                        first.countDown();
+                    } else {
+                        second.countDown();
+                    }
                 }
-            }
 
-            @Override
-            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
+                @Override
+                public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
 
-            @Override
-            public void onProbeError(String host, String message) {
-                error.countDown();
+                @Override
+                public void onProbeError(String host, String message) {
+                    error.countDown();
+                }
+            });
+            service.addHost("8.8.8.8", true);
+            assertTrue(first.await(5, TimeUnit.SECONDS));
+            assertTrue(awaitScrape(exporter, "pingui_target_reachable{host=\"8.8.8.8\"} 1.0", 3_000));
+            assertTrue(awaitScrape(exporter, "pingui_rtt_ms{host=\"8.8.8.8\",hop=\"2\"} 10.0", 3_000));
+            assertTrue(second.await(5, TimeUnit.SECONDS));
+            assertTrue(awaitScrape(exporter, "pingui_target_reachable{host=\"8.8.8.8\"} 0.0", 3_000));
+            assertTrue(error.await(5, TimeUnit.SECONDS));
+            assertTrue(awaitScrape(exporter, "pingui_target_reachable{host=\"8.8.8.8\"} 0.0", 3_000));
+            service.close();
+        }
+        registry.close();
+    }
+
+    private static boolean awaitScrape(io.pingui.observability.PrometheusExporter exporter, String needle, long timeoutMs)
+            throws InterruptedException {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        while (System.currentTimeMillis() < deadline) {
+            if (exporter.scrape().contains(needle)) {
+                return true;
             }
-        });
-        service.addHost("8.8.8.8", true);
-        assertTrue(first.await(5, TimeUnit.SECONDS));
-        assertTrue(exporter.scrape().contains("pingui_target_reachable{host=\"8.8.8.8\"} 1.0"));
-        assertTrue(exporter.scrape().contains("pingui_rtt_ms{host=\"8.8.8.8\",hop=\"2\"} 10.0"));
-        assertTrue(second.await(5, TimeUnit.SECONDS));
-        assertTrue(exporter.scrape().contains("pingui_target_reachable{host=\"8.8.8.8\"} 0.0"));
-        assertTrue(error.await(5, TimeUnit.SECONDS));
-        assertTrue(exporter.scrape().contains("pingui_target_reachable{host=\"8.8.8.8\"} 0.0"));
-        service.close();
+            Thread.sleep(20);
+        }
+        return false;
     }
 
     @Test

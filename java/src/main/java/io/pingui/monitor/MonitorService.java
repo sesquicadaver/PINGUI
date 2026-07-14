@@ -3,7 +3,6 @@ package io.pingui.monitor;
 import io.pingui.config.PingExpertEntry;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;
-import io.pingui.observability.PrometheusExporter;
 import io.pingui.persistence.PersistenceEventWriter;
 import io.pingui.persistence.PersistencePolicy;
 import io.pingui.persistence.PersistencePolicyHolder;
@@ -98,7 +97,6 @@ public final class MonitorService implements AutoCloseable {
     private final PersistencePolicyHolder persistencePolicy = new PersistencePolicyHolder();
     private final BurstSchedulePolicy burstPolicy = new BurstSchedulePolicy();
     private final TraceConcurrencyLimiter traceLimiter;
-    private volatile PrometheusExporter prometheusExporter;
     private volatile TelemetryBus telemetryBus;
 
     public MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds) {
@@ -204,11 +202,6 @@ public final class MonitorService implements AutoCloseable {
 
     public void setPersistenceEventWriter(PersistenceEventWriter persistenceEvents) {
         this.persistenceEvents = persistenceEvents;
-    }
-
-    /** Optional Prometheus scrape state (P15-010); null disables dual-emit. */
-    public void setPrometheusExporter(PrometheusExporter prometheusExporter) {
-        this.prometheusExporter = prometheusExporter;
     }
 
     /** Optional telemetry bus (P16-013); null disables offers. Must not block poll. */
@@ -443,8 +436,7 @@ public final class MonitorService implements AutoCloseable {
                     LOG.warn("Persistence probe_error failed for {}: {}", host, ex.getMessage());
                 }
             }
-            recordPrometheusFailure(host, probeMode, durationMs);
-            offerTelemetryProbeError(host, outcome.error(), probeMode);
+            offerTelemetryFailure(host, outcome.error(), probeMode, durationMs);
             current.onProbeError(host, outcome.error());
             return;
         }
@@ -463,7 +455,6 @@ public final class MonitorService implements AutoCloseable {
                     snapshot = defaultTargetPingEnricher.enrich(snapshot, timeoutSeconds);
                 }
             }
-            recordPrometheusSuccess(host, probeMode, snapshot, durationMs);
             offerTelemetrySuccess(host, probeMode, snapshot, durationMs);
             current.onDataReceived(host, snapshot);
         }
@@ -471,9 +462,6 @@ public final class MonitorService implements AutoCloseable {
             burstPolicy.onRouteChange(host, Instant.now());
         }
         if (outcome.routeChanged()) {
-            if (!outcome.oldIps().isEmpty()) {
-                recordPrometheusRouteChange(host);
-            }
             offerTelemetryRouteChange(host, outcome.oldIps(), outcome.newIps(), probeMode);
             current.onRouteChanged(host, outcome.oldIps(), outcome.newIps());
             dispatchRouteChangeAlert(host, outcome.oldIps(), outcome.newIps());
@@ -481,26 +469,6 @@ public final class MonitorService implements AutoCloseable {
             persistBaselineRouteChange(host, outcome.currentIps());
             offerTelemetryRouteChange(host, List.of(), outcome.currentIps(), probeMode);
             current.onRouteChanged(host, List.of(), outcome.currentIps());
-        }
-    }
-
-    private void recordPrometheusSuccess(
-            String host, HostProbeMode probeMode, RouteSnapshot snapshot, double durationMs) {
-        PrometheusExporter exporter = prometheusExporter;
-        if (exporter == null) {
-            return;
-        }
-        try {
-            exporter.clearHostRtt(host);
-            exporter.recordReachable(host, isTargetReachable(snapshot));
-            exporter.recordTraceDuration(host, probeMode.yamlValue(), durationMs);
-            for (var node : snapshot.nodes()) {
-                if (node.pingMs() != null && node.isReachable()) {
-                    exporter.recordRtt(host, node.hop(), node.pingMs());
-                }
-            }
-        } catch (RuntimeException ex) {
-            LOG.warn("Prometheus update failed for {}: {}", host, ex.getMessage());
         }
     }
 
@@ -521,31 +489,6 @@ public final class MonitorService implements AutoCloseable {
             }
         }
         return false;
-    }
-
-    private void recordPrometheusFailure(String host, HostProbeMode probeMode, double durationMs) {
-        PrometheusExporter exporter = prometheusExporter;
-        if (exporter == null) {
-            return;
-        }
-        try {
-            exporter.recordReachable(host, false);
-            exporter.recordTraceDuration(host, probeMode.yamlValue(), durationMs);
-        } catch (RuntimeException ex) {
-            LOG.warn("Prometheus update failed for {}: {}", host, ex.getMessage());
-        }
-    }
-
-    private void recordPrometheusRouteChange(String host) {
-        PrometheusExporter exporter = prometheusExporter;
-        if (exporter == null) {
-            return;
-        }
-        try {
-            exporter.incrementRouteChange(host);
-        } catch (RuntimeException ex) {
-            LOG.warn("Prometheus route_change counter failed for {}: {}", host, ex.getMessage());
-        }
     }
 
     private void offerTelemetrySuccess(
@@ -572,15 +515,19 @@ public final class MonitorService implements AutoCloseable {
         }
     }
 
-    private void offerTelemetryProbeError(String host, String message, HostProbeMode probeMode) {
+    private void offerTelemetryFailure(String host, String message, HostProbeMode probeMode, double durationMs) {
         TelemetryBus bus = telemetryBus;
         if (bus == null) {
             return;
         }
+        Instant ts = Instant.now();
+        Map<String, String> labels = telemetryLabels(probeMode);
         try {
-            bus.offerEvent(TelemetryEvent.probeError(host, message, telemetryLabels(probeMode), Instant.now()));
+            // No TARGET_REACHABLE sample: probe_error sets unreachable without clearHostRtt (P15 parity).
+            bus.offerSample(new MetricSample(MetricNames.TRACE_DURATION_MS, durationMs, host, null, labels, ts));
+            bus.offerEvent(TelemetryEvent.probeError(host, message, labels, ts));
         } catch (RuntimeException ex) {
-            LOG.warn("Telemetry probe_error offer failed for {}: {}", host, ex.getMessage());
+            LOG.warn("Telemetry failure offer failed for {}: {}", host, ex.getMessage());
         }
     }
 
