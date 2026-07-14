@@ -72,7 +72,7 @@ flowchart LR
 | `SqliteTelemetrySink` | local samples+events | **off** | Schema v4; separate from P11 `host_session`; retention P16-022 ✅ |
 | `JsonlRotateSink` | local file | **off** | `telemetry.jsonl.yyyy-MM-dd` (+ `.N` size); P16-021 ✅ |
 | `SyslogSink` | remote events | **off** | P16-030 ✅ RFC 5424 TCP; TLS optional; framing trailing NL; `events_only=true`; MSG = single-line JSON |
-| `GelfSink` | remote events | **off** | Graylog; TCP preferred / UDP lab; `events_only=true` by default (P16-033) |
+| `GelfSink` | remote events | **off** | P16-031 ✅ GELF 1.1; TCP `\0` framing / UDP lab; `events_only=true` |
 | `LokiPushSink` | remote | **off** | P2 (P16-032); same `events_only` default |
 | `PrometheusTelemetrySink` | in-process scrape state | via `--metrics-port` | Not remote_write (see ADR_OBSERVABILITY) |
 | `InfluxTelemetrySink` | remote samples | via TS config | Wrapper over B-05 / P15-020 |

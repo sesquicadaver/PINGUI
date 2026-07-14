@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P16-031** |
+| **Current task** | **P16-032** |
 | **Phase** | 16 — Telemetry |
-| **DoD (short)** | `GelfSink` — Graylog TCP (prod) / UDP (lab); `events_only` parity |
+| **DoD (short)** | `LokiPushSink` — HTTP push (optional P2) |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -69,7 +69,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 24 | **P16-022** | [x] | `retention_days` purge |
 | 25 | **P16-023** | [x] | `--telemetry-dump` |
 | 26 | **P16-030** | [x] | `SyslogSink` |
-| 27 | **P16-031** | [ ] | `GelfSink` |
+| 27 | **P16-031** | [x] | `GelfSink` |
 | 28 | **P16-032** | [ ] | `LokiPushSink` (P2) |
 | 29 | **P16-033** | [ ] | `events_only` mode |
 | 30 | **P16-034** | [ ] | 5m aggregates → LOG |
@@ -599,7 +599,7 @@ flowchart TD
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
 | **P16-030** | [x] `SyslogSink` — RFC 5424 TCP/TLS; MSG = single-line JSON; TCP framing canon | `telemetry/SyslogSink.java` | Contract test with mock server |
-| **P16-031** | [ ] `GelfSink` — Graylog TCP (prod) / UDP (lab); `events_only` parity; `\0` framing | `telemetry/GelfSink.java` | route_change + probe_error events |
+| **P16-031** | [x] `GelfSink` — Graylog TCP (prod) / UDP (lab); `events_only` parity; `\0` framing | `telemetry/GelfSink.java` | route_change + probe_error events |
 | **P16-032** | [ ] `LokiPushSink` — HTTP push (optional P2) | `telemetry/LokiPushSink.java` | labels: job=pingui, site |
 | **P16-033** | [ ] `events_only` mode for **all** remote LOG sinks (syslog, GELF, Loki) | `SinkConfig.java` | Default true; no high-freq RTT |
 | **P16-034** | [ ] 5m aggregates (avg/max RTT per hop) → LOG optional | `AggregateTelemetryJob.java` | YAML `log_aggregates: true` |

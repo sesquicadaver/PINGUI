@@ -21,6 +21,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **GELF sink (P16-031):** `GelfSink` — GELF 1.1 JSON; TCP `\0` framing (prod) / UDP (lab); `eventsOnly`.
 - **Syslog sink (P16-030):** `SyslogSink` — RFC 5424 over TCP (optional TLS); MSG = single-line event JSON; framing trailing NL; `eventsOnly`.
 - **Telemetry dump (P16-023):** `TelemetryDump` + CLI `--telemetry-dump PATH` (.csv/.json) from `--session-db`.
 - **Telemetry retention (P16-022):** `TelemetryRetentionJob` + CLI `--telemetry-retention N` (optional `--telemetry-jsonl-dir`); cron one-shot purge.
