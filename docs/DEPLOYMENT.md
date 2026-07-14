@@ -246,6 +246,106 @@ sudo certbot --nginx -d pingui.example.com
 - Basic Auth — мінімум; для NOC краще mTLS / SSO на edge (поза scope PINGUI v1).
 - ADR: [ADR_OBSERVABILITY.md](ADR_OBSERVABILITY.md).
 
+## LOG-server (P16-061)
+
+Telemetry **events** (`route_change`, `probe_error`, optional `rtt_aggregate`) можна надсилати на зовнішній LOG-stack. High-freq hop-RTT **не** йде в syslog/GELF/Loki при `events_only: true` (default). Повна таблиця полів: [CONFIGURATION.md § Телеметрія](CONFIGURATION.md#телеметрія-p16-040052). SPIKE: [SPIKE_LOG_SINKS.md](SPIKE_LOG_SINKS.md). ADR: [ADR_TELEMETRY.md](ADR_TELEMETRY.md).
+
+**Принцип:** *events* → LOG-server; *samples* → SQLite/JSONL / Influx / Prometheus scrape.
+
+### Daemon → remote sinks (приклад)
+
+```yaml
+# у профілі v2 (фрагмент)
+telemetry:
+  events_only: true
+  log_aggregates: false
+  syslog:
+    host: 127.0.0.1
+    port: 1514
+    tls: false          # опційно true (syslog TCP+TLS)
+  gelf:
+    host: 127.0.0.1
+    port: 12201
+    transport: tcp      # tcp prod; udp лише lab
+  # loki:               # опційно (P16-032)
+  #   url: http://127.0.0.1:3100
+  #   site: noc
+```
+
+```bash
+cd /path/to/PINGUI/java
+./pingui-java.sh -- --daemon \
+  --config config/hosts.example.yaml \
+  --session-db data/ping.db \
+  --pid-file /tmp/pingui-java.pid \
+  --telemetry-syslog 127.0.0.1:1514
+```
+
+CLI `--telemetry-syslog` / `--telemetry-jsonl` має пріоритет над YAML. Windows: не вмикайте `jsonl_dir` для hop-RTT — див. `hosts.windows.example.yaml` (P16-043).
+
+### rsyslog (TCP RFC 5424)
+
+PINGUI `SyslogSink`: TCP, framing trailing NL, MSG = one-line JSON event.
+
+```bash
+# /etc/rsyslog.d/30-pingui.conf
+module(load="imtcp")
+input(type="imtcp" port="1514")
+
+template(name="PinguiJson" type="string" string="%msg%\n")
+if $syslogfacility-text == 'local0' then {
+  action(type="omfile" file="/var/log/pingui/events.log" template="PinguiJson")
+  stop
+}
+```
+
+```bash
+sudo mkdir -p /var/log/pingui
+sudo systemctl restart rsyslog
+# перевірка: logger не потрібен — дивіться /var/log/pingui після route_change у daemon
+```
+
+TLS (опційно): terminate на rsyslog (`imtcp` + `StreamDriver`) або stunnel/nginx stream перед `syslog.host`; у YAML — `telemetry.syslog.tls: true` коли sink говорить TLS напряму.
+
+### Graylog (GELF TCP)
+
+`GelfSink`: GELF 1.1 JSON, TCP framing `\0` (prod). UDP — лише lab.
+
+1. Graylog → System → Inputs → **GELF TCP** (port `12201` або інший).
+2. У YAML: `telemetry.gelf.host` / `port` / `transport: tcp`.
+3. Index/stream: фільтр за `short_message` ∈ {`route_change`, `probe_error`} або `_event`.
+
+Не використовуйте GELF UDP у production (втрати без chunking у v1).
+
+### Grafana Loki (опційно)
+
+`LokiPushSink` — HTTP `POST /loki/api/v1/push`; labels `job=pingui`, `site`, `host`. Тримати `events_only: true`. URL secrets redact у логах (P16-042).
+
+### Локальна телеметрія + retention
+
+| Шлях | Конфіг | Retention |
+|------|--------|-------------|
+| SQLite telemetry tables | `telemetry.sqlite` + `--session-db` | `--telemetry-retention N` |
+| JSONL files | `telemetry.jsonl_dir` / `--telemetry-jsonl` | `--telemetry-retention N --telemetry-jsonl-dir DIR` |
+| Dump | — | `--telemetry-dump out.csv` (потрібен `--session-db`) |
+
+```bash
+# cron (щодня): purge samples/events старші за 30 днів
+cd /path/to/PINGUI/java
+./pingui-java.sh -- --session-db /var/lib/pingui/ping.db \
+  --telemetry-retention 30 \
+  --telemetry-jsonl-dir /var/lib/pingui/telemetry
+```
+
+Session persistence (`host_session` / `persistence_event`) — окремий шар; див. § SQLite нижче (P11-050).
+
+### Безпека LOG
+
+- За замовч. **не** слати hop-RTT у LOG (`events_only: true`).
+- Не логувати plaintext token/query в webhook/Loki URL.
+- Remote LOG — **outbound** з хоста PINGUI; inbound TLS для Prometheus/API — § Reverse proxy (P15-041), не плутати канали.
+- Firewall: дозволити лише TCP до rsyslog/Graylog портів з NOC-хоста.
+
 ## SQLite session persistence (Java / Python)
 
 | Що | Де |
@@ -279,6 +379,8 @@ sudo certbot --nginx -d pingui.example.com
 | `dbind-WARNING` / `accessibility bus` | Нормально без a11y; не запускайте через `sudo`; або `NO_AT_BRIDGE=1` (у `pingui-java.sh` за замовч.) |
 | IPv6 trace «немає hop-ів» | `traceroute -6` у PATH; raw cap **не** потрібен для v6 literal |
 | Raw ICMP v4 «permission denied» | `setcap cap_net_raw+ep` на JDK binary (див. § Raw ICMP) |
+| Немає events у rsyslog/Graylog | Увімкнути `telemetry.syslog`/`gelf` або `--telemetry-syslog`; `enabled: true` на хості; перевірити TCP порт / `events_only` |
+| LOG засипаний RTT | Повернути `events_only: true`; не вмикати `jsonl_dir` на Windows для high-freq |
 
 ## Розробка
 

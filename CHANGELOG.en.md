@@ -21,6 +21,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **DEPLOYMENT § LOG-server (P16-061):** rsyslog TCP, Graylog GELF, optional Loki, local telemetry retention cron; troubleshooting.
 - **CONFIGURATION § telemetry (P16-060):** full YAML/CLI field tables for `telemetry:` sinks, retention/dump/metrics-port, Windows preset note.
 - **InfluxTelemetrySink (P16-052):** Python bus wrapper over B-05 Influx/Timescale; daemon/GUI write TS via `QueueTelemetryEmitter` (no SessionStore dual-emit).
 - **Prometheus as TelemetrySink (P16-051):** `PrometheusTelemetrySink` updates scrape gauges from the bus; daemon registers on `--metrics-port`; MonitorService Prometheus dual-emit removed.

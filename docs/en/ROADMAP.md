@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P16-061** |
+| **Current task** | **P16-070** |
 | **Phase** | 16 — Telemetry |
-| **DoD (short)** | DEPLOYMENT § LOG-server |
+| **DoD (short)** | LIVING_SPEC telemetry matrix |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -81,7 +81,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 36 | **P16-051** | [x] | Prometheus as sink |
 | 37 | **P16-052** | [x] | Python Influx sink wrapper |
 | 38 | **P16-060** | [x] | CONFIGURATION § telemetry |
-| 39 | **P16-061** | [ ] | DEPLOYMENT § LOG-server |
+| 39 | **P16-061** | [x] | DEPLOYMENT § LOG-server |
 | 40 | **P16-070** | [ ] | LIVING_SPEC telemetry matrix |
 | 41 | **P16-071** | [ ] | CHECKLIST telemetry smoke |
 | 42 | **P16-072** | [ ] | Contract tests syslog/gelf |
@@ -626,7 +626,7 @@ flowchart TD
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
 | **P16-060** | [x] CONFIGURATION § telemetry | `docs/CONFIGURATION.md`, `docs/en/CONFIGURATION.md` | Full field table |
-| **P16-061** | [ ] DEPLOYMENT § LOG-server, rsyslog, Graylog, retention | `docs/DEPLOYMENT.md` | nginx/TLS optional |
+| **P16-061** | [x] DEPLOYMENT § LOG-server, rsyslog, Graylog, retention | `docs/DEPLOYMENT.md` | nginx/TLS optional |
 | **P16-070** | [ ] LIVING_SPEC: telemetry bus + sinks | `docs/LIVING_SPEC.md` | Module → test matrix |
 | **P16-071** | [ ] CHECKLIST § telemetry smoke | `docs/CHECKLIST.md` | local sqlite + syslog event |
 | **P16-072** | [ ] Contract tests: mock syslog/gelf + shared field fixture | `src/test/java/.../SyslogSinkTest.java` | CI green |

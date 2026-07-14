@@ -179,7 +179,7 @@ This matches the ROADMAP DoD (“v1 recommendation: syslog TCP + GELF”) and [A
 | **P16-030** | `SyslogSink` RFC 5424 TCP |
 | **P16-031** | `GelfSink` |
 | **P16-032** | `LokiPushSink` (P2) |
-| **P16-061** | DEPLOYMENT § rsyslog/Graylog |
+| **P16-061** | ✅ DEPLOYMENT § rsyslog/Graylog/Loki + retention |
 
 ---
 
