@@ -36,8 +36,7 @@ public final class AppMenuDialogs {
         Label runtime = new Label("Java " + AppInfo.runtimeJavaVersion() + " · " + AppInfo.runtimeOsName());
         runtime.setStyle("-fx-text-fill: #555;");
 
-        Label summary = new Label("Монітор RTT і маршрутів до 10 цілей (IPv4/IPv6 literal або hostname). "
-                + "Дані сесії зберігаються лише в RAM.");
+        Label summary = new Label(aboutSummary());
         summary.setWrapText(true);
 
         HBox linkRow = new HBox(4, new Label("Репозиторій:"), repositoryLink());
@@ -93,7 +92,15 @@ public final class AppMenuDialogs {
         return link;
     }
 
-    private static String helpText() {
+    /** About body (unit-tested; P16-094). */
+    static String aboutSummary() {
+        return "Монітор RTT і маршрутів до 10 цілей (IPv4/IPv6 literal або hostname). "
+                + "Сесія: RAM або SQLite (Налаштування → База даних…). "
+                + "Телеметрія / LOG sinks: Налаштування → Телеметрія… (YAML telemetry:).";
+    }
+
+    /** Help body (unit-tested; P16-094). */
+    static String helpText() {
         String expert = PlatformCapabilities.expertPingSupported()
                 ? "Експерт (Linux) — кнопка Exten. задає параметри ping(8) iputils."
                 : "Експерт недоступний на цій ОС (лише Linux, iputils ping).";
@@ -109,13 +116,19 @@ public final class AppMenuDialogs {
                 • Розширений — граф hop-ів і журнал змін маршруту.
                 • %s
 
+                Налаштування
+                • База даних… — SQLite session (історія route_change), не telemetry archive.
+                • Телеметрія… — sinks (sqlite/jsonl/syslog/GELF/Loki/OTLP), events_only; Apply + «Зберегти».
+                • persistence.session_db ≠ telemetry.sqlite (різні ролі).
+
                 Кнопки
                 • Додати / Змінити / Видалити — цілі в поточному профілі.
-                • Зберегти — запис усіх профілів у YAML (--config).
+                • Зберегти — запис усіх профілів у YAML (--config), включно з telemetry:.
 
                 CLI (термінал)
                 • ./pingui-java.sh [--config PATH] [--interval SEC] …
                 • --interval / --max-hops / --timeout / --probe перезаписують YAML лише якщо передані.
+                • --telemetry-syslog / --telemetry-jsonl / --telemetry-otlp — override sinks.
                 • --help — повний список опцій.
 
                 Платформа

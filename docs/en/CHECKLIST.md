@@ -76,7 +76,7 @@ Details: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ### Java telemetry smoke (P16-071)
 
-Sink fields: [CONFIGURATION § Telemetry](CONFIGURATION.md#telemetry-p16-040052). LOG-server: [DEPLOYMENT § LOG-server](DEPLOYMENT.md#log-server-p16-061). Unit coverage: `TelemetrySinkInstallerTest`, `TelemetryAttachmentTest`, `DaemonRunnerTest.startRegistersSqliteAndSyslogFromTelemetryConfig`, `SqliteTelemetrySinkTest`, `SyslogSinkTest`. Desktop GUI uses the same `TelemetryAttachment` (P16-090); dedicated GUI smoke — P16-094.
+Sink fields: [CONFIGURATION § Telemetry](CONFIGURATION.md#telemetry-p16-040052). LOG-server: [DEPLOYMENT § LOG-server](DEPLOYMENT.md#log-server-p16-061). Unit coverage: `TelemetrySinkInstallerTest`, `TelemetryAttachmentTest`, `DaemonRunnerTest.startRegistersSqliteAndSyslogFromTelemetryConfig`, `SqliteTelemetrySinkTest`, `SyslogSinkTest`, `AppMenuDialogsTest`. Desktop GUI uses the same `TelemetryAttachment` (P16-090); GUI smoke below (P16-094).
 
 **Prepare a profile** (copy of `java/config/hosts.example.yaml` or a temp YAML): host `enabled: true`; in the profile:
 
@@ -96,6 +96,14 @@ telemetry:
 - [ ] After first poll (baseline route_change): `sqlite3 data/telemetry.db "SELECT event, host FROM telemetry_event LIMIT 5;"` — has `route_change` (or `probe_error`)
 - [ ] In `/tmp/pingui-syslog.log` — RFC 5424 line with JSON `"event":"route_change"` (or `probe_error`); **no** hop-RTT sample flood when `events_only: true`
 - [ ] `./pingui-java.sh -- --stop --pid-file /tmp/pingui-java.pid`
+
+### Java GUI telemetry smoke (P16-094)
+
+- [ ] CI: `cd java && ./gradlew test --tests io.pingui.ui.AppMenuDialogsTest --tests io.pingui.TelemetryAttachmentTest --tests io.pingui.ui.TelemetrySettingsDialogTest` — green
+- [ ] About (“About PINGUI…”) mentions SQLite session and Telemetry menu (not “RAM only”)
+- [ ] Help (F1) has Settings section with `persistence.session_db` ≠ `telemetry.sqlite`
+- [ ] GUI: **Settings → Telemetry…** → sqlite `data/telemetry.db`, Apply → log “Телеметрія оновлена”; **Save** → YAML has `telemetry.sqlite`
+- [ ] After poll: `sqlite3 data/telemetry.db "SELECT event FROM telemetry_event LIMIT 3;"` — has `route_change` or `probe_error`
 
 ---
 

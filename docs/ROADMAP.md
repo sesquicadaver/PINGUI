@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **[P16-094](#фаза-16--телеметрія-метрики-мережі--log-server-beta--main-p0p1)** |
+| **Поточна задача** | **DONE** |
 | **Фаза** | 16 — Телеметрія (GUI) |
-| **DoD (коротко)** | Help/About + CHECKLIST GUI telemetry smoke |
+| **DoD (коротко)** | Черга виконана (наступний ID відсутній) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -90,7 +90,7 @@
 | 45 | **P16-091** | [x] | Меню «Телеметрія…» — мінімальний `TelemetrySettingsDialog` |
 | 46 | **P16-092** | [x] | Повні sinks UI + redacted status + `log_aggregates` |
 | 47 | **P16-093** | [x] | Python: підключити YAML telemetry або явно «Java/daemon only» |
-| 48 | **P16-094** | [ ] | Help/About + CHECKLIST GUI telemetry smoke |
+| 48 | **P16-094** | [x] | Help/About + CHECKLIST GUI telemetry smoke |
 
 **Закінчення черги:** оновити NEXT → `DONE` (немає відкритих ID).
 
@@ -652,7 +652,7 @@ flowchart TD
 | **P16-091** | [x] Меню «Налаштування → Телеметрія…» (мінімум) | `TelemetrySettingsDialog`, `MainController` | `events_only`, local sqlite/jsonl, один remote (syslog); Apply → профіль YAML + re-wire bus |
 | **P16-092** | [x] Повний UI sinks + статус | `TelemetrySettingsDialog` | syslog/GELF/Loki/OTLP, `log_aggregates`, `toRedactedString()` у діалозі |
 | **P16-093** | [x] Python GUI/docs: wire або «sinks = Java/daemon» | `__main__.py`, docs | Немає dead `_resolve_telemetry` у GUI без ефекту; чітка позиція в CONFIGURATION |
-| **P16-094** | [ ] Help/About + CHECKLIST GUI smoke | `AppMenuDialogs`, `CHECKLIST` | Згадано persistence+telemetry; smoke: GUI + sqlite event |
+| **P16-094** | [x] Help/About + CHECKLIST GUI smoke | `AppMenuDialogs`, `CHECKLIST` | Згадано persistence+telemetry; smoke: GUI + sqlite event |
 
 ---
 

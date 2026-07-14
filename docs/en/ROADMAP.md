@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **[P16-094](#phase-16--telemetry-network-metrics--log-server-beta--main-p0p1)** |
+| **Current task** | **DONE** |
 | **Phase** | 16 — Telemetry (GUI) |
-| **DoD (short)** | Help/About + CHECKLIST GUI telemetry smoke |
+| **DoD (short)** | Queue complete (no next ID) |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -90,7 +90,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 45 | **P16-091** | [x] | Menu “Telemetry…” — minimal `TelemetrySettingsDialog` |
 | 46 | **P16-092** | [x] | Full sinks UI + redacted status + `log_aggregates` |
 | 47 | **P16-093** | [x] | Python: wire YAML telemetry or document “Java/daemon only” |
-| 48 | **P16-094** | [ ] | Help/About + CHECKLIST GUI telemetry smoke |
+| 48 | **P16-094** | [x] | Help/About + CHECKLIST GUI telemetry smoke |
 
 **End of queue:** set NEXT → `DONE` (no open IDs).
 
@@ -652,7 +652,7 @@ flowchart TD
 | **P16-091** | [x] Menu “Settings → Telemetry…” (minimum) | `TelemetrySettingsDialog`, `MainController` | `events_only`, local sqlite/jsonl, one remote (syslog); Apply → profile YAML + re-wire bus |
 | **P16-092** | [x] Full sinks UI + status | `TelemetrySettingsDialog` | syslog/GELF/Loki/OTLP, `log_aggregates`, `toRedactedString()` in dialog |
 | **P16-093** | [x] Python GUI/docs: wire or “sinks = Java/daemon” | `__main__.py`, docs | No dead `_resolve_telemetry` in GUI path; clear CONFIGURATION stance |
-| **P16-094** | [ ] Help/About + CHECKLIST GUI smoke | `AppMenuDialogs`, `CHECKLIST` | Mentions persistence+telemetry; smoke: GUI + sqlite event |
+| **P16-094** | [x] Help/About + CHECKLIST GUI smoke | `AppMenuDialogs`, `CHECKLIST` | Mentions persistence+telemetry; smoke: GUI + sqlite event |
 
 ---
 
