@@ -125,6 +125,8 @@ Profile-level `telemetry:` (Java v2) or top-level (Python `load_telemetry_config
 
 **Java GUI (P16-090…092):** desktop sinks via `TelemetryAttachment`. Menu **Settings → Telemetry…** edits `events_only`, `log_aggregates`, local sqlite/jsonl, syslog(+TLS), GELF(+transport), Loki(URL+site), OTLP(endpoint+service); status shows `toRedactedString()`. Apply updates the active profile and re-wires the bus; disk write uses **Save**. CLI `--telemetry-syslog` / `--telemetry-jsonl` / `--telemetry-otlp` lock the matching fields.
 
+**Python (P16-093):** `telemetry:` + `--telemetry-*` are **validated** at GUI/daemon start; LOG sinks (sqlite/jsonl/syslog/GELF/Loki/OTLP) are **not emitted** in the Python runtime — Java only. TS push uses `--ts-backend` / `InfluxTelemetrySink`. Non-default LOG sinks print a stderr note (verbose adds `redacted_summary`).
+
 ```yaml
 profiles:
   noc:

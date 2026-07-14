@@ -21,6 +21,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Python telemetry stance (P16-093):** validate `telemetry:` on start; LOG sinks = Java only; stderr note + CONFIGURATION. ROADMAP NEXT → P16-094.
 - **Full telemetry settings UI (P16-092):** dialog edits GELF/Loki/OTLP + `log_aggregates` and shows `toRedactedString()` status. ROADMAP NEXT → P16-093.
 - **Telemetry settings dialog (P16-091):** Menu “Settings → Telemetry…” — `events_only`, sqlite, jsonl, syslog(+TLS); Apply → profile + re-wire bus; CLI locks honored. ROADMAP NEXT → P16-092.
 - **GUI telemetry bus (P16-090):** `TelemetryAttachment` — shared sink install + bus for JavaFX `MainController` and `DaemonRunner` (close: monitor → attachment → store).

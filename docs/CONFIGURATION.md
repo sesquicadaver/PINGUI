@@ -125,6 +125,8 @@ profiles:
 
 **Java GUI (P16-090…092):** sinks працюють у desktop через `TelemetryAttachment`. Меню **Налаштування → Телеметрія…** редагує `events_only`, `log_aggregates`, local sqlite/jsonl, syslog(+TLS), GELF(+transport), Loki(URL+site), OTLP(endpoint+service); статус — `toRedactedString()`. Apply оновлює активний профіль і re-wire bus; запис на диск — «Зберегти». CLI `--telemetry-syslog` / `--telemetry-jsonl` / `--telemetry-otlp` блокують відповідні поля.
 
+**Python (P16-093):** `telemetry:` + `--telemetry-*` **валідуються** при старті GUI/daemon; LOG sinks (sqlite/jsonl/syslog/GELF/Loki/OTLP) **не емітяться** у Python runtime — лише Java. TS push — `--ts-backend` / `InfluxTelemetrySink`. Якщо YAML має LOG sinks, stderr note (verbose додає `redacted_summary`).
+
 ```yaml
 profiles:
   noc:
