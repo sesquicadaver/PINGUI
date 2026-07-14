@@ -30,6 +30,8 @@ dependencies {
     implementation("org.xerial:sqlite-jdbc:3.47.2.0")
     implementation("org.postgresql:postgresql:42.7.4")
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    // Headless Glass for CI runners without a display (JavaFX unit UI tests).
+    testImplementation("org.testfx:openjfx-monocle:21.0.2")
 }
 
 tasks.test {
@@ -37,6 +39,14 @@ tasks.test {
     testLogging {
         events("passed", "skipped", "failed")
     }
+    // javafxplugin puts JavaFX on the classpath (not the module path), so --add-opens
+    // for javafx.* modules are unused; Monocle Glass + software Prism is enough for CI.
+    jvmArgs(
+        "-Dglass.platform=Monocle",
+        "-Dmonocle.platform=Headless",
+        "-Dprism.order=sw",
+        "-Djava.awt.headless=true",
+    )
     finalizedBy(tasks.jacocoTestReport)
 }
 
