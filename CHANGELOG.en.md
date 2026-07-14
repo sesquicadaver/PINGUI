@@ -21,6 +21,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **LIVING_SPEC telemetry matrix (P16-070):** concrete `*Test` classes for bus/sinks P16-010…052; Phase 16 overview; Python telemetry rows; stale P15-010 test name fixed.
 - **DEPLOYMENT § LOG-server (P16-061):** rsyslog TCP, Graylog GELF, optional Loki, local telemetry retention cron; troubleshooting.
 - **CONFIGURATION § telemetry (P16-060):** full YAML/CLI field tables for `telemetry:` sinks, retention/dump/metrics-port, Windows preset note.
 - **InfluxTelemetrySink (P16-052):** Python bus wrapper over B-05 Influx/Timescale; daemon/GUI write TS via `QueueTelemetryEmitter` (no SessionStore dual-emit).

@@ -32,7 +32,7 @@
 | Expert ping presets (P14-040) | `PingPresets`, `PingPreset`, `PingExpertDialog`, `ping_presets.yaml` | `PingPresetsTest` |
 | USER_GUIDE pro/NOC (P14-050) | `docs/USER_GUIDE.md`, `docs/en/USER_GUIDE.md`, `docs/en/DEPLOYMENT.md` | `scripts/check_doc_parity.py` |
 | Observability boundaries (P15-001) | `docs/ADR_OBSERVABILITY.md`, `docs/en/ADR_OBSERVABILITY.md` | Docs parity (`check_doc_parity.py`); Prometheus pull vs TS push |
-| Prometheus `/metrics` (P15-010) | `PrometheusExporter`, `MetricsHttpServer`, `DaemonRunner`, `MonitorService` | `PrometheusExporterTest`, `MetricsHttpServerTest`, `DaemonRunnerTest.startWithMetricsPortServesPrometheus`, `MonitorServiceTest.updatesPrometheusExporterOnPollAndIsolatesFailures` |
+| Prometheus `/metrics` (P15-010) | `PrometheusExporter`, `MetricsHttpServer`, `DaemonRunner` | `PrometheusExporterTest`, `MetricsHttpServerTest`, `DaemonRunnerTest.startWithMetricsPortServesPrometheus` |
 | CLI `--metrics-port` (P15-011) | `PinguiApplication.parseOptions`, `AppOptions.metricsPort` | `PinguiApplicationTest.parseOptions_metricsPort*` |
 | Influx/Timescale writer (P15-020) | `persistence/timeseries/*`, `CliTimeSeriesOverrides`, `SessionStore`, `DaemonRunner`, `MainController` | `TimeSeriesBackendsTest`, `SessionStoreTest.forwardsRouteAndPingSamplesToTimeSeriesBackend`, `PinguiApplicationTest.parseOptions_timeSeriesFlags` |
 | Scheduled CSV/HTML export (P15-030) | `ScheduledExport`, `ExportSchedulePeriod`, `PinguiApplication` | `ScheduledExportTest`, `PinguiApplicationTest.parseOptions_exportSchedule*` |
@@ -41,29 +41,30 @@
 | API contract tests (P15-050) | `api/ReadOnlyApiServer`, inline JSON string contracts | `ReadOnlyApiContractTest`, `JsonStringsTest`, `DaemonRunnerTest.startWithApiPortServesHosts` |
 | Telemetry ADR (P16-001) | `docs/ADR_TELEMETRY.md`, `docs/en/ADR_TELEMETRY.md` | Docs parity (`check_doc_parity.py`); bus → sinks; межі P10/P15 |
 | LOG sinks SPIKE (P16-002) | `docs/SPIKE_LOG_SINKS.md`, `docs/en/SPIKE_LOG_SINKS.md` | Docs parity; v1 = syslog TCP + GELF |
-| Telemetry models (P16-010) | `io.pingui.telemetry.MetricSample` / `TelemetryEvent`; `models.py` | Unit serialize Java+Python; shared JSON `kind` |
-| Sink registry (P16-011) | `TelemetrySink`, `SinkRegistry`, `NoOpTelemetrySink` | register/unregister; eventsOnly; isolated failures |
-| Telemetry bus (P16-012) | `TelemetryBus`, `DropPolicy` | async queue; batch flush; drop + `droppedCount` |
-| Monitor → bus (P16-013) | `MonitorService.setTelemetryBus`; `telemetry_emit.py` / `worker.py` | RTT/loss/route_change/probe_error offers; non-blocking |
-| Metric names (P16-014) | `telemetry/MetricNames.java`; `metric_names.py` | Канон `pingui_*`; labels `profile`/`probe_mode`/`edition` |
-| Sqlite telemetry sink (P16-020) | `persistence/SqliteTelemetrySink`; schema v4 | insert/query samples+events; default off |
-| JSONL rotate sink (P16-021) | `telemetry/JsonlRotateSink` | day + size rotate; `telemetry.jsonl.yyyy-MM-dd` |
-| Telemetry retention (P16-022) | `TelemetryRetentionJob`; CLI `--telemetry-retention` | purge SQLite + optional JSONL |
-| Telemetry dump (P16-023) | `export/TelemetryDump`; CLI `--telemetry-dump` | CSV/JSON one-shot from session DB |
-| Syslog sink (P16-030) | `telemetry/SyslogSink` | RFC 5424 TCP + trailing NL; MSG JSON; `eventsOnly` |
-| GELF sink (P16-031) | `telemetry/GelfSink` | GELF 1.1 TCP `\0` / UDP lab; `eventsOnly` |
-| Loki push sink (P16-032) | `telemetry/LokiPushSink` | HTTP `/loki/api/v1/push`; labels `job`/`site`/`host`; `eventsOnly` |
-| events_only LOG policy (P16-033) | `telemetry/SinkConfig` | default true; shared by syslog/GELF/Loki |
-| RTT aggregates → LOG (P16-034) | `telemetry/AggregateTelemetryJob` | 5m avg/max per hop; `rtt_aggregate`; default off |
-| YAML telemetry (P16-040) | `config/TelemetryConfig`; `ProfilesConfig`; `telemetry_config.py` | local+remote sinks; hosts.example |
-| CLI telemetry overrides (P16-041) | `CliTelemetryOverrides`; `PinguiApplication`; `__main__.py` | `--telemetry-syslog`, `--telemetry-jsonl` |
-| Telemetry secret redaction (P16-042) | `TelemetryConfig.redactUrl` / `toRedactedString` | no plaintext URL/token in logs |
-| Windows telemetry preset (P16-043) | `hosts.windows.example.yaml` `telemetry:` | `events_only`; no jsonl; `ProfilesConfigTest.loadWindowsExamplePreset` |
+| Telemetry models (P16-010) | `MetricSample`, `TelemetryEvent`; `models.py` | `MetricSampleTest`, `TelemetryEventTest`, `test_telemetry_models.py` |
+| Sink registry (P16-011) | `TelemetrySink`, `SinkRegistry`, `NoOpTelemetrySink` | `SinkRegistryTest` |
+| Telemetry bus (P16-012) | `TelemetryBus`, `DropPolicy` | `TelemetryBusTest` |
+| Monitor → bus (P16-013) | `MonitorService.setTelemetryBus`; `telemetry_emit.py` | `MonitorServiceTelemetryTest`, `test_monitor_telemetry.py` |
+| Metric names (P16-014) | `MetricNames.java`; `metric_names.py` | `MetricNamesTest`, `test_metric_names.py` |
+| Sqlite telemetry sink (P16-020) | `SqliteTelemetrySink`; schema v4 | `SqliteTelemetrySinkTest` |
+| JSONL rotate sink (P16-021) | `JsonlRotateSink` | `JsonlRotateSinkTest` |
+| Telemetry retention (P16-022) | `TelemetryRetentionJob` | `TelemetryRetentionJobTest` |
+| Telemetry dump (P16-023) | `TelemetryDump` | `TelemetryDumpTest` |
+| Syslog sink (P16-030) | `SyslogSink` | `SyslogSinkTest` (mock TCP) |
+| GELF sink (P16-031) | `GelfSink` | `GelfSinkTest` |
+| Loki push sink (P16-032) | `LokiPushSink` | `LokiPushSinkTest` |
+| events_only LOG policy (P16-033) | `SinkConfig` | `SinkConfigTest` |
+| RTT aggregates → LOG (P16-034) | `AggregateTelemetryJob` | `AggregateTelemetryJobTest` |
+| YAML telemetry (P16-040) | `TelemetryConfig`; `ProfilesConfig`; `telemetry_config.py` | `ProfilesConfigTest.loadTelemetry*`, `test_telemetry_config.py` |
+| CLI telemetry overrides (P16-041) | `CliTelemetryOverrides`; `PinguiApplication`; `__main__.py` | `PinguiApplicationTest.parseOptions_telemetrySyslogAndJsonlOverrideProfile` |
+| Telemetry secret redaction (P16-042) | `TelemetryConfig.redactUrl` / `toRedactedString` | `TelemetryConfigRedactionTest` |
+| Windows telemetry preset (P16-043) | `hosts.windows.example.yaml` `telemetry:` | `ProfilesConfigTest.loadWindowsExamplePreset` |
 | Webhook as TelemetrySink (P16-050) | `WebhookTelemetrySink`; `WebhookAlertDispatcher` | `WebhookTelemetrySinkTest`; `WebhookAlertDispatcherTest` |
 | Prometheus as TelemetrySink (P16-051) | `PrometheusTelemetrySink`; `DaemonRunner` | `PrometheusTelemetrySinkTest`; `MonitorServiceTest.updatesPrometheusViaTelemetrySinkOnPoll` |
 | Influx/Timescale TelemetrySink (P16-052) | `InfluxTelemetrySink`; Python daemon/GUI | `test_influx_telemetry_sink.py` |
 | CONFIGURATION telemetry (P16-060) | `docs/CONFIGURATION.md` § telemetry | Full YAML/CLI field tables; docs parity |
 | DEPLOYMENT LOG-server (P16-061) | `docs/DEPLOYMENT.md` § LOG-server | rsyslog/Graylog/Loki + retention; docs parity |
+| LIVING_SPEC telemetry matrix (P16-070) | цей документ § фаза 16 | Матриця bus → sinks → тести нижче |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
@@ -96,6 +97,25 @@
 
 ---
 
+## Фаза 16 — Телеметрія (огляд bus → sinks)
+
+Потік: **Monitor / jobs** → `TelemetryBus` → `SinkRegistry` → sinks. Скрап Prometheus і webhook alerts ідуть через sink-адаптери (P16-050/051), без dual-emit з MonitorService.
+
+| Шар | Модулі | Покриття |
+|-----|--------|----------|
+| Моделі + імена | `MetricSample`, `TelemetryEvent`, `MetricNames` | `MetricSampleTest`, `TelemetryEventTest`, `MetricNamesTest` (+ Python `test_telemetry_models.py`, `test_metric_names.py`) |
+| Bus / registry | `TelemetryBus`, `DropPolicy`, `SinkRegistry`, `NoOpTelemetrySink` | `TelemetryBusTest`, `SinkRegistryTest` |
+| Wire від poll | `MonitorService.setTelemetryBus` | `MonitorServiceTelemetryTest` (+ `test_monitor_telemetry.py`) |
+| Local sinks | `SqliteTelemetrySink`, `JsonlRotateSink`, `TelemetryRetentionJob`, `TelemetryDump` | `SqliteTelemetrySinkTest`, `JsonlRotateSinkTest`, `TelemetryRetentionJobTest`, `TelemetryDumpTest` |
+| LOG sinks | `SyslogSink`, `GelfSink`, `LokiPushSink`, `SinkConfig`, `AggregateTelemetryJob` | `SyslogSinkTest`, `GelfSinkTest`, `LokiPushSinkTest`, `SinkConfigTest`, `AggregateTelemetryJobTest` |
+| Config / CLI | `TelemetryConfig`, `ProfilesConfig`, `CliTelemetryOverrides` | `ProfilesConfigTest.loadTelemetry*`, `PinguiApplicationTest.parseOptions_telemetry*`, `TelemetryConfigRedactionTest` (+ `test_telemetry_config.py`) |
+| Bridge sinks | `WebhookTelemetrySink`, `PrometheusTelemetrySink`, `InfluxTelemetrySink` | `WebhookTelemetrySinkTest`, `PrometheusTelemetrySinkTest`, `test_influx_telemetry_sink.py`; `MonitorServiceTest.updatesPrometheusViaTelemetrySinkOnPoll` |
+| Docs | CONFIGURATION § telemetry, DEPLOYMENT § LOG-server | `scripts/check_doc_parity.py` |
+
+Рядки P16-001…070 у таблиці вище — детальна матриця ТЗ → клас → тест.
+
+---
+
 ## Python (`beta`)
 
 Матриця «модуль → тести» для Python-редакції. Оновлюй при додаванні фіч (PY-013).
@@ -116,6 +136,11 @@
 | Worker | `monitor/worker.py` | `test_worker.py`, `integration/test_worker_run.py` |
 | SQLite persistence | `persistence/session_db.py` | `test_session_db.py` |
 | Time-series | `persistence/timeseries/` | `test_timeseries.py` |
+| Telemetry models | `models.py` (`MetricSample`, `TelemetryEvent`) | `test_telemetry_models.py` |
+| Telemetry YAML | `telemetry_config.py` | `test_telemetry_config.py` |
+| Monitor → bus emit | `telemetry_emit.py`; `monitor_loop.py` | `test_monitor_telemetry.py` |
+| Metric names | `metric_names.py` | `test_metric_names.py` |
+| Influx TelemetrySink | `persistence/timeseries/influx_telemetry_sink.py` | `test_influx_telemetry_sink.py` |
 | Export reports | `export/session_report.py` | `test_session_export.py`, `test_main_export.py` |
 | GeoIP | `geoip/country.py`, `map_builder.py` | `test_geoip_country.py` (v4/v6/LAN), `test_geo_map.py` |
 | GUI | `ui/main_window.py`, `graph_canvas.py` | `test_graph_canvas.py`, `integration/test_ui_smoke.py` |
