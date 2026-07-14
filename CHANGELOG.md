@@ -21,6 +21,7 @@
 
 ### Added
 
+- **MtuDiscovery engine (P17-020):** ascending `-s` sweep (`min→start`) with `-M do`, stop at ≥1% loss, recommended MTU = last good payload + IP/ICMP overhead; `ProcessMtuProbeRunner`. ROADMAP NEXT → P17-021.
 - **Expert preset UX (P17-010):** `ping_presets.yaml` `summary`/`expect`/`caution`; Exten. tooltip + status line; clarify preset ≠ MTU wizard. ROADMAP NEXT → P17-020.
 - **Help/About + GUI telemetry smoke (P16-094):** About/Help mention SQLite + Telemetry menu; CHECKLIST GUI smoke. ROADMAP NEXT → DONE.
 - **Python telemetry stance (P16-093):** validate `telemetry:` on start; LOG sinks = Java only; stderr note + CONFIGURATION. ROADMAP NEXT → P16-094.

@@ -73,6 +73,7 @@
 | Python LOG sinks stance (P16-093) | `__main__._note_python_log_sinks`; `docs/CONFIGURATION.md` | `test_main_telemetry_note.py` |
 | Help/About + GUI telemetry smoke (P16-094) | `AppMenuDialogs`; `docs/CHECKLIST.md` | `AppMenuDialogsTest` |
 | Expert preset UX copy (P17-010) | `PingPreset`, `PingPresets`, `ping_presets.yaml`, `PingExpertDialog` | `PingPresetTest`, `PingPresetsTest` |
+| MtuDiscovery engine (P17-020) | `MtuDiscovery`, `MtuDiscoveryConfig`, `ProcessMtuProbeRunner` | `MtuDiscoveryTest`, `ProcessMtuProbeRunnerTest` |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |

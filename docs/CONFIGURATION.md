@@ -207,6 +207,8 @@ Webhook route alerts лишаються в `alerts.webhook` / `--alert-webhook` 
 
 Expert ping presets (Java GUI, P14-040 / P17-010): `config/ping_presets.yaml` поруч із hosts-конфігом (або CWD `config/ping_presets.yaml`); інакше bundled resource. Рівно 4 пресети (`mtu_probe`, `df`, `dscp`, `burst`). Обовʼязкові поля: `id`, `label`, `args`, `summary`, `expect`; опційно `caution`. Кнопки в `PingExpertDialog` підставляють args (збережений AF `-4`/`-6`) і показують status/tooltip з UX-копією. Пресети **не** запускають MTU sweep.
 
+MTU discovery engine (P17-020, API): `MtuDiscovery` + `ProcessMtuProbeRunner` — лінійний ascending sweep `-s` (`min → start`) з `-M do`, N проб на розмір, stop при loss% ≥ порогу (default 1%), `recommendedMtu = last_good_payload + 28` (IPv4) / `+ 48` (IPv6). GUI wizard — P17-021.
+
 ### Time-series (optional extra: `pip install -e ".[timeseries]"`)
 
 | Опція | Тип | За замовч. | Опис |

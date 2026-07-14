@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **[P17-020](#фаза-17--expert-ping-presets--mtu-discovery-beta-p0p1)** |
+| **Поточна задача** | **[P17-021](#фаза-17--expert-ping-presets--mtu-discovery-beta-p0p1)** |
 | **Фаза** | 17 — Expert ping / MTU |
-| **DoD (коротко)** | `MtuDiscovery` engine: sweep `-s`, stop ≥1% loss |
+| **DoD (коротко)** | MTU wizard UI + Alert + apply to Expert |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -92,7 +92,7 @@
 | 47 | **P16-093** | [x] | Python: підключити YAML telemetry або явно «Java/daemon only» |
 | 48 | **P16-094** | [x] | Help/About + CHECKLIST GUI telemetry smoke |
 | 49 | **P17-010** | [x] | Expert preset UX: summary/expect/caution + статус Exten. |
-| 50 | **P17-020** | [ ] | `MtuDiscovery` engine (sweep `-s`, stop ≥1% loss) |
+| 50 | **P17-020** | [x] | `MtuDiscovery` engine (sweep `-s`, stop ≥1% loss) |
 | 51 | **P17-021** | [ ] | MTU wizard UI + Alert + apply to Expert |
 | 52 | **P17-030** | [ ] | Informational self-check DF/DSCP/Burst (P2) |
 
@@ -669,7 +669,7 @@ flowchart TD
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
 | **P17-010** | [x] Preset UX copy + статус у Exten. | `PingPreset`, `ping_presets.yaml`, `PingExpertDialog`, docs | YAML `summary`/`expect`/`caution`; tooltip+status рядок; тести; USER_GUIDE note (пресет ≠ MTU wizard) |
-| **P17-020** | [ ] `MtuDiscovery` engine | `probe/MtuDiscovery*.java` | Sweep payload `-s` + `-M do`; N проб; stop при loss≥1%; unit recommended MTU |
+| **P17-020** | [x] `MtuDiscovery` engine | `probe/MtuDiscovery*.java` | Sweep payload `-s` + `-M do`; N проб; stop при loss≥1%; unit recommended MTU |
 | **P17-021** | [ ] MTU wizard UI | `ui/MtuDiscoveryDialog`, HostList | Прогрес (поточне `-s`, loss%); Stop; Alert з max MTU; Apply → Expert args |
 | **P17-030** | [ ] Self-check DF/DSCP/Burst (P2) | Exten. / short ping batch | Короткий результат у Alert без повного wizard |
 
