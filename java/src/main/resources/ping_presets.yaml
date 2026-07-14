@@ -1,17 +1,29 @@
-# Expert ping quick presets (P14-040).
+# Expert ping quick presets (P14-040 / P17-010).
 # Args must be accepted by PingExpertValidator (no -c/-w/-W/-i/-f/-l).
 # Address family (-4/-6) is kept from the dialog when a preset is applied.
+# summary/expect are required; caution optional. Presets merge flags only —
+# they do NOT run an MTU sweep (separate MTU wizard).
 
 presets:
   - id: mtu_probe
     label: MTU probe
     args: ["-M", "probe", "-s", "1472"]
+    summary: "Один ping на poll з підказкою PMTUD (-M probe) і payload 1472 B — не перебір MTU."
+    expect: "RTT цілі/hop або timeout при надто великому пакеті; max MTU — у майбутньому MTU wizard."
+    caution: "Не шукає max MTU і не зупиняється на втратах; для discovery — окремий wizard."
   - id: df
     label: DF
     args: ["-M", "do"]
+    summary: "Don't Fragment: ядро не фрагментує ICMP; при path MTU < пакет — fail/timeout."
+    expect: "Стабільний RTT при малому -s; timeout на великому -s натякає, що потрібен менший payload."
+    caution: "Без явного -s бере розмір за замовчуванням ping(8)."
   - id: dscp
     label: DSCP
     args: ["-Q", "46"]
+    summary: "ToS/DSCP = 46 (EF) — QoS-мітка на ICMP echo."
+    expect: "Можливий інший RTT або drop на політиках QoS порівняно з baseline без -Q."
   - id: burst
     label: Burst
     args: ["-s", "1024", "-O"]
+    summary: "Більший payload (1024) і звіт про outstanding replies (-O)."
+    expect: "RTT із більшим -s; затримки/timeouts помітніші за baseline дрібного ping."

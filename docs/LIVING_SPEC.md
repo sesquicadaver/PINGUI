@@ -68,6 +68,15 @@
 | Daemon sink wiring + CHECKLIST smoke (P16-071) | `TelemetrySinkInstaller`, `DaemonRunner`; `docs/CHECKLIST.md` | `TelemetrySinkInstallerTest`, `DaemonRunnerTest.startRegistersSqliteAndSyslogFromTelemetryConfig` |
 | Syslog/GELF field contract (P16-072) | `SyslogSink`, `GelfSink`; `TelemetryLogFieldFixture` | `SyslogGelfContractTest` (mock TCP + shared fields) |
 | OTLP/HTTP export (P16-080) | `OtlpHttpTelemetrySink`; `TelemetryConfig.otlp` | `OtlpHttpTelemetrySinkTest`; Profiles/CLI otlp |
+| GUI telemetry bus wire (P16-090) | `TelemetryAttachment`, `MainController`, `DaemonRunner` | `TelemetryAttachmentTest`; `DaemonRunnerTest.startRegistersSqliteAndSyslogFromTelemetryConfig` |
+| Telemetry settings dialog (P16-091/092) | `TelemetrySettingsDialog`, `MainController` | `TelemetrySettingsDialogTest` |
+| Python LOG sinks stance (P16-093) | `__main__._note_python_log_sinks`; `docs/CONFIGURATION.md` | `test_main_telemetry_note.py` |
+| Help/About + GUI telemetry smoke (P16-094) | `AppMenuDialogs`; `docs/CHECKLIST.md` | `AppMenuDialogsTest` |
+| Expert preset UX copy (P17-010) | `PingPreset`, `PingPresets`, `ping_presets.yaml`, `PingExpertDialog` | `PingPresetTest`, `PingPresetsTest` |
+| MtuDiscovery engine (P17-020) | `MtuDiscovery`, `MtuDiscoveryConfig`, `ProcessMtuProbeRunner` | `MtuDiscoveryTest`, `ProcessMtuProbeRunnerTest` |
+| MTU wizard UI (P17-021) | `MtuDiscoveryDialog`, `HostListPresenter`, `PingExpertDialog` | `MtuDiscoveryDialogTest`, `MtuDiscoveryTest` (progress) |
+| Expert Self-check DF/DSCP/Burst (P17-030) | `PresetSelfCheck`, `PresetSelfCheckUi`, `PingExpertDialog` | `PresetSelfCheckTest`, `PresetSelfCheckUiTest` |
+| Ping only toggle stats (P18-010) | `SessionStore.setProbeMode`, `MonitorService.pollHostOnce`, `HostListPresenter` | `SessionStoreTest.setProbeModeClearsHopStatsAndPingHistory`, `MonitorServiceTest.discardsStaleTraceOutcomeAfterPingOnlyToggle`, `MonitorServiceTest.discardsStaleTraceWhenMonitorFlippedBeforeSessionResolver` |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
@@ -87,7 +96,7 @@
 | Expert ping flags | `PingExpertValidator`, `ProcessExpertPing`, `ExpertPingArgs`, `HostAddressResolver` | `PingExpertValidatorTest`, `ExpertPingArgsTest`, `ProcessExpertPingTest`, `ExpertPingUiRulesTest`, `HostAddressResolverTest`, `PingTargetResolverTest` |
 | GUI / MonitorService | `MainController`, `MonitorService` | *(manual / TestFX — backlog)* |
 | UI coordinators | `ProfileUiCoordinator`, `HostListPresenter`, `MonitorLifecycle`, `ViewModeController`, `RouteGraphPresenter` | `./gradlew check`; B-035 manual smoke |
-| CI gate | `.github/workflows/java.yml` | `./gradlew check` (Spotless + Checkstyle + layerCheck + test) |
+| CI gate | `.github/workflows/java.yml` | `./gradlew check` (Spotless + Checkstyle + layerCheck + test; Monocle headless for FX UI tests) |
 | Doc parity UK/EN | `scripts/check_doc_parity.py` | `python3 scripts/check_doc_parity.py` (CI + `./scripts/ci_venv.sh`) |
 | JaCoCo coverage | `build.gradle.kts` `jacocoTestCoverageVerification` | `./gradlew check` (≥80%; tightened exclusions B-064; ExpertPingEnricher included B-064f) |
 | Static imports | `config/checkstyle/checkstyle.xml` | `./gradlew checkstyleMain` / `checkstyleTest` |

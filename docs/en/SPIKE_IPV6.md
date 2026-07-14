@@ -22,17 +22,17 @@ Should IPv6 support be added for:
 
 ---
 
-## Current state (evidence)
+## Phase 9 result (evidence)
 
-| Layer | IPv4 today | Phase 9 target |
-|-------|------------|----------------|
-| `HostsConfig` | Literal v4 + hostname; v6 literal RFC 5952 (V6-S1) | V6-020+ trace for v6 |
-| `ProcessRouteProbe` / parsers | Regex IPv4 | V6-024…V6-029: v6 tokens + fixtures |
-| Trace commands | without `-6` | V6-021…V6-023 |
-| `GeoCountry` | `Inet4Address` only | V6-035…V6-037 |
-| `RawIcmpRouteProbe` | `AF_INET` + `AF_INET6` (`probe: raw`) | V6-040…V6-045 ✅ |
-| Expert ping | iputils `-4`/`-6` catalog, v4 targets | V6-050…V6-053 |
-| Documentation | Dual-stack (V6-S4) | V6-074 |
+| Layer | IPv4 | IPv6 (phase 9) |
+|-------|------|----------------|
+| `HostsConfig` | Literal v4 + hostname | v6 literal RFC 5952 ✅ |
+| `ProcessRouteProbe` / parsers | Regex IPv4 | v6 tokens + fixtures ✅ |
+| Trace commands | `-4` / no `-6` | `-6` on Linux/Windows ✅ |
+| `GeoCountry` | `Inet4Address` | CIDR v6 hints ✅ |
+| `RawIcmpRouteProbe` | `AF_INET` | `AF_INET6` (`probe: raw`) ✅ |
+| Expert ping | iputils `-4` | `-6` + resolve ✅ |
+| Documentation | Dual-stack | V6-074 ✅ |
 
 ---
 
@@ -56,7 +56,7 @@ Retained as **constraints until phase 9**: raw v6 remains P2; process trace — 
 | GUI / GeoIP | V6-035…V6-037, V6-060…V6-062 |
 | Tests + CI | V6-027…V6-029, V6-070…V6-073 |
 
-**Estimate:** 3–5 sprints; atomic tasks ≤ 1 day each.
+**Estimate (historical, before phase start):** 3–5 sprints; atomic tasks ≤ 1 day each. Actually closed (see ROADMAP phase 9).
 
 ---
 

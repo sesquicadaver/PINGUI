@@ -10,7 +10,7 @@
 
 | Поле | Значення |
 |------|----------|
-| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (черга ROADMAP). Обидві: Java Pro (P9+) + Python після merge |
+| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (лінійна черга зараз **DONE**). Обидві: Java Pro (P9–P17) + Python після merge |
 | **Пріоритет** | P0 критично · P1 важливо · P2 бажано |
 | **DoD** | Definition of Done — умова закриття задачі |
 
@@ -23,17 +23,18 @@
 | Поле | Значення |
 |------|----------|
 | **Поточна задача** | **DONE** |
-| **Фаза** | 16 — Телеметрія |
-| **DoD (коротко)** | Черга виконана (наступний ID відсутній) |
+| **Фаза** | — |
+| **DoD (коротко)** | Черга виконання вичерпана (немає відкритих ID) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
 
 1. **Без аргументів** `/autopilot` / `$autopilot` = виконати **лише** ID з поля **Поточна задача**.
-2. **Заборонено питати** «який пункт далі?» — відповідь завжди в цій секції.
-3. Після `[x]` у таблиці фази: оновити **Поточна задача** на **наступний** рядок з **Черги виконання** (перший ще `[ ]`).
-4. Якщо код задачі вже є, але wiring знято (мертвий код) — **не** створювати паралельну задачу і **не** питати: виконати DoD (підключити або видалити мертве в межах того ж ID).
-5. Пропуск / зміна порядку — **лише** явною командою користувача з новим ID (тоді оновити NEXT + чергу).
+2. Якщо **Поточна задача = `DONE`** — **не** запускати цикл; повідомити, що лінійна черга вичерпана; працювати лише після явного нового ID (оновити NEXT + чергу спочатку).
+3. **Заборонено питати** «який пункт далі?» — відповідь завжди в цій секції.
+4. Після `[x]` у таблиці фази: оновити **Поточна задача** на **наступний** рядок з **Черги виконання** (перший ще `[ ]`), або **`DONE`**, якщо відкритих немає.
+5. Якщо код задачі вже є, але wiring знято (мертвий код) — **не** створювати паралельну задачу і **не** питати: виконати DoD (підключити або видалити мертве в межах того ж ID).
+6. Пропуск / зміна порядку — **лише** явною командою користувача з новим ID (тоді оновити NEXT + чергу).
 
 ---
 
@@ -86,8 +87,18 @@
 | 41 | **P16-071** | [x] | CHECKLIST telemetry smoke |
 | 42 | **P16-072** | [x] | Contract tests syslog/gelf |
 | 43 | **P16-080** | [x] | OTLP export (P2) |
+| 44 | **P16-090** | [x] | GUI: wire `TelemetryBus` / sinks (parity daemon) |
+| 45 | **P16-091** | [x] | Меню «Телеметрія…» — мінімальний `TelemetrySettingsDialog` |
+| 46 | **P16-092** | [x] | Повні sinks UI + redacted status + `log_aggregates` |
+| 47 | **P16-093** | [x] | Python: підключити YAML telemetry або явно «Java/daemon only» |
+| 48 | **P16-094** | [x] | Help/About + CHECKLIST GUI telemetry smoke |
+| 49 | **P17-010** | [x] | Expert preset UX: summary/expect/caution + статус Exten. |
+| 50 | **P17-020** | [x] | `MtuDiscovery` engine (sweep `-s`, stop ≥1% loss) |
+| 51 | **P17-021** | [x] | MTU wizard UI + Alert + apply to Expert |
+| 52 | **P17-030** | [x] | Informational self-check DF/DSCP/Burst (P2) |
+| 53 | **P18-010** | [x] | Ping only toggle: reset stats + discard stale poll |
 
-**Закінчення черги:** оновити NEXT → `DONE` (немає відкритих ID).
+**Стан черги:** закрита — **NEXT = DONE**. Нові задачі — лише явне розширення черги + оновлення NEXT.
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -208,7 +219,7 @@
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **V6-001** | [x] Оновити SPIKE: статус **planned**, цілі фази 9, матриця OS | `docs/SPIKE_IPV6.md` | Таблиця «шар → v4 → v6 → OS»; посилання на V6-* |
+| **V6-001** | [x] Оновити SPIKE (історичний DoD: статус *planned*) | `docs/SPIKE_IPV6.md` | SPIKE зараз **implemented**; таблиця OS + посилання на V6-* |
 | **V6-002** | [x] ADR: політика dual-stack (literal v6, hostname→AAAA, mixed profile) | `docs/ADR_IPV6.md` | Рішення: bracket YAML, canonical RFC 5952, probe fallback |
 | **V6-003** | [x] `HostAddressKind` + `HostAddressParser` (IPv4 / IPv6 / hostname) | `config/HostAddress*.java` | Unit-тест: parse/normalize без UI |
 
@@ -637,6 +648,43 @@ flowchart TD
 |----|--------|-----------|
 | **P16-080** | [x] OTLP logs/metrics export | P2 |
 
+### 16.8 — Desktop GUI telemetry (P0–P1) ✅
+
+**Контекст (історичний, до P16-090):** sinks з YAML/`--telemetry-*` працювали в `DaemonRunner`; JavaFX лише зберігала `telemetry:` при Save без bus. **З P16-090:** спільний `TelemetryAttachment` для GUI і daemon.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P16-090** | [x] Wire `TelemetryBus` у Java GUI (спільний attach з daemon) | `TelemetryAttachment`, `MainController`, `DaemonRunner` | При непорожньому `telemetry:` GUI реєструє sinks; close order: monitor → bus → store; unit + daemon regression |
+| **P16-091** | [x] Меню «Налаштування → Телеметрія…» (мінімум) | `TelemetrySettingsDialog`, `MainController` | `events_only`, local sqlite/jsonl, один remote (syslog); Apply → профіль YAML + re-wire bus |
+| **P16-092** | [x] Повний UI sinks + статус | `TelemetrySettingsDialog` | syslog/GELF/Loki/OTLP, `log_aggregates`, `toRedactedString()` у діалозі |
+| **P16-093** | [x] Python GUI/docs: wire або «sinks = Java/daemon» | `__main__.py`, docs | Немає dead `_resolve_telemetry` у GUI без ефекту; чітка позиція в CONFIGURATION |
+| **P16-094** | [x] Help/About + CHECKLIST GUI smoke | `AppMenuDialogs`, `CHECKLIST` | Згадано persistence+telemetry; smoke: GUI + sqlite event |
+
+---
+
+## Фаза 17 — Expert ping presets + MTU discovery (`beta`, P0–P1) ✅ DONE
+
+**Мета:** пресети Exten. інформативні; окремий керований MTU discovery (не плутати з `-M probe` як «автоперебір»).
+
+**Контекст (на старті фази):** кнопки пресетів лише мержили args у форму; poll — `ping -c 1` з фіксованим `-s`. **Вирішено:** P17-020/021 (wizard) + P17-030 (Self-check Alert).
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P17-010** | [x] Preset UX copy + статус у Exten. | `PingPreset`, `ping_presets.yaml`, `PingExpertDialog`, docs | YAML `summary`/`expect`/`caution`; tooltip+status рядок; тести; USER_GUIDE note (пресет ≠ MTU wizard) |
+| **P17-020** | [x] `MtuDiscovery` engine | `probe/MtuDiscovery*.java` | Sweep payload `-s` + `-M do`; N проб; stop при loss≥1%; unit recommended MTU |
+| **P17-021** | [x] MTU wizard UI | `ui/MtuDiscoveryDialog`, HostList, `PingExpertDialog` | Прогрес (поточне `-s`, loss%); Stop; Alert з max MTU; Apply → Expert args |
+| **P17-030** | [x] Self-check DF/DSCP/Burst (P2) | `PresetSelfCheck`, `PresetSelfCheckUi`, Exten. | Короткий результат у Alert без повного wizard |
+
+---
+
+## Фаза 18 — Стабільність режимів probe (`beta`) ✅ DONE
+
+**Мета:** перемикання probe mode не спотворює loss/RTT цілі.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P18-010** | [x] Ping only toggle stats | `SessionStore`, `MonitorService`, `HostListPresenter` | Clear hopStats/pingHistory; discard stale mid-flight poll; syncMetrics після toggle |
+
 ---
 
 ## Поза scope (не плануємо)
@@ -721,7 +769,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog:** M/B roadmap закрито; B-064 coverage ongoing; **IPv6 — Фаза 9 (V6-*)**; **Python NOC — Фаза PY (PY-*)**; **Pro — Фази 10–16 (P10–P16)**.
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–17 (P10–P17)**. Лінійна черга — **NEXT=DONE**.
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

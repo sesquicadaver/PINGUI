@@ -20,7 +20,7 @@ NOC/SRE очікують дві різні інтеграції з PINGUI:
 | SQLite session (`--session-db`) | P11 | Стан сесії + дискретні події (`route_change`, `probe_error`) для GUI/history |
 | Alerts (webhook / desktop) | P10 | Оповіщення оператора; не time-series store |
 | REST read-only API | P15-040 | Операційний знімок хостів/маршрутів; не scrape metrics |
-| Telemetry bus + LOG-server | P16 | Уніфікований emit → sinks (майбутнє) |
+| Telemetry bus + LOG-server | P16 ✅ | Уніфікований emit → sinks (GUI + daemon) |
 
 Без ADR легко змішати scrape з push, або намагатися годувати Grafana з SQLite session DB.
 
@@ -46,14 +46,14 @@ MonitorService / poll loop
         ├─► AlertDispatcher (P10)          — operator notify
         ├─► PrometheusExporter (P15)       — in-process gauges → scrape
         ├─► TimeSeriesBackend (P15/B-05)   — push samples (опційно)
-        └─► TelemetryBus (P16, later)      — unified async emit → sinks
+        └─► TelemetryBus (P16 ✅)          — unified async emit → sinks
 ```
 
 | Не робити в P15 | Чому |
 |-----------------|------|
 | Писати hop-RTT у SQLite як «Prometheus replacement» | Session DB ≠ TS; обсяг і query model інші |
 | Дублювати alert webhook як metrics push | P10 лишається notify; metrics — окремий контракт |
-| OTLP / OpenTelemetry export | Відкладено (P16-080) |
+| OTLP / OpenTelemetry export | Окремо: **P16-080 ✅** (опційно) |
 | Prometheus `remote_write` | Out of scope v1; scrape достатньо для daemon |
 | High-freq RTT у syslog | Це P16 LOG-server (`events_only`) |
 

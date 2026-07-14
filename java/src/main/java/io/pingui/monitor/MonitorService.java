@@ -407,12 +407,14 @@ public final class MonitorService implements AutoCloseable {
         }
         List<String> previousIps;
         HostProbeMode probeMode;
+        HostProbeMode mappedAtStart;
         synchronized (lock) {
             if (!hosts.contains(host)) {
                 return;
             }
             previousIps = List.copyOf(lastRoutes.getOrDefault(host, List.of()));
             probeMode = resolveProbeMode(host);
+            mappedAtStart = probeModes.getOrDefault(host, profileProbeMode);
             lastPollAt.put(host, Instant.now());
         }
         long startedNanos = System.nanoTime();
@@ -426,6 +428,19 @@ public final class MonitorService implements AutoCloseable {
         Listener current = listener;
         if (current == null || !isKnownHost(host)) {
             return;
+        }
+        // Discard if resolver or local map changed mid-flight (half-updated Ping only toggle).
+        // Compare each to its start snapshot — not to each other — so PingOnlyResolver may
+        // override while the map still holds TRACE.
+        synchronized (lock) {
+            if (!hosts.contains(host)) {
+                return;
+            }
+            HostProbeMode resolved = resolveProbeMode(host);
+            HostProbeMode mapped = probeModes.getOrDefault(host, profileProbeMode);
+            if (resolved != probeMode || mapped != mappedAtStart) {
+                return;
+            }
         }
         if (outcome.error() != null) {
             PersistenceEventWriter events = persistenceEvents;
@@ -642,5 +657,7 @@ public final class MonitorService implements AutoCloseable {
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
         }
+        // Bus lifecycle is owned by TelemetryAttachment / caller — drop the pointer only.
+        telemetryBus = null;
     }
 }

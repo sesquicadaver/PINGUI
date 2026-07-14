@@ -27,10 +27,14 @@ from pingui.persistence.policy import (
     load_persistence_config,
     resolve_session_db_path,
 )
-from pingui.telemetry_config import apply_cli_overrides, load_telemetry_config
 from pingui.persistence.session_db import SessionDatabase
 from pingui.persistence.timeseries.base import TimeSeriesBackend, TimeSeriesConfigError
 from pingui.persistence.timeseries.factory import create_timeseries_backend
+from pingui.telemetry_config import (
+    TelemetryConfig,
+    apply_cli_overrides,
+    load_telemetry_config,
+)
 
 DEFAULT_CONFIG = Path("config/hosts.example.yaml")
 SUBCOMMANDS = frozenset({"run", "export", "monitor", "daemon", "stop", "status"})
@@ -342,7 +346,7 @@ def _resolve_persistence(args: argparse.Namespace) -> tuple[Path | None, Persist
     return session_db, policy
 
 
-def _resolve_telemetry(args: argparse.Namespace):
+def _resolve_telemetry(args: argparse.Namespace) -> TelemetryConfig:
     """Return TelemetryConfig with CLI overrides over YAML (P16-041)."""
     return apply_cli_overrides(
         load_telemetry_config(args.config),
@@ -352,16 +356,46 @@ def _resolve_telemetry(args: argparse.Namespace):
     )
 
 
+def _note_python_log_sinks(cfg: TelemetryConfig, *, verbose: bool) -> None:
+    """P16-093: Python validates telemetry: ; LOG sinks run in Java only.
+
+    Time-series push uses ``--ts-backend`` / ``InfluxTelemetrySink``, not YAML LOG sinks.
+    """
+    if cfg.is_default():
+        return
+    has_log_sink = any(
+        (
+            cfg.sqlite is not None,
+            cfg.jsonl_dir is not None,
+            cfg.syslog is not None,
+            cfg.gelf is not None,
+            cfg.loki is not None,
+            cfg.otlp is not None,
+        )
+    )
+    if not has_log_sink and not cfg.log_aggregates:
+        return
+    msg = (
+        "Note: Python validates telemetry: but LOG sinks "
+        "(sqlite/jsonl/syslog/gelf/loki/otlp) are implemented in the Java GUI/daemon. "
+        "Python TS push uses --ts-backend / InfluxTelemetrySink."
+    )
+    if verbose:
+        msg = f"{msg} Resolved: {cfg.redacted_summary()}"
+    print(msg, file=sys.stderr)
+
+
 def _run_gui(args: argparse.Namespace, hosts: list[str]) -> int:
     geo_err = _configure_geoip(args)
     if geo_err is not None:
         return geo_err
     try:
         session_db_path, policy = _resolve_persistence(args)
-        _resolve_telemetry(args)
+        telemetry = _resolve_telemetry(args)
     except ConfigError as exc:
         print(f"Config error: {exc}", file=sys.stderr)
         return 1
+    _note_python_log_sinks(telemetry, verbose=args.verbose)
     timeseries_backend = _build_timeseries_backend(args)
     from pingui.ui.app import run_app
 
@@ -386,10 +420,11 @@ def _run_headless(args: argparse.Namespace, hosts: list[str], *, pid_file: Path 
         return icmp_err
     try:
         session_db_path, policy = _resolve_persistence(args)
-        _resolve_telemetry(args)
+        telemetry = _resolve_telemetry(args)
     except ConfigError as exc:
         print(f"Config error: {exc}", file=sys.stderr)
         return 1
+    _note_python_log_sinks(telemetry, verbose=args.verbose)
     timeseries_backend = _build_timeseries_backend(args)
     return run_headless_monitor(
         hosts,

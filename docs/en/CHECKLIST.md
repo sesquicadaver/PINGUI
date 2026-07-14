@@ -76,7 +76,7 @@ Details: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ### Java telemetry smoke (P16-071)
 
-Sink fields: [CONFIGURATION § Telemetry](CONFIGURATION.md#telemetry-p16-040052). LOG-server: [DEPLOYMENT § LOG-server](DEPLOYMENT.md#log-server-p16-061). Unit coverage: `TelemetrySinkInstallerTest`, `DaemonRunnerTest.startRegistersSqliteAndSyslogFromTelemetryConfig`, `SqliteTelemetrySinkTest`, `SyslogSinkTest`.
+Sink fields: [CONFIGURATION § Telemetry](CONFIGURATION.md#telemetry-p16-040052). LOG-server: [DEPLOYMENT § LOG-server](DEPLOYMENT.md#log-server-p16-061). Unit coverage: `TelemetrySinkInstallerTest`, `TelemetryAttachmentTest`, `DaemonRunnerTest.startRegistersSqliteAndSyslogFromTelemetryConfig`, `SqliteTelemetrySinkTest`, `SyslogSinkTest`, `AppMenuDialogsTest`. Desktop GUI uses the same `TelemetryAttachment` (P16-090); GUI smoke below (P16-094).
 
 **Prepare a profile** (copy of `java/config/hosts.example.yaml` or a temp YAML): host `enabled: true`; in the profile:
 
@@ -96,6 +96,14 @@ telemetry:
 - [ ] After first poll (baseline route_change): `sqlite3 data/telemetry.db "SELECT event, host FROM telemetry_event LIMIT 5;"` — has `route_change` (or `probe_error`)
 - [ ] In `/tmp/pingui-syslog.log` — RFC 5424 line with JSON `"event":"route_change"` (or `probe_error`); **no** hop-RTT sample flood when `events_only: true`
 - [ ] `./pingui-java.sh -- --stop --pid-file /tmp/pingui-java.pid`
+
+### Java GUI telemetry smoke (P16-094)
+
+- [ ] CI: `cd java && ./gradlew test --tests io.pingui.ui.AppMenuDialogsTest --tests io.pingui.TelemetryAttachmentTest --tests io.pingui.ui.TelemetrySettingsDialogTest` — green
+- [ ] About (“About PINGUI…”) mentions SQLite session and Telemetry menu (not “RAM only”)
+- [ ] Help (F1) has Settings section with `persistence.session_db` ≠ `telemetry.sqlite`
+- [ ] GUI: **Settings → Telemetry…** → sqlite `data/telemetry.db`, Apply → log “Телеметрія оновлена”; **Save** → YAML has `telemetry.sqlite`
+- [ ] After poll: `sqlite3 data/telemetry.db "SELECT event FROM telemetry_event LIMIT 3;"` — has `route_change` or `probe_error`
 
 ---
 
@@ -140,6 +148,8 @@ export PINGUI_JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64   # if needed
 - [ ] Extended: graph + change log
 - [ ] Save YAML → restart → target persists
 - [ ] Expert ON → **Exten.** → `-4 -s 128` → RTT updates
+- [ ] Expert ON → **MTU** (or Expert → **MTU wizard…**) → Start → Stop/finish → Alert with MTU → Apply → Expert args `-M do -s …`
+- [ ] Expert → Exten. → **Self-check** → Alert for DF/DSCP/Burst (loss%/RTT); Expert form unchanged
 
 ### jpackage (.deb)
 
@@ -261,6 +271,9 @@ chmod +x pingui-java.sh gradlew
 4. Simple: RTT/loss; Extended: graph
 5. Save config → restart
 6. **Linux only:** Expert → Exten. → `-4 -s 128`
+7. **Linux only:** Expert → **MTU** → wizard Start/Apply (not the «MTU probe» preset)
+8. **Linux only:** Expert → Exten. → **Self-check** → Alert DF/DSCP/Burst
+9. Optional: **Settings → Telemetry…** — see § GUI telemetry smoke (P16-094)
 
 ---
 

@@ -74,7 +74,7 @@ profiles:
 |----|---------|-------|-------------|
 | Linux | ✅ recommended | ✅ target (mtr-like state machine) | ✅ |
 | Windows | ⚠ slow trace | ⚠ MTR via subprocess limited | ✅ **recommended** |
-| macOS | ✅ | ✅ planned | ✅ |
+| macOS | ✅ | best-effort / not shipped as full MTR | ✅ |
 
 Windows preset (P13-040): `probe_mode: ping_only`, `interval: 60` in `hosts.windows.example.yaml`.
 

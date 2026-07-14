@@ -13,7 +13,7 @@
 
 ## Гілки
 
-- `beta` — активна розробка (черга ROADMAP / `/autopilot`); CI на push/PR.
+- `beta` — активна розробка; `/autopilot` бере ID з ROADMAP NEXT (якщо **DONE** — черга порожня, потрібен явний новий ID); CI на push/PR.
 - `main` — стабільний зріз після merge з `beta`; CI на push/PR.
 - Feature-гілки: `feature/короткий-опис` → PR у `beta`.
 

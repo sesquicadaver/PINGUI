@@ -121,4 +121,4 @@ GUI Java лишає journal/route graph як є; desktop alert — опційн�
 
 - [ROADMAP.md](ROADMAP.md) — фаза 10 (P10-*), фаза 16 (P16-050)  
 - Python: `src/pingui/models.py` (`RouteChangeEvent`), `src/pingui/monitor/alert_dispatcher.py`  
-- Java (planned): `monitor/AlertDispatcher.java`, `monitor/WebhookAlertDispatcher.java`
+- Java (shipped): `monitor/AlertDispatcher.java`, `monitor/WebhookAlertDispatcher.java`, …

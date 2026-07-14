@@ -2,7 +2,9 @@
 
 # PINGUI Module Reference
 
-Public APIs of the `pingui` package (version 0.2.0).
+> **Scope:** Python package `pingui` only (version 0.2.0). Java Pro (telemetry, MTU, Expert) — [JAVA.md](JAVA.md) and [java/README.en.md](../../java/README.en.md).
+
+Public APIs of the `pingui` package.
 
 ---
 

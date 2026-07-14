@@ -9,11 +9,16 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Docs sync (NEXT=DONE):** UK/EN indexes, README, java/README, ADRs (`planned`→shipped), SPIKE_IPV6, `/autopilot` contract for `DONE`, MODULES/ARCHITECTURE scoped to Python; removed “phases 0–16” / “SPIKE planned” / orphan “future” wording after P17.
 - **Branches `main` / `beta` (docs):** README and related docs no longer describe `main` as “RAM-only / no SQLite·alerts·daemon·IPv6·Python”. Reality: `main` = last stable merge; `beta` = development ahead; Pro stack and Python are on both after merge.
-- **ROADMAP NEXT + linear queue:** `docs/ROADMAP.md` / `docs/en/ROADMAP.md` and root `ROADMAP*.md` — single **Current task** field; `/autopilot` with no args always takes that ID (no “which item?”). Agent rule: `.cursor/rules/roadmap-next.mdc`.
+- **ROADMAP NEXT + linear queue:** single **Current task** field; `/autopilot` with no args takes that ID unless **DONE** (then stop). Agent rule: `.cursor/rules/roadmap-next.mdc`.
 
 ### Fixed
 
+- **Ping only toggle (P18-010):** mode switch clears hopStats/pingHistory; mid-flight TRACE discarded after toggle; UI `syncMetrics` — no false 100% loss. ROADMAP NEXT → DONE.
+- **MonitorService stale-mode discard:** compare resolver/map to start-of-poll snapshots (not to each other) so a `PingOnlyResolver` override still applies when the local map stays TRACE.
+- **Python CI (mypy):** remove unused `type: ignore` on `daemon_runner` `telemetry.close()` — emitter is always `QueueTelemetryEmitter`.
+- **Java CI (headless FX):** TestFX Monocle + jvmArgs for UI unit tests; close SQLite in `RouteHistoryPresenterTest` so Windows `@TempDir` cleanup succeeds.
 - **RouteHistoryPresenterTest:** fixed `2026-07-09` timestamps fell outside the 24h lookback — tests now use relative `Instant.now()`.
 - **Java UI:** adding a second host no longer switches the route-history target filter to the new host — history stays on the current target.
 - **CI:** GitHub Actions upgraded to Node.js 24 (`checkout@v6`, `setup-java@v5`, `setup-python@v6`) — removes Node 20 deprecation warnings.
@@ -21,7 +26,16 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **OTLP/HTTP export (P16-080):** `OtlpHttpTelemetrySink` posts OTLP JSON to `/v1/logs` and `/v1/metrics` (no OTel SDK); YAML `telemetry.otlp` + `--telemetry-otlp`; ROADMAP NEXT → DONE.
+- **Expert Self-check DF/DSCP/Burst (P17-030):** `PresetSelfCheck` + Exten. «Self-check» → short batch → Alert (no wizard). ROADMAP NEXT → **DONE**.
+- **MTU wizard UI (P17-021):** `MtuDiscoveryDialog` (progress / Stop / Alert / Apply → Expert `-M do -s`); HostList **MTU** + Expert «MTU wizard…». ROADMAP NEXT → P17-030.
+- **MtuDiscovery engine (P17-020):** ascending `-s` sweep (`min→start`) with `-M do`, stop at ≥1% loss, recommended MTU = last good payload + IP/ICMP overhead; `ProcessMtuProbeRunner`. ROADMAP NEXT → P17-021.
+- **Expert preset UX (P17-010):** `ping_presets.yaml` `summary`/`expect`/`caution`; Exten. tooltip + status line; clarify preset ≠ MTU wizard. ROADMAP NEXT → P17-020.
+- **Help/About + GUI telemetry smoke (P16-094):** About/Help mention SQLite + Telemetry menu; CHECKLIST GUI smoke. (end of P16 GUI queue at the time; P17 followed)
+- **Python telemetry stance (P16-093):** validate `telemetry:` on start; LOG sinks = Java only; stderr note + CONFIGURATION. ROADMAP NEXT → P16-094.
+- **Full telemetry settings UI (P16-092):** dialog edits GELF/Loki/OTLP + `log_aggregates` and shows `toRedactedString()` status. ROADMAP NEXT → P16-093.
+- **Telemetry settings dialog (P16-091):** Menu “Settings → Telemetry…” — `events_only`, sqlite, jsonl, syslog(+TLS); Apply → profile + re-wire bus; CLI locks honored. ROADMAP NEXT → P16-092.
+- **GUI telemetry bus (P16-090):** `TelemetryAttachment` — shared sink install + bus for JavaFX `MainController` and `DaemonRunner` (close: monitor → attachment → store).
+- **OTLP/HTTP export (P16-080):** `OtlpHttpTelemetrySink` posts OTLP JSON to `/v1/logs` and `/v1/metrics` (no OTel SDK); YAML `telemetry.otlp` + `--telemetry-otlp`.
 - **Syslog/GELF contract tests (P16-072):** `TelemetryLogFieldFixture` + `SyslogGelfContractTest` — mock TCP, shared event fields across RFC 5424 MSG and GELF `_payload`.
 - **Telemetry CHECKLIST smoke + daemon sink wiring (P16-071):** `TelemetrySinkInstaller` registers sqlite/jsonl/syslog/gelf/loki from YAML; CHECKLIST § Java telemetry smoke (local DB + syslog event).
 - **LIVING_SPEC telemetry matrix (P16-070):** concrete `*Test` classes for bus/sinks P16-010…052; Phase 16 overview; Python telemetry rows; stale P15-010 test name fixed.

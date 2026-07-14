@@ -20,7 +20,7 @@ NOC-профілі потребують моніторингу маршруту 
 | Конфіг | `--config` + YAML; CLI overrides як у GUI |
 | SQLite | `--session-db` або YAML `persistence.session_db` |
 | Alerts | `--alert-webhook`, `--desktop-alerts` (Linux) — як P10 |
-| Reload | **SIGHUP → reload config** — заплановано P12-050 (не в P12-010) |
+| Reload | **SIGHUP → reload config** — out of scope v1 (немає ID у поточній черзі; deferred) |
 
 ## Альтернативи
 
@@ -35,5 +35,5 @@ NOC-профілі потребують моніторингу маршруту 
 
 ## Follow-ups
 
-- P12-050: SIGHUP reload `ProfilesConfig` без перезапуску процесу.
+- SIGHUP reload `ProfilesConfig` без перезапуску — deferred (немає ID у поточній лінійній черзі).
 - PY parity: `python -m pingui daemon` залишається окремим шляхом.

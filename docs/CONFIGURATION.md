@@ -119,9 +119,13 @@ profiles:
 
 За замовчуванням alerts вимкнено (`NoOp` dispatcher).
 
-### Телеметрія (P16-040…052, P16-080)
+### Телеметрія (P16-040…052, P16-080, P16-090…092)
 
 Секція `telemetry:` у профілі v2 (Java) або top-level (Python `load_telemetry_config`). Пріоритет: **CLI > YAML > defaults**. За замовч. усі sinks **off**; `events_only: true`; `log_aggregates: false`. ADR: [ADR_TELEMETRY.md](ADR_TELEMETRY.md). Приклад: `java/config/hosts.example.yaml`. Windows-пресет: `config/hosts.windows.example.yaml` (P16-043: `events_only` без `jsonl_dir`).
+
+**Java GUI (P16-090…092):** sinks працюють у desktop через `TelemetryAttachment`. Меню **Налаштування → Телеметрія…** редагує `events_only`, `log_aggregates`, local sqlite/jsonl, syslog(+TLS), GELF(+transport), Loki(URL+site), OTLP(endpoint+service); статус — `toRedactedString()`. Apply оновлює активний профіль і re-wire bus; запис на диск — «Зберегти». CLI `--telemetry-syslog` / `--telemetry-jsonl` / `--telemetry-otlp` блокують відповідні поля.
+
+**Python (P16-093):** `telemetry:` + `--telemetry-*` **валідуються** при старті GUI/daemon; LOG sinks (sqlite/jsonl/syslog/GELF/Loki/OTLP) **не емітяться** у Python runtime — лише Java. TS push — `--ts-backend` / `InfluxTelemetrySink`. Якщо YAML має LOG sinks, stderr note (verbose додає `redacted_summary`).
 
 ```yaml
 profiles:
@@ -201,7 +205,11 @@ Webhook route alerts лишаються в `alerts.webhook` / `--alert-webhook` 
 | `--asn-timeout-ms` | int | `2000` | Зарезервовано під майбутній whois fallback |
 | `--no-geo-map` | flag | off | Вимкнути вкладку folium geo-map |
 
-Expert ping presets (Java GUI, P14-040): `config/ping_presets.yaml` поруч із hosts-конфігом (або CWD `config/ping_presets.yaml`); інакше bundled resource. Рівно 4 пресети (`mtu_probe`, `df`, `dscp`, `burst`); кнопки в `PingExpertDialog` підставляють args і зберігають поточний AF (`-4`/`-6`).
+Expert ping presets (Java GUI, P14-040 / P17-010): `config/ping_presets.yaml` поруч із hosts-конфігом (або CWD `config/ping_presets.yaml`); інакше bundled resource. Рівно 4 пресети (`mtu_probe`, `df`, `dscp`, `burst`). Обовʼязкові поля: `id`, `label`, `args`, `summary`, `expect`; опційно `caution`. Кнопки в `PingExpertDialog` підставляють args (збережений AF `-4`/`-6`) і показують status/tooltip з UX-копією. Пресети **не** запускають MTU sweep.
+
+MTU discovery engine (P17-020, API): `MtuDiscovery` + `ProcessMtuProbeRunner` — лінійний ascending sweep `-s` (`min → start`) з `-M do`, N проб на розмір, stop при loss% ≥ порогу (default 1%), `recommendedMtu = last_good_payload + 28` (IPv4) / `+ 48` (IPv6). GUI wizard (P17-021): `MtuDiscoveryDialog` — HostList **MTU** / Expert «MTU wizard…»; Apply → `-M do -s <payload>` (пресет «MTU probe» лишається окремим).
+
+Expert Self-check (P17-030): `PresetSelfCheck` — 3× `ping -c 1` для пресетів `df` / `dscp` / `burst` (AF з форми); Exten. «Self-check» → Alert з loss%/avgRTT; форму Expert не змінює.
 
 ### Time-series (optional extra: `pip install -e ".[timeseries]"`)
 

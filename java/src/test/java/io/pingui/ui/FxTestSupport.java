@@ -20,9 +20,18 @@ final class FxTestSupport {
                 return;
             }
             CountDownLatch latch = new CountDownLatch(1);
-            Platform.startup(latch::countDown);
+            try {
+                Platform.startup(latch::countDown);
+            } catch (IllegalStateException already) {
+                // Toolkit already running in this JVM (e.g. another suite).
+                started = true;
+                return;
+            } catch (RuntimeException ex) {
+                throw new IllegalStateException(
+                        "JavaFX toolkit failed to start (need display or Monocle headless)", ex);
+            }
             if (!latch.await(10, TimeUnit.SECONDS)) {
-                throw new IllegalStateException("JavaFX toolkit failed to start");
+                throw new IllegalStateException("JavaFX toolkit failed to start (timeout)");
             }
             started = true;
         }

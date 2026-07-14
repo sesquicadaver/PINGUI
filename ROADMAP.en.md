@@ -9,13 +9,13 @@
 | Field | Value |
 |------|----------|
 | **Current task** | **[DONE](docs/en/ROADMAP.md#next--single-source-of-truth)** |
-| **Rule** | `/autopilot` with no args = this ID. **Do not ask** “which item?”. |
+| **Rule** | if not `DONE` — `/autopilot` = this ID; if `DONE` — stop / wait for an explicit new ID. **Do not ask** “which item?”. |
 
-Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear).
+Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (currently exhausted).
 
 **MVP status:** ✅ implemented (2026-06-26)
 
-**Target audience for upcoming phases:** NOC/SRE, network engineers, WAN/MPLS admins.
+**Target audience for Pro features:** NOC/SRE, network engineers, WAN/MPLS admins.
 
 - Launch: `./pingui.sh` / `./pingui.sh --deploy` · `java/pingui-java.sh` (develop on `beta`; production snapshot — `main`)
 - CI: ruff + mypy + pytest · `./gradlew check` (both branches)
@@ -37,7 +37,9 @@ Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#e
 | **13** | Probe efficiency (MTR, smart interval, burst) | ✅ P13-001…050 |
 | **14** | Pro GUI (diff, tags, ASN/rDNS, presets) | ✅ |
 | **15** | Integrations (Prometheus, REST API, export) | ✅ |
-| **16** | Telemetry + LOG-server | 🔄 **NEXT → P16-070** |
+| **16** | Telemetry + LOG-server | ✅ (GUI P16-090…094) |
+| **17** | Expert ping / MTU discovery | ✅ |
+| **18** | Probe mode stability | ✅ **DONE** (queue exhausted) |
 
 ---
 
@@ -68,6 +70,7 @@ flowchart LR
   F13[Phase 13 done] --> F14[Phase 14 Pro GUI]
   F14 --> F15[Phase 15 Integrations]
   F15 --> F16[Phase 16 Telemetry]
+  F16 --> F17[Phase 17 MTU / Self-check DONE]
 ```
 
 ---
@@ -97,7 +100,7 @@ PINGUI/
 3. `./pingui.sh --deploy` or `./gradlew check` green.
 4. Row in `docs/LIVING_SPEC.md`.
 5. README / DEPLOYMENT / CHANGELOG — if launch or UX changed.
-6. Update **NEXT** + the matching **Execution queue** row (`[x]` → next ID).
+6. Update **NEXT** + the matching **Execution queue** row (`[x]` → next ID, or **DONE** if the queue is empty).
 
 ---
 

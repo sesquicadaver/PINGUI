@@ -138,7 +138,8 @@ Store/history/change detection — `SessionStore`, `RouteHistory`, `RouteChangeD
 
 - Меню **Про** / **Довідка** (F1) — `AppMenuDialogs`
 - Вибір **профілю трасування** (ComboBox + новий/видалити); усі профілі в одному YAML
-- Чекбокс **«Експерт»** → кнопка **Exten.** на рядку хоста → `PingExpertDialog` (каталог з `pingMan.txt`, без `-c/-w/-W/-i` тощо); 4 quick presets з `ping_presets.yaml` (MTU probe, DF, DSCP, Burst)
+- Чекбокс **«Експерт»** → **Exten.** / **MTU** на рядку хоста → `PingExpertDialog` (каталог з `pingMan.txt`, без `-c/-w/-W/-i` тощо); 4 quick presets з `ping_presets.yaml` (MTU probe, DF, DSCP, Burst); **MTU wizard…** (`MtuDiscoveryDialog`); **Self-check** (`PresetSelfCheckUi`)
+- Меню **Налаштування → Телеметрія…** — `TelemetrySettingsDialog` + bus via `TelemetryAttachment`
 - `ListView<HostItem>` + CheckBox у комірці
 - **GraphCanvas** — вертикальний граф, inactive/active колонки
 - Log `TextArea`
@@ -215,4 +216,4 @@ pingui-java.bat --package    REM .msi
 
 ## Майбутнє
 
-Див. чергу ROADMAP на гілці **`beta`** ([docs/ROADMAP.md](ROADMAP.md) § NEXT).
+Лінійна черга ROADMAP вичерпана (**NEXT = DONE**). Нові задачі — лише після явного оновлення черги / нового ID ([docs/ROADMAP.md](ROADMAP.md) § NEXT).

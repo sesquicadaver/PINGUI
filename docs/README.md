@@ -2,7 +2,7 @@
 
 # Документація PINGUI
 
-На **`main`** і **`beta`** — повний пакет (Java Pro + Python) після merge; **`beta`** — гілка розробки (черга ROADMAP), **`main`** — останній стабільний зріз. Див. «Гілки» у [README.md](../README.md).
+На **`main`** і **`beta`** — повний пакет (Java Pro + Python) після merge; **`beta`** — гілка розробки, **`main`** — останній стабільний зріз. Лінійна черга ROADMAP зараз **DONE** (див. [ROADMAP.md § NEXT](ROADMAP.md#next--єдине-джерело-правди)). «Гілки» — [README.md](../README.md).
 
 ## Навігація
 
@@ -11,7 +11,7 @@
 | [CHECKLIST.md](CHECKLIST.md) | Адмін / DevOps | Checklist Linux / Windows / macOS |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Адмін / DevOps | JDK 21, venv, cap_net_raw, systemd |
 | [JAVA.md](JAVA.md) | Розробник | Probe, monitor, UI, YAML |
-| [ROADMAP.md](ROADMAP.md) | Розробник | Офіційний план: фази 0–16 (Pro/NOC + telemetry) |
+| [ROADMAP.md](ROADMAP.md) | Розробник | Офіційний план: фази 0–17 (Pro/NOC + telemetry + Expert MTU); NEXT=DONE |
 | [LIVING_SPEC.md](LIVING_SPEC.md) | Розробник | Матриця модуль → тести |
 | [ADR_IPV6.md](ADR_IPV6.md) | Розробник | Dual-stack config ADR (V6-002) |
 | [ADR_ALERTS.md](ADR_ALERTS.md) | Розробник | Route-change alerts ADR (P10-001) |
@@ -19,7 +19,7 @@
 | [ADR_PROBE_MODES.md](ADR_PROBE_MODES.md) | Розробник | Probe modes trace/mtr/ping_only ADR (P13-001) |
 | [ADR_OBSERVABILITY.md](ADR_OBSERVABILITY.md) | Розробник | Prometheus vs TS backend ADR (P15-001) |
 | [ADR_TELEMETRY.md](ADR_TELEMETRY.md) | Розробник | Telemetry bus / events vs samples ADR (P16-001) |
-| [SPIKE_IPV6.md](SPIKE_IPV6.md) | Розробник | IPv6 scope (**planned**, фаза 9 V6-*) |
+| [SPIKE_IPV6.md](SPIKE_IPV6.md) | Розробник | IPv6 scope (**implemented**, фаза 9 V6-*) |
 | [SPIKE_PERSISTENCE.md](SPIKE_PERSISTENCE.md) | Розробник | SQLite session schema (фаза 11 P11-*) |
 | [SPIKE_LOG_SINKS.md](SPIKE_LOG_SINKS.md) | Розробник | LOG-server protocols SPIKE (P16-002) |
 | [CONFIGURATION.md](CONFIGURATION.md) | Розробник | YAML, CLI (Python) |

@@ -3,13 +3,12 @@ package io.pingui.daemon;
 import io.pingui.AppOptions;
 import io.pingui.CliProfileOverrides;
 import io.pingui.CliTelemetryOverrides;
-import io.pingui.TelemetrySinkInstaller;
+import io.pingui.TelemetryAttachment;
 import io.pingui.api.ReadOnlyApiServer;
 import io.pingui.config.HostEntry;
 import io.pingui.config.ProfileDocument;
 import io.pingui.config.ProfilesConfig;
 import io.pingui.config.SessionDbResolver;
-import io.pingui.config.TelemetryConfig;
 import io.pingui.config.TracingProfile;
 import io.pingui.geoip.AsnLookup;
 import io.pingui.geoip.GeoCountry;
@@ -25,7 +24,6 @@ import io.pingui.persistence.timeseries.TimeSeriesBackend;
 import io.pingui.persistence.timeseries.TimeSeriesBackends;
 import io.pingui.persistence.timeseries.TimeSeriesConfigException;
 import io.pingui.telemetry.SinkRegistry;
-import io.pingui.telemetry.TelemetryBus;
 import io.pingui.ui.HostViewRules;
 import io.pingui.ui.MonitorLifecycle;
 import java.io.IOException;
@@ -45,9 +43,7 @@ public final class DaemonRunner implements AutoCloseable {
     private ProfileDocument profileDocument;
     private SessionStore store;
     private MonitorService monitor;
-    private SinkRegistry telemetryRegistry;
-    private TelemetryBus telemetryBus;
-    private TelemetrySinkInstaller.Result telemetryInstall;
+    private TelemetryAttachment telemetry;
     private MetricsHttpServer metricsServer;
     private ReadOnlyApiServer apiServer;
     private final CountDownLatch running = new CountDownLatch(1);
@@ -103,7 +99,7 @@ public final class DaemonRunner implements AutoCloseable {
 
     /** Exposed for tests — telemetry sink registry when bus is attached. */
     public Optional<SinkRegistry> telemetryRegistry() {
-        return Optional.ofNullable(telemetryRegistry);
+        return telemetry != null ? Optional.of(telemetry.registry()) : Optional.empty();
     }
 
     @Override
@@ -124,17 +120,9 @@ public final class DaemonRunner implements AutoCloseable {
             monitor.close();
             monitor = null;
         }
-        if (telemetryBus != null) {
-            telemetryBus.close();
-            telemetryBus = null;
-        }
-        if (telemetryRegistry != null) {
-            telemetryRegistry.close();
-            telemetryRegistry = null;
-        }
-        if (telemetryInstall != null) {
-            telemetryInstall.closeOwned();
-            telemetryInstall = null;
+        if (telemetry != null) {
+            telemetry.close();
+            telemetry = null;
         }
         if (store != null) {
             store.close();
@@ -156,8 +144,8 @@ public final class DaemonRunner implements AutoCloseable {
         }
         PrometheusExporter exporter = new PrometheusExporter();
         metricsServer = MetricsHttpServer.start(exporter, port.get());
-        if (telemetryRegistry != null) {
-            telemetryRegistry.register(new PrometheusTelemetrySink(exporter));
+        if (telemetry != null) {
+            telemetry.registry().register(new PrometheusTelemetrySink(exporter));
             LOG.info("Prometheus telemetry sink registered (scrape :{})", port.get());
         } else {
             LOG.warn("Metrics port set but telemetry registry missing — scrape empty until bus wired");
@@ -200,14 +188,10 @@ public final class DaemonRunner implements AutoCloseable {
     }
 
     private void attachTelemetryBus(MonitorService service) {
-        telemetryRegistry = new SinkRegistry();
-        TelemetryConfig telemetry =
-                profileDocument != null ? profileDocument.active().telemetry() : TelemetryConfig.defaults();
         Optional<SessionDatabase> sessionDb =
                 store != null && store.database() != null ? Optional.of(store.database()) : Optional.empty();
-        telemetryInstall = TelemetrySinkInstaller.install(telemetryRegistry, telemetry, sessionDb);
-        telemetryBus = new TelemetryBus(telemetryRegistry);
-        service.setTelemetryBus(telemetryBus);
+        telemetry = TelemetryAttachment.replace(
+                telemetry, service, profileDocument.active().telemetry(), sessionDb);
     }
 
     private void attachTimeSeries(SessionStore sessionStore) {

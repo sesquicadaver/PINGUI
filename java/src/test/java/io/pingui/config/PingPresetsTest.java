@@ -1,6 +1,7 @@
 package io.pingui.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -13,6 +14,32 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class PingPresetsTest {
+    private static final String FOUR_PRESETS =
+            """
+            presets:
+              - id: mtu_probe
+                label: MTU
+                args: ["-M", "want"]
+                summary: "s mtu"
+                expect: "e mtu"
+                caution: "c mtu"
+              - id: df
+                label: DF
+                args: ["-M", "do"]
+                summary: "s df"
+                expect: "e df"
+              - id: dscp
+                label: DSCP
+                args: ["-Q", "0x2e"]
+                summary: "s dscp"
+                expect: "e dscp"
+              - id: burst
+                label: Burst
+                args: ["-O"]
+                summary: "s burst"
+                expect: "e burst"
+            """;
+
     @BeforeEach
     @AfterEach
     void reset() {
@@ -20,7 +47,7 @@ class PingPresetsTest {
     }
 
     @Test
-    void bundledResourceHasFourNamedPresets() {
+    void bundledResourceHasFourNamedPresetsWithUxCopy() {
         List<PingPreset> presets = PingPresets.all();
         assertEquals(PingPresets.EXPECTED_COUNT, presets.size());
         assertEquals(
@@ -30,6 +57,10 @@ class PingPresetsTest {
         assertEquals(List.of("-M", "do"), presets.get(1).args());
         assertEquals(List.of("-Q", "46"), presets.get(2).args());
         assertEquals(List.of("-s", "1024", "-O"), presets.get(3).args());
+        assertFalse(presets.get(0).summary().isBlank());
+        assertFalse(presets.get(0).expect().isBlank());
+        assertTrue(presets.get(0).statusLine().contains("MTU probe"));
+        assertTrue(presets.get(0).tooltipText().contains("-M"));
     }
 
     @Test
@@ -47,30 +78,47 @@ class PingPresetsTest {
     @Test
     void configureFromFileOverridesResource() throws Exception {
         Path file = Files.createTempFile("ping-presets-", ".yaml");
-        Files.writeString(
-                file,
-                """
-                presets:
-                  - id: mtu_probe
-                    label: MTU
-                    args: ["-M", "want"]
-                  - id: df
-                    label: DF
-                    args: ["-M", "do"]
-                  - id: dscp
-                    label: DSCP
-                    args: ["-Q", "0x2e"]
-                  - id: burst
-                    label: Burst
-                    args: ["-O"]
-                """);
+        Files.writeString(file, FOUR_PRESETS);
         try {
             PingPresets.configure(file);
             assertEquals(List.of("-M", "want"), PingPresets.all().get(0).args());
             assertEquals("0x2e", PingPresets.all().get(2).args().get(1));
+            assertEquals("s mtu", PingPresets.all().get(0).summary());
+            assertEquals("c mtu", PingPresets.all().get(0).caution());
         } finally {
             Files.deleteIfExists(file);
         }
+    }
+
+    @Test
+    void missingSummaryRejected() {
+        ConfigError error = assertThrows(
+                ConfigError.class,
+                () -> PingPresets.parseYaml(
+                        """
+                        presets:
+                          - id: mtu_probe
+                            label: MTU
+                            args: ["-M", "do"]
+                            expect: "e"
+                          - id: df
+                            label: DF
+                            args: ["-M", "do"]
+                            summary: "s"
+                            expect: "e"
+                          - id: dscp
+                            label: DSCP
+                            args: ["-Q", "46"]
+                            summary: "s"
+                            expect: "e"
+                          - id: burst
+                            label: Burst
+                            args: ["-O"]
+                            summary: "s"
+                            expect: "e"
+                        """,
+                        "test"));
+        assertTrue(error.getMessage().contains("summary"));
     }
 
     @Test
@@ -83,15 +131,23 @@ class PingPresetsTest {
                           - id: mtu_probe
                             label: MTU
                             args: ["-f"]
+                            summary: "s"
+                            expect: "e"
                           - id: df
                             label: DF
                             args: ["-M", "do"]
+                            summary: "s"
+                            expect: "e"
                           - id: dscp
                             label: DSCP
                             args: ["-Q", "46"]
+                            summary: "s"
+                            expect: "e"
                           - id: burst
                             label: Burst
                             args: ["-O"]
+                            summary: "s"
+                            expect: "e"
                         """,
                         "test"));
     }
@@ -102,23 +158,7 @@ class PingPresetsTest {
         Path hosts = dir.resolve("hosts.yaml");
         Path presets = dir.resolve("ping_presets.yaml");
         Files.writeString(hosts, "profiles: {}\n");
-        Files.writeString(
-                presets,
-                """
-                presets:
-                  - id: mtu_probe
-                    label: MTU
-                    args: ["-M", "want"]
-                  - id: df
-                    label: DF
-                    args: ["-M", "do"]
-                  - id: dscp
-                    label: DSCP
-                    args: ["-Q", "46"]
-                  - id: burst
-                    label: Burst
-                    args: ["-O"]
-                """);
+        Files.writeString(presets, FOUR_PRESETS);
         try {
             assertEquals(presets, PingPresets.resolvePath(hosts));
             PingPresets.configure(PingPresets.resolvePath(hosts));
@@ -140,6 +180,8 @@ class PingPresetsTest {
                           - id: only
                             label: Only
                             args: []
+                            summary: "s"
+                            expect: "e"
                         """,
                         "test"));
         assertTrue(error.getMessage().contains("expected 4"));

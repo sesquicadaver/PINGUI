@@ -17,7 +17,7 @@ from pingui.persistence.policy import PersistencePolicy
 from pingui.persistence.session_db import SessionDatabase
 from pingui.persistence.timeseries.base import TimeSeriesBackend
 from pingui.persistence.timeseries.influx_telemetry_sink import InfluxTelemetrySink
-from pingui.telemetry_emit import QueueTelemetryEmitter, TelemetryEmitter
+from pingui.telemetry_emit import QueueTelemetryEmitter
 
 logger = logging.getLogger(__name__)
 
@@ -172,7 +172,6 @@ def run_headless_monitor(
             store.set_enabled(host, True)
 
     ts_sink: InfluxTelemetrySink | None = None
-    telemetry: TelemetryEmitter
     if timeseries_backend is not None:
         ts_sink = InfluxTelemetrySink(timeseries_backend)
         telemetry = QueueTelemetryEmitter(
@@ -230,8 +229,7 @@ def run_headless_monitor(
     finally:
         loop.stop()
         loop.join(timeout=5.0)
-        if hasattr(telemetry, "close"):
-            telemetry.close()  # type: ignore[union-attr]
+        telemetry.close()
         if ts_sink is not None:
             ts_sink.close()
         store.close()

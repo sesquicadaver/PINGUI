@@ -119,9 +119,13 @@ profiles:
 
 Alerts are disabled by default (`NoOp` dispatcher).
 
-### Telemetry (P16-040…052, P16-080)
+### Telemetry (P16-040…052, P16-080, P16-090…092)
 
 Profile-level `telemetry:` (Java v2) or top-level (Python `load_telemetry_config`). Priority: **CLI > YAML > defaults**. Default: all sinks **off**; `events_only: true`; `log_aggregates: false`. ADR: [ADR_TELEMETRY.md](ADR_TELEMETRY.md). Example: `java/config/hosts.example.yaml`. Windows preset: `config/hosts.windows.example.yaml` (P16-043: `events_only`, no `jsonl_dir`).
+
+**Java GUI (P16-090…092):** desktop sinks via `TelemetryAttachment`. Menu **Settings → Telemetry…** edits `events_only`, `log_aggregates`, local sqlite/jsonl, syslog(+TLS), GELF(+transport), Loki(URL+site), OTLP(endpoint+service); status shows `toRedactedString()`. Apply updates the active profile and re-wires the bus; disk write uses **Save**. CLI `--telemetry-syslog` / `--telemetry-jsonl` / `--telemetry-otlp` lock the matching fields.
+
+**Python (P16-093):** `telemetry:` + `--telemetry-*` are **validated** at GUI/daemon start; LOG sinks (sqlite/jsonl/syslog/GELF/Loki/OTLP) are **not emitted** in the Python runtime — Java only. TS push uses `--ts-backend` / `InfluxTelemetrySink`. Non-default LOG sinks print a stderr note (verbose adds `redacted_summary`).
 
 ```yaml
 profiles:
@@ -201,7 +205,11 @@ Webhook route alerts stay under `alerts.webhook` / `--alert-webhook` (P10); HTTP
 | `--asn-timeout-ms` | int | `2000` | Reserved for future whois fallback |
 | `--no-geo-map` | flag | off | Disable folium geo-map tab |
 
-Expert ping presets (Java GUI, P14-040): `config/ping_presets.yaml` beside the hosts config (or CWD `config/ping_presets.yaml`); otherwise the bundled resource. Exactly 4 presets (`mtu_probe`, `df`, `dscp`, `burst`); buttons in `PingExpertDialog` apply args and keep the current AF (`-4`/`-6`).
+Expert ping presets (Java GUI, P14-040 / P17-010): `config/ping_presets.yaml` beside the hosts config (or CWD `config/ping_presets.yaml`); otherwise the bundled resource. Exactly 4 presets (`mtu_probe`, `df`, `dscp`, `burst`). Required fields: `id`, `label`, `args`, `summary`, `expect`; optional `caution`. Buttons in `PingExpertDialog` apply args (keeping AF `-4`/`-6`) and show a status/tooltip with UX copy. Presets do **not** run an MTU sweep.
+
+MTU discovery engine (P17-020, API): `MtuDiscovery` + `ProcessMtuProbeRunner` — linear ascending `-s` sweep (`min → start`) with `-M do`, N probes per size, stop when loss% ≥ threshold (default 1%), `recommendedMtu = last_good_payload + 28` (IPv4) / `+ 48` (IPv6). GUI wizard (P17-021): `MtuDiscoveryDialog` — HostList **MTU** / Expert «MTU wizard…»; Apply → `-M do -s <payload>` (the «MTU probe» preset stays separate).
+
+Expert Self-check (P17-030): `PresetSelfCheck` — 3× `ping -c 1` for presets `df` / `dscp` / `burst` (AF from the form); Exten. «Self-check» → Alert with loss%/avgRTT; does not change Expert form.
 
 ### Time-series (optional extra: `pip install -e ".[timeseries]"`)
 

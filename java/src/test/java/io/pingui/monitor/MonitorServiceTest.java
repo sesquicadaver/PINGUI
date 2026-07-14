@@ -480,6 +480,103 @@ class MonitorServiceTest {
     }
 
     @Test
+    void discardsStaleTraceOutcomeAfterPingOnlyToggle() throws Exception {
+        RouteSnapshot multiHop = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "8.8.8.8", 12.0, false)));
+        CountDownLatch probeStarted = new CountDownLatch(1);
+        CountDownLatch releaseProbe = new CountDownLatch(1);
+        RouteProbe slowTrace = (targetHost, maxHops, timeoutSeconds) -> {
+            probeStarted.countDown();
+            try {
+                if (!releaseProbe.await(5, TimeUnit.SECONDS)) {
+                    throw new java.io.IOException("probe wait timed out");
+                }
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new java.io.IOException("probe interrupted", ex);
+            }
+            return multiHop;
+        };
+        AtomicInteger multiHopReceived = new AtomicInteger();
+        MonitorService service = new MonitorService(0.05, 20, 0.5, slowTrace);
+        service.setListener(new MonitorService.Listener() {
+            @Override
+            public void onDataReceived(String host, RouteSnapshot snap) {
+                if (snap.nodes().size() > 1) {
+                    multiHopReceived.incrementAndGet();
+                }
+            }
+
+            @Override
+            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
+
+            @Override
+            public void onProbeError(String host, String message) {}
+        });
+        service.addHost("8.8.8.8", true, HostProbeMode.TRACE);
+        assertTrue(probeStarted.await(3, TimeUnit.SECONDS));
+        service.setHostPingOnly("8.8.8.8", true);
+        releaseProbe.countDown();
+        Thread.sleep(400);
+        assertEquals(0, multiHopReceived.get(), "stale multi-hop TRACE must not apply after Ping only ON");
+        service.close();
+    }
+
+    @Test
+    void discardsStaleTraceWhenMonitorFlippedBeforeSessionResolver() throws Exception {
+        // Production resolver = store::getProbeMode. If only the monitor map flips mid-flight,
+        // the in-flight TRACE must still be dropped (resolver still TRACE until session update).
+        SessionStore session = new SessionStore(List.of("8.8.8.8"));
+        session.setEnabled("8.8.8.8", true);
+        RouteSnapshot multiHop = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "8.8.8.8", 12.0, false)));
+        CountDownLatch probeStarted = new CountDownLatch(1);
+        CountDownLatch releaseProbe = new CountDownLatch(1);
+        RouteProbe slowTrace = (targetHost, maxHops, timeoutSeconds) -> {
+            probeStarted.countDown();
+            try {
+                if (!releaseProbe.await(5, TimeUnit.SECONDS)) {
+                    throw new java.io.IOException("probe wait timed out");
+                }
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new java.io.IOException("probe interrupted", ex);
+            }
+            return multiHop;
+        };
+        AtomicInteger multiHopReceived = new AtomicInteger();
+        MonitorService service = new MonitorService(0.05, 20, 0.5, slowTrace);
+        service.setHostProbeModeResolver(session::getProbeMode);
+        service.setListener(new MonitorService.Listener() {
+            @Override
+            public void onDataReceived(String host, RouteSnapshot snap) {
+                if (snap.nodes().size() > 1) {
+                    multiHopReceived.incrementAndGet();
+                }
+            }
+
+            @Override
+            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
+
+            @Override
+            public void onProbeError(String host, String message) {}
+        });
+        service.addHost("8.8.8.8", true, HostProbeMode.TRACE);
+        assertTrue(probeStarted.await(3, TimeUnit.SECONDS));
+        service.setHostPingOnly("8.8.8.8", true);
+        // Prevent a later TRACE poll (resolver still TRACE) from masking the discard assertion.
+        service.setHostEnabled("8.8.8.8", false);
+        releaseProbe.countDown();
+        Thread.sleep(400);
+        assertEquals(0, multiHopReceived.get(), "resolver lag behind monitor must not apply TRACE");
+        service.close();
+    }
+
+    @Test
     void pingOnlyResolverOverridesMapFlag() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         MonitorService service = new MonitorService(

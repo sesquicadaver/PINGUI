@@ -32,6 +32,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.stage.Window;
 
 /** Dialog for per-host expert ping flags (iputils ping). */
 public final class PingExpertDialog {
@@ -137,12 +138,47 @@ public final class PingExpertDialog {
 
         wireUiConstraints(host, addressFamily, flagChoices, textValues);
 
-        HBox presetsBar = buildPresetsBar(addressFamily, flagChoices, choiceValues, textValues);
+        Label presetStatus = new Label(
+                "Оберіть пресет — args у форму. «MTU wizard…» — перебір MTU; «Self-check» — короткий DF/DSCP/Burst batch (Alert).");
+        presetStatus.setWrapText(true);
+        presetStatus.setStyle("-fx-text-fill: #444;");
+        HBox presetsBar = buildPresetsBar(addressFamily, flagChoices, choiceValues, textValues, presetStatus);
+        Button mtuWizardButton = new Button("MTU wizard…");
+        mtuWizardButton.setTooltip(new Tooltip("Ascending -s sweep with -M do; Apply підставляє -s/-M у форму"));
+        Button selfCheckButton = new Button("Self-check");
+        selfCheckButton.setTooltip(
+                new Tooltip("Короткий ping batch для пресетів DF / DSCP / Burst → Alert (без зміни форми)"));
+        mtuWizardButton.setOnAction(event -> {
+            boolean ipv6 = AF_IPV6.equals(addressFamily.getValue());
+            Window owner = dialog.getDialogPane().getScene() != null
+                    ? dialog.getDialogPane().getScene().getWindow()
+                    : null;
+            List<String> currentFormArgs = collectArgs(addressFamily, flagChoices, choiceValues, textValues);
+            MtuDiscoveryDialog.show(owner, host, ipv6, currentFormArgs, result -> {
+                applyArgsToForm(result.expertArgs(), addressFamily, flagChoices, choiceValues, textValues);
+                String mtu = result.discovery().recommendedMtu().isPresent()
+                        ? Integer.toString(result.discovery().recommendedMtu().getAsInt())
+                        : "?";
+                presetStatus.setText("MTU wizard: MTU≈" + mtu + " → форма: " + result.expertArgs());
+            });
+        });
+        selfCheckButton.setOnAction(event -> {
+            boolean ipv6 = AF_IPV6.equals(addressFamily.getValue());
+            Window owner = dialog.getDialogPane().getScene() != null
+                    ? dialog.getDialogPane().getScene().getWindow()
+                    : null;
+            PresetSelfCheckUi.runAsync(owner, host, ipv6, busy -> {
+                selfCheckButton.setDisable(busy);
+                mtuWizardButton.setDisable(busy);
+                presetStatus.setText(busy ? "Self-check DF/DSCP/Burst…" : "Self-check завершено (див. Alert).");
+            });
+        });
+        HBox wizardBar = new HBox(6, mtuWizardButton, selfCheckButton);
 
         ScrollPane scroll = new ScrollPane(grid);
         scroll.setFitToWidth(true);
         scroll.setPrefViewportHeight(360);
-        VBox content = new VBox(8, chainCheck, presetsBar, scroll);
+        VBox content = new VBox(8, chainCheck, presetsBar, wizardBar, presetStatus, scroll);
         content.setPadding(new Insets(10));
         dialog.getDialogPane().setContent(content);
 
@@ -170,18 +206,20 @@ public final class PingExpertDialog {
             ComboBox<String> addressFamily,
             Map<String, ComboBox<String>> flagChoices,
             Map<String, ComboBox<String>> choiceValues,
-            Map<String, TextField> textValues) {
+            Map<String, TextField> textValues,
+            Label presetStatus) {
         HBox bar = new HBox(6);
         Label title = new Label("Presets:");
         title.setMinWidth(56);
         bar.getChildren().add(title);
         for (PingPreset preset : PingPresets.all()) {
             Button button = new Button(preset.label());
-            button.setTooltip(new Tooltip(String.join(" ", preset.args())));
+            button.setTooltip(new Tooltip(preset.tooltipText()));
             button.setOnAction(event -> {
                 List<String> current = collectArgs(addressFamily, flagChoices, choiceValues, textValues);
                 List<String> merged = PingPresets.mergeKeepingAddressFamily(current, preset.args());
                 applyArgsToForm(merged, addressFamily, flagChoices, choiceValues, textValues);
+                presetStatus.setText(preset.statusLine());
             });
             bar.getChildren().add(button);
         }

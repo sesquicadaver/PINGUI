@@ -112,6 +112,8 @@ flowchart LR
 
 Секрети (URL, token) — **не** логувати plaintext (P16-042 ✅ `TelemetryConfig.redactUrl` / `redactSecret` / `toRedactedString`).
 
+**Runtime attach (P16-090 ✅):** `TelemetryAttachment` — спільний шлях для `DaemonRunner` і JavaFX `MainController` (install sinks → bus → `MonitorService.setTelemetryBus`). Порядок close: monitor → attachment → session store. GUI: **P16-091…094 ✅** (`TelemetrySettingsDialog` + Help/CHECKLIST).
+
 ### 7. Failure policy
 
 | Ситуація | Поведінка |
@@ -134,5 +136,5 @@ flowchart LR
 - [ADR_ALERTS.md](ADR_ALERTS.md) — notify-канал  
 - [ADR_DAEMON.md](ADR_DAEMON.md) — headless process  
 - [SPIKE_PERSISTENCE.md](SPIKE_PERSISTENCE.md) — SQLite session ≠ TS  
-- Java (planned): `telemetry/`  
-- Python (planned): дзеркало моделей + sinks
+- Java (shipped): `io.pingui.telemetry/` (bus + sinks)
+- Python: моделі/emit; LOG sinks = Java/daemon only (P16-093)
