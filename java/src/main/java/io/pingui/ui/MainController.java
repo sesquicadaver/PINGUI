@@ -3,6 +3,7 @@ package io.pingui.ui;
 import io.pingui.AppOptions;
 import io.pingui.CliProfileOverrides;
 import io.pingui.CliTelemetryOverrides;
+import io.pingui.TelemetryAttachment;
 import io.pingui.config.ConfigError;
 import io.pingui.config.HostEntry;
 import io.pingui.config.PersistenceConfig;
@@ -18,6 +19,7 @@ import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
 import io.pingui.persistence.PersistencePolicy;
+import io.pingui.persistence.SessionDatabase;
 import io.pingui.persistence.timeseries.TimeSeriesBackends;
 import io.pingui.persistence.timeseries.TimeSeriesConfigException;
 import io.pingui.platform.PlatformCapabilities;
@@ -67,6 +69,7 @@ public final class MainController {
     private ProfileDocument profileDocument;
     private SessionStore store;
     private MonitorService monitor;
+    private TelemetryAttachment telemetry;
     private final ObservableList<HostItem> hostItems = FXCollections.observableArrayList();
     private final ListView<HostItem> hostList = new ListView<>();
     private final TextField hostInput = new TextField();
@@ -230,6 +233,7 @@ public final class MainController {
     public void shutdown() {
         dismissEasterEgg();
         monitor.close();
+        closeTelemetry();
         store.close();
     }
 
@@ -435,7 +439,22 @@ public final class MainController {
                 store.database(),
                 sessionHosts);
         applyPersistencePolicy(service, profile);
+        attachTelemetry(service);
         return service;
+    }
+
+    private void attachTelemetry(MonitorService service) {
+        Optional<SessionDatabase> sessionDb =
+                store != null && store.database() != null ? Optional.of(store.database()) : Optional.empty();
+        telemetry = TelemetryAttachment.replace(
+                telemetry, service, profileDocument.active().telemetry(), sessionDb);
+    }
+
+    private void closeTelemetry() {
+        if (telemetry != null) {
+            telemetry.close();
+            telemetry = null;
+        }
     }
 
     private void applyPersistencePolicy(MonitorService service, TracingProfile profile) {
@@ -510,6 +529,7 @@ public final class MainController {
         List<HostEntry> liveEntries = HostViewRules.entriesForConfig(store.toHostEntries());
         TracingProfile profile = profileDocument.active();
         monitor.close();
+        closeTelemetry();
         store.close();
         store = SessionStore.fromEntries(liveEntries, openSessionDatabase(), profile.hostProbeMode());
         attachTimeSeries(store);
@@ -547,6 +567,7 @@ public final class MainController {
         TracingProfile profile = profileDocument.active();
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(profile.hosts());
         monitor.close();
+        closeTelemetry();
         store.close();
         store = SessionStore.fromEntries(sessionHosts, openSessionDatabase(), profile.hostProbeMode());
         attachTimeSeries(store);

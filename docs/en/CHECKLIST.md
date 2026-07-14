@@ -76,7 +76,7 @@ Details: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ### Java telemetry smoke (P16-071)
 
-Sink fields: [CONFIGURATION § Telemetry](CONFIGURATION.md#telemetry-p16-040052). LOG-server: [DEPLOYMENT § LOG-server](DEPLOYMENT.md#log-server-p16-061). Unit coverage: `TelemetrySinkInstallerTest`, `DaemonRunnerTest.startRegistersSqliteAndSyslogFromTelemetryConfig`, `SqliteTelemetrySinkTest`, `SyslogSinkTest`.
+Sink fields: [CONFIGURATION § Telemetry](CONFIGURATION.md#telemetry-p16-040052). LOG-server: [DEPLOYMENT § LOG-server](DEPLOYMENT.md#log-server-p16-061). Unit coverage: `TelemetrySinkInstallerTest`, `TelemetryAttachmentTest`, `DaemonRunnerTest.startRegistersSqliteAndSyslogFromTelemetryConfig`, `SqliteTelemetrySinkTest`, `SyslogSinkTest`. Desktop GUI uses the same `TelemetryAttachment` (P16-090); dedicated GUI smoke — P16-094.
 
 **Prepare a profile** (copy of `java/config/hosts.example.yaml` or a temp YAML): host `enabled: true`; in the profile:
 

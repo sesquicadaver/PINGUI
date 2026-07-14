@@ -112,6 +112,8 @@ flowchart LR
 
 Секрети (URL, token) — **не** логувати plaintext (P16-042 ✅ `TelemetryConfig.redactUrl` / `redactSecret` / `toRedactedString`).
 
+**Runtime attach (P16-090 ✅):** `TelemetryAttachment` — спільний шлях для `DaemonRunner` і JavaFX `MainController` (install sinks → bus → `MonitorService.setTelemetryBus`). Порядок close: monitor → attachment → session store. Налаштування з GUI — P16-091+.
+
 ### 7. Failure policy
 
 | Ситуація | Поведінка |

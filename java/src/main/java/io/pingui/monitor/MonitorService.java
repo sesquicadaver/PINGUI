@@ -642,5 +642,7 @@ public final class MonitorService implements AutoCloseable {
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
         }
+        // Bus lifecycle is owned by TelemetryAttachment / caller — drop the pointer only.
+        telemetryBus = null;
     }
 }

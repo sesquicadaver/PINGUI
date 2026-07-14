@@ -21,6 +21,7 @@
 
 ### Added
 
+- **GUI telemetry bus (P16-090):** `TelemetryAttachment` — shared sink install + bus for JavaFX `MainController` and `DaemonRunner` (close: monitor → attachment → store). ROADMAP NEXT → P16-091.
 - **OTLP/HTTP export (P16-080):** `OtlpHttpTelemetrySink` posts OTLP JSON to `/v1/logs` and `/v1/metrics` (no OTel SDK); YAML `telemetry.otlp` + `--telemetry-otlp`; ROADMAP NEXT → DONE.
 - **Syslog/GELF contract tests (P16-072):** `TelemetryLogFieldFixture` + `SyslogGelfContractTest` — mock TCP, shared event fields across RFC 5424 MSG and GELF `_payload`.
 - **Telemetry CHECKLIST smoke + daemon sink wiring (P16-071):** `TelemetrySinkInstaller` registers sqlite/jsonl/syslog/gelf/loki from YAML; CHECKLIST § Java telemetry smoke (local DB + syslog event).

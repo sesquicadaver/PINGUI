@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **DONE** |
-| **Phase** | 16 — Telemetry |
-| **DoD (short)** | Queue complete (no next ID) |
+| **Current task** | **[P16-091](#phase-16--telemetry-network-metrics--log-server-beta--main-p0p1)** |
+| **Phase** | 16 — Telemetry (GUI) |
+| **DoD (short)** | Menu “Telemetry…” — minimal dialog → YAML + re-wire |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -86,6 +86,11 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 41 | **P16-071** | [x] | CHECKLIST telemetry smoke |
 | 42 | **P16-072** | [x] | Contract tests syslog/gelf |
 | 43 | **P16-080** | [x] | OTLP export (P2) |
+| 44 | **P16-090** | [x] | GUI: wire `TelemetryBus` / sinks (daemon parity) |
+| 45 | **P16-091** | [ ] | Menu “Telemetry…” — minimal `TelemetrySettingsDialog` |
+| 46 | **P16-092** | [ ] | Full sinks UI + redacted status + `log_aggregates` |
+| 47 | **P16-093** | [ ] | Python: wire YAML telemetry or document “Java/daemon only” |
+| 48 | **P16-094** | [ ] | Help/About + CHECKLIST GUI telemetry smoke |
 
 **End of queue:** set NEXT → `DONE` (no open IDs).
 
@@ -636,6 +641,18 @@ flowchart TD
 | ID | Task | Priority |
 |----|------|----------|
 | **P16-080** | [x] OTLP logs/metrics export | P2 |
+
+### 16.8 — Desktop GUI telemetry (P0–P1)
+
+**Context:** sinks from YAML/`--telemetry-*` work in `DaemonRunner`; JavaFX GUI preserves `telemetry:` on Save but **does not** attach the bus → desktop events never reach sinks.
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **P16-090** | [x] Wire `TelemetryBus` in Java GUI (shared attach with daemon) | `TelemetryAttachment`, `MainController`, `DaemonRunner` | Non-empty `telemetry:` registers sinks in GUI; close order monitor → bus → store; unit + daemon regression |
+| **P16-091** | [ ] Menu “Settings → Telemetry…” (minimum) | `TelemetrySettingsDialog`, `MainController` | `events_only`, local sqlite/jsonl, one remote (syslog); Apply → profile YAML + re-wire bus |
+| **P16-092** | [ ] Full sinks UI + status | `TelemetrySettingsDialog` | syslog/GELF/Loki/OTLP, `log_aggregates`, `toRedactedString()` in dialog |
+| **P16-093** | [ ] Python GUI/docs: wire or “sinks = Java/daemon” | `__main__.py`, docs | No dead `_resolve_telemetry` in GUI path; clear CONFIGURATION stance |
+| **P16-094** | [ ] Help/About + CHECKLIST GUI smoke | `AppMenuDialogs`, `CHECKLIST` | Mentions persistence+telemetry; smoke: GUI + sqlite event |
 
 ---
 
