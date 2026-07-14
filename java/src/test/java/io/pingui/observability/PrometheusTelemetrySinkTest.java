@@ -31,8 +31,7 @@ class PrometheusTelemetrySinkTest {
         sink.onSample(MetricSample.rttMs("8.8.8.8", 1, 5.0, labels.map(), ts));
         sink.onSample(MetricSample.rttMs("8.8.8.8", 2, 10.0, labels.map(), ts));
         sink.onSample(new MetricSample(MetricNames.HOP_LOSS_PCT, 0.0, "8.8.8.8", 1, labels.map(), ts));
-        sink.onEvent(TelemetryEvent.routeChange(
-                "8.8.8.8", List.of("10.0.0.1"), List.of("8.8.8.8"), labels.map(), ts));
+        sink.onEvent(TelemetryEvent.routeChange("8.8.8.8", List.of("10.0.0.1"), List.of("8.8.8.8"), labels.map(), ts));
         sink.onEvent(TelemetryEvent.routeChange("8.8.8.8", List.of(), List.of("8.8.8.8"), labels.map(), ts));
 
         String text = exporter.scrape();

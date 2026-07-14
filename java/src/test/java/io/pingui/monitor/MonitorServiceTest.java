@@ -286,7 +286,8 @@ class MonitorServiceTest {
         registry.close();
     }
 
-    private static boolean awaitScrape(io.pingui.observability.PrometheusExporter exporter, String needle, long timeoutMs)
+    private static boolean awaitScrape(
+            io.pingui.observability.PrometheusExporter exporter, String needle, long timeoutMs)
             throws InterruptedException {
         long deadline = System.currentTimeMillis() + timeoutMs;
         while (System.currentTimeMillis() < deadline) {

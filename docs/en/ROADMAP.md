@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P16-071** |
+| **Current task** | **P16-072** |
 | **Phase** | 16 — Telemetry |
-| **DoD (short)** | CHECKLIST telemetry smoke |
+| **DoD (short)** | Contract tests syslog/gelf |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -83,7 +83,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 38 | **P16-060** | [x] | CONFIGURATION § telemetry |
 | 39 | **P16-061** | [x] | DEPLOYMENT § LOG-server |
 | 40 | **P16-070** | [x] | LIVING_SPEC telemetry matrix |
-| 41 | **P16-071** | [ ] | CHECKLIST telemetry smoke |
+| 41 | **P16-071** | [x] | CHECKLIST telemetry smoke |
 | 42 | **P16-072** | [ ] | Contract tests syslog/gelf |
 | 43 | **P16-080** | [ ] | OTLP export (P2) |
 
@@ -628,7 +628,7 @@ flowchart TD
 | **P16-060** | [x] CONFIGURATION § telemetry | `docs/CONFIGURATION.md`, `docs/en/CONFIGURATION.md` | Full field table |
 | **P16-061** | [x] DEPLOYMENT § LOG-server, rsyslog, Graylog, retention | `docs/DEPLOYMENT.md` | nginx/TLS optional |
 | **P16-070** | [x] LIVING_SPEC: telemetry bus + sinks | `docs/LIVING_SPEC.md` | Module → test matrix |
-| **P16-071** | [ ] CHECKLIST § telemetry smoke | `docs/CHECKLIST.md` | local sqlite + syslog event |
+| **P16-071** | [x] CHECKLIST § telemetry smoke | `docs/CHECKLIST.md` | local sqlite + syslog event |
 | **P16-072** | [ ] Contract tests: mock syslog/gelf + shared field fixture | `src/test/java/.../SyslogSinkTest.java` | CI green |
 
 **Estimate:** 2–3 sprints. **Out of scope v1:** OpenTelemetry OTLP export (P2 ticket P16-080).

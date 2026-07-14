@@ -3,11 +3,13 @@ package io.pingui.daemon;
 import io.pingui.AppOptions;
 import io.pingui.CliProfileOverrides;
 import io.pingui.CliTelemetryOverrides;
+import io.pingui.TelemetrySinkInstaller;
 import io.pingui.api.ReadOnlyApiServer;
 import io.pingui.config.HostEntry;
 import io.pingui.config.ProfileDocument;
 import io.pingui.config.ProfilesConfig;
 import io.pingui.config.SessionDbResolver;
+import io.pingui.config.TelemetryConfig;
 import io.pingui.config.TracingProfile;
 import io.pingui.geoip.AsnLookup;
 import io.pingui.geoip.GeoCountry;
@@ -45,6 +47,7 @@ public final class DaemonRunner implements AutoCloseable {
     private MonitorService monitor;
     private SinkRegistry telemetryRegistry;
     private TelemetryBus telemetryBus;
+    private TelemetrySinkInstaller.Result telemetryInstall;
     private MetricsHttpServer metricsServer;
     private ReadOnlyApiServer apiServer;
     private final CountDownLatch running = new CountDownLatch(1);
@@ -98,6 +101,11 @@ public final class DaemonRunner implements AutoCloseable {
         return Optional.ofNullable(apiServer);
     }
 
+    /** Exposed for tests — telemetry sink registry when bus is attached. */
+    public Optional<SinkRegistry> telemetryRegistry() {
+        return Optional.ofNullable(telemetryRegistry);
+    }
+
     @Override
     public void close() {
         if (closed) {
@@ -123,6 +131,10 @@ public final class DaemonRunner implements AutoCloseable {
         if (telemetryRegistry != null) {
             telemetryRegistry.close();
             telemetryRegistry = null;
+        }
+        if (telemetryInstall != null) {
+            telemetryInstall.closeOwned();
+            telemetryInstall = null;
         }
         if (store != null) {
             store.close();
@@ -189,6 +201,11 @@ public final class DaemonRunner implements AutoCloseable {
 
     private void attachTelemetryBus(MonitorService service) {
         telemetryRegistry = new SinkRegistry();
+        TelemetryConfig telemetry =
+                profileDocument != null ? profileDocument.active().telemetry() : TelemetryConfig.defaults();
+        Optional<SessionDatabase> sessionDb =
+                store != null && store.database() != null ? Optional.of(store.database()) : Optional.empty();
+        telemetryInstall = TelemetrySinkInstaller.install(telemetryRegistry, telemetry, sessionDb);
         telemetryBus = new TelemetryBus(telemetryRegistry);
         service.setTelemetryBus(telemetryBus);
     }

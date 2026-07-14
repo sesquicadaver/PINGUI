@@ -76,7 +76,9 @@ public final class WebhookTelemetrySink implements TelemetrySink {
         if (profile == null || profile.isBlank()) {
             profile = "default";
         }
-        postJson(formatRouteChangeAlertJson(event.host(), event.oldIps(), event.newIps(), event.timestamp(), profile), event.host());
+        postJson(
+                formatRouteChangeAlertJson(event.host(), event.oldIps(), event.newIps(), event.timestamp(), profile),
+                event.host());
     }
 
     /**
@@ -99,10 +101,9 @@ public final class WebhookTelemetrySink implements TelemetrySink {
         try {
             HttpResponse<Void> response = httpClient.send(request, HttpResponse.BodyHandlers.discarding());
             if (response.statusCode() >= 400) {
-                LOG.log(
-                        Level.WARNING,
-                        "WebhookTelemetrySink HTTP {0} for {1} ({2})",
-                        new Object[] {response.statusCode(), hostLabel, redactedUrl()});
+                LOG.log(Level.WARNING, "WebhookTelemetrySink HTTP {0} for {1} ({2})", new Object[] {
+                    response.statusCode(), hostLabel, redactedUrl()
+                });
             }
         } catch (IOException | RuntimeException ex) {
             LOG.log(
@@ -115,10 +116,9 @@ public final class WebhookTelemetrySink implements TelemetrySink {
                             + ex.getMessage());
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            LOG.log(
-                    Level.WARNING,
-                    "WebhookTelemetrySink interrupted for {0} ({1})",
-                    new Object[] {hostLabel, redactedUrl()});
+            LOG.log(Level.WARNING, "WebhookTelemetrySink interrupted for {0} ({1})", new Object[] {
+                hostLabel, redactedUrl()
+            });
         }
     }
 

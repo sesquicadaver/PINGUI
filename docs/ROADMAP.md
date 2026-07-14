@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P16-071** |
+| **Поточна задача** | **P16-072** |
 | **Фаза** | 16 — Телеметрія |
-| **DoD (коротко)** | CHECKLIST telemetry smoke |
+| **DoD (коротко)** | Contract tests syslog/gelf |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -83,7 +83,7 @@
 | 38 | **P16-060** | [x] | CONFIGURATION § telemetry |
 | 39 | **P16-061** | [x] | DEPLOYMENT § LOG-server |
 | 40 | **P16-070** | [x] | LIVING_SPEC telemetry matrix |
-| 41 | **P16-071** | [ ] | CHECKLIST telemetry smoke |
+| 41 | **P16-071** | [x] | CHECKLIST telemetry smoke |
 | 42 | **P16-072** | [ ] | Contract tests syslog/gelf |
 | 43 | **P16-080** | [ ] | OTLP export (P2) |
 
@@ -628,7 +628,7 @@ flowchart TD
 | **P16-060** | [x] CONFIGURATION § telemetry | `docs/CONFIGURATION.md`, `docs/en/CONFIGURATION.md` | Повна таблиця полів |
 | **P16-061** | [x] DEPLOYMENT § LOG-server, rsyslog, Graylog, retention | `docs/DEPLOYMENT.md` | nginx/TLS optional |
 | **P16-070** | [x] LIVING_SPEC: telemetry bus + sinks | `docs/LIVING_SPEC.md` | Матриця модуль → тест |
-| **P16-071** | [ ] CHECKLIST § telemetry smoke | `docs/CHECKLIST.md` | local sqlite + syslog event |
+| **P16-071** | [x] CHECKLIST § telemetry smoke | `docs/CHECKLIST.md` | local sqlite + syslog event |
 | **P16-072** | [ ] Contract tests: mock syslog/gelf + shared field fixture | `src/test/java/.../SyslogSinkTest.java` | CI green |
 
 **Орієнтовно:** 2–3 sprint. **Поза scope v1:** OpenTelemetry OTLP export (P2 ticket P16-080).

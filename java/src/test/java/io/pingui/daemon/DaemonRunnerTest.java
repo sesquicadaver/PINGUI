@@ -197,6 +197,78 @@ class DaemonRunnerTest {
     }
 
     @Test
+    void startRegistersSqliteAndSyslogFromTelemetryConfig() throws Exception {
+        Path sessionDb = tempDir.resolve("session.db");
+        Path telemetryDb = tempDir.resolve("telemetry.db");
+        Path config = tempDir.resolve("hosts-telemetry.yaml");
+        Files.writeString(
+                config,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    interval: 30.0
+                    max_hops: 5
+                    timeout: 1.0
+                    probe: process
+                    hosts:
+                      - address: 127.0.0.1
+                        enabled: false
+                    telemetry:
+                      events_only: true
+                      sqlite: %s
+                      syslog:
+                        host: 127.0.0.1
+                        port: 15999
+                        tls: false
+                """
+                        .formatted(telemetryDb.toString().replace('\\', '/')));
+        Path pidFile = tempDir.resolve("telemetry.pid");
+        AppOptions options = new AppOptions(
+                config,
+                CliProfileOverrides.none(),
+                CliAlertOverrides.none(),
+                CliPersistenceOverrides.none(),
+                CliTelemetryOverrides.none(),
+                io.pingui.CliTimeSeriesOverrides.none(),
+                false,
+                false,
+                Path.of("config/geoip_hints.yaml"),
+                false,
+                Path.of("config/asn_hints.yaml"),
+                2000,
+                Optional.of(sessionDb),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                CliRunMode.DAEMON,
+                pidFile,
+                Optional.empty(),
+                Optional.empty(),
+                OptionalInt.empty(),
+                Optional.empty(),
+                Optional.empty());
+
+        try (DaemonRunner runner = new DaemonRunner(options, pidFile)) {
+            runner.start();
+            assertTrue(runner.telemetryRegistry().isPresent());
+            assertTrue(runner.telemetryRegistry().get().contains("sqlite"));
+            assertTrue(runner.telemetryRegistry().get().contains("syslog"));
+            runner.telemetryRegistry()
+                    .get()
+                    .emitEvent(io.pingui.telemetry.TelemetryEvent.routeChange(
+                            "8.8.8.8",
+                            java.util.List.of("10.0.0.1"),
+                            java.util.List.of("8.8.8.8"),
+                            java.util.Map.of("profile", "default"),
+                            java.time.Instant.parse("2026-07-14T09:00:00Z")));
+        }
+        try (io.pingui.persistence.SessionDatabase db = new io.pingui.persistence.SessionDatabase(telemetryDb)) {
+            assertEquals(1, db.countTelemetryEvents());
+        }
+    }
+
+    @Test
     void startRejectsDuplicatePidFile() throws Exception {
         Path config = tempDir.resolve("hosts.yaml");
         Files.writeString(

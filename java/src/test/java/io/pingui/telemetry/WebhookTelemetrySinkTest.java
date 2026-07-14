@@ -49,11 +49,7 @@ class WebhookTelemetrySinkTest {
             sink.onSample(MetricSample.rttMs("8.8.8.8", 1, 12.0, MetricNames.javaLabels("lab", "trace"), ts));
             sink.onEvent(TelemetryEvent.probeError("8.8.8.8", "timeout", MetricNames.javaLabels("lab", "trace"), ts));
             sink.onEvent(TelemetryEvent.routeChange(
-                    "8.8.8.8",
-                    List.of("10.0.0.1"),
-                    List.of("8.8.8.8"),
-                    MetricNames.javaLabels("lab", "trace"),
-                    ts));
+                    "8.8.8.8", List.of("10.0.0.1"), List.of("8.8.8.8"), MetricNames.javaLabels("lab", "trace"), ts));
             assertEquals(1, posts.get());
             RouteChangeEvent parsed = RouteChangeEvent.fromJson(body.get());
             assertEquals("8.8.8.8", parsed.host());

@@ -74,6 +74,29 @@ Details: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 - [ ] `./pingui-java.sh --desktop-alerts` — GUI + `notify-send` on route change (requires `libnotify-bin`)
 - [ ] YAML `alerts.webhook` / `alert_webhook` in profile — route change → POST without CLI override
 
+### Java telemetry smoke (P16-071)
+
+Sink fields: [CONFIGURATION § Telemetry](CONFIGURATION.md#telemetry-p16-040052). LOG-server: [DEPLOYMENT § LOG-server](DEPLOYMENT.md#log-server-p16-061). Unit coverage: `TelemetrySinkInstallerTest`, `DaemonRunnerTest.startRegistersSqliteAndSyslogFromTelemetryConfig`, `SqliteTelemetrySinkTest`, `SyslogSinkTest`.
+
+**Prepare a profile** (copy of `java/config/hosts.example.yaml` or a temp YAML): host `enabled: true`; in the profile:
+
+```yaml
+telemetry:
+  events_only: true
+  sqlite: data/telemetry.db
+  syslog:
+    host: 127.0.0.1
+    port: 1514
+    tls: false
+```
+
+- [ ] CI: `cd java && ./gradlew test --tests io.pingui.TelemetrySinkInstallerTest --tests io.pingui.daemon.DaemonRunnerTest.startRegistersSqliteAndSyslogFromTelemetryConfig` — green
+- [ ] Terminal A (mock syslog TCP): `nc -l 1514 | tee /tmp/pingui-syslog.log` (or rsyslog from DEPLOYMENT)
+- [ ] Terminal B: `./pingui-java.sh -- --daemon --config <yaml> --session-db data/ping.db --pid-file /tmp/pingui-java.pid` (or CLI override `--telemetry-syslog 127.0.0.1:1514`)
+- [ ] After first poll (baseline route_change): `sqlite3 data/telemetry.db "SELECT event, host FROM telemetry_event LIMIT 5;"` — has `route_change` (or `probe_error`)
+- [ ] In `/tmp/pingui-syslog.log` — RFC 5424 line with JSON `"event":"route_change"` (or `probe_error`); **no** hop-RTT sample flood when `events_only: true`
+- [ ] `./pingui-java.sh -- --stop --pid-file /tmp/pingui-java.pid`
+
 ---
 
 ## Linux (Ubuntu 22.04 / 24.04 / 26.04)

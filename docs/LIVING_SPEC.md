@@ -65,6 +65,7 @@
 | CONFIGURATION telemetry (P16-060) | `docs/CONFIGURATION.md` § telemetry | Full YAML/CLI field tables; docs parity |
 | DEPLOYMENT LOG-server (P16-061) | `docs/DEPLOYMENT.md` § LOG-server | rsyslog/Graylog/Loki + retention; docs parity |
 | LIVING_SPEC telemetry matrix (P16-070) | цей документ § фаза 16 | Матриця bus → sinks → тести нижче |
+| Daemon sink wiring + CHECKLIST smoke (P16-071) | `TelemetrySinkInstaller`, `DaemonRunner`; `docs/CHECKLIST.md` | `TelemetrySinkInstallerTest`, `DaemonRunnerTest.startRegistersSqliteAndSyslogFromTelemetryConfig` |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
