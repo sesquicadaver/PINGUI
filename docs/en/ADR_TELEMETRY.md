@@ -75,7 +75,7 @@ flowchart LR
 | `GelfSink` | remote events | **off** | P16-031 ✅ GELF 1.1; TCP `\0` framing / UDP lab; `events_only` via `SinkConfig` (P16-033 ✅) |
 | `LokiPushSink` | remote | **off** | P16-032 ✅ HTTP `/loki/api/v1/push`; labels `job`/`site`/`host`; `events_only` via `SinkConfig` (P16-033 ✅) |
 | `PrometheusTelemetrySink` | in-process scrape state | via `--metrics-port` | P16-051 ✅ — `PrometheusExporter` wrapper from bus; not remote_write |
-| `InfluxTelemetrySink` | remote samples | via TS config | Wrapper over B-05 / P15-020 |
+| `InfluxTelemetrySink` | remote samples | via TS config | P16-052 ✅ — B-05 Influx/Timescale wrapper from bus |
 | Webhook as sink | remote events | via alerts config | P16-050 ✅ — one emit path (`WebhookTelemetrySink`), not a second HTTP client |
 
 ### 4. Boundaries with P10 and P15
@@ -84,7 +84,7 @@ flowchart LR
 |----------|----------|
 | **P10 alerts** | Remain **operator notify**. Telemetry **may** mirror `route_change` as an event to sinks, but LOG does not replace UX notify. P16-050 ✅ refactors webhook into `WebhookTelemetrySink`; `WebhookAlertDispatcher` delegates HTTP (ADR_ALERTS payload unchanged). |
 | **P15 Prometheus** | Pull/scrape remains. P16-051 ✅: `PrometheusTelemetrySink` updates in-process gauges from the bus (`DaemonRunner` registers on `--metrics-port`). |
-| **P15 TS push** | P16-052: Influx/Timescale as a bus sink; MonitorService dual-emit removed after P16-013. |
+| **P15 TS push** | P16-052 ✅: `InfluxTelemetrySink` from bus (Python daemon/GUI); SessionStore TS dual-emit removed. |
 | **P11 session DB** | GUI history / policy events. **Not** a Grafana datasource and not a telemetry archive replacement. |
 | **REST API** | Read snapshot; not the telemetry bus. |
 | **OTLP** | Out of scope for v1 (P16-080). |

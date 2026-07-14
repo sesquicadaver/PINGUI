@@ -84,7 +84,7 @@ Java P15-020 має дзеркалити Python API (`TimeSeriesBackend`), не 
 
 ### 5. Звʼязок з фазою 16
 
-P15 адаптери — **тимчасові прямі** виклики з monitor (**dual-emit debt** до P16-051/052): MonitorService може оновлювати Prometheus gauges **напряму** і push у TS backend. P16-051 ✅ зняв dual-emit для Prometheus (`PrometheusTelemetrySink` з bus). TS dual-emit лишається до P16-052. P16-013 підключив poll → TelemetryBus.
+P15 адаптери — **тимчасові прямі** виклики з monitor (**dual-emit debt** до P16-051/052): MonitorService міг оновлювати Prometheus gauges **напряму** і SessionStore push у TS. P16-051 ✅ зняв dual-emit для Prometheus; P16-052 ✅ Python TS через `InfluxTelemetrySink` з bus (без SessionStore dual-emit). Java TS SessionStore dual-emit лишається до окремого wire.
 
 Після P16-011…013:
 

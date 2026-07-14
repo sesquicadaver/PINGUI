@@ -21,6 +21,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **InfluxTelemetrySink (P16-052):** Python bus wrapper over B-05 Influx/Timescale; daemon/GUI write TS via `QueueTelemetryEmitter` (no SessionStore dual-emit).
 - **Prometheus as TelemetrySink (P16-051):** `PrometheusTelemetrySink` updates scrape gauges from the bus; daemon registers on `--metrics-port`; MonitorService Prometheus dual-emit removed.
 - **Webhook as TelemetrySink (P16-050):** `WebhookTelemetrySink` owns HTTP POST; `WebhookAlertDispatcher` delegates (ADR_ALERTS JSON unchanged).
 - **Windows telemetry preset (P16-043):** `hosts.windows.example.yaml` — explicit `telemetry.events_only: true`, no `jsonl_dir`/sqlite high-freq; CHECKLIST smoke.

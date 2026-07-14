@@ -303,12 +303,13 @@ class MonitorLoop:
                     )
                 )
                 if node.ping_ms is not None and not node.is_timeout:
+                    rtt_labels = {**labels, "hop_ip": node.ip}
                     self._telemetry.offer_sample(
                         MetricSample.rtt_ms(
                             host,
                             node.hop,
                             node.ping_ms,
-                            labels=labels,
+                            labels=rtt_labels,
                             timestamp=ts,
                         )
                     )

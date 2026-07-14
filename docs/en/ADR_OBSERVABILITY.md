@@ -84,7 +84,7 @@ Java P15-020 must mirror the Python API (`TimeSeriesBackend`), not invent a thir
 
 ### 5. Link to phase 16
 
-P15 adapters are **temporary direct** calls from the monitor (**dual-emit debt** until P16-051/052): MonitorService may update Prometheus gauges **directly** and push to a TS backend. P16-051 ✅ removed Prometheus dual-emit (`PrometheusTelemetrySink` from bus). TS dual-emit remains until P16-052. P16-013 wired poll → TelemetryBus.
+P15 adapters are **temporary direct** calls from the monitor (**dual-emit debt** until P16-051/052): MonitorService could update Prometheus gauges **directly** and SessionStore push to TS. P16-051 ✅ removed Prometheus dual-emit; P16-052 ✅ Python TS via `InfluxTelemetrySink` from the bus (no SessionStore dual-emit). Java SessionStore TS dual-emit remains until a separate wire.
 
 After P16-011…013:
 
