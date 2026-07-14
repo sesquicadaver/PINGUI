@@ -253,6 +253,22 @@ class PinguiApplicationTest {
     }
 
     @Test
+    void parseOptions_telemetryDumpRequiresSessionDb() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PinguiApplication.parseOptions(Map.of("telemetry-dump", "out.json")));
+    }
+
+    @Test
+    void parseOptions_telemetryDumpWithSessionDb() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of(
+                "session-db", "data/ping.db",
+                "telemetry-dump", "out/telem.json"));
+        assertEquals(CliRunMode.TELEMETRY_DUMP, options.runMode());
+        assertEquals(Path.of("out/telem.json"), options.telemetryDumpPath().orElseThrow());
+    }
+
+    @Test
     void parseOptions_asnTimeoutMustBePositive() {
         assertThrows(
                 IllegalArgumentException.class, () -> PinguiApplication.parseOptions(Map.of("asn-timeout-ms", "0")));

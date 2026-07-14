@@ -27,7 +27,8 @@ public record AppOptions(
         Optional<Integer> metricsPort,
         Optional<Integer> apiPort,
         OptionalInt telemetryRetentionDays,
-        Optional<Path> telemetryJsonlDir) {
+        Optional<Path> telemetryJsonlDir,
+        Optional<Path> telemetryDumpPath) {
     public static AppOptions defaults() {
         return new AppOptions(
                 Path.of("config/hosts.example.yaml"),
@@ -50,6 +51,7 @@ public record AppOptions(
                 Optional.empty(),
                 Optional.empty(),
                 OptionalInt.empty(),
+                Optional.empty(),
                 Optional.empty());
     }
 

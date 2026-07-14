@@ -426,6 +426,42 @@ public final class SessionDatabase implements AutoCloseable {
         }
     }
 
+    /** Oldest-first sample payloads for full archive dump (P16-023). */
+    public synchronized List<MetricSample> listAllTelemetrySamples() {
+        try (PreparedStatement ps = connection.prepareStatement(
+                        """
+                SELECT payload_json FROM telemetry_sample
+                ORDER BY observed_at ASC, id ASC
+                """);
+                ResultSet rs = ps.executeQuery()) {
+            List<MetricSample> rows = new ArrayList<>();
+            while (rs.next()) {
+                rows.add(MetricSample.fromJson(rs.getString(1)));
+            }
+            return List.copyOf(rows);
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to list all telemetry samples", ex);
+        }
+    }
+
+    /** Oldest-first event payloads for full archive dump (P16-023). */
+    public synchronized List<TelemetryEvent> listAllTelemetryEvents() {
+        try (PreparedStatement ps = connection.prepareStatement(
+                        """
+                SELECT payload_json FROM telemetry_event
+                ORDER BY observed_at ASC, id ASC
+                """);
+                ResultSet rs = ps.executeQuery()) {
+            List<TelemetryEvent> rows = new ArrayList<>();
+            while (rs.next()) {
+                rows.add(TelemetryEvent.fromJson(rs.getString(1)));
+            }
+            return List.copyOf(rows);
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to list all telemetry events", ex);
+        }
+    }
+
     public synchronized int countTelemetrySamples() {
         return countTable("telemetry_sample");
     }

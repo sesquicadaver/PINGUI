@@ -21,6 +21,7 @@
 
 ### Added
 
+- **Telemetry dump (P16-023):** `TelemetryDump` + CLI `--telemetry-dump PATH` (.csv/.json) from `--session-db`.
 - **Telemetry retention (P16-022):** `TelemetryRetentionJob` + CLI `--telemetry-retention N` (optional `--telemetry-jsonl-dir`); cron one-shot purge.
 - **JSONL rotate sink (P16-021):** `JsonlRotateSink` — UTC day files `telemetry.jsonl.yyyy-MM-dd` (+ `.N` on size); default off.
 - **Sqlite telemetry sink (P16-020):** `SqliteTelemetrySink` + schema v4 (`telemetry_sample` / `telemetry_event`); default off; unit insert/query.

@@ -8,6 +8,7 @@ import io.pingui.daemon.DaemonRunner;
 import io.pingui.export.ExportSchedulePeriod;
 import io.pingui.export.ScheduledExport;
 import io.pingui.export.SessionReportExporter;
+import io.pingui.export.TelemetryDump;
 import io.pingui.persistence.SessionDatabase;
 import io.pingui.probe.ProbeMode;
 import io.pingui.telemetry.TelemetryRetentionJob;
@@ -159,6 +160,21 @@ public final class PinguiApplication extends Application {
         if (telemetryRetention.isPresent() && (exportReport.isPresent() || exportSchedule.isPresent())) {
             throw new IllegalArgumentException("Use either --telemetry-retention or export flags, not both");
         }
+        Optional<Path> telemetryDump = Optional.empty();
+        if (params.containsKey("telemetry-dump")) {
+            String value = params.get("telemetry-dump");
+            if (value == null || value.isBlank()) {
+                throw new IllegalArgumentException("Missing value for --telemetry-dump");
+            }
+            telemetryDump = Optional.of(Path.of(value.strip()));
+        }
+        if (telemetryDump.isPresent() && sessionDb.isEmpty()) {
+            throw new IllegalArgumentException("--telemetry-dump requires --session-db PATH");
+        }
+        if (telemetryDump.isPresent()
+                && (telemetryRetention.isPresent() || exportReport.isPresent() || exportSchedule.isPresent())) {
+            throw new IllegalArgumentException("Use either --telemetry-dump or retention/export flags, not both");
+        }
         CliRunMode runMode = CliRunMode.GUI;
         if (params.containsKey("daemon")) {
             runMode = CliRunMode.DAEMON;
@@ -168,6 +184,8 @@ public final class PinguiApplication extends Application {
             runMode = CliRunMode.STATUS;
         } else if (telemetryRetention.isPresent()) {
             runMode = CliRunMode.TELEMETRY_RETENTION;
+        } else if (telemetryDump.isPresent()) {
+            runMode = CliRunMode.TELEMETRY_DUMP;
         } else if (exportReport.isPresent() || exportSchedule.isPresent()) {
             runMode = CliRunMode.EXPORT;
         }
@@ -200,7 +218,8 @@ public final class PinguiApplication extends Application {
                 metricsPort,
                 apiPort,
                 telemetryRetention,
-                telemetryJsonlDir);
+                telemetryJsonlDir,
+                telemetryDump);
     }
 
     private static CliTimeSeriesOverrides parseTimeSeriesOverrides(Map<String, String> params) {
@@ -342,6 +361,10 @@ public final class PinguiApplication extends Application {
                 runTelemetryRetention(options);
                 return;
             }
+            case TELEMETRY_DUMP -> {
+                runTelemetryDump(options);
+                return;
+            }
             case DAEMON -> {
                 runDaemon(options);
                 return;
@@ -456,6 +479,20 @@ public final class PinguiApplication extends Application {
                 + result.jsonlFilesDeleted());
     }
 
+    private static void runTelemetryDump(AppOptions options) {
+        if (options.sessionDbPath().isEmpty() || options.telemetryDumpPath().isEmpty()) {
+            failCli("--telemetry-dump requires --session-db PATH");
+        }
+        Path dumpPath = options.telemetryDumpPath().orElseThrow();
+        try (SessionDatabase database =
+                new SessionDatabase(options.sessionDbPath().orElseThrow())) {
+            TelemetryDump.export(database, dumpPath);
+            System.out.println("Telemetry dump written: " + dumpPath.toAbsolutePath());
+        } catch (IOException | RuntimeException ex) {
+            failCli("Telemetry dump failed: " + ex.getMessage());
+        }
+    }
+
     private static boolean isHtmlReport(Path path) {
         String name = path.getFileName().toString().toLowerCase();
         return name.endsWith(".html") || name.endsWith(".htm");
@@ -525,6 +562,7 @@ public final class PinguiApplication extends Application {
                   --session-db PATH  SQLite session metrics + events (optional)
                   --telemetry-retention N  Purge telemetry older than N days and exit (cron)
                   --telemetry-jsonl-dir DIR  Optional JSONL dir for --telemetry-retention
+                  --telemetry-dump PATH     Dump SQLite telemetry to .csv/.json and exit
                   --export-report PATH  Export CSV/HTML from --session-db and exit (no GUI)
                   --export-schedule P   Cron one-shot: hourly|daily|weekly (with --export-dir)
                   --export-dir DIR      Output directory for --export-schedule (CSV+HTML stamped)

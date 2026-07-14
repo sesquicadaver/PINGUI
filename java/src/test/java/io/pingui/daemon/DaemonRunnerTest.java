@@ -59,6 +59,7 @@ class DaemonRunnerTest {
                 Optional.empty(),
                 Optional.empty(),
                 OptionalInt.empty(),
+                Optional.empty(),
                 Optional.empty());
 
         try (DaemonRunner runner = new DaemonRunner(options, pidFile)) {
@@ -112,6 +113,7 @@ class DaemonRunnerTest {
                 Optional.of(port),
                 Optional.empty(),
                 OptionalInt.empty(),
+                Optional.empty(),
                 Optional.empty());
 
         try (DaemonRunner runner = new DaemonRunner(options, pidFile)) {
@@ -171,6 +173,7 @@ class DaemonRunnerTest {
                 Optional.empty(),
                 Optional.of(port),
                 OptionalInt.empty(),
+                Optional.empty(),
                 Optional.empty());
 
         try (DaemonRunner runner = new DaemonRunner(options, pidFile)) {
@@ -223,6 +226,7 @@ class DaemonRunnerTest {
                 Optional.empty(),
                 Optional.empty(),
                 OptionalInt.empty(),
+                Optional.empty(),
                 Optional.empty());
 
         try (DaemonRunner runner = new DaemonRunner(options, pidFile)) {
