@@ -9,13 +9,13 @@
 | Поле | Значення |
 |------|----------|
 | **Поточна задача** | **[DONE](docs/ROADMAP.md#next--єдине-джерело-правди)** |
-| **Правило** | `/autopilot` без аргументів = цей ID. **Не питати** «який пункт?». |
+| **Правило** | якщо не `DONE` — `/autopilot` = цей ID; якщо `DONE` — зупинитись / чекати явного нового ID. **Не питати** «який пункт?». |
 
-Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна).
+Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна) (зараз вичерпана).
 
 **Статус MVP:** ✅ реалізовано (2026-06-26)
 
-**Цільова аудиторія наступних фаз:** NOC/SRE, мережеві інженери, адміни WAN/MPLS.
+**Цільова аудиторія Pro-функцій:** NOC/SRE, мережеві інженери, адміни WAN/MPLS.
 
 - Запуск: `./pingui.sh` / `./pingui.sh --deploy` · `java/pingui-java.sh` (розробка на `beta`; production-зріз — `main`)
 - CI: ruff + mypy + pytest · `./gradlew check` (обидві гілки)
@@ -69,6 +69,7 @@ flowchart LR
   F13[Phase 13 done] --> F14[Phase 14 Pro GUI]
   F14 --> F15[Phase 15 Integrations]
   F15 --> F16[Phase 16 Telemetry]
+  F16 --> F17[Phase 17 MTU / Self-check DONE]
 ```
 
 ---
@@ -98,7 +99,7 @@ PINGUI/
 3. `./pingui.sh --deploy` або `./gradlew check` green.
 4. Рядок у `docs/LIVING_SPEC.md`.
 5. README / DEPLOYMENT / CHANGELOG — якщо змінився запуск або UX.
-6. Оновити **NEXT** + рядок у **Черзі виконання** (`[x]` → наступний ID).
+6. Оновити **NEXT** + рядок у **Черзі виконання** (`[x]` → наступний ID, або **DONE** якщо черга порожня).
 
 ---
 

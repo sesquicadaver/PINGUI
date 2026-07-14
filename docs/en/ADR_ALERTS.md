@@ -121,4 +121,4 @@ The Java GUI keeps journal/route graph as-is; desktop alert is an optional chann
 
 - [ROADMAP.md](ROADMAP.md) — phase 10 (P10-*), phase 16 (P16-050)  
 - Python: `src/pingui/models.py` (`RouteChangeEvent`), `src/pingui/monitor/alert_dispatcher.py`  
-- Java (planned): `monitor/AlertDispatcher.java`, `monitor/WebhookAlertDispatcher.java`
+- Java (shipped): `monitor/AlertDispatcher.java`, `monitor/WebhookAlertDispatcher.java`, …

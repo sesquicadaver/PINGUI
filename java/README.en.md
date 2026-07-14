@@ -98,9 +98,13 @@ gradlew.bat run        # Windows
 | `--asn-hints` | `config/asn_hints.yaml` | Offline CIDR→ASN+org |
 | `--no-asn` | off | Disable ASN in labels |
 | `--asn-timeout-ms` | `2000` | Reserved for whois fallback |
+| `--telemetry-syslog` | off | Syslog sink `HOST:PORT` (YAML override) |
+| `--telemetry-jsonl` | off | JSONL rotate sink directory |
+| `--telemetry-otlp` | off | OTLP/HTTP endpoint |
+| `--telemetry-dump` | off | Dump telemetry SQLite/JSONL |
 | `--verbose` | off | Debug log |
 
-The CLI **does not overwrite** profile defaults (1.0 / 20 / 0.5 / auto) unless the corresponding flag is provided.
+The CLI **does not overwrite** profile defaults (1.0 / 20 / 0.5 / auto) unless the corresponding flag is provided. Full telemetry YAML: [CONFIGURATION § telemetry](../docs/en/CONFIGURATION.md).
 
 **Prometheus (P15-010/011):** `./pingui-java.sh -- --daemon --metrics-port 9090` → `http://127.0.0.1:9090/metrics`. Metrics: `pingui_rtt_ms`, `pingui_route_change_total`, `pingui_target_reachable`, `pingui_trace_duration_ms`. Without `--metrics-port` no listener starts.
 
@@ -116,7 +120,8 @@ The CLI **does not overwrite** profile defaults (1.0 / 20 / 0.5 / auto) unless t
 - **Trace profiles**: multiple named profiles in YAML, switchable in the UI
 - List of up to **10 targets**, checkbox = active tracing; **Ping only** = ping without trace
 - **Add / Edit / Delete / Save** → YAML
-- **Expert** (Linux): **Exten.** → `ping(8)` iputils parameters; single AF (`-4` or `-6`, default IPv4); disabled on Win/mac
+- **Expert** (Linux): **Exten.** → `ping(8)` presets; **MTU** / **MTU wizard…** (`-s` sweep + `-M do`); **Self-check** DF/DSCP/Burst → Alert; single AF (`-4`/`-6`); disabled on Win/mac
+- **Telemetry…** (Settings menu): sinks sqlite/jsonl/syslog/GELF/Loki/OTLP + `events_only`
 - **Simple** / **Advanced**: RTT metrics, loss %, route graph, change log
 - **Database…** (menu): connect SQLite without CLI; **Route history** — `route_change` timeline + graph replay (advanced mode)
 
@@ -124,17 +129,18 @@ The CLI **does not overwrite** profile defaults (1.0 / 20 / 0.5 / auto) unless t
 
 ```
 io.pingui
-├── config/          ProfilesConfig, PingExpertEntry
+├── config/          ProfilesConfig, PingExpertEntry, PingPresets, TelemetryConfig
 ├── model/           HopNode, RouteSnapshot
-├── probe/           RouteProbeFactory, ProcessRouteProbe, TraceCommandBuilder,
-                       UnixTraceOutputParser, WindowsTraceOutputParser, ProcessExpertPing
+├── probe/           RouteProbeFactory, ProcessRouteProbe, ProcessExpertPing,
+                       MtuDiscovery*, PresetSelfCheck*, Trace parsers
 ├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
+├── telemetry/       TelemetryBus, sinks (sqlite/jsonl/syslog/GELF/Loki/OTLP), SinkRegistry
 ├── persistence/     SessionDatabase, PersistenceEventWriter (P11); timeseries/ (P15-020)
 ├── observability/   PrometheusExporter, PrometheusTelemetrySink (P16-051), MetricsHttpServer (P15-010)
 ├── api/             ReadOnlyApiServer (P15-040)
 ├── export/          SessionReportExporter (P11-030), ScheduledExport (P15-030)
-└── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,
-                       MonitorLifecycle, ViewModeController, RouteGraphPresenter, GraphCanvas
+└── ui/              MainController, HostListPresenter, PingExpertDialog,
+                       MtuDiscoveryDialog, PresetSelfCheckUi, TelemetrySettingsDialog, GraphCanvas
 ```
 
 Details: [docs/JAVA.md](../docs/en/JAVA.md).
@@ -173,7 +179,7 @@ cd java
 ./gradlew jpackageDeb   # Linux .deb → build/dist/
 ```
 
-Unit tests (21) — `src/test/java`; matrix: [docs/LIVING_SPEC.md](../docs/en/LIVING_SPEC.md). CI: ![Java CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/java.yml/badge.svg)
+Unit tests — `src/test/java`; matrix: [docs/LIVING_SPEC.md](../docs/en/LIVING_SPEC.md). CI: ![Java CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/java.yml/badge.svg)
 
 ## Packaging (jpackage)
 

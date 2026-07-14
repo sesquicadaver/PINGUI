@@ -14,8 +14,8 @@
 
 | | **`main`** | **`beta`** |
 |---|------------|------------|
-| **Роль** | Стабільний зріз після merge з `beta` (production) | Активна розробка: черга ROADMAP / `/autopilot` |
-| **Java desktop** | ✅ GUI + Pro (IPv6, SQLite, alerts, history, daemon, export) — як у останньому merge | ✅ Те саме **+** незамерджені пункти черги |
+| **Роль** | Стабільний зріз після merge з `beta` (production) | Активна розробка (`/autopilot` — лише якщо NEXT ≠ DONE) |
+| **Java desktop** | ✅ GUI + Pro (IPv6, SQLite, alerts, history, daemon, export, telemetry, Expert MTU) — як у останньому merge | ✅ Те саме **+** будь-які зміни до merge; лінійна черга ROADMAP зараз **DONE** |
 | **Сесія** | RAM за замовчуванням; опційно **SQLite** | Те саме |
 | **Оповіщення / історія / daemon / IPv6** | ✅ (після merge фаз 9–12+) | ✅ + новіші зміни до merge |
 | **Python PyQt6** | ✅ `src/pingui/`, `./pingui.sh`, pytest (може трохи відставати від `beta`) | ✅ Найновіший Python-шар |
@@ -61,7 +61,8 @@ pingui-java.bat
 - До **10 цілей**, чекбокс = активне трасування; **Ping only** = RTT до цілі без trace
 - **Профілі трасування** в одному YAML (`active_profile` + `profiles`)
 - **Простий** / **Розширений** режим UI; loss %, min/avg/max RTT; граф маршруту
-- **Expert ping** (Linux, iputils) — діалог **Exten.** на хост
+- **Expert ping** (Linux, iputils) — **Exten.**: пресети, **MTU wizard**, **Self-check** DF/DSCP/Burst
+- **Телеметрія** — sinks (sqlite/jsonl/syslog/GELF/Loki/OTLP), меню **Налаштування → Телеметрія…**
 - Трасування через `traceroute` / `tracert`; опційно raw ICMP на Linux (`probe: auto|raw`)
 - Dual-stack IPv6, алерти зміни маршруту, SQLite + «Історія змін», headless daemon, CSV/HTML export — див. [java/README.md](java/README.md)
 

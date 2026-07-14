@@ -138,7 +138,8 @@ Store/history/change detection — `SessionStore`, `RouteHistory`, `RouteChangeD
 
 - **About** / **Help** (F1) menu — `AppMenuDialogs`
 - **Trace profile** selection (ComboBox + new/delete); all profiles in one YAML
-- **“Expert”** checkbox → **Exten.** button on host row → `PingExpertDialog` (catalog from `pingMan.txt`, without `-c/-w/-W/-i` etc.); 4 quick presets from `ping_presets.yaml` (MTU probe, DF, DSCP, Burst)
+- **“Expert”** checkbox → **Exten.** / **MTU** on host row → `PingExpertDialog` (catalog from `pingMan.txt`, without `-c/-w/-W/-i` etc.); 4 quick presets from `ping_presets.yaml` (MTU probe, DF, DSCP, Burst); **MTU wizard…** (`MtuDiscoveryDialog`); **Self-check** (`PresetSelfCheckUi`)
+- **Settings → Telemetry…** — `TelemetrySettingsDialog` + bus via `TelemetryAttachment`
 - `ListView<HostItem>` + CheckBox in cell
 - **GraphCanvas** — vertical graph, inactive/active columns
 - Log `TextArea`
@@ -215,4 +216,4 @@ Tests and CI — on **`main`** and **`beta`** (ROADMAP development on `beta`).
 
 ## Future
 
-See the ROADMAP queue on **`beta`** ([docs/en/ROADMAP.md](ROADMAP.md) § NEXT).
+The linear ROADMAP queue is exhausted (**NEXT = DONE**). New work requires an explicit queue update / new ID ([docs/en/ROADMAP.md](ROADMAP.md) § NEXT).

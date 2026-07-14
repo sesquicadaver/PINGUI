@@ -20,7 +20,7 @@ NOC profiles need route monitoring without JavaFX (server, systemd). Python has 
 | Config | `--config` + YAML; CLI overrides as in GUI |
 | SQLite | `--session-db` or YAML `persistence.session_db` |
 | Alerts | `--alert-webhook`, `--desktop-alerts` (Linux) — as P10 |
-| Reload | **SIGHUP → reload config** — planned P12-050 (not in P12-010) |
+| Reload | **SIGHUP → reload config** — out of scope v1 (no ID in current queue; deferred) |
 
 ## Alternatives
 
@@ -35,5 +35,5 @@ NOC profiles need route monitoring without JavaFX (server, systemd). Python has 
 
 ## Follow-ups
 
-- P12-050: SIGHUP reload `ProfilesConfig` without process restart.
+- SIGHUP reload `ProfilesConfig` without process restart — deferred (no ID in the current linear queue).
 - PY parity: `python -m pingui daemon` remains a separate path.

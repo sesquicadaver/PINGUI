@@ -10,7 +10,7 @@ Post-MVP roadmap (2026-06-26) for **professional users** (NOC/SRE, network engin
 
 | Field | Value |
 |-------|-------|
-| **Branch** | `main` — stable snapshot after merge; `beta` — development (ROADMAP queue). Both: Java Pro (P9+) + Python after merge |
+| **Branch** | `main` — stable snapshot after merge; `beta` — development (linear queue currently **DONE**). Both: Java Pro (P9–P17) + Python after merge |
 | **Priority** | P0 critical · P1 important · P2 nice-to-have |
 | **DoD** | Definition of Done — task closure condition |
 
@@ -30,10 +30,11 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 ### Contract for `/autopilot` and agents
 
 1. **With no args**, `/autopilot` / `$autopilot` = execute **only** the ID in **Current task**.
-2. **Do not ask** “which item next?” — the answer is always this section.
-3. After marking `[x]` in the phase table: set **Current task** to the **next** still-`[ ]` row in the **Execution queue**.
-4. If task code already exists but wiring was removed (dead code) — **do not** invent a parallel task and **do not** ask: finish the DoD (wire or delete dead code under the same ID).
-5. Skip / reorder — **only** on an explicit user command naming a new ID (then update NEXT + queue).
+2. If **Current task = `DONE`** — **do not** start the loop; report that the linear queue is empty; work only after an explicit new ID (update NEXT + queue first).
+3. **Do not ask** “which item next?” — the answer is always this section.
+4. After marking `[x]` in the phase table: set **Current task** to the **next** still-`[ ]` row in the **Execution queue**, or **`DONE`** if none remain.
+5. If task code already exists but wiring was removed (dead code) — **do not** invent a parallel task and **do not** ask: finish the DoD (wire or delete dead code under the same ID).
+6. Skip / reorder — **only** on an explicit user command naming a new ID (then update NEXT + queue).
 
 ---
 
@@ -96,7 +97,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 51 | **P17-021** | [x] | MTU wizard UI + Alert + apply to Expert |
 | 52 | **P17-030** | [x] | Informational self-check DF/DSCP/Burst (P2) |
 
-**End of queue:** set NEXT → `DONE` (no open IDs).
+**Queue status:** closed — **NEXT = DONE** (no open IDs). New work requires an explicit queue extension + NEXT update.
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -217,7 +218,7 @@ Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details �
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **V6-001** | [x] Update SPIKE: status **planned**, phase 9 goals, OS matrix | `docs/SPIKE_IPV6.md` | Table «layer → v4 → v6 → OS»; links to V6-* |
+| **V6-001** | [x] Update SPIKE (historical DoD: status *planned*) | `docs/SPIKE_IPV6.md` | SPIKE is now **implemented**; OS table + V6-* links |
 | **V6-002** | [x] ADR: dual-stack policy (literal v6, hostname→AAAA, mixed profile) | `docs/ADR_IPV6.md` | Decision: bracket YAML, canonical RFC 5952, probe fallback |
 | **V6-003** | [x] `HostAddressKind` + `HostAddressParser` (IPv4 / IPv6 / hostname) | `config/HostAddress*.java` | Unit test: parse/normalize without UI |
 
@@ -646,9 +647,9 @@ flowchart TD
 |----|------|----------|
 | **P16-080** | [x] OTLP logs/metrics export | P2 |
 
-### 16.8 — Desktop GUI telemetry (P0–P1)
+### 16.8 — Desktop GUI telemetry (P0–P1) ✅
 
-**Context:** sinks from YAML/`--telemetry-*` work in `DaemonRunner`; JavaFX GUI preserves `telemetry:` on Save but **does not** attach the bus → desktop events never reach sinks.
+**Context (historical, before P16-090):** sinks from YAML/`--telemetry-*` worked in `DaemonRunner`; JavaFX only preserved `telemetry:` on Save without a bus. **Since P16-090:** shared `TelemetryAttachment` for GUI and daemon.
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
@@ -660,11 +661,11 @@ flowchart TD
 
 ---
 
-## Phase 17 — Expert ping presets + MTU discovery (`beta`, P0–P1)
+## Phase 17 — Expert ping presets + MTU discovery (`beta`, P0–P1) ✅ DONE
 
 **Goal:** Exten. presets are informative; controlled MTU discovery is a separate wizard (not confused with `-M probe` as “auto search”).
 
-**Context:** Preset buttons only merge args into the form; each poll runs `ping -c 1` with a fixed `-s`. “Sweep MTU → stop on loss → recommended MTU” = new wizard (P17-020/021).
+**Context (at phase start):** preset buttons only merged args into the form; each poll ran `ping -c 1` with a fixed `-s`. **Resolved:** P17-020/021 (wizard) + P17-030 (Self-check Alert).
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
@@ -757,7 +758,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog:** M/B roadmap closed; B-064 coverage ongoing; **IPv6 — Phase 9 (V6-*)**; **Python NOC — Phase PY (PY-*)**; **Pro — Phases 10–16 (P10–P16)**.
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–17 (P10–P17)**. Linear queue — **NEXT=DONE**.
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

@@ -9,8 +9,9 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Docs sync (NEXT=DONE):** UK/EN indexes, README, java/README, ADRs (`planned`→shipped), SPIKE_IPV6, `/autopilot` contract for `DONE`, MODULES/ARCHITECTURE scoped to Python; removed “phases 0–16” / “SPIKE planned” / orphan “future” wording after P17.
 - **Branches `main` / `beta` (docs):** README and related docs no longer describe `main` as “RAM-only / no SQLite·alerts·daemon·IPv6·Python”. Reality: `main` = last stable merge; `beta` = development ahead; Pro stack and Python are on both after merge.
-- **ROADMAP NEXT + linear queue:** `docs/ROADMAP.md` / `docs/en/ROADMAP.md` and root `ROADMAP*.md` — single **Current task** field; `/autopilot` with no args always takes that ID (no “which item?”). Agent rule: `.cursor/rules/roadmap-next.mdc`.
+- **ROADMAP NEXT + linear queue:** single **Current task** field; `/autopilot` with no args takes that ID unless **DONE** (then stop). Agent rule: `.cursor/rules/roadmap-next.mdc`.
 
 ### Fixed
 
@@ -25,7 +26,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 - **MTU wizard UI (P17-021):** `MtuDiscoveryDialog` (progress / Stop / Alert / Apply → Expert `-M do -s`); HostList **MTU** + Expert «MTU wizard…». ROADMAP NEXT → P17-030.
 - **MtuDiscovery engine (P17-020):** ascending `-s` sweep (`min→start`) with `-M do`, stop at ≥1% loss, recommended MTU = last good payload + IP/ICMP overhead; `ProcessMtuProbeRunner`. ROADMAP NEXT → P17-021.
 - **Expert preset UX (P17-010):** `ping_presets.yaml` `summary`/`expect`/`caution`; Exten. tooltip + status line; clarify preset ≠ MTU wizard. ROADMAP NEXT → P17-020.
-- **Help/About + GUI telemetry smoke (P16-094):** About/Help mention SQLite + Telemetry menu; CHECKLIST GUI smoke. ROADMAP NEXT → DONE.
+- **Help/About + GUI telemetry smoke (P16-094):** About/Help mention SQLite + Telemetry menu; CHECKLIST GUI smoke. (end of P16 GUI queue at the time; P17 followed)
 - **Python telemetry stance (P16-093):** validate `telemetry:` on start; LOG sinks = Java only; stderr note + CONFIGURATION. ROADMAP NEXT → P16-094.
 - **Full telemetry settings UI (P16-092):** dialog edits GELF/Loki/OTLP + `log_aggregates` and shows `toRedactedString()` status. ROADMAP NEXT → P16-093.
 - **Telemetry settings dialog (P16-091):** Menu “Settings → Telemetry…” — `events_only`, sqlite, jsonl, syslog(+TLS); Apply → profile + re-wire bus; CLI locks honored. ROADMAP NEXT → P16-092.

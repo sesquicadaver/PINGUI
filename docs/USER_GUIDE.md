@@ -134,6 +134,7 @@ cd java
 5. **Expert ping** — чекбокс **Експерт** → **Exten.** → пресети **MTU probe / DF / DSCP / Burst** з `ping_presets.yaml` (AF `-4`/`-6` зберігається). Кожен пресет лише підставляє прапорці `ping(8)` + показує summary/expect у діалозі. Перебір MTU — кнопка **MTU** / **MTU wizard…** (Apply → `-M do -s`). **Self-check** — короткий batch DF/DSCP/Burst → Alert (форма не змінюється).
 6. **Алерти** — webhook / desktop при зміні маршруту (`alerts:` у YAML або `--alert-webhook`). Rate limit на хост: [CONFIGURATION.md](CONFIGURATION.md).
 7. **Персистентність** — `--session-db` або **Налаштування → База даних…**; історія й `hop_stats` переживають рестарт. Export: `--export-report report.csv`.
+8. **Телеметрія** — **Налаштування → Телеметрія…** (sinks sqlite/jsonl/syslog/…); Apply + **Зберегти** YAML. Деталі: [CONFIGURATION.md](CONFIGURATION.md).
 
 ### Headless NOC (без GUI)
 
@@ -155,4 +156,6 @@ cd java
 | Увімкнені хости | У лозі є оновлення / немає постійних «Помилка» |
 | Зміна маршруту | Рядок у **Історії змін** + (якщо налаштовано) webhook |
 | SQLite | Файл `--session-db` росте; після рестарту граф відновлюється |
+| Expert MTU / Self-check | Wizard Apply → `-M do -s`; Self-check → Alert без зміни форми |
+| Телеметрія (якщо є) | Sink path / remote у діалозі; events у sqlite/syslog за конфігом |
 | Daemon (якщо є) | `--status` показує running; alerts доходять |

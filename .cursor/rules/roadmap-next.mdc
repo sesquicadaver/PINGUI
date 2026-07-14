@@ -7,10 +7,11 @@ alwaysApply: true
 
 When the user runs `/autopilot`, `$autopilot`, or asks to continue roadmap work **without naming a task ID**:
 
-1. Read **Current task** from `docs/ROADMAP.md` § **NEXT** (UK) or `docs/en/ROADMAP.md` § **NEXT** (EN).
-2. Execute **only** that ID end-to-end (ralplan → ralph → code-review).
-3. **Never ask** “which item should we do?” / «який пункт виконувати?».
-4. After DoD + `[x]`: advance **NEXT** and the matching row in **Черга виконання** / **Execution queue** to the next `[ ]` ID.
-5. Dead code for that ID (e.g. unwired `AsnLookup`) is in-scope: wire it or delete it under the same ID — do not spawn a side quest or ask.
+1. Read **Current task** / **Поточна задача** from `docs/ROADMAP.md` § **NEXT** (UK) or `docs/en/ROADMAP.md` § **NEXT** (EN).
+2. If the value is **`DONE`** (queue exhausted): **do not** start ralplan/ralph; report that the linear queue is empty and wait for an explicit new task ID (then update NEXT + queue first).
+3. Otherwise execute **only** that ID end-to-end (ralplan → ralph → code-review).
+4. **Never ask** “which item should we do?” / «який пункт виконувати?».
+5. After DoD + `[x]`: advance **NEXT** and the matching row in **Черга виконання** / **Execution queue** to the next `[ ]` ID, or set **NEXT = DONE** if none remain.
+6. Dead code for that ID (e.g. unwired `AsnLookup`) is in-scope: wire it or delete it under the same ID — do not spawn a side quest or ask.
 
 Explicit user override: if they name another ID, update NEXT/queue first, then execute that ID.

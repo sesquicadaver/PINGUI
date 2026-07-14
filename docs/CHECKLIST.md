@@ -272,6 +272,8 @@ chmod +x pingui-java.sh gradlew
 5. Зберегти конфіг → перезапуск
 6. **Linux only:** Expert → Exten. → `-4 -s 128`
 7. **Linux only:** Expert → **MTU** → wizard Start/Apply (не плутати з пресетом «MTU probe»)
+8. **Linux only:** Expert → Exten. → **Self-check** → Alert DF/DSCP/Burst
+9. Опційно: **Налаштування → Телеметрія…** — див. § GUI telemetry smoke (P16-094)
 
 ---
 

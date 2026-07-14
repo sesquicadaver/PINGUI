@@ -1,10 +1,12 @@
 > **Мова:** Українська · [English](en/ARCHITECTURE.md)
 
-# Архітектура PINGUI
+# Архітектура PINGUI (Python)
+
+> **Scope:** Python-редакція (`src/pingui`). Java-архітектура — [JAVA.md](JAVA.md) / [java/README.md](../java/README.md).
 
 ## Огляд
 
-PINGUI — однопроцесний desktop-додаток: **PyQt6 GUI** + **фоновий QThread worker** + **in-memory SessionStore**.
+Python PINGUI — однопроцесний desktop-додаток: **PyQt6 GUI** + **фоновий QThread worker** + **in-memory SessionStore**.
 Мережеві операції (ICMP) ізольовані в шарі `icmp/`; бізнес-логіка опитування — у `monitor/polling.py` без залежності від Qt.
 
 ```

@@ -14,8 +14,8 @@ By default session data lives **in RAM**; optional **SQLite** (`--session-db`, G
 
 | | **`main`** | **`beta`** |
 |---|------------|------------|
-| **Role** | Stable snapshot after merge from `beta` (production) | Active development: ROADMAP queue / `/autopilot` |
-| **Java desktop** | ✅ GUI + Pro (IPv6, SQLite, alerts, history, daemon, export) as of last merge | ✅ Same **plus** unmerged queue items |
+| **Role** | Stable snapshot after merge from `beta` (production) | Active development (`/autopilot` only when NEXT ≠ DONE) |
+| **Java desktop** | ✅ GUI + Pro (IPv6, SQLite, alerts, history, daemon, export, telemetry, Expert MTU) as of last merge | ✅ Same **plus** any work until merge; linear ROADMAP queue is currently **DONE** |
 | **Session** | RAM by default; optional **SQLite** | Same |
 | **Alerts / history / daemon / IPv6** | ✅ (after phases 9–12+ merged) | ✅ + newer work until merge |
 | **Python PyQt6** | ✅ `src/pingui/`, `./pingui.sh`, pytest (may lag `beta` slightly) | ✅ Latest Python stack |
@@ -61,7 +61,8 @@ Requirements: **JDK 21** ([Eclipse Temurin](https://adoptium.net/temurin/release
 - Up to **10 targets**, checkbox = active tracing; **Ping only** = target RTT without trace
 - **Tracing profiles** in one YAML (`active_profile` + `profiles`)
 - **Simple** / **Extended** UI modes; loss %, min/avg/max RTT; route graph
-- **Expert ping** (Linux, iputils) — **Exten.** dialog per host
+- **Expert ping** (Linux, iputils) — **Exten.**: presets, **MTU wizard**, **Self-check** DF/DSCP/Burst
+- **Telemetry** — sinks (sqlite/jsonl/syslog/GELF/Loki/OTLP), **Settings → Telemetry…**
 - Tracing via `traceroute` / `tracert`; optional raw ICMP on Linux (`probe: auto|raw`)
 - Dual-stack IPv6, route-change alerts, SQLite + route history, headless daemon, CSV/HTML export — see [java/README.en.md](java/README.en.md)
 

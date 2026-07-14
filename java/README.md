@@ -100,9 +100,13 @@ gradlew.bat run        # Windows
 | `--asn-hints` | `config/asn_hints.yaml` | Offline CIDR→ASN+org |
 | `--no-asn` | off | Вимкнути ASN у підписах |
 | `--asn-timeout-ms` | `2000` | Резерв під whois fallback |
+| `--telemetry-syslog` | off | Syslog sink `HOST:PORT` (override YAML) |
+| `--telemetry-jsonl` | off | Каталог JSONL rotate sink |
+| `--telemetry-otlp` | off | OTLP/HTTP endpoint |
+| `--telemetry-dump` | off | Dump telemetry SQLite/JSONL |
 | `--verbose` | off | Debug-лог |
 
-CLI **не затирає** поля профілю defaults (1.0 / 20 / 0.5 / auto), якщо відповідний прапор не передано.
+CLI **не затирає** поля профілю defaults (1.0 / 20 / 0.5 / auto), якщо відповідний прапор не передано. Повний telemetry YAML: [CONFIGURATION § telemetry](../docs/CONFIGURATION.md).
 
 **Prometheus (P15-010/011):** `./pingui-java.sh -- --daemon --metrics-port 9090` → `http://127.0.0.1:9090/metrics`. Метрики: `pingui_rtt_ms`, `pingui_route_change_total`, `pingui_target_reachable`, `pingui_trace_duration_ms`. Без `--metrics-port` listener не стартує.
 
@@ -118,7 +122,8 @@ CLI **не затирає** поля профілю defaults (1.0 / 20 / 0.5 / a
 - **Профілі трасування**: кілька named-профілів у YAML, перемикання в UI
 - Список до **10 цілей**, чекбокс = активне трасування; **Ping only** = лише ping без trace
 - **Додати / Змінити / Видалити / Зберегти** → YAML
-- **Експерт** (Linux): **Exten.** → параметри `ping(8)` iputils; один AF (`-4` або `-6`, default IPv4); на Win/mac disabled
+- **Експерт** (Linux): **Exten.** → пресети `ping(8)`; **MTU** / **MTU wizard…** (sweep `-s` + `-M do`); **Self-check** DF/DSCP/Burst → Alert; один AF (`-4`/`-6`); на Win/mac disabled
+- **Телеметрія…** (меню Налаштування): sinks sqlite/jsonl/syslog/GELF/Loki/OTLP + `events_only`
 - **Простий** / **Розширений**: метрики RTT, loss %, граф маршруту, лог змін
 - **База даних…** (меню): підключення SQLite без CLI; **Історія змін** — timeline `route_change` + replay на графі (розширений режим)
 
@@ -126,17 +131,18 @@ CLI **не затирає** поля профілю defaults (1.0 / 20 / 0.5 / a
 
 ```
 io.pingui
-├── config/          ProfilesConfig, PingExpertEntry
+├── config/          ProfilesConfig, PingExpertEntry, PingPresets, TelemetryConfig
 ├── model/           HopNode, RouteSnapshot
-├── probe/           RouteProbeFactory, ProcessRouteProbe, TraceCommandBuilder,
-                       UnixTraceOutputParser, WindowsTraceOutputParser, ProcessExpertPing
+├── probe/           RouteProbeFactory, ProcessRouteProbe, ProcessExpertPing,
+                       MtuDiscovery*, PresetSelfCheck*, Trace parsers
 ├── monitor/         SessionStore, MonitorService, AlertDispatchers, RouteChangeEvent
+├── telemetry/       TelemetryBus, sinks (sqlite/jsonl/syslog/GELF/Loki/OTLP), SinkRegistry
 ├── persistence/     SessionDatabase, PersistenceEventWriter (P11); timeseries/ (P15-020)
 ├── observability/   PrometheusExporter, PrometheusTelemetrySink (P16-051), MetricsHttpServer (P15-010)
 ├── api/             ReadOnlyApiServer (P15-040)
 ├── export/          SessionReportExporter (P11-030), ScheduledExport (P15-030)
-└── ui/              MainController (wiring), ProfileUiCoordinator, HostListPresenter,
-                       MonitorLifecycle, ViewModeController, RouteGraphPresenter, GraphCanvas
+└── ui/              MainController, HostListPresenter, PingExpertDialog,
+                       MtuDiscoveryDialog, PresetSelfCheckUi, TelemetrySettingsDialog, GraphCanvas
 ```
 
 Деталі: [docs/JAVA.md](../docs/JAVA.md).
@@ -175,7 +181,7 @@ cd java
 ./gradlew jpackageDeb   # Linux .deb → build/dist/
 ```
 
-Unit-тести (21) — `src/test/java`; матриця: [docs/LIVING_SPEC.md](../docs/LIVING_SPEC.md). CI: ![Java CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/java.yml/badge.svg)
+Unit-тести — `src/test/java`; матриця: [docs/LIVING_SPEC.md](../docs/LIVING_SPEC.md). CI: ![Java CI](https://github.com/sesquicadaver/PINGUI/actions/workflows/java.yml/badge.svg)
 
 ## Пакування (jpackage)
 

@@ -99,6 +99,8 @@ tasks.jacocoTestCoverageVerification {
                         "io/pingui/ui/ViewModeController*.class",
                         "io/pingui/ui/RouteGraphPresenter*.class",
                         "io/pingui/ui/AppMenuDialogs*.class",
+                        "io/pingui/ui/MtuDiscoveryDialog*.class",
+                        "io/pingui/ui/PresetSelfCheckUi*.class",
                     )
                 }
             },

@@ -1,10 +1,12 @@
 > **Language:** English · [Українська](../ARCHITECTURE.md)
 
-# PINGUI Architecture
+# PINGUI Architecture (Python)
+
+> **Scope:** Python edition (`src/pingui`). Java architecture — [JAVA.md](JAVA.md) / [java/README.en.md](../../java/README.en.md).
 
 ## Overview
 
-PINGUI is a single-process desktop application: **PyQt6 GUI** + **background QThread worker** + **in-memory SessionStore**.
+Python PINGUI is a single-process desktop application: **PyQt6 GUI** + **background QThread worker** + **in-memory SessionStore**.
 Network operations (ICMP) are isolated in the `icmp/` layer; polling business logic lives in `monitor/polling.py` without Qt dependencies.
 
 ```

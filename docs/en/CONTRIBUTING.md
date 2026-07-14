@@ -13,7 +13,7 @@ Thank you for your interest in the project. This document describes the process 
 
 ## Branches
 
-- `beta` — active development (ROADMAP queue / `/autopilot`); CI on push/PR.
+- `beta` — active development; `/autopilot` takes the ROADMAP NEXT ID (if **DONE**, queue is empty — need an explicit new ID); CI on push/PR.
 - `main` — stable snapshot after merge from `beta`; CI on push/PR.
 - Feature branches: `feature/short-description` → PR into `beta`.
 

@@ -22,17 +22,17 @@
 
 ---
 
-## Поточний стан (evidence)
+## Результат фази 9 (evidence)
 
-| Шар | IPv4 сьогодні | Ціль фази 9 |
-|-----|---------------|-------------|
-| `HostsConfig` | Literal v4 + hostname; v6 literal RFC 5952 (V6-S1) | V6-020+ trace для v6 |
-| `ProcessRouteProbe` / parsers | Regex IPv4 | V6-024…V6-029: v6 tokens + fixtures |
-| Trace commands | без `-6` | V6-021…V6-023 |
-| `GeoCountry` | `Inet4Address` only | V6-035…V6-037 |
-| `RawIcmpRouteProbe` | `AF_INET` + `AF_INET6` (`probe: raw`) | V6-040…V6-045 ✅ |
-| Expert ping | iputils `-4`/`-6` catalog, v4 targets | V6-050…V6-053 |
-| Документація | Dual-stack (V6-S4) | V6-074 |
+| Шар | IPv4 | IPv6 (фаза 9) |
+|-----|------|---------------|
+| `HostsConfig` | Literal v4 + hostname | v6 literal RFC 5952 ✅ |
+| `ProcessRouteProbe` / parsers | Regex IPv4 | v6 tokens + fixtures ✅ |
+| Trace commands | `-4` / без `-6` | `-6` на Linux/Windows ✅ |
+| `GeoCountry` | `Inet4Address` | CIDR v6 hints ✅ |
+| `RawIcmpRouteProbe` | `AF_INET` | `AF_INET6` (`probe: raw`) ✅ |
+| Expert ping | iputils `-4` | `-6` + resolve ✅ |
+| Документація | Dual-stack | V6-074 ✅ |
 
 ---
 
@@ -56,7 +56,7 @@
 | GUI / GeoIP | V6-035…V6-037, V6-060…V6-062 |
 | Тести + CI | V6-027…V6-029, V6-070…V6-073 |
 
-**Орієнтовно:** 3–5 sprint; атомарні задачі ≤ 1 день кожна.
+**Оцінка (історично, до старту фази):** 3–5 sprint; атомарні задачі ≤ 1 день кожна. Фактично — закрито (див. ROADMAP фаза 9).
 
 ---
 

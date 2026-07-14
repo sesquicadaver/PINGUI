@@ -20,7 +20,7 @@ Other data channels already exist and are **not** metrics backends:
 | SQLite session (`--session-db`) | P11 | Session state + discrete events (`route_change`, `probe_error`) for GUI/history |
 | Alerts (webhook / desktop) | P10 | Operator notify; not a time-series store |
 | REST read-only API | P15-040 | Operational host/route snapshot; not metrics scrape |
-| Telemetry bus + LOG-server | P16 | Unified emit → sinks (future) |
+| Telemetry bus + LOG-server | P16 ✅ | Unified emit → sinks (GUI + daemon) |
 
 Without an ADR it is easy to conflate scrape with push, or try to feed Grafana from the SQLite session DB.
 
@@ -46,14 +46,14 @@ MonitorService / poll loop
         ├─► AlertDispatcher (P10)          — operator notify
         ├─► PrometheusExporter (P15)       — in-process gauges → scrape
         ├─► TimeSeriesBackend (P15/B-05)   — push samples (optional)
-        └─► TelemetryBus (P16, later)      — unified async emit → sinks
+        └─► TelemetryBus (P16 ✅)          — unified async emit → sinks
 ```
 
 | Do not do in P15 | Why |
 |------------------|-----|
 | Write hop-RTT into SQLite as a “Prometheus replacement” | Session DB ≠ TS; volume and query model differ |
 | Duplicate alert webhook as metrics push | P10 stays notify; metrics are a separate contract |
-| OTLP / OpenTelemetry export | Deferred (P16-080) |
+| OTLP / OpenTelemetry export | Separate: **P16-080 ✅** (optional) |
 | Prometheus `remote_write` | Out of scope v1; scrape is enough for daemon |
 | High-freq RTT to syslog | That is P16 LOG-server (`events_only`) |
 
