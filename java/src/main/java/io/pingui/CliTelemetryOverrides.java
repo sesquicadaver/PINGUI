@@ -5,19 +5,24 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 /**
- * CLI overrides for telemetry sinks (P16-041). Empty fields keep YAML {@code telemetry:} values.
+ * CLI overrides for telemetry sinks (P16-041 / P16-080). Empty fields keep YAML {@code telemetry:}
+ * values.
  *
- * <p>{@code --telemetry-syslog HOST:PORT} and {@code --telemetry-jsonl DIR} take precedence over
- * profile YAML. Distinct from {@code --telemetry-jsonl-dir} (retention purge only).
+ * <p>{@code --telemetry-syslog HOST:PORT}, {@code --telemetry-jsonl DIR}, and {@code
+ * --telemetry-otlp URL} take precedence over profile YAML. Distinct from {@code
+ * --telemetry-jsonl-dir} (retention purge only).
  */
-public record CliTelemetryOverrides(Optional<TelemetryConfig.SyslogSinkConfig> syslog, Optional<Path> jsonlDir) {
+public record CliTelemetryOverrides(
+        Optional<TelemetryConfig.SyslogSinkConfig> syslog,
+        Optional<Path> jsonlDir,
+        Optional<TelemetryConfig.OtlpSinkConfig> otlp) {
 
     public static CliTelemetryOverrides none() {
-        return new CliTelemetryOverrides(Optional.empty(), Optional.empty());
+        return new CliTelemetryOverrides(Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     public boolean isEmpty() {
-        return syslog.isEmpty() && jsonlDir.isEmpty();
+        return syslog.isEmpty() && jsonlDir.isEmpty() && otlp.isEmpty();
     }
 
     public TelemetryConfig applyTo(TelemetryConfig yaml) {
@@ -29,7 +34,8 @@ public record CliTelemetryOverrides(Optional<TelemetryConfig.SyslogSinkConfig> s
                 jsonlDir.isPresent() ? jsonlDir : base.jsonlDir(),
                 syslog.isPresent() ? syslog : base.syslog(),
                 base.gelf(),
-                base.loki());
+                base.loki(),
+                otlp.isPresent() ? otlp : base.otlp());
     }
 
     /**
@@ -72,5 +78,13 @@ public record CliTelemetryOverrides(Optional<TelemetryConfig.SyslogSinkConfig> s
             throw new IllegalArgumentException("--telemetry-syslog port must be 1..65535");
         }
         return new TelemetryConfig.SyslogSinkConfig(host, port, false);
+    }
+
+    /** Parses OTLP base endpoint URL; service name defaults to {@code pingui}. */
+    public static TelemetryConfig.OtlpSinkConfig parseOtlpEndpoint(String raw) {
+        if (raw == null || raw.isBlank()) {
+            throw new IllegalArgumentException("Missing value for --telemetry-otlp");
+        }
+        return new TelemetryConfig.OtlpSinkConfig(raw.strip(), "pingui");
     }
 }

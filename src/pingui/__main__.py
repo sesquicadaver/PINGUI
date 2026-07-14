@@ -84,6 +84,11 @@ def _add_monitor_args(parser: argparse.ArgumentParser) -> None:
         help="Override telemetry JSONL directory (profile telemetry.jsonl_dir)",
     )
     parser.add_argument(
+        "--telemetry-otlp",
+        default=None,
+        help="Override telemetry OTLP/HTTP endpoint URL (profile telemetry.otlp)",
+    )
+    parser.add_argument(
         "--no-persist-route-change",
         action="store_true",
         help="Do not write route_change rows to persistence_event",
@@ -343,6 +348,7 @@ def _resolve_telemetry(args: argparse.Namespace):
         load_telemetry_config(args.config),
         syslog=getattr(args, "telemetry_syslog", None),
         jsonl_dir=getattr(args, "telemetry_jsonl", None),
+        otlp=getattr(args, "telemetry_otlp", None),
     )
 
 

@@ -112,6 +112,18 @@ class PinguiApplicationTest {
     }
 
     @Test
+    void parseOptions_telemetryOtlpOverrideProfile() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of("telemetry-otlp", "http://127.0.0.1:4318"));
+        assertEquals(
+                "http://127.0.0.1:4318",
+                options.telemetryOverrides().otlp().orElseThrow().endpoint());
+        io.pingui.config.TelemetryConfig merged =
+                options.telemetryOverrides().applyTo(io.pingui.config.TelemetryConfig.defaults());
+        assertEquals("http://127.0.0.1:4318", merged.otlp().orElseThrow().endpoint());
+        assertEquals("pingui", merged.otlp().orElseThrow().serviceName());
+    }
+
+    @Test
     void parseOptions_telemetrySyslogInvalid() {
         assertThrows(
                 IllegalArgumentException.class,

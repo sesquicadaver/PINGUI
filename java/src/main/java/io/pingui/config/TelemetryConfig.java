@@ -13,9 +13,9 @@ import java.util.Optional;
  * Per-profile telemetry YAML ({@code telemetry:}) — P16-040 / ADR_TELEMETRY.
  *
  * <p>Default: all local/remote sinks off, {@code events_only=true}, {@code log_aggregates=false}.
- * Presence of {@code sqlite}/{@code jsonl_dir}/syslog/gelf/loki entries enables that sink in the
- * config model. CLI overrides: P16-041. Secret redaction for logs: {@link #redactUrl(String)},
- * {@link #redactSecret(String)}, {@link #toRedactedString()} (P16-042).
+ * Presence of {@code sqlite}/{@code jsonl_dir}/syslog/gelf/loki/otlp entries enables that sink in
+ * the config model. CLI overrides: P16-041 / P16-080. Secret redaction for logs: {@link
+ * #redactUrl(String)}, {@link #redactSecret(String)}, {@link #toRedactedString()} (P16-042).
  */
 public record TelemetryConfig(
         boolean eventsOnly,
@@ -24,7 +24,8 @@ public record TelemetryConfig(
         Optional<Path> jsonlDir,
         Optional<SyslogSinkConfig> syslog,
         Optional<GelfSinkConfig> gelf,
-        Optional<LokiSinkConfig> loki) {
+        Optional<LokiSinkConfig> loki,
+        Optional<OtlpSinkConfig> otlp) {
 
     public TelemetryConfig {
         sqlitePath = sqlitePath != null ? sqlitePath : Optional.empty();
@@ -32,11 +33,19 @@ public record TelemetryConfig(
         syslog = syslog != null ? syslog : Optional.empty();
         gelf = gelf != null ? gelf : Optional.empty();
         loki = loki != null ? loki : Optional.empty();
+        otlp = otlp != null ? otlp : Optional.empty();
     }
 
     public static TelemetryConfig defaults() {
         return new TelemetryConfig(
-                true, false, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+                true,
+                false,
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty());
     }
 
     public SinkConfig toSinkConfig() {
@@ -50,15 +59,16 @@ public record TelemetryConfig(
                 && jsonlDir.isEmpty()
                 && syslog.isEmpty()
                 && gelf.isEmpty()
-                && loki.isEmpty();
+                && loki.isEmpty()
+                && otlp.isEmpty();
     }
 
     public TelemetryConfig withEventsOnly(boolean eventsOnly) {
-        return new TelemetryConfig(eventsOnly, logAggregates, sqlitePath, jsonlDir, syslog, gelf, loki);
+        return new TelemetryConfig(eventsOnly, logAggregates, sqlitePath, jsonlDir, syslog, gelf, loki, otlp);
     }
 
     public TelemetryConfig withLogAggregates(boolean logAggregates) {
-        return new TelemetryConfig(eventsOnly, logAggregates, sqlitePath, jsonlDir, syslog, gelf, loki);
+        return new TelemetryConfig(eventsOnly, logAggregates, sqlitePath, jsonlDir, syslog, gelf, loki, otlp);
     }
 
     /**
@@ -121,6 +131,10 @@ public record TelemetryConfig(
                 .append(g.transport().name().toLowerCase(Locale.ROOT)));
         loki.ifPresent(l ->
                 sb.append(", loki=").append(redactUrl(l.url())).append(" site=").append(l.site()));
+        otlp.ifPresent(o -> sb.append(", otlp=")
+                .append(redactUrl(o.endpoint()))
+                .append(" service=")
+                .append(o.serviceName()));
         sb.append('}');
         return sb.toString();
     }
@@ -158,6 +172,14 @@ public record TelemetryConfig(
         public LokiSinkConfig {
             url = requireNonBlank(url, "telemetry.loki.url");
             site = requireNonBlank(site, "telemetry.loki.site");
+        }
+    }
+
+    /** OTLP/HTTP endpoint from YAML {@code telemetry.otlp} (P16-080). */
+    public record OtlpSinkConfig(String endpoint, String serviceName) {
+        public OtlpSinkConfig {
+            endpoint = requireNonBlank(endpoint, "telemetry.otlp.endpoint");
+            serviceName = serviceName == null || serviceName.isBlank() ? "pingui" : serviceName.strip();
         }
     }
 

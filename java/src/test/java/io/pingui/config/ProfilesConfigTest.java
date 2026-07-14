@@ -77,6 +77,9 @@ class ProfilesConfigTest {
                       loki:
                         url: http://127.0.0.1:3100
                         site: lab
+                      otlp:
+                        endpoint: http://127.0.0.1:4318
+                        service_name: pingui-noc
                 """);
         TelemetryConfig telemetry = ProfilesConfig.load(path).active().telemetry();
         assertTrue(telemetry.eventsOnly());
@@ -90,6 +93,8 @@ class ProfilesConfigTest {
                 io.pingui.telemetry.GelfSink.Transport.UDP,
                 telemetry.gelf().orElseThrow().transport());
         assertEquals("lab", telemetry.loki().orElseThrow().site());
+        assertEquals("http://127.0.0.1:4318", telemetry.otlp().orElseThrow().endpoint());
+        assertEquals("pingui-noc", telemetry.otlp().orElseThrow().serviceName());
         assertTrue(telemetry.toSinkConfig().eventsOnly());
     }
 
@@ -104,7 +109,8 @@ class ProfilesConfigTest {
                 Optional.of(new TelemetryConfig.SyslogSinkConfig("syslog.example", 514, false)),
                 Optional.of(new TelemetryConfig.GelfSinkConfig(
                         "gelf.example", 12201, io.pingui.telemetry.GelfSink.Transport.TCP)),
-                Optional.of(new TelemetryConfig.LokiSinkConfig("http://loki.example:3100", "noc")));
+                Optional.of(new TelemetryConfig.LokiSinkConfig("http://loki.example:3100", "noc")),
+                Optional.of(new TelemetryConfig.OtlpSinkConfig("http://collector:4318", "pingui")));
         TracingProfile profile = TracingProfile.defaults(List.of(HostEntry.basic("8.8.8.8", false)))
                 .withTelemetry(telemetry);
         ProfilesConfig.save(path, ProfileDocument.singleDefault(profile));
@@ -114,6 +120,7 @@ class ProfilesConfigTest {
         assertEquals(Path.of("data/t.db"), reloaded.sqlitePath().orElseThrow());
         assertEquals("syslog.example", reloaded.syslog().orElseThrow().host());
         assertEquals("http://loki.example:3100", reloaded.loki().orElseThrow().url());
+        assertEquals("http://collector:4318", reloaded.otlp().orElseThrow().endpoint());
     }
 
     @Test

@@ -42,13 +42,17 @@ class TelemetryConfigRedactionTest {
                 Optional.of(new TelemetryConfig.SyslogSinkConfig("syslog.example", 514, true)),
                 Optional.of(new TelemetryConfig.GelfSinkConfig("gelf.example", 12201, GelfSink.Transport.UDP)),
                 Optional.of(new TelemetryConfig.LokiSinkConfig(
-                        "https://token:secret@loki.example:3100/loki/api/v1/push?orgId=1", "noc")));
+                        "https://token:secret@loki.example:3100/loki/api/v1/push?orgId=1", "noc")),
+                Optional.of(new TelemetryConfig.OtlpSinkConfig(
+                        "https://token:secret@otel.example:4318?api_key=1", "pingui")));
         String debug = cfg.toRedactedString();
         assertTrue(debug.contains("syslog=syslog.example:514(tls)"));
         assertTrue(debug.contains("gelf=gelf.example:12201/udp"));
         assertTrue(debug.contains("loki=https://loki.example:3100/loki/api/v1/push"));
         assertTrue(debug.contains("site=noc"));
+        assertTrue(debug.contains("otlp=https://otel.example:4318"));
         assertFalse(debug.contains("token:secret"));
         assertFalse(debug.contains("orgId=1"));
+        assertFalse(debug.contains("api_key"));
     }
 }

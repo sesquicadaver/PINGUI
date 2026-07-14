@@ -6,6 +6,7 @@ import io.pingui.persistence.SqliteTelemetrySink;
 import io.pingui.telemetry.GelfSink;
 import io.pingui.telemetry.JsonlRotateSink;
 import io.pingui.telemetry.LokiPushSink;
+import io.pingui.telemetry.OtlpHttpTelemetrySink;
 import io.pingui.telemetry.SinkConfig;
 import io.pingui.telemetry.SinkRegistry;
 import io.pingui.telemetry.SyslogSink;
@@ -85,6 +86,15 @@ public final class TelemetrySinkInstaller {
             registry.register(new LokiPushSink(loki.url(), loki.site(), remotePolicy));
             registered.add(LokiPushSink.ID);
             LOG.info("Telemetry loki sink enabled ({} site={})", TelemetryConfig.redactUrl(loki.url()), loki.site());
+        });
+
+        config.otlp().ifPresent(otlp -> {
+            registry.register(new OtlpHttpTelemetrySink(otlp.endpoint(), otlp.serviceName(), remotePolicy));
+            registered.add(OtlpHttpTelemetrySink.ID);
+            LOG.info(
+                    "Telemetry otlp sink enabled ({} service={})",
+                    TelemetryConfig.redactUrl(otlp.endpoint()),
+                    otlp.serviceName());
         });
 
         return new Result(List.copyOf(owned), List.copyOf(registered));

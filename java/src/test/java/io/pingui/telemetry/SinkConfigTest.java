@@ -28,13 +28,14 @@ class SinkConfigTest {
     }
 
     @Test
-    void remoteLogIdsCoverSyslogGelfLoki() {
+    void remoteLogIdsCoverSyslogGelfLokiOtlp() {
         assertTrue(SinkConfig.isRemoteLogSink(SyslogSink.ID));
         assertTrue(SinkConfig.isRemoteLogSink(GelfSink.ID));
         assertTrue(SinkConfig.isRemoteLogSink(LokiPushSink.ID));
+        assertTrue(SinkConfig.isRemoteLogSink(OtlpHttpTelemetrySink.ID));
         assertFalse(SinkConfig.isRemoteLogSink("jsonl"));
         assertFalse(SinkConfig.isRemoteLogSink(null));
-        assertEquals(3, SinkConfig.REMOTE_LOG_IDS.size());
+        assertEquals(4, SinkConfig.REMOTE_LOG_IDS.size());
     }
 
     @Test

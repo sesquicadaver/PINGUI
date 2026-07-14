@@ -74,6 +74,7 @@ flowchart LR
 | `SyslogSink` | remote events | **off** | P16-030 ✅ RFC 5424 TCP; TLS optional; framing trailing NL; MSG = single-line JSON; `events_only` via `SinkConfig` (P16-033 ✅ default true) |
 | `GelfSink` | remote events | **off** | P16-031 ✅ GELF 1.1; TCP `\0` framing / UDP lab; `events_only` via `SinkConfig` (P16-033 ✅) |
 | `LokiPushSink` | remote | **off** | P16-032 ✅ HTTP `/loki/api/v1/push`; labels `job`/`site`/`host`; `events_only` via `SinkConfig` (P16-033 ✅) |
+| `OtlpHttpTelemetrySink` | remote logs+metrics | **off** | P16-080 ✅ OTLP/HTTP JSON `/v1/logs` + `/v1/metrics` (без OTel SDK); `events_only` → лише logs |
 | `PrometheusTelemetrySink` | in-process scrape state | via `--metrics-port` | P16-051 ✅ — обгортка `PrometheusExporter` з bus; не remote_write |
 | `InfluxTelemetrySink` | remote samples | via TS config | P16-052 ✅ — обгортка B-05 Influx/Timescale з bus |
 | Webhook as sink | remote events | via alerts config | P16-050 ✅ — один код emit (`WebhookTelemetrySink`), не другий HTTP клієнт |
@@ -87,7 +88,7 @@ flowchart LR
 | **P15 TS push** | P16-052 ✅: `InfluxTelemetrySink` з bus (Python daemon/GUI); SessionStore dual-emit для TS знято. |
 | **P11 session DB** | GUI history / policy events. **Не** Grafana datasource і не заміна telemetry archive. |
 | **REST API** | Read snapshot; не telemetry bus. |
-| **OTLP** | Out of scope v1 (P16-080). |
+| **OTLP** | P16-080 ✅: `OtlpHttpTelemetrySink` (HTTP JSON, default off). |
 
 ### 5. Імена метрик (узгодження з P15)
 

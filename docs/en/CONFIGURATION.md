@@ -119,7 +119,7 @@ profiles:
 
 Alerts are disabled by default (`NoOp` dispatcher).
 
-### Telemetry (P16-040…052)
+### Telemetry (P16-040…052, P16-080)
 
 Profile-level `telemetry:` (Java v2) or top-level (Python `load_telemetry_config`). Priority: **CLI > YAML > defaults**. Default: all sinks **off**; `events_only: true`; `log_aggregates: false`. ADR: [ADR_TELEMETRY.md](ADR_TELEMETRY.md). Example: `java/config/hosts.example.yaml`. Windows preset: `config/hosts.windows.example.yaml` (P16-043: `events_only`, no `jsonl_dir`).
 
@@ -144,13 +144,16 @@ profiles:
       loki:
         url: http://127.0.0.1:3100
         site: default
+      otlp:                         # P16-080 OTLP/HTTP JSON (Collector :4318)
+        endpoint: http://127.0.0.1:4318
+        service_name: pingui
 ```
 
 #### YAML `telemetry:` — fields
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `events_only` | bool | `true` | Remote LOG sinks (syslog/GELF/Loki) accept events only; no high-freq RTT samples |
+| `events_only` | bool | `true` | Remote LOG sinks (syslog/GELF/Loki/OTLP logs) accept events only; no high-freq RTT samples |
 | `log_aggregates` | bool | `false` | Optional 5m avg/max RTT as `rtt_aggregate` events (P16-034) |
 | `sqlite` | Path | — (off) | Local `SqliteTelemetrySink` (schema v4) |
 | `jsonl_dir` | Path | — (off) | `JsonlRotateSink` directory (`telemetry.jsonl.yyyy-MM-dd`) |
@@ -162,8 +165,10 @@ profiles:
 | `gelf.transport` | `tcp` \| `udp` | `tcp` | TCP `\0` framing (prod) / UDP (lab) |
 | `loki.url` | URL | — | Base or full `/loki/api/v1/push` |
 | `loki.site` | str | — | Label `site` (with `job=pingui`, `host`) |
+| `otlp.endpoint` | URL | — | OTLP/HTTP base (appends `/v1/logs`, `/v1/metrics`) |
+| `otlp.service_name` | str | `pingui` | Resource attribute `service.name` |
 
-Presence of a sink block (`sqlite` / `jsonl_dir` / `syslog` / `gelf` / `loki`) **enables** that sink in the config model. Secrets in URLs/tokens are **not** logged in plaintext (P16-042: `TelemetryConfig.redactUrl` / `redactSecret`).
+Presence of a sink block (`sqlite` / `jsonl_dir` / `syslog` / `gelf` / `loki` / `otlp`) **enables** that sink in the config model. Secrets in URLs/tokens are **not** logged in plaintext (P16-042: `TelemetryConfig.redactUrl` / `redactSecret`). OTLP: events → logs; samples → metrics only when `events_only: false` (Java `OtlpHttpTelemetrySink`).
 
 #### Telemetry CLI (Java + Python)
 
@@ -171,6 +176,7 @@ Presence of a sink block (`sqlite` / `jsonl_dir` / `syslog` / `gelf` / `loki`) *
 |--------|------|---------|-------------|
 | `--telemetry-syslog` | `HOST:PORT` or `[IPv6]:PORT` | — | Override `telemetry.syslog` (tls=false) |
 | `--telemetry-jsonl` | Path | — | Override `telemetry.jsonl_dir` (not retention) |
+| `--telemetry-otlp` | URL | — | Override `telemetry.otlp.endpoint` (service_name=`pingui`) |
 
 #### One-shot / scrape CLI (mostly Java)
 

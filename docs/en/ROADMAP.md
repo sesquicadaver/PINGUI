@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P16-080** |
+| **Current task** | **DONE** |
 | **Phase** | 16 — Telemetry |
-| **DoD (short)** | OTLP export (P2) |
+| **DoD (short)** | Queue complete (no next ID) |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -85,7 +85,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 40 | **P16-070** | [x] | LIVING_SPEC telemetry matrix |
 | 41 | **P16-071** | [x] | CHECKLIST telemetry smoke |
 | 42 | **P16-072** | [x] | Contract tests syslog/gelf |
-| 43 | **P16-080** | [ ] | OTLP export (P2) |
+| 43 | **P16-080** | [x] | OTLP export (P2) |
 
 **End of queue:** set NEXT → `DONE` (no open IDs).
 
@@ -631,11 +631,11 @@ flowchart TD
 | **P16-071** | [x] CHECKLIST § telemetry smoke | `docs/CHECKLIST.md` | local sqlite + syslog event |
 | **P16-072** | [x] Contract tests: mock syslog/gelf + shared field fixture | `SyslogGelfContractTest`, `TelemetryLogFieldFixture` | CI green |
 
-**Estimate:** 2–3 sprints. **Out of scope v1:** OpenTelemetry OTLP export (P2 ticket P16-080).
+**Estimate:** 2–3 sprints. Optional P2 OTLP landed as **P16-080**.
 
 | ID | Task | Priority |
 |----|------|----------|
-| **P16-080** | [ ] OTLP logs/metrics export | P2 |
+| **P16-080** | [x] OTLP logs/metrics export | P2 |
 
 ---
 

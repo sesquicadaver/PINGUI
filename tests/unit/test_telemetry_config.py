@@ -48,6 +48,9 @@ profiles:
       loki:
         url: http://127.0.0.1:3100
         site: lab
+      otlp:
+        endpoint: http://127.0.0.1:4318
+        service_name: pingui-noc
 """,
         encoding="utf-8",
     )
@@ -59,6 +62,8 @@ profiles:
     assert cfg.syslog is not None and cfg.syslog.port == 1514 and cfg.syslog.tls is True
     assert cfg.gelf is not None and cfg.gelf.transport == "udp"
     assert cfg.loki is not None and cfg.loki.site == "lab"
+    assert cfg.otlp is not None and cfg.otlp.endpoint == "http://127.0.0.1:4318"
+    assert cfg.otlp.service_name == "pingui-noc"
 
 
 def test_top_level_telemetry_legacy(tmp_path: Path) -> None:
@@ -93,6 +98,13 @@ telemetry:
     )
     with pytest.raises(ConfigError, match="transport"):
         load_telemetry_config(path)
+
+
+def test_apply_cli_overrides_otlp() -> None:
+    cfg = apply_cli_overrides(TelemetryConfig.defaults(), otlp="http://127.0.0.1:4318")
+    assert cfg.otlp is not None
+    assert cfg.otlp.endpoint == "http://127.0.0.1:4318"
+    assert cfg.otlp.service_name == "pingui"
 
 
 def test_apply_cli_overrides_syslog_and_jsonl() -> None:

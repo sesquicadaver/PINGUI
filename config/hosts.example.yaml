@@ -27,3 +27,6 @@ hosts:
 #   loki:
 #     url: http://127.0.0.1:3100
 #     site: default
+#   otlp:                          # P16-080 OTLP/HTTP JSON
+#     endpoint: http://127.0.0.1:4318
+#     service_name: pingui

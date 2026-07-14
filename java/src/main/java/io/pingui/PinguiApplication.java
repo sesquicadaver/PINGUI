@@ -237,7 +237,11 @@ public final class PinguiApplication extends Application {
             }
             jsonlDir = Optional.of(Path.of(value.strip()));
         }
-        return new CliTelemetryOverrides(syslog, jsonlDir);
+        Optional<io.pingui.config.TelemetryConfig.OtlpSinkConfig> otlp = Optional.empty();
+        if (params.containsKey("telemetry-otlp")) {
+            otlp = Optional.of(CliTelemetryOverrides.parseOtlpEndpoint(params.get("telemetry-otlp")));
+        }
+        return new CliTelemetryOverrides(syslog, jsonlDir, otlp);
     }
 
     private static CliTimeSeriesOverrides parseTimeSeriesOverrides(Map<String, String> params) {
@@ -580,6 +584,7 @@ public final class PinguiApplication extends Application {
                   --session-db PATH  SQLite session metrics + events (optional)
                   --telemetry-syslog HOST:PORT  Override telemetry syslog sink (profile)
                   --telemetry-jsonl DIR         Override telemetry JSONL directory (profile)
+                  --telemetry-otlp URL          Override telemetry OTLP/HTTP endpoint (profile)
                   --telemetry-retention N  Purge telemetry older than N days and exit (cron)
                   --telemetry-jsonl-dir DIR  Optional JSONL dir for --telemetry-retention
                   --telemetry-dump PATH     Dump SQLite telemetry to .csv/.json and exit

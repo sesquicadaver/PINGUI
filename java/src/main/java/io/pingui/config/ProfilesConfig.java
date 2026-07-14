@@ -138,7 +138,8 @@ public final class ProfilesConfig {
                 parseSyslog(telemetryMap.get("syslog"), profileName);
         java.util.Optional<TelemetryConfig.GelfSinkConfig> gelf = parseGelf(telemetryMap.get("gelf"), profileName);
         java.util.Optional<TelemetryConfig.LokiSinkConfig> loki = parseLoki(telemetryMap.get("loki"), profileName);
-        return new TelemetryConfig(eventsOnly, logAggregates, sqlite, jsonlDir, syslog, gelf, loki);
+        java.util.Optional<TelemetryConfig.OtlpSinkConfig> otlp = parseOtlp(telemetryMap.get("otlp"), profileName);
+        return new TelemetryConfig(eventsOnly, logAggregates, sqlite, jsonlDir, syslog, gelf, loki, otlp);
     }
 
     private static java.util.Optional<java.nio.file.Path> optionalPath(Object value, String profileName, String label) {
@@ -197,6 +198,22 @@ public final class ProfilesConfig {
             site = siteStr.strip();
         }
         return java.util.Optional.of(new TelemetryConfig.LokiSinkConfig(url, site));
+    }
+
+    private static java.util.Optional<TelemetryConfig.OtlpSinkConfig> parseOtlp(Object value, String profileName) {
+        if (value == null) {
+            return java.util.Optional.empty();
+        }
+        if (!(value instanceof Map<?, ?> sinkMap)) {
+            throw new ConfigError("Profile '" + profileName + "' telemetry.otlp must be a mapping");
+        }
+        String endpoint = requireStringField(sinkMap.get("endpoint"), profileName, "telemetry.otlp.endpoint");
+        String serviceName = "pingui";
+        Object serviceObj = sinkMap.get("service_name");
+        if (serviceObj instanceof String serviceStr && !serviceStr.isBlank()) {
+            serviceName = serviceStr.strip();
+        }
+        return java.util.Optional.of(new TelemetryConfig.OtlpSinkConfig(endpoint, serviceName));
     }
 
     private static String requireStringField(Object value, String profileName, String label) {
@@ -414,6 +431,14 @@ public final class ProfilesConfig {
             sink.put("url", loki.url());
             sink.put("site", loki.site());
             out.put("loki", sink);
+        });
+        telemetry.otlp().ifPresent(otlp -> {
+            Map<String, Object> sink = new LinkedHashMap<>();
+            sink.put("endpoint", otlp.endpoint());
+            if (!"pingui".equals(otlp.serviceName())) {
+                sink.put("service_name", otlp.serviceName());
+            }
+            out.put("otlp", sink);
         });
         return out;
     }

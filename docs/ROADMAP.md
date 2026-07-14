@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P16-080** |
+| **Поточна задача** | **DONE** |
 | **Фаза** | 16 — Телеметрія |
-| **DoD (коротко)** | OTLP export (P2) |
+| **DoD (коротко)** | Черга виконана (наступний ID відсутній) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -85,7 +85,7 @@
 | 40 | **P16-070** | [x] | LIVING_SPEC telemetry matrix |
 | 41 | **P16-071** | [x] | CHECKLIST telemetry smoke |
 | 42 | **P16-072** | [x] | Contract tests syslog/gelf |
-| 43 | **P16-080** | [ ] | OTLP export (P2) |
+| 43 | **P16-080** | [x] | OTLP export (P2) |
 
 **Закінчення черги:** оновити NEXT → `DONE` (немає відкритих ID).
 
@@ -631,11 +631,11 @@ flowchart TD
 | **P16-071** | [x] CHECKLIST § telemetry smoke | `docs/CHECKLIST.md` | local sqlite + syslog event |
 | **P16-072** | [x] Contract tests: mock syslog/gelf + shared field fixture | `SyslogGelfContractTest`, `TelemetryLogFieldFixture` | CI green |
 
-**Орієнтовно:** 2–3 sprint. **Поза scope v1:** OpenTelemetry OTLP export (P2 ticket P16-080).
+**Орієнтовно:** 2–3 sprint. Optional P2 OTLP закрито як **P16-080**.
 
 | ID | Задача | Пріоритет |
 |----|--------|-----------|
-| **P16-080** | [ ] OTLP logs/metrics export | P2 |
+| **P16-080** | [x] OTLP logs/metrics export | P2 |
 
 ---
 

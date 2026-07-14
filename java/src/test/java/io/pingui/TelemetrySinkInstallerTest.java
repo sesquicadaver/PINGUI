@@ -10,6 +10,7 @@ import io.pingui.persistence.SqliteTelemetrySink;
 import io.pingui.telemetry.GelfSink;
 import io.pingui.telemetry.JsonlRotateSink;
 import io.pingui.telemetry.LokiPushSink;
+import io.pingui.telemetry.OtlpHttpTelemetrySink;
 import io.pingui.telemetry.SinkRegistry;
 import io.pingui.telemetry.SyslogSink;
 import io.pingui.telemetry.TelemetryEvent;
@@ -36,7 +37,8 @@ class TelemetrySinkInstallerTest {
                 Optional.of(jsonl),
                 Optional.of(new TelemetryConfig.SyslogSinkConfig("127.0.0.1", 1514, false)),
                 Optional.of(new TelemetryConfig.GelfSinkConfig("127.0.0.1", 12201, GelfSink.Transport.TCP)),
-                Optional.of(new TelemetryConfig.LokiSinkConfig("http://127.0.0.1:3100", "lab")));
+                Optional.of(new TelemetryConfig.LokiSinkConfig("http://127.0.0.1:3100", "lab")),
+                Optional.of(new TelemetryConfig.OtlpSinkConfig("http://127.0.0.1:4318", "pingui")));
         try (SinkRegistry registry = new SinkRegistry()) {
             TelemetrySinkInstaller.Result result = TelemetrySinkInstaller.install(registry, config, Optional.empty());
             assertTrue(registry.contains(SqliteTelemetrySink.ID));
@@ -44,7 +46,8 @@ class TelemetrySinkInstallerTest {
             assertTrue(registry.contains(SyslogSink.ID));
             assertTrue(registry.contains(GelfSink.ID));
             assertTrue(registry.contains(LokiPushSink.ID));
-            assertEquals(5, result.registeredIds().size());
+            assertTrue(registry.contains(OtlpHttpTelemetrySink.ID));
+            assertEquals(6, result.registeredIds().size());
             assertEquals(1, result.ownedResources().size());
             result.closeOwned();
         }
@@ -59,6 +62,7 @@ class TelemetrySinkInstallerTest {
                     true,
                     false,
                     Optional.of(dbPath),
+                    Optional.empty(),
                     Optional.empty(),
                     Optional.empty(),
                     Optional.empty(),

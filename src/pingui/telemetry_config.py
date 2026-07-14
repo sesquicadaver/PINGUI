@@ -37,6 +37,12 @@ class LokiSinkConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class OtlpSinkConfig:
+    endpoint: str
+    service_name: str = "pingui"
+
+
+@dataclass(frozen=True, slots=True)
 class TelemetryConfig:
     """Optional local + remote LOG sinks from YAML ``telemetry:``."""
 
@@ -47,6 +53,7 @@ class TelemetryConfig:
     syslog: SyslogSinkConfig | None = None
     gelf: GelfSinkConfig | None = None
     loki: LokiSinkConfig | None = None
+    otlp: OtlpSinkConfig | None = None
 
     @classmethod
     def defaults(cls) -> TelemetryConfig:
@@ -61,6 +68,7 @@ class TelemetryConfig:
             and self.syslog is None
             and self.gelf is None
             and self.loki is None
+            and self.otlp is None
         )
 
     def redacted_summary(self) -> str:
@@ -80,6 +88,10 @@ class TelemetryConfig:
             parts.append(f"gelf={self.gelf.host}:{self.gelf.port}/{self.gelf.transport}")
         if self.loki is not None:
             parts.append(f"loki={redact_url(self.loki.url)} site={self.loki.site}")
+        if self.otlp is not None:
+            parts.append(
+                f"otlp={redact_url(self.otlp.endpoint)} service={self.otlp.service_name}"
+            )
         return "TelemetryConfig{" + ", ".join(parts) + "}"
 
 
@@ -116,8 +128,9 @@ def apply_cli_overrides(
     *,
     syslog: str | None = None,
     jsonl_dir: Path | str | None = None,
+    otlp: str | None = None,
 ) -> TelemetryConfig:
-    """Apply CLI ``--telemetry-syslog`` / ``--telemetry-jsonl`` over YAML config."""
+    """Apply CLI ``--telemetry-syslog`` / ``--telemetry-jsonl`` / ``--telemetry-otlp``."""
     next_syslog = config.syslog
     if syslog is not None:
         next_syslog = parse_syslog_host_port(syslog)
@@ -128,6 +141,12 @@ def apply_cli_overrides(
             msg = "--telemetry-jsonl must be a non-empty path"
             raise ConfigError(msg)
         next_jsonl = path
+    next_otlp = config.otlp
+    if otlp is not None:
+        if not isinstance(otlp, str) or not otlp.strip():
+            msg = "Missing value for --telemetry-otlp"
+            raise ConfigError(msg)
+        next_otlp = OtlpSinkConfig(endpoint=otlp.strip(), service_name="pingui")
     return TelemetryConfig(
         events_only=config.events_only,
         log_aggregates=config.log_aggregates,
@@ -136,6 +155,7 @@ def apply_cli_overrides(
         syslog=next_syslog,
         gelf=config.gelf,
         loki=config.loki,
+        otlp=next_otlp,
     )
 
 
@@ -212,6 +232,7 @@ def _parse_telemetry(block: dict[str, Any]) -> TelemetryConfig:
     syslog = _parse_syslog(block.get("syslog"))
     gelf = _parse_gelf(block.get("gelf"))
     loki = _parse_loki(block.get("loki"))
+    otlp = _parse_otlp(block.get("otlp"))
     return TelemetryConfig(
         events_only=events_only,
         log_aggregates=log_aggregates,
@@ -220,6 +241,7 @@ def _parse_telemetry(block: dict[str, Any]) -> TelemetryConfig:
         syslog=syslog,
         gelf=gelf,
         loki=loki,
+        otlp=otlp,
     )
 
 
@@ -278,6 +300,23 @@ def _parse_loki(raw: Any) -> LokiSinkConfig | None:
             raise ConfigError(msg)
         site = site_raw.strip()
     return LokiSinkConfig(url=url, site=site)
+
+
+def _parse_otlp(raw: Any) -> OtlpSinkConfig | None:
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        msg = "telemetry.otlp must be a mapping"
+        raise ConfigError(msg)
+    endpoint = _require_str(raw.get("endpoint"), "telemetry.otlp.endpoint")
+    service_name = "pingui"
+    service_raw = raw.get("service_name")
+    if service_raw is not None:
+        if not isinstance(service_raw, str) or not service_raw.strip():
+            msg = "telemetry.otlp.service_name must be a non-empty string"
+            raise ConfigError(msg)
+        service_name = service_raw.strip()
+    return OtlpSinkConfig(endpoint=endpoint, service_name=service_name)
 
 
 def _require_str(raw: Any, label: str) -> str:

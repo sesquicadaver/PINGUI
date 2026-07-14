@@ -12,7 +12,8 @@ import java.util.Set;
  */
 public record SinkConfig(boolean eventsOnly) {
     /** Registry ids for remote LOG sinks that must share {@link #eventsOnly()}. */
-    public static final Set<String> REMOTE_LOG_IDS = Set.of(SyslogSink.ID, GelfSink.ID, LokiPushSink.ID);
+    public static final Set<String> REMOTE_LOG_IDS =
+            Set.of(SyslogSink.ID, GelfSink.ID, LokiPushSink.ID, OtlpHttpTelemetrySink.ID);
 
     /** Production-safe default: events only (no high-freq samples on LOG). */
     public static SinkConfig defaults() {
