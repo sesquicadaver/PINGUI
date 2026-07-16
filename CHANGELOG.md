@@ -9,6 +9,7 @@
 
 ### Changed
 
+- **P19-005 — HostRegistry slice:** host list / enabled / probe mode / poll bookmarks винесено з `MonitorService` у `HostRegistry`; поведінка без змін; ROADMAP NEXT → **P19-006**.
 - **P19-004 — legacy pingOnly removal:** `MonitorService` більше не тримає dual `Map pingOnly` / `PingOnlyResolver`; лише `probeModes` + `HostProbeModeResolver`; UI перемикає через `setProbeMode`/`setHostProbeMode`; ROADMAP NEXT → **P19-005**.
 - **P19-003 — trace parser/builder coverage:** прямі unit-тести `UnixTraceOutputParser`, `WindowsTraceOutputParser`, `TraceCommandBuildersTest` (fixture output); класи прибрано з JaCoCo excludes; ROADMAP NEXT → **P19-004**.
 - **P19-002 — Windows CI blocking:** прибрано `continue-on-error` на `check-windows`; обидва job (`ubuntu` + `windows`) блокують merge; ROADMAP NEXT → **P19-003**.

@@ -40,7 +40,7 @@ Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#e
 | **16** | Telemetry + LOG-server | ✅ (GUI P16-090…094) |
 | **17** | Expert ping / MTU discovery | ✅ |
 | **18** | Probe mode stability | ✅ |
-| **19** | Production hardening (version, CI, coverage, probe-mode debt) | 🔄 **P19-005** |
+| **19** | Production hardening (version, CI, coverage, probe-mode debt) | 🔄 **P19-006** |
 
 ---
 

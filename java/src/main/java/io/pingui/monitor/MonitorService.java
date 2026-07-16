@@ -16,12 +16,9 @@ import io.pingui.telemetry.MetricSample;
 import io.pingui.telemetry.TelemetryBus;
 import io.pingui.telemetry.TelemetryEvent;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalDouble;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -67,13 +64,7 @@ public final class MonitorService implements AutoCloseable {
     private final ScheduledExecutorService scheduler;
     private final ExecutorService probePool;
     private final AtomicBoolean running = new AtomicBoolean(true);
-    private final Object lock = new Object();
-    private final List<String> hosts = new ArrayList<>();
-    private final Map<String, Boolean> enabled = new HashMap<>();
-    private final Map<String, HostProbeMode> probeModes = new HashMap<>();
-    private final Map<String, List<String>> lastRoutes = new HashMap<>();
-    private final Map<String, Instant> lastPollAt = new HashMap<>();
-    private final Map<String, AtomicBoolean> pollsInFlight = new ConcurrentHashMap<>();
+    private final HostRegistry registry = new HostRegistry();
     private final double profileIntervalSeconds;
     private final int maxHops;
     private final double timeoutSeconds;
@@ -205,23 +196,15 @@ public final class MonitorService implements AutoCloseable {
     }
 
     public List<String> hosts() {
-        synchronized (lock) {
-            return List.copyOf(hosts);
-        }
+        return registry.hosts();
     }
 
     public List<String> enabledHosts() {
-        synchronized (lock) {
-            return hosts.stream()
-                    .filter(h -> Boolean.TRUE.equals(enabled.get(h)))
-                    .toList();
-        }
+        return registry.enabledHosts();
     }
 
     public boolean canAddHost() {
-        synchronized (lock) {
-            return hosts.size() < io.pingui.config.HostsConfig.MAX_HOSTS;
-        }
+        return registry.canAdd();
     }
 
     public void addHost(String host, boolean hostEnabled) {
@@ -233,79 +216,25 @@ public final class MonitorService implements AutoCloseable {
     }
 
     public void addHost(String host, boolean hostEnabled, HostProbeMode probeMode) {
-        synchronized (lock) {
-            if (hosts.contains(host)) {
-                throw new io.pingui.config.ConfigError("Host already in list: " + host);
-            }
-            hosts.add(host);
-            enabled.put(host, hostEnabled);
-            probeModes.put(host, probeMode != null ? probeMode : HostProbeMode.TRACE);
-            lastRoutes.put(host, List.of());
-            lastPollAt.remove(host);
-        }
+        registry.add(host, hostEnabled, probeMode);
     }
 
     public void removeHost(String host) {
-        synchronized (lock) {
-            if (!hosts.remove(host)) {
-                throw new io.pingui.config.ConfigError("Unknown host: " + host);
-            }
-            enabled.remove(host);
-            probeModes.remove(host);
-            lastRoutes.remove(host);
-            lastPollAt.remove(host);
-        }
+        registry.remove(host);
         burstPolicy.clearHost(host);
-        pollsInFlight.remove(host);
     }
 
     public void renameHost(String oldHost, String newHost) {
-        synchronized (lock) {
-            int index = hosts.indexOf(oldHost);
-            if (index < 0) {
-                throw new io.pingui.config.ConfigError("Unknown host: " + oldHost);
-            }
-            hosts.set(index, newHost);
-            Boolean wasEnabled = enabled.remove(oldHost);
-            if (wasEnabled != null) {
-                enabled.put(newHost, wasEnabled);
-            }
-            HostProbeMode wasMode = probeModes.remove(oldHost);
-            if (wasMode != null) {
-                probeModes.put(newHost, wasMode);
-            }
-            lastRoutes.put(newHost, lastRoutes.remove(oldHost));
-            Instant wasLastPoll = lastPollAt.remove(oldHost);
-            if (wasLastPoll != null) {
-                lastPollAt.put(newHost, wasLastPoll);
-            }
-            AtomicBoolean inFlight = pollsInFlight.remove(oldHost);
-            if (inFlight != null) {
-                pollsInFlight.put(newHost, inFlight);
-            }
-        }
+        registry.rename(oldHost, newHost);
         burstPolicy.renameHost(oldHost, newHost);
     }
 
     public void setHostEnabled(String host, boolean hostEnabled) {
-        synchronized (lock) {
-            if (!hosts.contains(host)) {
-                throw new io.pingui.config.ConfigError("Unknown host: " + host);
-            }
-            enabled.put(host, hostEnabled);
-        }
+        registry.setEnabled(host, hostEnabled);
     }
 
     public void setHostProbeMode(String host, HostProbeMode probeMode) {
-        synchronized (lock) {
-            if (!hosts.contains(host)) {
-                throw new io.pingui.config.ConfigError("Unknown host: " + host);
-            }
-            HostProbeMode mode = probeMode != null ? probeMode : HostProbeMode.TRACE;
-            probeModes.put(host, mode);
-            lastRoutes.put(host, List.of());
-            lastPollAt.remove(host);
-        }
+        registry.setProbeMode(host, probeMode);
         burstPolicy.clearHost(host);
         poller.resetMtrHost(host);
     }
@@ -314,12 +243,7 @@ public final class MonitorService implements AutoCloseable {
         if (!running.get()) {
             return;
         }
-        List<String> active;
-        synchronized (lock) {
-            active = hosts.stream()
-                    .filter(h -> Boolean.TRUE.equals(enabled.get(h)))
-                    .toList();
-        }
+        List<String> active = registry.enabledHosts();
         if (active.isEmpty()) {
             persistencePolicy.applyPendingAfterCycle();
             return;
@@ -331,10 +255,7 @@ public final class MonitorService implements AutoCloseable {
             }
             HostProbeMode mode = resolveProbeMode(host);
             double intervalSeconds = resolveIntervalSeconds(host, mode);
-            Instant lastPoll;
-            synchronized (lock) {
-                lastPoll = lastPollAt.get(host);
-            }
+            Instant lastPoll = registry.lastPollAt(host);
             if (!HostPollSchedule.isDue(lastPoll, now, intervalSeconds)) {
                 continue;
             }
@@ -364,7 +285,7 @@ public final class MonitorService implements AutoCloseable {
         if (!running.get()) {
             return;
         }
-        AtomicBoolean inFlight = pollsInFlight.computeIfAbsent(host, ignored -> new AtomicBoolean(false));
+        AtomicBoolean inFlight = registry.inFlightFlag(host);
         if (!inFlight.compareAndSet(false, true)) {
             return;
         }
@@ -379,18 +300,13 @@ public final class MonitorService implements AutoCloseable {
         if (!running.get()) {
             return;
         }
-        List<String> previousIps;
-        HostProbeMode probeMode;
-        HostProbeMode mappedAtStart;
-        synchronized (lock) {
-            if (!hosts.contains(host)) {
-                return;
-            }
-            previousIps = List.copyOf(lastRoutes.getOrDefault(host, List.of()));
-            probeMode = resolveProbeMode(host);
-            mappedAtStart = probeModes.getOrDefault(host, profileProbeMode);
-            lastPollAt.put(host, Instant.now());
+        HostRegistry.PollStart start = registry.beginPoll(host, profileProbeMode, Instant.now());
+        if (start == null) {
+            return;
         }
+        List<String> previousIps = start.previousIps();
+        HostProbeMode mappedAtStart = start.mappedMode();
+        HostProbeMode probeMode = resolveProbeMode(host);
         long startedNanos = System.nanoTime();
         HostPollOutcome outcome =
                 switch (probeMode) {
@@ -400,21 +316,15 @@ public final class MonitorService implements AutoCloseable {
                 };
         double durationMs = (System.nanoTime() - startedNanos) / 1_000_000.0;
         Listener current = listener;
-        if (current == null || !isKnownHost(host)) {
+        if (current == null || !registry.contains(host)) {
             return;
         }
         // Discard if resolver or local map changed mid-flight (half-updated probe-mode toggle).
         // Compare each to its start snapshot — not to each other — so HostProbeModeResolver
         // (SessionStore) may still report the old mode while the local map already flipped.
-        synchronized (lock) {
-            if (!hosts.contains(host)) {
-                return;
-            }
-            HostProbeMode resolved = resolveProbeMode(host);
-            HostProbeMode mapped = probeModes.getOrDefault(host, profileProbeMode);
-            if (resolved != probeMode || mapped != mappedAtStart) {
-                return;
-            }
+        HostProbeMode resolved = resolveProbeMode(host);
+        if (resolved != probeMode || !registry.mappedModeUnchanged(host, mappedAtStart, profileProbeMode)) {
+            return;
         }
         if (outcome.error() != null) {
             PersistenceEventWriter events = persistenceEvents;
@@ -429,12 +339,8 @@ public final class MonitorService implements AutoCloseable {
             current.onProbeError(host, outcome.error());
             return;
         }
-        synchronized (lock) {
-            if (hosts.contains(host)) {
-                lastRoutes.put(host, outcome.currentIps());
-            }
-        }
-        if (outcome.snapshot() != null && isKnownHost(host)) {
+        registry.putLastRoute(host, outcome.currentIps());
+        if (outcome.snapshot() != null && registry.contains(host)) {
             RouteSnapshot snapshot = outcome.snapshot();
             if (probeMode != HostProbeMode.PING_ONLY) {
                 PingExpertEntry expert = resolveExpert(host);
@@ -577,12 +483,6 @@ public final class MonitorService implements AutoCloseable {
         }
     }
 
-    private boolean isKnownHost(String host) {
-        synchronized (lock) {
-            return hosts.contains(host);
-        }
-    }
-
     private PingExpertEntry resolveExpert(String host) {
         PingExpertResolver resolver = expertResolver;
         if (resolver == null) {
@@ -600,7 +500,7 @@ public final class MonitorService implements AutoCloseable {
                 return resolved;
             }
         }
-        return probeModes.getOrDefault(host, profileProbeMode);
+        return registry.mappedMode(host, profileProbeMode);
     }
 
     private double resolveIntervalSeconds(String host, HostProbeMode mode) {

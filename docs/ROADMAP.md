@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P19-005** |
+| **Поточна задача** | **P19-006** |
 | **Фаза** | 19 — Production hardening |
-| **DoD (коротко)** | `MonitorService` slice: `HostRegistry` |
+| **DoD (коротко)** | PostgreSQL driver optional scope |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -101,10 +101,10 @@
 | 55 | **P19-002** | [x] | Windows CI blocking (прибрати `continue-on-error`) |
 | 56 | **P19-003** | [x] | Trace parser/builder unit tests + JaCoCo include |
 | 57 | **P19-004** | [x] | Видалити legacy `pingOnly` / `PingOnlyResolver` |
-| 58 | **P19-005** | [ ] | `MonitorService` slice: `HostRegistry` |
+| 58 | **P19-005** | [x] | `MonitorService` slice: `HostRegistry` |
 | 59 | **P19-006** | [ ] | PostgreSQL driver optional scope |
 
-**Стан черги:** відкрита — **NEXT = P19-005** (фаза 19, post-`main` hardening після аналізу 2026-07).
+**Стан черги:** відкрита — **NEXT = P19-006** (фаза 19, post-`main` hardening після аналізу 2026-07).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -705,7 +705,7 @@ flowchart TD
 | **P19-002** | [x] Windows CI blocking | `.github/workflows/java.yml` | Прибрати `continue-on-error: true` на `check-windows`; обидва job блокують merge; green на `beta`/`main` |
 | **P19-003** | [x] Trace parser/builder coverage | `probe/*Trace*`, `probe/*Traceroute*`, `build.gradle.kts`, `src/test/java/io/pingui/probe/` | Unit-тести на `UnixTraceOutputParser`, `WindowsTraceOutputParser`, OS command builders (fixture output); прибрати ці класи з JaCoCo excludes; `./gradlew check` green |
 | **P19-004** | [x] Legacy pingOnly removal | `MonitorService`, `SessionStore`, UI callers | Лишити `HostProbeMode` + `setHostProbeMode`; видалити `Map pingOnly`, `PingOnlyResolver`, `setHostPingOnly` shim де можливо; atomic `switchProbeMode` monitor+session; тести на stale poll без dual map |
-| **P19-005** | [ ] MonitorService slice: HostRegistry | `monitor/HostRegistry.java`, `MonitorService` | Винести host list, enabled, probe mode, interval override, rename/remove; `MonitorService` делегує; поведінка без змін; unit-тести registry |
+| **P19-005** | [x] MonitorService slice: HostRegistry | `monitor/HostRegistry.java`, `MonitorService` | Винести host list, enabled, probe mode, interval override, rename/remove; `MonitorService` делегує; поведінка без змін; unit-тести registry |
 | **P19-006** | [ ] PostgreSQL driver scope (P2) | `build.gradle.kts`, persistence wiring docs | `postgresql` не в unconditional `implementation` (optional/`runtimeOnly`/feature flag); desktop install без PG не тягне driver; LIVING_SPEC/DEPLOYMENT note |
 
 ---
@@ -792,7 +792,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–18 (P10–P18)**. Лінійна черга — **NEXT=P19-005** (фаза 19).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–18 (P10–P18)**. Лінійна черга — **NEXT=P19-006** (фаза 19).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

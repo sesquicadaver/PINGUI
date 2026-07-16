@@ -78,6 +78,7 @@ Module → unit test matrix. Update when adding features.
 | Expert Self-check DF/DSCP/Burst (P17-030) | `PresetSelfCheck`, `PresetSelfCheckUi`, `PingExpertDialog` | `PresetSelfCheckTest`, `PresetSelfCheckUiTest` |
 | Ping only toggle stats (P18-010) | `SessionStore.setProbeMode`, `MonitorService.pollHostOnce`, `HostListPresenter` | `SessionStoreTest.setProbeModeClearsHopStatsAndPingHistory`, `MonitorServiceTest.discardsStaleTraceOutcomeAfterPingOnlyToggle`, `MonitorServiceTest.discardsStaleTraceWhenMonitorFlippedBeforeSessionResolver` |
 | Legacy pingOnly removal (P19-004) | `MonitorService` (`probeModes` only), `HostListPresenter` | `MonitorServiceTest.setHostProbeModeGuardsUnknownHost`, `hostProbeModeResolverOverridesMap`, stale-discard tests without `PingOnlyResolver` |
+| HostRegistry slice (P19-005) | `HostRegistry`, `MonitorService` | `HostRegistryTest`; existing `MonitorServiceTest` regression |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
