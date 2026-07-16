@@ -9,6 +9,7 @@
 
 ### Changed
 
+- **P19-002 — Windows CI blocking:** прибрано `continue-on-error` на `check-windows`; обидва job (`ubuntu` + `windows`) блокують merge; ROADMAP NEXT → **P19-003**.
 - **P19-001 — єдине джерело версії:** `jpackage --app-version` з Gradle `version` (без `-SNAPSHOT`); видалено окремий `appVersion = "0.1.0"`; `AppInfo` fallback `0.2.0-SNAPSHOT`; OpenAPI `/openapi.json` — динамічна версія; ROADMAP NEXT → **P19-002**.
 - **ROADMAP фаза 19:** post-`main` hardening (P19-001…006) — version, Windows CI blocking, trace coverage, pingOnly removal, HostRegistry slice, PG driver scope; NEXT → **P19-001**. UK/EN індекси, README, java/README, ADR (`planned`→shipped), SPIKE_IPV6, CONTRACT `/autopilot` для `DONE`, MODULES/ARCHITECTURE як Python-scope; прибрано «фази 0–16» / «SPIKE planned» / orphan «майбутнє» формулювання після P17.
 - **Гілки `main` / `beta` (docs):** README і супутні docs більше не описують `main` як «лише RAM / без SQLite·alerts·daemon·IPv6·Python». Фактично: `main` = останній стабільний merge; `beta` = розробка попереду; Pro-стек і Python — на обох після merge.
