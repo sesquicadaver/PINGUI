@@ -93,7 +93,7 @@ Module → unit test matrix. Update when adding features.
 | CI gate | `.github/workflows/java.yml` | `./gradlew check` (ubuntu + windows jobs block merge; Monocle headless for FX UI tests) |
 | Windows CI blocking (P19-002) | `.github/workflows/java.yml` `check-windows` | No `continue-on-error`; both matrix jobs required on `main`/`beta` |
 | Doc parity UK/EN | `scripts/check_doc_parity.py` | `python3 scripts/check_doc_parity.py` (CI + `./scripts/ci_venv.sh`) |
-| JaCoCo coverage | `build.gradle.kts` `jacocoTestCoverageVerification` | `./gradlew check` (≥80%; tightened exclusions B-064; ExpertPingEnricher included B-064f) |
+| JaCoCo coverage | `build.gradle.kts` `jacocoTestCoverageVerification` | `./gradlew check` (≥80%; parsers + command builders included P19-003) |
 | Static imports | `config/checkstyle/checkstyle.xml` | `./gradlew checkstyleMain` / `checkstyleTest` |
 
 **Run locally:** `cd java && ./gradlew check`
