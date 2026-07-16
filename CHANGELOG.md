@@ -9,7 +9,13 @@
 
 ### Changed
 
-- **Docs sync (NEXT=DONE):** UK/EN індекси, README, java/README, ADR (`planned`→shipped), SPIKE_IPV6, CONTRACT `/autopilot` для `DONE`, MODULES/ARCHITECTURE як Python-scope; прибрано «фази 0–16» / «SPIKE planned» / orphan «майбутнє» формулювання після P17.
+- **P19-006 — PostgreSQL optional:** JDBC драйвер `compileOnly` (+ `testImplementation`); default `installDist`/jpackage без `postgresql.jar`; Timescale потребує `-PwithPostgresql=true`; ROADMAP NEXT → **DONE** (фаза 19 закрита).
+- **P19-005 — HostRegistry slice:** host list / enabled / probe mode / poll bookmarks винесено з `MonitorService` у `HostRegistry`; поведінка без змін; ROADMAP NEXT → **P19-006**.
+- **P19-004 — legacy pingOnly removal:** `MonitorService` більше не тримає dual `Map pingOnly` / `PingOnlyResolver`; лише `probeModes` + `HostProbeModeResolver`; UI перемикає через `setProbeMode`/`setHostProbeMode`; ROADMAP NEXT → **P19-005**.
+- **P19-003 — trace parser/builder coverage:** прямі unit-тести `UnixTraceOutputParser`, `WindowsTraceOutputParser`, `TraceCommandBuildersTest` (fixture output); класи прибрано з JaCoCo excludes; ROADMAP NEXT → **P19-004**.
+- **P19-002 — Windows CI blocking:** прибрано `continue-on-error` на `check-windows`; обидва job (`ubuntu` + `windows`) блокують merge; ROADMAP NEXT → **P19-003**.
+- **P19-001 — єдине джерело версії:** `jpackage --app-version` з Gradle `version` (без `-SNAPSHOT`); видалено окремий `appVersion = "0.1.0"`; `AppInfo` fallback `0.2.0-SNAPSHOT`; OpenAPI `/openapi.json` — динамічна версія; ROADMAP NEXT → **P19-002**.
+- **ROADMAP фаза 19:** post-`main` hardening (P19-001…006) — version, Windows CI blocking, trace coverage, pingOnly removal, HostRegistry slice, PG driver scope; NEXT → **P19-001**. UK/EN індекси, README, java/README, ADR (`planned`→shipped), SPIKE_IPV6, CONTRACT `/autopilot` для `DONE`, MODULES/ARCHITECTURE як Python-scope; прибрано «фази 0–16» / «SPIKE planned» / orphan «майбутнє» формулювання після P17.
 - **Гілки `main` / `beta` (docs):** README і супутні docs більше не описують `main` як «лише RAM / без SQLite·alerts·daemon·IPv6·Python». Фактично: `main` = останній стабільний merge; `beta` = розробка попереду; Pro-стек і Python — на обох після merge.
 - **ROADMAP NEXT + лінійна черга:** єдине поле **Поточна задача**; `/autopilot` без аргументів бере цей ID, якщо не **DONE** (тоді зупиняється). Правило агента: `.cursor/rules/roadmap-next.mdc`.
 

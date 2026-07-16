@@ -64,10 +64,15 @@ pingui-java.bat --config config/hosts.windows.example.yaml
 
 ## Build and packaging
 
+Application version comes from `version` in `java/build.gradle.kts` (single source). Gradle `generateBuildProperties` writes it to `pingui/build.properties` and the JAR manifest; About (`AppInfo`) shows the same value. `jpackage --app-version` uses semver without `-SNAPSHOT` (e.g. `0.2.0` from `0.2.0-SNAPSHOT`).
+
+**PostgreSQL / Timescale JDBC (P19-006):** the `org.postgresql:postgresql` driver is **not** on the default `implementation` / `installDist` / jpackage classpath. Desktop packages run without it (SQLite session remains). For `--ts-backend timescale`, build/run with `-PwithPostgresql=true` or add the JAR to the runtime classpath; otherwise PINGUI reports that the driver is missing.
+
 ```bash
 cd java
 ./gradlew build          # compile + jar
-./pingui-java.sh --package   # jpackage: .deb / .dmg / .msi
+./gradlew run -PwithPostgresql=true --args='--ts-backend timescale --timescale-dsn …'
+./pingui-java.sh --package   # jpackage: .deb / .dmg / .msi (no postgresql.jar)
 ```
 
 ## Raw ICMP (Linux, optional)

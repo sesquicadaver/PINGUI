@@ -6,12 +6,12 @@
 
 | Модуль / ТЗ | Клас | Тести |
 |-------------|------|-------|
-| Парсинг Unix trace | `UnixTraceOutputParser`, `ProcessRouteProbe` | `ProcessRouteProbeTest` (unix + `unix_v6_*`, `v4FixturesRemainGreen`) |
-| Парсинг Windows tracert | `WindowsTraceOutputParser`, `ProcessRouteProbe` | `ProcessRouteProbeTest` (win + `win_v6_*` fixtures) |
-| Trace argv (OS) | `TraceCommandBuilder`, `TraceTarget`, `LinuxTracerouteCommand`, `MacTracerouteCommand`, `WindowsTracertCommand` | `TraceTargetTest`, `ProcessRouteProbeCommandTest` (v6 `-6`) |
+| Trace parser coverage (P19-003) | `UnixTraceOutputParser`, `WindowsTraceOutputParser`, `LinuxTracerouteCommand`, `MacTracerouteCommand`, `WindowsTracertCommand` | `UnixTraceOutputParserTest`, `WindowsTraceOutputParserTest`, `TraceCommandBuildersTest` (fixtures in `src/test/resources/trace/`) |
+| Trace argv (OS) | `TraceCommandBuilder`, `TraceTarget`, `LinuxTracerouteCommand`, `MacTracerouteCommand`, `WindowsTracertCommand` | `TraceTargetTest`, `TraceCommandBuildersTest`, `ProcessRouteProbeCommandTest` (v6 `-6`) |
 | Валідація хостів IPv4/IPv6 | `HostsConfig`, `HostAddressParser`, `HostEntry` | `HostsConfigTest`, `HostAddressParserTest`, `HostEntryTest` |
 | CLI interval vs YAML (M-014) | `CliProfileOverrides`, `ProfilesConfig` | `PinguiApplicationTest.m014_*` |
-| Build metadata | `AppInfo`, `generateBuildProperties` | `AppInfoTest` |
+| Build metadata | `AppInfo`, `generateBuildProperties`, `jpackageAppVersion` | `AppInfoTest`, `./gradlew jpackage*` uses Gradle `version` |
+| Version source (P19-001) | `build.gradle.kts` `version`, `AppInfo`, `ReadOnlyApiJson` | `AppInfoTest.version_matchesBuildPropertiesWhenGenerated`; `ReadOnlyApiContractTest.openApiStubDocumentsRequiredPaths` |
 | Layer deps (no ui in config) | `scripts/check-layer-deps.sh` | `./gradlew layerCheck` |
 | GeoIP hints | `GeoCountry` | `GeoCountryTest` (longest-prefix, LAN/IPv6, invalid YAML, 0.0.0.0/0) |
 | YAML profiles v2 + legacy | `ProfilesConfig`, `ProfileDocument` | `ProfilesConfigTest` (host flags, type errors, save max hosts), `ProfileDocumentTest` |
@@ -77,6 +77,9 @@
 | MTU wizard UI (P17-021) | `MtuDiscoveryDialog`, `HostListPresenter`, `PingExpertDialog` | `MtuDiscoveryDialogTest`, `MtuDiscoveryTest` (progress) |
 | Expert Self-check DF/DSCP/Burst (P17-030) | `PresetSelfCheck`, `PresetSelfCheckUi`, `PingExpertDialog` | `PresetSelfCheckTest`, `PresetSelfCheckUiTest` |
 | Ping only toggle stats (P18-010) | `SessionStore.setProbeMode`, `MonitorService.pollHostOnce`, `HostListPresenter` | `SessionStoreTest.setProbeModeClearsHopStatsAndPingHistory`, `MonitorServiceTest.discardsStaleTraceOutcomeAfterPingOnlyToggle`, `MonitorServiceTest.discardsStaleTraceWhenMonitorFlippedBeforeSessionResolver` |
+| Legacy pingOnly removal (P19-004) | `MonitorService` (`probeModes` only), `HostListPresenter` | `MonitorServiceTest.setHostProbeModeGuardsUnknownHost`, `hostProbeModeResolverOverridesMap`, stale-discard tests without `PingOnlyResolver` |
+| HostRegistry slice (P19-005) | `HostRegistry`, `MonitorService` | `HostRegistryTest`; existing `MonitorServiceTest` regression |
+| PostgreSQL optional (P19-006) | `build.gradle.kts` (`compileOnly` + `-PwithPostgresql`), `TimescaleTimeSeriesBackend.requirePostgresqlDriver` | `TimeSeriesBackendsTest.requirePostgresqlDriverSucceedsWhenOnTestClasspath`; `installDist` lib без `postgresql*.jar` |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
@@ -96,9 +99,10 @@
 | Expert ping flags | `PingExpertValidator`, `ProcessExpertPing`, `ExpertPingArgs`, `HostAddressResolver` | `PingExpertValidatorTest`, `ExpertPingArgsTest`, `ProcessExpertPingTest`, `ExpertPingUiRulesTest`, `HostAddressResolverTest`, `PingTargetResolverTest` |
 | GUI / MonitorService | `MainController`, `MonitorService` | *(manual / TestFX — backlog)* |
 | UI coordinators | `ProfileUiCoordinator`, `HostListPresenter`, `MonitorLifecycle`, `ViewModeController`, `RouteGraphPresenter` | `./gradlew check`; B-035 manual smoke |
-| CI gate | `.github/workflows/java.yml` | `./gradlew check` (Spotless + Checkstyle + layerCheck + test; Monocle headless for FX UI tests) |
+| CI gate | `.github/workflows/java.yml` | `./gradlew check` (ubuntu + windows jobs block merge; Monocle headless for FX UI tests) |
+| Windows CI blocking (P19-002) | `.github/workflows/java.yml` `check-windows` | No `continue-on-error`; both matrix jobs required on `main`/`beta` |
 | Doc parity UK/EN | `scripts/check_doc_parity.py` | `python3 scripts/check_doc_parity.py` (CI + `./scripts/ci_venv.sh`) |
-| JaCoCo coverage | `build.gradle.kts` `jacocoTestCoverageVerification` | `./gradlew check` (≥80%; tightened exclusions B-064; ExpertPingEnricher included B-064f) |
+| JaCoCo coverage | `build.gradle.kts` `jacocoTestCoverageVerification` | `./gradlew check` (≥80%; parsers + command builders included P19-003) |
 | Static imports | `config/checkstyle/checkstyle.xml` | `./gradlew checkstyleMain` / `checkstyleTest` |
 
 **Прогін локально:** `cd java && ./gradlew check`

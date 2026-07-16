@@ -467,15 +467,15 @@ class MonitorServiceTest {
     }
 
     @Test
-    void setHostPingOnlyGuardsUnknownHost() {
+    void setHostProbeModeGuardsUnknownHost() {
         MonitorService service = new MonitorService(
                 1.0,
                 20,
                 0.5,
                 new FakeRouteProbe(new RouteSnapshot("a", "1.1.1.1", List.of(new HopNode(1, "1.1.1.1", 1.0, false)))));
         service.addHost("a", true, false);
-        service.setHostPingOnly("a", true);
-        assertThrows(ConfigError.class, () -> service.setHostPingOnly("missing", true));
+        service.setHostProbeMode("a", HostProbeMode.PING_ONLY);
+        assertThrows(ConfigError.class, () -> service.setHostProbeMode("missing", HostProbeMode.PING_ONLY));
         service.close();
     }
 
@@ -517,7 +517,7 @@ class MonitorServiceTest {
         });
         service.addHost("8.8.8.8", true, HostProbeMode.TRACE);
         assertTrue(probeStarted.await(3, TimeUnit.SECONDS));
-        service.setHostPingOnly("8.8.8.8", true);
+        service.setHostProbeMode("8.8.8.8", HostProbeMode.PING_ONLY);
         releaseProbe.countDown();
         Thread.sleep(400);
         assertEquals(0, multiHopReceived.get(), "stale multi-hop TRACE must not apply after Ping only ON");
@@ -567,7 +567,7 @@ class MonitorServiceTest {
         });
         service.addHost("8.8.8.8", true, HostProbeMode.TRACE);
         assertTrue(probeStarted.await(3, TimeUnit.SECONDS));
-        service.setHostPingOnly("8.8.8.8", true);
+        service.setHostProbeMode("8.8.8.8", HostProbeMode.PING_ONLY);
         // Prevent a later TRACE poll (resolver still TRACE) from masking the discard assertion.
         service.setHostEnabled("8.8.8.8", false);
         releaseProbe.countDown();
@@ -577,7 +577,7 @@ class MonitorServiceTest {
     }
 
     @Test
-    void pingOnlyResolverOverridesMapFlag() throws Exception {
+    void hostProbeModeResolverOverridesMap() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         MonitorService service = new MonitorService(
                 0.05,
@@ -585,7 +585,7 @@ class MonitorServiceTest {
                 0.5,
                 new FakeRouteProbe(
                         new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false)))));
-        service.setPingOnlyResolver(host -> true);
+        service.setHostProbeModeResolver(host -> HostProbeMode.PING_ONLY);
         service.setListener(new MonitorService.Listener() {
             @Override
             public void onDataReceived(String host, RouteSnapshot snap) {

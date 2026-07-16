@@ -27,7 +27,7 @@ public final class AppInfo {
         if (fromBuild != null && !fromBuild.isBlank()) {
             return fromBuild;
         }
-        return "0.1.0-SNAPSHOT";
+        return "0.2.0-SNAPSHOT";
     }
 
     /** Short git commit from {@code pingui/build.properties} (Gradle-generated). */
@@ -40,7 +40,7 @@ public final class AppInfo {
         return BUILD.getProperty("buildNumber", "local");
     }
 
-    /** Version string for About: {@code 0.1.0-SNAPSHOT (ea3d507)} or with CI build. */
+    /** Version string for About: {@code 0.2.0-SNAPSHOT (ea3d507)} or with CI build. */
     public static String versionDetail() {
         String sha = gitSha();
         String base = version();

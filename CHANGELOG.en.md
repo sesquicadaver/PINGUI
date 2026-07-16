@@ -9,7 +9,13 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- **Docs sync (NEXT=DONE):** UK/EN indexes, README, java/README, ADRs (`planned`→shipped), SPIKE_IPV6, `/autopilot` contract for `DONE`, MODULES/ARCHITECTURE scoped to Python; removed “phases 0–16” / “SPIKE planned” / orphan “future” wording after P17.
+- **P19-006 — PostgreSQL optional:** JDBC driver is `compileOnly` (+ `testImplementation`); default `installDist`/jpackage omit `postgresql.jar`; Timescale needs `-PwithPostgresql=true`; ROADMAP NEXT → **DONE** (phase 19 closed).
+- **P19-005 — HostRegistry slice:** host list / enabled / probe mode / poll bookmarks extracted from `MonitorService` into `HostRegistry`; behavior unchanged; ROADMAP NEXT → **P19-006**.
+- **P19-004 — legacy pingOnly removal:** `MonitorService` no longer keeps dual `Map pingOnly` / `PingOnlyResolver`; only `probeModes` + `HostProbeModeResolver`; UI toggles via `setProbeMode`/`setHostProbeMode`; ROADMAP NEXT → **P19-005**.
+- **P19-003 — trace parser/builder coverage:** direct unit tests `UnixTraceOutputParser`, `WindowsTraceOutputParser`, `TraceCommandBuildersTest` (fixture output); classes removed from JaCoCo excludes; ROADMAP NEXT → **P19-004**.
+- **P19-002 — Windows CI blocking:** removed `continue-on-error` on `check-windows`; both jobs (`ubuntu` + `windows`) block merge; ROADMAP NEXT → **P19-003**.
+- **P19-001 — single version source:** `jpackage --app-version` from Gradle `version` (strip `-SNAPSHOT`); removed separate `appVersion = "0.1.0"`; `AppInfo` dev fallback `0.2.0-SNAPSHOT`; OpenAPI `/openapi.json` uses dynamic version; ROADMAP NEXT → **P19-002**.
+- **ROADMAP phase 19:** post-`main` hardening (P19-001…006) — version, Windows CI blocking, trace coverage, pingOnly removal, HostRegistry slice, PG driver scope; NEXT → **P19-001**. UK/EN indexes, README, java/README, ADRs (`planned`→shipped), SPIKE_IPV6, `/autopilot` contract for `DONE`, MODULES/ARCHITECTURE scoped to Python; removed “phases 0–16” / “SPIKE planned” / orphan “future” wording after P17.
 - **Branches `main` / `beta` (docs):** README and related docs no longer describe `main` as “RAM-only / no SQLite·alerts·daemon·IPv6·Python”. Reality: `main` = last stable merge; `beta` = development ahead; Pro stack and Python are on both after merge.
 - **ROADMAP NEXT + linear queue:** single **Current task** field; `/autopilot` with no args takes that ID unless **DONE** (then stop). Agent rule: `.cursor/rules/roadmap-next.mdc`.
 

@@ -10,6 +10,9 @@ plugins {
 group = "io.pingui"
 version = "0.2.0-SNAPSHOT"
 
+/** Semver for jpackage {@code --app-version} (Gradle {@code version} minus {@code -SNAPSHOT}). */
+val jpackageAppVersion: String = version.toString().removeSuffix("-SNAPSHOT")
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
@@ -20,18 +23,32 @@ repositories {
     mavenCentral()
 }
 
-val appVersion = "0.1.0"
-
 dependencies {
     implementation("org.yaml:snakeyaml:2.3")
     implementation("org.slf4j:slf4j-simple:2.0.16")
     implementation("net.java.dev.jna:jna:5.15.0")
     implementation("net.java.dev.jna:jna-platform:5.15.0")
     implementation("org.xerial:sqlite-jdbc:3.47.2.0")
-    implementation("org.postgresql:postgresql:42.7.4")
+    // Optional Timescale/PostgreSQL JDBC (P19-006): not on default runtime/jpackage classpath.
+    compileOnly("org.postgresql:postgresql:42.7.4")
+    testImplementation("org.postgresql:postgresql:42.7.4")
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
     // Headless Glass for CI runners without a display (JavaFX unit UI tests).
     testImplementation("org.testfx:openjfx-monocle:21.0.2")
+}
+
+/** When {@code -PwithPostgresql=true}, add the driver to runtime (run / installDist / daemon). */
+val withPostgresql: Boolean =
+    providers
+        .gradleProperty("withPostgresql")
+        .map { it.equals("true", ignoreCase = true) }
+        .orElse(false)
+        .get()
+
+if (withPostgresql) {
+    dependencies {
+        runtimeOnly("org.postgresql:postgresql:42.7.4")
+    }
 }
 
 tasks.test {
@@ -60,8 +77,8 @@ tasks.jacocoTestReport {
 
 tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.jacocoTestReport)
-    // Bundle includes IPv6 config/geoip/probe label helpers (HopDisplay, DualStackRouteProbe, GeoCountry).
-    // JavaFX canvas/dialogs and subprocess runners stay excluded — parser/unit tests + CHECKLIST smoke.
+    // Bundle includes IPv6 config/geoip/probe parsers + command builders (P19-003).
+    // JavaFX canvas/dialogs and subprocess runners stay excluded — CHECKLIST smoke.
     violationRules {
         rule {
             element = "BUNDLE"
@@ -90,11 +107,6 @@ tasks.jacocoTestCoverageVerification {
                         "io/pingui/probe/TraceProcessTiming.class",
                         "io/pingui/probe/TracerouteExecutables.class",
                         "io/pingui/probe/TracerouteFlavorDetector.class",
-                        "io/pingui/probe/LinuxTracerouteCommand.class",
-                        "io/pingui/probe/MacTracerouteCommand.class",
-                        "io/pingui/probe/WindowsTracertCommand.class",
-                        "io/pingui/probe/UnixTraceOutputParser.class",
-                        "io/pingui/probe/WindowsTraceOutputParser.class",
                         "io/pingui/probe/icmp/LinuxJnaIcmpTransport*.class",
                         "io/pingui/probe/icmp/LinuxCLibrary*.class",
                         "io/pingui/probe/icmp/RawIcmpPermission.class",
@@ -260,7 +272,7 @@ tasks.register<Exec>("jpackageDeb") {
         "--type", "deb",
         "--java-options", "-Dprism.order=sw",
         "--vendor", "PINGUI",
-        "--app-version", appVersion,
+        "--app-version", jpackageAppVersion,
         "--dest", distDir.get().asFile.absolutePath,
     )
     onlyIf {
@@ -287,7 +299,7 @@ tasks.register<Exec>("jpackageMsi") {
         "--type", "msi",
         "--java-options", "-Dprism.order=sw",
         "--vendor", "PINGUI",
-        "--app-version", appVersion,
+        "--app-version", jpackageAppVersion,
         "--dest", distDir.get().asFile.absolutePath,
     )
     onlyIf {
@@ -314,7 +326,7 @@ tasks.register<Exec>("jpackageDmg") {
         "--type", "dmg",
         "--java-options", "-Dprism.order=sw",
         "--vendor", "PINGUI",
-        "--app-version", appVersion,
+        "--app-version", jpackageAppVersion,
         "--dest", distDir.get().asFile.absolutePath,
     )
     onlyIf {

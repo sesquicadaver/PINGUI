@@ -120,6 +120,11 @@ class TimeSeriesBackendsTest {
     }
 
     @Test
+    void requirePostgresqlDriverSucceedsWhenOnTestClasspath() {
+        TimescaleTimeSeriesBackend.requirePostgresqlDriver();
+    }
+
+    @Test
     void timescaleJsonArrayEscapes() {
         assertEquals("[\"a\",\"b\\\"c\"]", TimescaleTimeSeriesBackend.toJsonArray(List.of("a", "b\"c")));
     }

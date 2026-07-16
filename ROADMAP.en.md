@@ -8,10 +8,10 @@
 
 | Field | Value |
 |------|----------|
-| **Current task** | **[DONE](docs/en/ROADMAP.md#next--single-source-of-truth)** |
+| **Current task** | **[P19-001](docs/en/ROADMAP.md#phase-19--production-hardening-beta-p0p2)** |
 | **Rule** | if not `DONE` — `/autopilot` = this ID; if `DONE` — stop / wait for an explicit new ID. **Do not ask** “which item?”. |
 
-Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (currently exhausted).
+Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (phase 19, #54–59).
 
 **MVP status:** ✅ implemented (2026-06-26)
 
@@ -39,7 +39,8 @@ Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#e
 | **15** | Integrations (Prometheus, REST API, export) | ✅ |
 | **16** | Telemetry + LOG-server | ✅ (GUI P16-090…094) |
 | **17** | Expert ping / MTU discovery | ✅ |
-| **18** | Probe mode stability | ✅ **DONE** (queue exhausted) |
+| **18** | Probe mode stability | ✅ |
+| **19** | Production hardening (version, CI, coverage, probe-mode debt) | ✅ **DONE** |
 
 ---
 
