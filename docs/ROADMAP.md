@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P19-006** |
+| **Поточна задача** | **DONE** |
 | **Фаза** | 19 — Production hardening |
-| **DoD (коротко)** | PostgreSQL driver optional scope |
+| **DoD (коротко)** | Лінійна черга фази 19 вичерпана |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -102,9 +102,9 @@
 | 56 | **P19-003** | [x] | Trace parser/builder unit tests + JaCoCo include |
 | 57 | **P19-004** | [x] | Видалити legacy `pingOnly` / `PingOnlyResolver` |
 | 58 | **P19-005** | [x] | `MonitorService` slice: `HostRegistry` |
-| 59 | **P19-006** | [ ] | PostgreSQL driver optional scope |
+| 59 | **P19-006** | [x] | PostgreSQL driver optional scope |
 
-**Стан черги:** відкрита — **NEXT = P19-006** (фаза 19, post-`main` hardening після аналізу 2026-07).
+**Стан черги:** **DONE** — фаза 19 закрита (P19-001…006); наступний `/autopilot` без аргументів не стартує, доки не задано новий ID.
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -706,7 +706,7 @@ flowchart TD
 | **P19-003** | [x] Trace parser/builder coverage | `probe/*Trace*`, `probe/*Traceroute*`, `build.gradle.kts`, `src/test/java/io/pingui/probe/` | Unit-тести на `UnixTraceOutputParser`, `WindowsTraceOutputParser`, OS command builders (fixture output); прибрати ці класи з JaCoCo excludes; `./gradlew check` green |
 | **P19-004** | [x] Legacy pingOnly removal | `MonitorService`, `SessionStore`, UI callers | Лишити `HostProbeMode` + `setHostProbeMode`; видалити `Map pingOnly`, `PingOnlyResolver`, `setHostPingOnly` shim де можливо; atomic `switchProbeMode` monitor+session; тести на stale poll без dual map |
 | **P19-005** | [x] MonitorService slice: HostRegistry | `monitor/HostRegistry.java`, `MonitorService` | Винести host list, enabled, probe mode, interval override, rename/remove; `MonitorService` делегує; поведінка без змін; unit-тести registry |
-| **P19-006** | [ ] PostgreSQL driver scope (P2) | `build.gradle.kts`, persistence wiring docs | `postgresql` не в unconditional `implementation` (optional/`runtimeOnly`/feature flag); desktop install без PG не тягне driver; LIVING_SPEC/DEPLOYMENT note |
+| **P19-006** | [x] PostgreSQL driver scope (P2) | `build.gradle.kts`, persistence wiring docs | `postgresql` не в unconditional `implementation` (optional/`runtimeOnly`/feature flag); desktop install без PG не тягне driver; LIVING_SPEC/DEPLOYMENT note |
 
 ---
 
@@ -792,7 +792,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–18 (P10–P18)**. Лінійна черга — **NEXT=P19-006** (фаза 19).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–18 (P10–P18)**; **Фаза 19 hardening — DONE**. Лінійна черга — **NEXT=DONE**.
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

@@ -110,7 +110,7 @@ CLI **не затирає** поля профілю defaults (1.0 / 20 / 0.5 / a
 
 **Prometheus (P15-010/011):** `./pingui-java.sh -- --daemon --metrics-port 9090` → `http://127.0.0.1:9090/metrics`. Метрики: `pingui_rtt_ms`, `pingui_route_change_total`, `pingui_target_reachable`, `pingui_trace_duration_ms`. Без `--metrics-port` listener не стартує.
 
-**Time-series (P15-020):** `--ts-backend influx` (+ Influx flags/env) або `--ts-backend timescale --timescale-dsn …` — dual-emit RTT/route з `SessionStore` (GUI і daemon). Помилки write → WARN, poll не зупиняється.
+**Time-series (P15-020):** `--ts-backend influx` (+ Influx flags/env) або `--ts-backend timescale --timescale-dsn …` — dual-emit RTT/route з `SessionStore` (GUI і daemon). Помилки write → WARN, poll не зупиняється. JDBC PostgreSQL **опційний** (P19-006): default jpackage/`installDist` без драйвера; для Timescale — `./gradlew run -PwithPostgresql=true` (див. [DEPLOYMENT.md](../docs/DEPLOYMENT.md#збірка-та-пакування)).
 
 **Scheduled export (P15-030):** `./pingui-java.sh -- --session-db data/session.db --export-schedule daily --export-dir reports/` → `pingui-daily-YYYY-MM-DD.csv` + `.html` (UTC). Для cron; не тримає процес.
 

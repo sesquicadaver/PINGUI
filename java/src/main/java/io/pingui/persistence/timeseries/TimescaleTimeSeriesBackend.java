@@ -30,6 +30,7 @@ public final class TimescaleTimeSeriesBackend implements TimeSeriesBackend {
         if (dsn.isBlank()) {
             throw new TimeSeriesConfigException("Timescale backend requires --timescale-dsn or PINGUI_TIMESCALE_DSN");
         }
+        requirePostgresqlDriver();
         try {
             Properties props = new Properties();
             props.setProperty("loginTimeout", "5");
@@ -185,5 +186,21 @@ public final class TimescaleTimeSeriesBackend implements TimeSeriesBackend {
             return "jdbc:" + dsn.replaceFirst("^postgres://", "postgresql://");
         }
         return dsn;
+    }
+
+    /**
+     * Ensures the optional PostgreSQL JDBC driver is present (omitted from default desktop installs).
+     *
+     * @throws TimeSeriesConfigException when {@code org.postgresql.Driver} is not on the classpath
+     */
+    static void requirePostgresqlDriver() {
+        try {
+            Class.forName("org.postgresql.Driver");
+        } catch (ClassNotFoundException ex) {
+            throw new TimeSeriesConfigException(
+                    "PostgreSQL JDBC driver not on classpath. Desktop packages omit it by default (P19-006). "
+                            + "Rebuild/run with -PwithPostgresql=true, or add org.postgresql:postgresql to the runtime classpath.",
+                    ex);
+        }
     }
 }

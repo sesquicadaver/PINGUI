@@ -66,10 +66,13 @@ pingui-java.bat --config config/hosts.windows.example.yaml
 
 Версія застосунку — поле `version` у `java/build.gradle.kts` (єдине джерело). Gradle `generateBuildProperties` записує її в `pingui/build.properties` і JAR manifest; About (`AppInfo`) показує ту саму версію. `jpackage --app-version` — semver без `-SNAPSHOT` (напр. `0.2.0` з `0.2.0-SNAPSHOT`).
 
+**PostgreSQL / Timescale JDBC (P19-006):** драйвер `org.postgresql:postgresql` **не** входить у default `implementation` / `installDist` / jpackage. Desktop-пакети працюють без нього (SQLite session лишається). Для `--ts-backend timescale` зберіть/запустіть з `-PwithPostgresql=true` або додайте JAR на runtime classpath; інакше PINGUI повідомить, що драйвер відсутній.
+
 ```bash
 cd java
 ./gradlew build          # compile + jar
-./pingui-java.sh --package   # jpackage: .deb / .dmg / .msi
+./gradlew run -PwithPostgresql=true --args='--ts-backend timescale --timescale-dsn …'
+./pingui-java.sh --package   # jpackage: .deb / .dmg / .msi (без postgresql.jar)
 ```
 
 ## Raw ICMP (Linux, опційно)

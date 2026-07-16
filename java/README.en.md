@@ -108,7 +108,7 @@ The CLI **does not overwrite** profile defaults (1.0 / 20 / 0.5 / auto) unless t
 
 **Prometheus (P15-010/011):** `./pingui-java.sh -- --daemon --metrics-port 9090` → `http://127.0.0.1:9090/metrics`. Metrics: `pingui_rtt_ms`, `pingui_route_change_total`, `pingui_target_reachable`, `pingui_trace_duration_ms`. Without `--metrics-port` no listener starts.
 
-**Time-series (P15-020):** `--ts-backend influx` (+ Influx flags/env) or `--ts-backend timescale --timescale-dsn …` — dual-emit RTT/route from `SessionStore` (GUI and daemon). Write failures → WARN; poll continues.
+**Time-series (P15-020):** `--ts-backend influx` (+ Influx flags/env) or `--ts-backend timescale --timescale-dsn …` — dual-emit RTT/route from `SessionStore` (GUI and daemon). Write failures → WARN; poll continues. PostgreSQL JDBC is **optional** (P19-006): default jpackage/`installDist` omit the driver; for Timescale use `./gradlew run -PwithPostgresql=true` (see [DEPLOYMENT.md](../docs/en/DEPLOYMENT.md#build-and-packaging)).
 
 **Scheduled export (P15-030):** `./pingui-java.sh -- --session-db data/session.db --export-schedule daily --export-dir reports/` → `pingui-daily-YYYY-MM-DD.csv` + `.html` (UTC). For cron; does not keep the process running.
 

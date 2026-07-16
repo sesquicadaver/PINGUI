@@ -29,10 +29,26 @@ dependencies {
     implementation("net.java.dev.jna:jna:5.15.0")
     implementation("net.java.dev.jna:jna-platform:5.15.0")
     implementation("org.xerial:sqlite-jdbc:3.47.2.0")
-    implementation("org.postgresql:postgresql:42.7.4")
+    // Optional Timescale/PostgreSQL JDBC (P19-006): not on default runtime/jpackage classpath.
+    compileOnly("org.postgresql:postgresql:42.7.4")
+    testImplementation("org.postgresql:postgresql:42.7.4")
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
     // Headless Glass for CI runners without a display (JavaFX unit UI tests).
     testImplementation("org.testfx:openjfx-monocle:21.0.2")
+}
+
+/** When {@code -PwithPostgresql=true}, add the driver to runtime (run / installDist / daemon). */
+val withPostgresql: Boolean =
+    providers
+        .gradleProperty("withPostgresql")
+        .map { it.equals("true", ignoreCase = true) }
+        .orElse(false)
+        .get()
+
+if (withPostgresql) {
+    dependencies {
+        runtimeOnly("org.postgresql:postgresql:42.7.4")
+    }
 }
 
 tasks.test {
