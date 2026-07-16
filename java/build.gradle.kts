@@ -61,8 +61,8 @@ tasks.jacocoTestReport {
 
 tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.jacocoTestReport)
-    // Bundle includes IPv6 config/geoip/probe label helpers (HopDisplay, DualStackRouteProbe, GeoCountry).
-    // JavaFX canvas/dialogs and subprocess runners stay excluded — parser/unit tests + CHECKLIST smoke.
+    // Bundle includes IPv6 config/geoip/probe parsers + command builders (P19-003).
+    // JavaFX canvas/dialogs and subprocess runners stay excluded — CHECKLIST smoke.
     violationRules {
         rule {
             element = "BUNDLE"
@@ -91,11 +91,6 @@ tasks.jacocoTestCoverageVerification {
                         "io/pingui/probe/TraceProcessTiming.class",
                         "io/pingui/probe/TracerouteExecutables.class",
                         "io/pingui/probe/TracerouteFlavorDetector.class",
-                        "io/pingui/probe/LinuxTracerouteCommand.class",
-                        "io/pingui/probe/MacTracerouteCommand.class",
-                        "io/pingui/probe/WindowsTracertCommand.class",
-                        "io/pingui/probe/UnixTraceOutputParser.class",
-                        "io/pingui/probe/WindowsTraceOutputParser.class",
                         "io/pingui/probe/icmp/LinuxJnaIcmpTransport*.class",
                         "io/pingui/probe/icmp/LinuxCLibrary*.class",
                         "io/pingui/probe/icmp/RawIcmpPermission.class",
