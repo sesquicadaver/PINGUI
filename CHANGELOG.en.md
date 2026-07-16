@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P19-004 — legacy pingOnly removal:** `MonitorService` no longer keeps dual `Map pingOnly` / `PingOnlyResolver`; only `probeModes` + `HostProbeModeResolver`; UI toggles via `setProbeMode`/`setHostProbeMode`; ROADMAP NEXT → **P19-005**.
 - **P19-003 — trace parser/builder coverage:** direct unit tests `UnixTraceOutputParser`, `WindowsTraceOutputParser`, `TraceCommandBuildersTest` (fixture output); classes removed from JaCoCo excludes; ROADMAP NEXT → **P19-004**.
 - **P19-002 — Windows CI blocking:** removed `continue-on-error` on `check-windows`; both jobs (`ubuntu` + `windows`) block merge; ROADMAP NEXT → **P19-003**.
 - **P19-001 — single version source:** `jpackage --app-version` from Gradle `version` (strip `-SNAPSHOT`); removed separate `appVersion = "0.1.0"`; `AppInfo` dev fallback `0.2.0-SNAPSHOT`; OpenAPI `/openapi.json` uses dynamic version; ROADMAP NEXT → **P19-002**.

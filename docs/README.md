@@ -2,7 +2,7 @@
 
 # Документація PINGUI
 
-На **`main`** і **`beta`** — повний пакет (Java Pro + Python) після merge; **`beta`** — гілка розробки, **`main`** — останній стабільний зріз. Лінійна черга ROADMAP: **NEXT = P19-004** (фаза 19 — [ROADMAP.md § NEXT](ROADMAP.md#next--єдине-джерело-правди)). «Гілки» — [README.md](../README.md).
+На **`main`** і **`beta`** — повний пакет (Java Pro + Python) після merge; **`beta`** — гілка розробки, **`main`** — останній стабільний зріз. Лінійна черга ROADMAP: **NEXT = P19-005** (фаза 19 — [ROADMAP.md § NEXT](ROADMAP.md#next--єдине-джерело-правди)). «Гілки» — [README.md](../README.md).
 
 ## Навігація
 
@@ -11,7 +11,7 @@
 | [CHECKLIST.md](CHECKLIST.md) | Адмін / DevOps | Checklist Linux / Windows / macOS |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Адмін / DevOps | JDK 21, venv, cap_net_raw, systemd |
 | [JAVA.md](JAVA.md) | Розробник | Probe, monitor, UI, YAML |
-| [ROADMAP.md](ROADMAP.md) | Розробник | Офіційний план: фази 0–19 (Pro/NOC + telemetry + hardening); NEXT=P19-004 |
+| [ROADMAP.md](ROADMAP.md) | Розробник | Офіційний план: фази 0–19 (Pro/NOC + telemetry + hardening); NEXT=P19-005 |
 | [LIVING_SPEC.md](LIVING_SPEC.md) | Розробник | Матриця модуль → тести |
 | [ADR_IPV6.md](ADR_IPV6.md) | Розробник | Dual-stack config ADR (V6-002) |
 | [ADR_ALERTS.md](ADR_ALERTS.md) | Розробник | Route-change alerts ADR (P10-001) |

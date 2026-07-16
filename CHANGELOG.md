@@ -9,6 +9,7 @@
 
 ### Changed
 
+- **P19-004 — legacy pingOnly removal:** `MonitorService` більше не тримає dual `Map pingOnly` / `PingOnlyResolver`; лише `probeModes` + `HostProbeModeResolver`; UI перемикає через `setProbeMode`/`setHostProbeMode`; ROADMAP NEXT → **P19-005**.
 - **P19-003 — trace parser/builder coverage:** прямі unit-тести `UnixTraceOutputParser`, `WindowsTraceOutputParser`, `TraceCommandBuildersTest` (fixture output); класи прибрано з JaCoCo excludes; ROADMAP NEXT → **P19-004**.
 - **P19-002 — Windows CI blocking:** прибрано `continue-on-error` на `check-windows`; обидва job (`ubuntu` + `windows`) блокують merge; ROADMAP NEXT → **P19-003**.
 - **P19-001 — єдине джерело версії:** `jpackage --app-version` з Gradle `version` (без `-SNAPSHOT`); видалено окремий `appVersion = "0.1.0"`; `AppInfo` fallback `0.2.0-SNAPSHOT`; OpenAPI `/openapi.json` — динамічна версія; ROADMAP NEXT → **P19-002**.

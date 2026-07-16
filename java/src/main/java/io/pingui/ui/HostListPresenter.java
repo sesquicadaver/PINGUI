@@ -5,6 +5,7 @@ import io.pingui.config.HostEntry;
 import io.pingui.config.HostTags;
 import io.pingui.config.HostsConfig;
 import io.pingui.config.PingExpertEntry;
+import io.pingui.monitor.HostProbeMode;
 import io.pingui.monitor.HostTargetStats;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
@@ -425,9 +426,10 @@ final class HostListPresenter {
     private void onTogglePingOnly(HostItem item, boolean pingOnly) {
         try {
             SessionStore session = store.get();
+            HostProbeMode mode = pingOnly ? HostProbeMode.PING_ONLY : HostProbeMode.TRACE;
             // Session first: resolver (store::getProbeMode) matches intended mode before monitor flips.
-            session.setPingOnly(item.getHost(), pingOnly);
-            monitor.get().setHostPingOnly(item.getHost(), pingOnly);
+            session.setProbeMode(item.getHost(), mode);
+            monitor.get().setHostProbeMode(item.getHost(), mode);
             if (pingOnly) {
                 PingExpertEntry expert = session.getPingExpert(item.getHost());
                 if (expert.applyToChain()) {
