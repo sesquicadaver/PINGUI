@@ -9,7 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- **Docs sync (NEXT=DONE):** UK/EN indexes, README, java/README, ADRs (`planned`→shipped), SPIKE_IPV6, `/autopilot` contract for `DONE`, MODULES/ARCHITECTURE scoped to Python; removed “phases 0–16” / “SPIKE planned” / orphan “future” wording after P17.
+- **ROADMAP phase 19:** post-`main` hardening (P19-001…006) — version, Windows CI blocking, trace coverage, pingOnly removal, HostRegistry slice, PG driver scope; NEXT → **P19-001**. UK/EN indexes, README, java/README, ADRs (`planned`→shipped), SPIKE_IPV6, `/autopilot` contract for `DONE`, MODULES/ARCHITECTURE scoped to Python; removed “phases 0–16” / “SPIKE planned” / orphan “future” wording after P17.
 - **Branches `main` / `beta` (docs):** README and related docs no longer describe `main` as “RAM-only / no SQLite·alerts·daemon·IPv6·Python”. Reality: `main` = last stable merge; `beta` = development ahead; Pro stack and Python are on both after merge.
 - **ROADMAP NEXT + linear queue:** single **Current task** field; `/autopilot` with no args takes that ID unless **DONE** (then stop). Agent rule: `.cursor/rules/roadmap-next.mdc`.
 

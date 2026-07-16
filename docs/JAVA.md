@@ -216,4 +216,4 @@ pingui-java.bat --package    REM .msi
 
 ## Майбутнє
 
-Лінійна черга ROADMAP вичерпана (**NEXT = DONE**). Нові задачі — лише після явного оновлення черги / нового ID ([docs/ROADMAP.md](ROADMAP.md) § NEXT).
+Лінійна черга ROADMAP: **NEXT = P19-001** (фаза 19 — production hardening). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT.

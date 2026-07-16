@@ -10,7 +10,7 @@ Post-MVP roadmap (2026-06-26) for **professional users** (NOC/SRE, network engin
 
 | Field | Value |
 |-------|-------|
-| **Branch** | `main` — stable snapshot after merge; `beta` — development (linear queue currently **DONE**). Both: Java Pro (P9–P17) + Python after merge |
+| **Branch** | `main` — stable snapshot after merge; `beta` — development (linear queue **P19**). Both: Java Pro (P9–P18) + Python after merge |
 | **Priority** | P0 critical · P1 important · P2 nice-to-have |
 | **DoD** | Definition of Done — task closure condition |
 
@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **DONE** |
-| **Phase** | — |
-| **DoD (short)** | Execution queue exhausted (no open IDs; P18-010 closed) |
+| **Current task** | **P19-001** |
+| **Phase** | 19 — Production hardening |
+| **DoD (short)** | `appVersion` = `version` in Gradle/jpackage; README/DEPLOYMENT aligned |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -97,8 +97,14 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 51 | **P17-021** | [x] | MTU wizard UI + Alert + apply to Expert |
 | 52 | **P17-030** | [x] | Informational self-check DF/DSCP/Burst (P2) |
 | 53 | **P18-010** | [x] | Ping only toggle: reset stats + discard stale poll |
+| 54 | **P19-001** | [ ] | Single version source (`appVersion` ← `version`) |
+| 55 | **P19-002** | [ ] | Windows CI blocking (remove `continue-on-error`) |
+| 56 | **P19-003** | [ ] | Trace parser/builder unit tests + JaCoCo include |
+| 57 | **P19-004** | [ ] | Remove legacy `pingOnly` / `PingOnlyResolver` |
+| 58 | **P19-005** | [ ] | `MonitorService` slice: `HostRegistry` |
+| 59 | **P19-006** | [ ] | PostgreSQL driver optional scope |
 
-**Queue status:** closed — **NEXT = DONE**. New work requires an explicit queue extension + NEXT update.
+**Queue status:** open — **NEXT = P19-001** (phase 19, post-`main` hardening after 2026-07 analysis).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -687,6 +693,23 @@ flowchart TD
 
 ---
 
+## Phase 19 — Production hardening (`beta`, P0–P2)
+
+**Goal:** close risks after `main` merge (PR #10): release hygiene, cross-platform CI gate, more meaningful OS-critical coverage, transitional probe-mode debt removal, first `MonitorService` decomposition step.
+
+**Context:** repeat architecture review of `main` @ `176a9d3` (2026-07): JaCoCo 80% with large exclusions; Windows job non-blocking; `version` vs `appVersion`; dual `pingOnly`/`probeModes`; `MonitorService` god object; `postgresql` on fat classpath.
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **P19-001** | [ ] Single version source | `java/build.gradle.kts`, `java/README.md`, `docs/en/DEPLOYMENT.md` | `jpackage --app-version` from `version` (no separate `0.1.0`); `build.properties`/`About` aligned; CHANGELOG note |
+| **P19-002** | [ ] Windows CI blocking | `.github/workflows/java.yml` | Remove `continue-on-error: true` on `check-windows`; both jobs block merge; green on `beta`/`main` |
+| **P19-003** | [ ] Trace parser/builder coverage | `probe/*Trace*`, `probe/*Traceroute*`, `build.gradle.kts`, `src/test/java/io/pingui/probe/` | Unit tests for `UnixTraceOutputParser`, `WindowsTraceOutputParser`, OS command builders (fixture output); remove those classes from JaCoCo excludes; `./gradlew check` green |
+| **P19-004** | [ ] Legacy pingOnly removal | `MonitorService`, `SessionStore`, UI callers | Keep `HostProbeMode` + `setHostProbeMode`; remove `Map pingOnly`, `PingOnlyResolver`, `setHostPingOnly` shim where possible; atomic `switchProbeMode` monitor+session; stale-poll tests without dual map |
+| **P19-005** | [ ] MonitorService slice: HostRegistry | `monitor/HostRegistry.java`, `MonitorService` | Extract host list, enabled, probe mode, interval override, rename/remove; `MonitorService` delegates; behavior unchanged; registry unit tests |
+| **P19-006** | [ ] PostgreSQL driver scope (P2) | `build.gradle.kts`, persistence wiring docs | `postgresql` not in unconditional `implementation` (optional/`runtimeOnly`/feature flag); desktop install without PG does not bundle driver; LIVING_SPEC/DEPLOYMENT note |
+
+---
+
 ## Out of scope (not planned)
 
 | ID | Idea | Why not |
@@ -769,7 +792,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–17 (P10–P17)**. Linear queue — **NEXT=DONE**.
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–18 (P10–P18)**. Linear queue — **NEXT=P19-001** (phase 19).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

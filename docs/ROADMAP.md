@@ -10,7 +10,7 @@
 
 | Поле | Значення |
 |------|----------|
-| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (лінійна черга зараз **DONE**). Обидві: Java Pro (P9–P17) + Python після merge |
+| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (лінійна черга **P19**). Обидві: Java Pro (P9–P18) + Python після merge |
 | **Пріоритет** | P0 критично · P1 важливо · P2 бажано |
 | **DoD** | Definition of Done — умова закриття задачі |
 
@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **DONE** |
-| **Фаза** | — |
-| **DoD (коротко)** | Черга виконання вичерпана (немає відкритих ID) |
+| **Поточна задача** | **P19-001** |
+| **Фаза** | 19 — Production hardening |
+| **DoD (коротко)** | `appVersion` = `version` у Gradle/jpackage; README/DEPLOYMENT узгоджені |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -97,8 +97,14 @@
 | 51 | **P17-021** | [x] | MTU wizard UI + Alert + apply to Expert |
 | 52 | **P17-030** | [x] | Informational self-check DF/DSCP/Burst (P2) |
 | 53 | **P18-010** | [x] | Ping only toggle: reset stats + discard stale poll |
+| 54 | **P19-001** | [ ] | Єдине джерело версії (`appVersion` ← `version`) |
+| 55 | **P19-002** | [ ] | Windows CI blocking (прибрати `continue-on-error`) |
+| 56 | **P19-003** | [ ] | Trace parser/builder unit tests + JaCoCo include |
+| 57 | **P19-004** | [ ] | Видалити legacy `pingOnly` / `PingOnlyResolver` |
+| 58 | **P19-005** | [ ] | `MonitorService` slice: `HostRegistry` |
+| 59 | **P19-006** | [ ] | PostgreSQL driver optional scope |
 
-**Стан черги:** закрита — **NEXT = DONE**. Нові задачі — лише явне розширення черги + оновлення NEXT.
+**Стан черги:** відкрита — **NEXT = P19-001** (фаза 19, post-`main` hardening після аналізу 2026-07).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -687,6 +693,23 @@ flowchart TD
 
 ---
 
+## Фаза 19 — Production hardening (`beta`, P0–P2)
+
+**Мета:** закрити ризики після merge `main` (PR #10): release hygiene, cross-platform CI gate, реальніше coverage OS-critical шляхів, усунення transitional probe-mode debt, перший крок декомпозиції `MonitorService`.
+
+**Контекст:** повторний архітектурний аналіз `main` @ `176a9d3` (2026-07): JaCoCo 80% з великими exclusions; Windows job non-blocking; `version` vs `appVersion`; подвійна `pingOnly`/`probeModes`; `MonitorService` god object; `postgresql` у fat classpath.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P19-001** | [ ] Єдине джерело версії | `java/build.gradle.kts`, `java/README.md`, `docs/DEPLOYMENT.md` | `jpackage --app-version` береться з `version` (без окремого `0.1.0`); `build.properties`/`About` узгоджені; CHANGELOG note |
+| **P19-002** | [ ] Windows CI blocking | `.github/workflows/java.yml` | Прибрати `continue-on-error: true` на `check-windows`; обидва job блокують merge; green на `beta`/`main` |
+| **P19-003** | [ ] Trace parser/builder coverage | `probe/*Trace*`, `probe/*Traceroute*`, `build.gradle.kts`, `src/test/java/io/pingui/probe/` | Unit-тести на `UnixTraceOutputParser`, `WindowsTraceOutputParser`, OS command builders (fixture output); прибрати ці класи з JaCoCo excludes; `./gradlew check` green |
+| **P19-004** | [ ] Legacy pingOnly removal | `MonitorService`, `SessionStore`, UI callers | Лишити `HostProbeMode` + `setHostProbeMode`; видалити `Map pingOnly`, `PingOnlyResolver`, `setHostPingOnly` shim де можливо; atomic `switchProbeMode` monitor+session; тести на stale poll без dual map |
+| **P19-005** | [ ] MonitorService slice: HostRegistry | `monitor/HostRegistry.java`, `MonitorService` | Винести host list, enabled, probe mode, interval override, rename/remove; `MonitorService` делегує; поведінка без змін; unit-тести registry |
+| **P19-006** | [ ] PostgreSQL driver scope (P2) | `build.gradle.kts`, persistence wiring docs | `postgresql` не в unconditional `implementation` (optional/`runtimeOnly`/feature flag); desktop install без PG не тягне driver; LIVING_SPEC/DEPLOYMENT note |
+
+---
+
 ## Поза scope (не плануємо)
 
 | ID | Ідея | Чому ні |
@@ -769,7 +792,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–17 (P10–P17)**. Лінійна черга — **NEXT=DONE**.
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–18 (P10–P18)**. Лінійна черга — **NEXT=P19-001** (фаза 19).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 
