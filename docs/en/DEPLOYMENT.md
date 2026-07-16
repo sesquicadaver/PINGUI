@@ -64,6 +64,8 @@ pingui-java.bat --config config/hosts.windows.example.yaml
 
 ## Build and packaging
 
+Application version comes from `version` in `java/build.gradle.kts` (single source). Gradle `generateBuildProperties` writes it to `pingui/build.properties` and the JAR manifest; About (`AppInfo`) shows the same value. `jpackage --app-version` uses semver without `-SNAPSHOT` (e.g. `0.2.0` from `0.2.0-SNAPSHOT`).
+
 ```bash
 cd java
 ./gradlew build          # compile + jar

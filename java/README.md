@@ -185,6 +185,8 @@ Unit-тести — `src/test/java`; матриця: [docs/LIVING_SPEC.md](../do
 
 ## Пакування (jpackage)
 
+Єдине джерело версії — `version` у `build.gradle.kts` (`0.2.0-SNAPSHOT` за замовч.). `generateBuildProperties` пише її в `pingui/build.properties` і JAR manifest; About (`AppInfo`) читає звідти. `jpackage --app-version` бере semver без суфікса `-SNAPSHOT` (напр. `0.2.0`).
+
 ```bash
 ./pingui-java.sh --package    # Linux / macOS
 pingui-java.bat --package     # Windows

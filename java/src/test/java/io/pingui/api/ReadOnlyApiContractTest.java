@@ -3,6 +3,7 @@ package io.pingui.api;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.pingui.AppInfo;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.HostSessionData;
 import io.pingui.monitor.HostProbeMode;
@@ -85,6 +86,9 @@ class ReadOnlyApiContractTest {
             assertTrue(body.contains("\"/hosts\""));
             assertTrue(body.contains("\"/routes/{host}\""));
             assertTrue(body.contains("\"404\""));
+            String apiVersion = AppInfo.version().replace("-SNAPSHOT", "");
+            assertTrue(body.contains("\"version\": \"" + apiVersion + "\"")
+                    || body.contains("\"version\":\"" + apiVersion + "\""));
         }
     }
 

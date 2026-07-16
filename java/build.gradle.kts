@@ -10,6 +10,9 @@ plugins {
 group = "io.pingui"
 version = "0.2.0-SNAPSHOT"
 
+/** Semver for jpackage {@code --app-version} (Gradle {@code version} minus {@code -SNAPSHOT}). */
+val jpackageAppVersion: String = version.toString().removeSuffix("-SNAPSHOT")
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
@@ -19,8 +22,6 @@ java {
 repositories {
     mavenCentral()
 }
-
-val appVersion = "0.1.0"
 
 dependencies {
     implementation("org.yaml:snakeyaml:2.3")
@@ -260,7 +261,7 @@ tasks.register<Exec>("jpackageDeb") {
         "--type", "deb",
         "--java-options", "-Dprism.order=sw",
         "--vendor", "PINGUI",
-        "--app-version", appVersion,
+        "--app-version", jpackageAppVersion,
         "--dest", distDir.get().asFile.absolutePath,
     )
     onlyIf {
@@ -287,7 +288,7 @@ tasks.register<Exec>("jpackageMsi") {
         "--type", "msi",
         "--java-options", "-Dprism.order=sw",
         "--vendor", "PINGUI",
-        "--app-version", appVersion,
+        "--app-version", jpackageAppVersion,
         "--dest", distDir.get().asFile.absolutePath,
     )
     onlyIf {
@@ -314,7 +315,7 @@ tasks.register<Exec>("jpackageDmg") {
         "--type", "dmg",
         "--java-options", "-Dprism.order=sw",
         "--vendor", "PINGUI",
-        "--app-version", appVersion,
+        "--app-version", jpackageAppVersion,
         "--dest", distDir.get().asFile.absolutePath,
     )
     onlyIf {

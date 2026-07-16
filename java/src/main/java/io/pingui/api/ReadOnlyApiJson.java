@@ -1,5 +1,6 @@
 package io.pingui.api;
 
+import io.pingui.AppInfo;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.HostSessionData;
 import io.pingui.monitor.SessionStore;
@@ -61,12 +62,13 @@ final class ReadOnlyApiJson {
 
     /** Minimal OpenAPI 3.0 stub for the two read endpoints. */
     static String openApiDocument() {
+        String apiVersion = AppInfo.version().replace("-SNAPSHOT", "");
         return """
                 {
                   "openapi": "3.0.3",
                   "info": {
                     "title": "PINGUI Read-Only API",
-                    "version": "0.1.0",
+                    "version": "%s",
                     "description": "Localhost runbook API (P15-040). Auth out of scope for v1."
                   },
                   "servers": [{"url": "http://127.0.0.1"}],
@@ -112,6 +114,7 @@ final class ReadOnlyApiJson {
                     }
                   }
                 }
-                """;
+                """
+                .formatted(apiVersion);
     }
 }

@@ -183,6 +183,8 @@ Unit tests — `src/test/java`; matrix: [docs/LIVING_SPEC.md](../docs/en/LIVING_
 
 ## Packaging (jpackage)
 
+Single version source: `version` in `build.gradle.kts` (default `0.2.0-SNAPSHOT`). `generateBuildProperties` writes it to `pingui/build.properties` and the JAR manifest; About (`AppInfo`) reads from there. `jpackage --app-version` uses semver without `-SNAPSHOT` (e.g. `0.2.0`).
+
 ```bash
 ./pingui-java.sh --package    # Linux / macOS
 pingui-java.bat --package     # Windows

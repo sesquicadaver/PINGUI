@@ -64,6 +64,8 @@ pingui-java.bat --config config/hosts.windows.example.yaml
 
 ## Збірка та пакування
 
+Версія застосунку — поле `version` у `java/build.gradle.kts` (єдине джерело). Gradle `generateBuildProperties` записує її в `pingui/build.properties` і JAR manifest; About (`AppInfo`) показує ту саму версію. `jpackage --app-version` — semver без `-SNAPSHOT` (напр. `0.2.0` з `0.2.0-SNAPSHOT`).
+
 ```bash
 cd java
 ./gradlew build          # compile + jar

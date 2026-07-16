@@ -11,7 +11,8 @@ Module → unit test matrix. Update when adding features.
 | Trace argv (OS) | `TraceCommandBuilder`, `TraceTarget`, `LinuxTracerouteCommand`, `MacTracerouteCommand`, `WindowsTracertCommand` | `TraceTargetTest`, `ProcessRouteProbeCommandTest` (v6 `-6`) |
 | IPv4/IPv6 host validation | `HostsConfig`, `HostAddressParser`, `HostEntry` | `HostsConfigTest`, `HostAddressParserTest`, `HostEntryTest` |
 | CLI interval vs YAML (M-014) | `CliProfileOverrides`, `ProfilesConfig` | `PinguiApplicationTest.m014_*` |
-| Build metadata | `AppInfo`, `generateBuildProperties` | `AppInfoTest` |
+| Build metadata | `AppInfo`, `generateBuildProperties`, `jpackageAppVersion` | `AppInfoTest`, `./gradlew jpackage*` uses Gradle `version` |
+| Version source (P19-001) | `build.gradle.kts` `version`, `AppInfo`, `ReadOnlyApiJson` | `AppInfoTest.version_matchesBuildPropertiesWhenGenerated`; `ReadOnlyApiContractTest.openApiStubDocumentsRequiredPaths` |
 | Layer deps (no ui in config) | `scripts/check-layer-deps.sh` | `./gradlew layerCheck` |
 | GeoIP hints | `GeoCountry` | `GeoCountryTest` (longest-prefix, LAN/IPv6, invalid YAML, 0.0.0.0/0) |
 | YAML profiles v2 + legacy | `ProfilesConfig`, `ProfileDocument` | `ProfilesConfigTest` (host flags, type errors, save max hosts), `ProfileDocumentTest` |
