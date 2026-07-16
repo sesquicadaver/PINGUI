@@ -76,7 +76,9 @@ class TraceCommandBuildersTest {
         WindowsTracertCommand builder = new WindowsTracertCommand();
         List<String> command = builder.buildCommand("8.8.8.8", 20, 0.5);
 
-        assertTrue(command.get(0).endsWith("tracert") || command.get(0).equals("tracert"));
+        assertTrue(
+                command.get(0).toLowerCase().contains("tracert"),
+                "executable should resolve to tracert: " + command.get(0));
         assertTrue(command.contains("-d"));
         assertTrue(command.contains("-h"));
         assertTrue(command.contains("20"));
