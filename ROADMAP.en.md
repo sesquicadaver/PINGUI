@@ -8,10 +8,10 @@
 
 | Field | Value |
 |------|----------|
-| **Current task** | **[P19-001](docs/en/ROADMAP.md#phase-19--production-hardening-beta-p0p2)** |
+| **Current task** | **[P20-001](docs/en/ROADMAP.md#phase-20--gui-ux-beta-p1p2)** |
 | **Rule** | if not `DONE` — `/autopilot` = this ID; if `DONE` — stop / wait for an explicit new ID. **Do not ask** “which item?”. |
 
-Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (phase 19, #54–59).
+Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (phase 20, #60–71).
 
 **MVP status:** ✅ implemented (2026-06-26)
 
@@ -41,6 +41,7 @@ Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#e
 | **17** | Expert ping / MTU discovery | ✅ |
 | **18** | Probe mode stability | ✅ |
 | **19** | Production hardening (version, CI, coverage, probe-mode debt) | ✅ **DONE** |
+| **20** | GUI UX (Simple feedback, confirm, dirty, polish, settings depth) | 🔄 **P20-001** |
 
 ---
 

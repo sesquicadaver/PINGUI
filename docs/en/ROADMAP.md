@@ -10,7 +10,7 @@ Post-MVP roadmap (2026-06-26) for **professional users** (NOC/SRE, network engin
 
 | Field | Value |
 |-------|-------|
-| **Branch** | `main` — stable snapshot after merge; `beta` — development (linear queue **P19**). Both: Java Pro (P9–P18) + Python after merge |
+| **Branch** | `main` — stable snapshot after merge; `beta` — development (linear queue **P20**). Both: Java Pro (P9–P19) + Python after merge |
 | **Priority** | P0 critical · P1 important · P2 nice-to-have |
 | **DoD** | Definition of Done — task closure condition |
 
@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **DONE** |
-| **Phase** | 19 — Production hardening |
-| **DoD (short)** | Phase 19 linear queue exhausted |
+| **Current task** | **P20-001** |
+| **Phase** | 20 — GUI UX |
+| **DoD (short)** | Simple-mode feedback: errors not silent (Alert / status, not Extended log only) |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -103,8 +103,20 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 57 | **P19-004** | [x] | Remove legacy `pingOnly` / `PingOnlyResolver` |
 | 58 | **P19-005** | [x] | `MonitorService` slice: `HostRegistry` |
 | 59 | **P19-006** | [x] | PostgreSQL driver optional scope |
+| 60 | **P20-001** | [ ] | Simple-mode feedback (errors not silent) |
+| 61 | **P20-002** | [ ] | Confirm delete host / profile |
+| 62 | **P20-003** | [ ] | Dirty / unsaved indicator |
+| 63 | **P20-004** | [ ] | Route diff visual (color/icons) |
+| 64 | **P20-005** | [ ] | Export now from menu |
+| 65 | **P20-006** | [ ] | Keyboard accelerators |
+| 66 | **P20-007** | [ ] | Empty states (Extended / SQLite hints) |
+| 67 | **P20-008** | [ ] | Self-check ProgressBar |
+| 68 | **P20-009** | [ ] | Wire `log_aggregates` to bus |
+| 69 | **P20-010** | [ ] | Profile params GUI (interval/hops/timeout) |
+| 70 | **P20-011** | [ ] | Alerts settings GUI |
+| 71 | **P20-012** | [ ] | Graph UX: zoom/pan / copy / tooltip |
 
-**Queue status:** **DONE** — phase 19 closed (P19-001…006); bare `/autopilot` will not start until a new ID is set.
+**Queue status:** open — **NEXT = P20-001** (phase 20 — GUI UX: quick UX → polish → feature depth).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -710,6 +722,31 @@ flowchart TD
 
 ---
 
+## Phase 20 — GUI UX (`beta`, P1–P2)
+
+**Goal:** close operator UX debt after phase 19: Simple-mode feedback, protect against config loss, polish history/graphs, deeper Settings.
+
+**Context:** GUI analysis 2026-07 — `appendLog` silent in Simple; delete without Confirm; Apply ≠ Save YAML; diff/export/keyboard/empty states; `log_aggregates` flag unwired; profile/alerts YAML/CLI only.
+
+**Waves:** P20-001…003 quick UX · P20-004…008 polish · P20-009…012 feature depth.
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **P20-001** | [ ] Simple-mode feedback | `MainController`, `HostListPresenter`, `appendLog` callers | add/edit/delete/tags errors visible in Simple (Alert or status bar); Extended log kept; unit/UI smoke |
+| **P20-002** | [ ] Confirm delete | `HostListPresenter`, `ProfileUiCoordinator` | Confirm before delete host and delete profile; Cancel no-op; CHECKLIST smoke |
+| **P20-003** | [ ] Dirty / unsaved | `MainController`, profile/telemetry/persistence apply paths | Unsaved-changes indicator; Save clears; profile switch with dirty → Confirm discard/save; CHANGELOG |
+| **P20-004** | [ ] Route diff visual | `RouteDiffPresenter` | CHANGED/ADDED/REMOVED with color or icon (not plain text only); `./gradlew check` |
+| **P20-005** | [ ] Export from menu | `AppMenuDialogs` / `MainController`, `SessionReportExporter` | Menu «Export now…» → CSV/HTML (CLI export parity); clear error without SQLite |
+| **P20-006** | [ ] Keyboard accelerators | `MainController` | Hotkeys: Save, Add host, Help(F1); document in Help; do not break TextField focus |
+| **P20-007** | [ ] Empty states | `RouteHistoryPresenter`, `MainController` / view mode | Hints when no SQLite / empty history / Simple without log; UK/EN |
+| **P20-008** | [ ] Self-check ProgressBar | `PresetSelfCheckUi` | Progress during batch (like MTU wizard); Stop or disabled until done; tests |
+| **P20-009** | [ ] Wire `log_aggregates` | `AggregateTelemetryJob`, `TelemetryAttachment` / daemon+GUI | Checkbox on → job on bus; off → off; tooltip without «backlog»; LIVING_SPEC |
+| **P20-010** | [ ] Profile params GUI | Settings dialog or profile panel | Edit interval / max_hops / timeout (+ optional probe) of active profile → YAML Save; validation; tests |
+| **P20-011** | [ ] Alerts settings GUI | Settings dialog | Desktop/webhook enable + URL (redacted); wire as YAML alerts; not a full NMS |
+| **P20-012** | [ ] Graph UX | `GraphCanvas`, `RouteGraphPresenter` | At least 2 of: zoom/pan, copy hop IP, hover tooltip; CHECKLIST smoke Extended |
+
+---
+
 ## Out of scope (not planned)
 
 | ID | Idea | Why not |
@@ -792,7 +829,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–18 (P10–P18)**; **Phase 19 hardening — DONE**. Linear queue — **NEXT=DONE**.
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Linear queue — **NEXT=P20-001**.
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

@@ -10,7 +10,7 @@
 
 | Поле | Значення |
 |------|----------|
-| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (лінійна черга **P19**). Обидві: Java Pro (P9–P18) + Python після merge |
+| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (лінійна черга **P20**). Обидві: Java Pro (P9–P19) + Python після merge |
 | **Пріоритет** | P0 критично · P1 важливо · P2 бажано |
 | **DoD** | Definition of Done — умова закриття задачі |
 
@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **DONE** |
-| **Фаза** | 19 — Production hardening |
-| **DoD (коротко)** | Лінійна черга фази 19 вичерпана |
+| **Поточна задача** | **P20-001** |
+| **Фаза** | 20 — GUI UX |
+| **DoD (коротко)** | Feedback у Simple: помилки не silent (Alert / status, не лише Extended log) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -103,8 +103,20 @@
 | 57 | **P19-004** | [x] | Видалити legacy `pingOnly` / `PingOnlyResolver` |
 | 58 | **P19-005** | [x] | `MonitorService` slice: `HostRegistry` |
 | 59 | **P19-006** | [x] | PostgreSQL driver optional scope |
+| 60 | **P20-001** | [ ] | Feedback у Simple (помилки не silent) |
+| 61 | **P20-002** | [ ] | Confirm delete host / profile |
+| 62 | **P20-003** | [ ] | Dirty / unsaved indicator |
+| 63 | **P20-004** | [ ] | Route diff visual (color/icons) |
+| 64 | **P20-005** | [ ] | Export зараз з меню |
+| 65 | **P20-006** | [ ] | Keyboard accelerators |
+| 66 | **P20-007** | [ ] | Empty states (Extended / SQLite hints) |
+| 67 | **P20-008** | [ ] | Self-check ProgressBar |
+| 68 | **P20-009** | [ ] | Wire `log_aggregates` to bus |
+| 69 | **P20-010** | [ ] | Profile params GUI (interval/hops/timeout) |
+| 70 | **P20-011** | [ ] | Alerts settings GUI |
+| 71 | **P20-012** | [ ] | Graph UX: zoom/pan / copy / tooltip |
 
-**Стан черги:** **DONE** — фаза 19 закрита (P19-001…006); наступний `/autopilot` без аргументів не стартує, доки не задано новий ID.
+**Стан черги:** відкрита — **NEXT = P20-001** (фаза 20 — GUI UX: швидкий UX → polish → feature depth).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -710,6 +722,31 @@ flowchart TD
 
 ---
 
+## Фаза 20 — GUI UX (`beta`, P1–P2)
+
+**Мета:** закрити операторський UX-борг після фази 19: зворотний зв’язок у Simple, захист від втрати конфігу, polish історії/графів, глибші Settings.
+
+**Контекст:** аналіз GUI 2026-07 — `appendLog` мовчить у Simple; delete без Confirm; Apply ≠ Save YAML; diff/export/keyboard/empty states; `log_aggregates` flag без wire; profile/alerts лише YAML/CLI.
+
+**Хвилі:** P20-001…003 швидкий UX · P20-004…008 polish · P20-009…012 feature depth.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P20-001** | [ ] Feedback у Simple | `MainController`, `HostListPresenter`, callers `appendLog` | Помилки add/edit/delete/tags видимі в Simple (Alert або status bar); Extended log лишається; unit/UI smoke |
+| **P20-002** | [ ] Confirm delete | `HostListPresenter`, `ProfileUiCoordinator` | Confirm перед delete host і delete profile; Cancel без змін; CHECKLIST smoke |
+| **P20-003** | [ ] Dirty / unsaved | `MainController`, profile/telemetry/persistence apply paths | Індикатор «є незбережені зміни»; Save очищає; switch profile з dirty → Confirm discard/save; CHANGELOG |
+| **P20-004** | [ ] Route diff visual | `RouteDiffPresenter` | CHANGED/ADDED/REMOVED з кольором або іконкою (не лише plain text); `./gradlew check` |
+| **P20-005** | [ ] Export з меню | `AppMenuDialogs` / `MainController`, `SessionReportExporter` | Пункт меню «Експорт зараз…» → CSV/HTML (паритет CLI export); без SQLite — зрозуміла помилка |
+| **P20-006** | [ ] Keyboard accelerators | `MainController` | Hotkeys: Save, Add host, Help(F1); документувати в Help; не ламати TextField focus |
+| **P20-007** | [ ] Empty states | `RouteHistoryPresenter`, `MainController` / view mode | Підказки коли немає SQLite / порожня history / Simple без log; UK/EN |
+| **P20-008** | [ ] Self-check ProgressBar | `PresetSelfCheckUi` | Progress під час batch (як MTU wizard); Stop або disabled до кінця; тести |
+| **P20-009** | [ ] Wire `log_aggregates` | `AggregateTelemetryJob`, `TelemetryAttachment` / daemon+GUI | Checkbox увімкнений → job на bus; вимкнений → off; tooltip без «backlog»; LIVING_SPEC |
+| **P20-010** | [ ] Profile params GUI | Settings dialog або profile panel | Edit interval / max_hops / timeout (+ опційно probe) активного профілю → YAML Save; валідація; тести |
+| **P20-011** | [ ] Alerts settings GUI | Settings dialog | Desktop/webhook enable + URL (redacted); wire як YAML alerts; без повного NMS |
+| **P20-012** | [ ] Graph UX | `GraphCanvas`, `RouteGraphPresenter` | Мінімум 2 з: zoom/pan, copy hop IP, hover tooltip; CHECKLIST smoke Extended |
+
+---
+
 ## Поза scope (не плануємо)
 
 | ID | Ідея | Чому ні |
@@ -792,7 +829,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–18 (P10–P18)**; **Фаза 19 hardening — DONE**. Лінійна черга — **NEXT=DONE**.
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Лінійна черга — **NEXT=P20-001**.
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

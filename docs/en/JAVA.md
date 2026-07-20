@@ -216,4 +216,4 @@ Tests and CI — on **`main`** and **`beta`** (ROADMAP development on `beta`).
 
 ## Future
 
-The linear ROADMAP queue: **NEXT = DONE** (phase 19 — production hardening). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT.
+The linear ROADMAP queue: **NEXT = P20-001** (phase 20 — GUI UX). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT.
