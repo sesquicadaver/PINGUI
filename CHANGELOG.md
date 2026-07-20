@@ -9,6 +9,7 @@
 
 ### Changed
 
+- **P20-002 — Confirm delete:** Confirm перед delete host/profile (`ConfirmDialogs`); Cancel без змін; ROADMAP NEXT → **P20-003**.
 - **P20-001 — Simple feedback:** `UserFeedback`/`UiFeedbackRouter` — у Simple info→status, error→status+Alert; Extended лише log (без Alert); `statusLabel` видимий у Simple; ROADMAP NEXT → **P20-002**.
 - **ROADMAP фаза 20:** відкрито GUI UX (P20-001…012) — хвилі швидкий UX → polish → feature depth; лінійна черга #60–71; NEXT → **P20-001**.
 - **P19-006 — PostgreSQL optional:** JDBC драйвер `compileOnly` (+ `testImplementation`); default `installDist`/jpackage без `postgresql.jar`; Timescale потребує `-PwithPostgresql=true`; ROADMAP NEXT → **DONE** (фаза 19 закрита).

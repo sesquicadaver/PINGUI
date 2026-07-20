@@ -6,10 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.config.HostEntry;
 import io.pingui.config.PingExpertEntry;
+import io.pingui.monitor.MonitorFixtures;
+import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -106,6 +109,46 @@ class HostListPresenterTest {
         });
     }
 
+    @Test
+    void removeHostCancelDoesNotMutate() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            Harness harness = new Harness(List.of(tagged("8.8.8.8"), tagged("1.1.1.1")));
+            harness.presenter.configure();
+            harness.presenter.rebuild(harness.entries);
+            harness.hostList.getSelectionModel().select(0);
+            harness.presenter.setConfirmDeleteHost(host -> false);
+
+            harness.presenter.removeHost();
+
+            assertEquals(2, harness.hostItems.size());
+            assertTrue(harness.store.containsHost("8.8.8.8"));
+            assertTrue(harness.infos.isEmpty());
+            assertTrue(harness.errors.isEmpty());
+        });
+    }
+
+    @Test
+    void removeHostOkDeletesSelectedHost() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            MonitorService monitor = MonitorFixtures.idle();
+            monitor.addHost("8.8.8.8", true);
+            monitor.addHost("1.1.1.1", true);
+            Harness harness = new Harness(List.of(tagged("8.8.8.8"), tagged("1.1.1.1")), () -> monitor);
+            harness.presenter.configure();
+            harness.presenter.rebuild(harness.entries);
+            harness.hostList.getSelectionModel().select(0);
+            harness.presenter.setConfirmDeleteHost(host -> true);
+
+            harness.presenter.removeHost();
+
+            assertEquals(1, harness.hostItems.size());
+            assertEquals("1.1.1.1", harness.hostItems.get(0).getHost());
+            assertTrue(!harness.store.containsHost("8.8.8.8"));
+            assertTrue(harness.infos.stream().anyMatch(line -> line.contains("Видалено ціль: 8.8.8.8")));
+            monitor.close();
+        });
+    }
+
     private static HostEntry tagged(String host, String... tags) {
         return new HostEntry(host, true, false, PingExpertEntry.empty(), null, null, List.of(tags));
     }
@@ -121,6 +164,12 @@ class HostListPresenterTest {
         final HostListPresenter presenter;
 
         Harness(List<HostEntry> entries) {
+            this(entries, () -> {
+                throw new UnsupportedOperationException("monitor unused");
+            });
+        }
+
+        Harness(List<HostEntry> entries, Supplier<MonitorService> monitor) {
             this.entries = entries;
             this.store = SessionStore.fromEntries(entries);
             UserFeedback feedback = new UserFeedback() {
@@ -139,9 +188,7 @@ class HostListPresenterTest {
                     hostList,
                     hostInput,
                     () -> store,
-                    () -> {
-                        throw new UnsupportedOperationException("monitor unused");
-                    },
+                    monitor,
                     new SimpleBooleanProperty(false),
                     feedback,
                     () -> {},

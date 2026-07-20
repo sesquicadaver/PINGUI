@@ -9,9 +9,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextInputDialog;
+import javafx.stage.Window;
 
 /** Profile selection and CRUD in the main window. */
 final class ProfileUiCoordinator {
@@ -23,6 +25,7 @@ final class ProfileUiCoordinator {
     private final Runnable reloadActiveProfile;
     private final Runnable refreshProfileCombo;
     private final UserFeedback userFeedback;
+    private Function<String, Boolean> confirmDeleteProfile = this::confirmDeleteProfileDialog;
 
     ProfileUiCoordinator(
             Supplier<ProfileDocument> profileDocument,
@@ -41,6 +44,12 @@ final class ProfileUiCoordinator {
         this.reloadActiveProfile = reloadActiveProfile;
         this.refreshProfileCombo = refreshProfileCombo;
         this.userFeedback = userFeedback;
+    }
+
+    /** Package-visible for tests: inject delete confirmation without modal Alert. */
+    void setConfirmDeleteProfile(Function<String, Boolean> confirmDeleteProfile) {
+        this.confirmDeleteProfile =
+                confirmDeleteProfile != null ? confirmDeleteProfile : this::confirmDeleteProfileDialog;
     }
 
     void syncActiveProfileFromSession() {
@@ -122,6 +131,9 @@ final class ProfileUiCoordinator {
     void onDeleteProfile() {
         ProfileDocument document = profileDocument.get();
         String active = document.activeProfile();
+        if (!Boolean.TRUE.equals(confirmDeleteProfile.apply(active))) {
+            return;
+        }
         try {
             syncActiveProfileFromSession();
             document.removeProfile(active);
@@ -131,5 +143,14 @@ final class ProfileUiCoordinator {
         } catch (ConfigError ex) {
             userFeedback.error(ex.getMessage());
         }
+    }
+
+    private boolean confirmDeleteProfileDialog(String profileName) {
+        Window owner = profileCombo.getScene() != null ? profileCombo.getScene().getWindow() : null;
+        return ConfirmDialogs.confirm(
+                owner,
+                "Видалити профіль",
+                "Видалити профіль «" + profileName + "»?",
+                "Профіль зникне з документа. Збережіть конфіг, щоб зміна потрапила у YAML.");
     }
 }

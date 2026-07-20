@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ListChangeListener;
@@ -59,6 +60,7 @@ final class HostListPresenter {
     private boolean updatingList;
     private boolean refreshingChips;
     private BiFunction<String, List<String>, Optional<List<String>>> tagsEditor = HostTagsDialog::show;
+    private Function<String, Boolean> confirmDeleteHost = this::confirmDeleteHostDialog;
 
     HostListPresenter(
             ObservableList<HostItem> hostItems,
@@ -186,6 +188,11 @@ final class HostListPresenter {
     /** Package-visible for tests: inject dialog without JavaFX modality. */
     void setTagsEditor(BiFunction<String, List<String>, Optional<List<String>>> tagsEditor) {
         this.tagsEditor = tagsEditor != null ? tagsEditor : HostTagsDialog::show;
+    }
+
+    /** Package-visible for tests: inject delete confirmation without modal Alert. */
+    void setConfirmDeleteHost(Function<String, Boolean> confirmDeleteHost) {
+        this.confirmDeleteHost = confirmDeleteHost != null ? confirmDeleteHost : this::confirmDeleteHostDialog;
     }
 
     String activeFilterTag() {
@@ -329,6 +336,9 @@ final class HostListPresenter {
             return;
         }
         String host = selected.getHost();
+        if (!Boolean.TRUE.equals(confirmDeleteHost.apply(host))) {
+            return;
+        }
         try {
             monitor.get().removeHost(host);
             store.get().removeHost(host);
@@ -340,6 +350,15 @@ final class HostListPresenter {
         } catch (ConfigError ex) {
             userFeedback.error(ex.getMessage());
         }
+    }
+
+    private boolean confirmDeleteHostDialog(String host) {
+        Window owner = hostList.getScene() != null ? hostList.getScene().getWindow() : null;
+        return ConfirmDialogs.confirm(
+                owner,
+                "Видалити ціль",
+                "Видалити «" + host + "» зі списку?",
+                "Ціль зникне з поточної сесії. Збережіть конфіг, щоб зміна потрапила у YAML.");
     }
 
     void syncInputLimits() {

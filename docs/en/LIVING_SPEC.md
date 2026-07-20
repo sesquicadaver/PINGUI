@@ -81,6 +81,7 @@ Module → unit test matrix. Update when adding features.
 | HostRegistry slice (P19-005) | `HostRegistry`, `MonitorService` | `HostRegistryTest`; existing `MonitorServiceTest` regression |
 | PostgreSQL optional (P19-006) | `build.gradle.kts` (`compileOnly` + `-PwithPostgresql`), `TimescaleTimeSeriesBackend.requirePostgresqlDriver` | `TimeSeriesBackendsTest.requirePostgresqlDriverSucceedsWhenOnTestClasspath`; `installDist` lib without `postgresql*.jar` |
 | Simple-mode feedback (P20-001) | `UserFeedback`, `UiFeedbackRouter`, `ViewModeController`, `MainController`, `HostListPresenter`, `ProfileUiCoordinator` | `UiFeedbackRouterTest`, `ViewModeControllerTest`, `HostListPresenterTest.addHostValidationFailureCallsErrorFeedback` |
+| Confirm delete host/profile (P20-002) | `ConfirmDialogs`, `HostListPresenter`, `ProfileUiCoordinator` | `HostListPresenterTest.removeHostCancelDoesNotMutate`, `removeHostOkDeletesSelectedHost`, `ProfileUiCoordinatorTest` |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |

@@ -286,6 +286,7 @@ chmod +x pingui-java.sh gradlew
 - [ ] **Новий профіль** → ім'я `test` → список хостів порожній, вікно без чорних смуг
 - [ ] **Видалити профіль** (повернення до default) → Simple mode, вікно зменшується коректно (не лишається oversized frame)
 - [ ] **Розширений** → граф + лог; **Простий** → знову compact layout
+- [ ] **P20-002 Confirm delete:** Видалити ціль / профіль → Confirm; Cancel без змін
 - [ ] **P20-001 Simple feedback:** помилка add host (дублікат) → status + Alert; Extended fail → лише лог (без Alert); live «Останнє оновлення…» в Extended не затирається feedback info
 - [ ] Додати `8.8.8.8` → **Зберегти** → перезапуск `./pingui-java.sh` → ціль і профіль на місці
 - [ ] Перемикання профілів у ComboBox — хости оновлюються
