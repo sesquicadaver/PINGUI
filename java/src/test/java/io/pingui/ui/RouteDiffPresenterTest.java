@@ -26,6 +26,20 @@ class RouteDiffPresenterTest {
     }
 
     @Test
+    void showChangedRowExposesKindForStyledCell() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            RouteDiffPresenter presenter = new RouteDiffPresenter();
+            presenter.show(
+                    List.of(new HopNode(1, "10.0.0.1", 5.0, false)),
+                    List.of(new HopNode(1, "192.168.1.1", 8.0, false)));
+            RouteDiff.Row row = presenter.listView().getItems().get(0);
+            assertEquals(RouteDiff.Kind.CHANGED, row.kind());
+            assertTrue(RouteDiffStyle.cellText(row).startsWith("~ "));
+            assertEquals(RouteDiffStyle.textFill(RouteDiff.Kind.CHANGED), RouteDiffStyle.textFill(row.kind()));
+        });
+    }
+
+    @Test
     void clearEmptiesList() throws Exception {
         FxTestSupport.runOnFxThread(() -> {
             RouteDiffPresenter presenter = new RouteDiffPresenter();

@@ -286,6 +286,7 @@ chmod +x pingui-java.sh gradlew
 - [ ] **Новий профіль** → ім'я `test` → список хостів порожній, вікно без чорних смуг
 - [ ] **Видалити профіль** (повернення до default) → Simple mode, вікно зменшується коректно (не лишається oversized frame)
 - [ ] **Розширений** → граф + лог; **Простий** → знову compact layout
+- [ ] **P20-004 Route diff:** Extended — зміна маршруту → рядки з `~`/`+`/`−` і кольором
 - [ ] **P20-003 Dirty/unsaved:** змінити хост → «Зберегти *»; switch profile → Confirm; Save очищає *
 - [ ] **P20-002 Confirm delete:** Видалити ціль / профіль → Confirm; Cancel без змін
 - [ ] **P20-001 Simple feedback:** помилка add host (дублікат) → status + Alert; Extended fail → лише лог (без Alert); live «Останнє оновлення…» в Extended не затирається feedback info

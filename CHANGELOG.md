@@ -9,6 +9,7 @@
 
 ### Changed
 
+- **P20-004 — Route diff visual:** `RouteDiffStyle` — prefix (`=`/`~`/`+`/`−`) + колір для Kind; ListCell у `RouteDiffPresenter`; ROADMAP NEXT → **P20-005**.
 - **P20-003 — Dirty/unsaved:** `ConfigDirtyState` — індикатор Save*/title*; mark після CRUD/settings; Save очищає; switch profile Confirm Зберегти/Не зберігати/Скасувати; ROADMAP NEXT → **P20-004**.
 - **P20-002 — Confirm delete:** Confirm перед delete host/profile (`ConfirmDialogs`); Cancel без змін; ROADMAP NEXT → **P20-003**.
 - **P20-001 — Simple feedback:** `UserFeedback`/`UiFeedbackRouter` — у Simple info→status, error→status+Alert; Extended лише log (без Alert); `statusLabel` видимий у Simple; ROADMAP NEXT → **P20-002**.

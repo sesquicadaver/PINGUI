@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P20-004 — Route diff visual:** `RouteDiffStyle` — prefix (`=`/`~`/`+`/`−`) + color per Kind; ListCell in `RouteDiffPresenter`; ROADMAP NEXT → **P20-005**.
 - **P20-003 — Dirty/unsaved:** `ConfigDirtyState` — Save*/title* indicator; mark after CRUD/settings; Save clears; profile switch Confirm Save/Discard/Cancel; ROADMAP NEXT → **P20-004**.
 - **P20-002 — Confirm delete:** Confirm before delete host/profile (`ConfirmDialogs`); Cancel is a no-op; ROADMAP NEXT → **P20-003**.
 - **P20-001 — Simple feedback:** `UserFeedback`/`UiFeedbackRouter` — Simple info→status, error→status+Alert; Extended log only (no Alert); `statusLabel` visible in Simple; ROADMAP NEXT → **P20-002**.
