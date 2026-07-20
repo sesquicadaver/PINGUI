@@ -26,6 +26,10 @@ final class ProfileUiCoordinator {
     private final Runnable refreshProfileCombo;
     private final UserFeedback userFeedback;
     private Function<String, Boolean> confirmDeleteProfile = this::confirmDeleteProfileDialog;
+    private Runnable markDirty = () -> {};
+    private BooleanSupplier isDirty = () -> false;
+    private BooleanSupplier saveYaml = () -> true;
+    private Supplier<ConfirmDialogs.UnsavedDecision> confirmUnsaved = this::confirmUnsavedDialog;
 
     ProfileUiCoordinator(
             Supplier<ProfileDocument> profileDocument,
@@ -50,6 +54,18 @@ final class ProfileUiCoordinator {
     void setConfirmDeleteProfile(Function<String, Boolean> confirmDeleteProfile) {
         this.confirmDeleteProfile =
                 confirmDeleteProfile != null ? confirmDeleteProfile : this::confirmDeleteProfileDialog;
+    }
+
+    /** Package-visible for tests / wiring: YAML dirty tracking and save/confirm hooks. */
+    void setDirtyHooks(
+            Runnable markDirty,
+            BooleanSupplier isDirty,
+            BooleanSupplier saveYaml,
+            Supplier<ConfirmDialogs.UnsavedDecision> confirmUnsaved) {
+        this.markDirty = markDirty != null ? markDirty : () -> {};
+        this.isDirty = isDirty != null ? isDirty : () -> false;
+        this.saveYaml = saveYaml != null ? saveYaml : () -> true;
+        this.confirmUnsaved = confirmUnsaved != null ? confirmUnsaved : this::confirmUnsavedDialog;
     }
 
     void syncActiveProfileFromSession() {
@@ -90,6 +106,21 @@ final class ProfileUiCoordinator {
         if (selected == null || selected.equals(document.activeProfile())) {
             return;
         }
+        String previous = document.activeProfile();
+        if (isDirty.getAsBoolean()) {
+            ConfirmDialogs.UnsavedDecision decision = confirmUnsaved.get();
+            if (decision == ConfirmDialogs.UnsavedDecision.CANCEL) {
+                revertComboSelection(previous);
+                return;
+            }
+            if (decision == ConfirmDialogs.UnsavedDecision.SAVE) {
+                if (!saveYaml.getAsBoolean()) {
+                    revertComboSelection(previous);
+                    return;
+                }
+            }
+            // DISCARD: switch without YAML write; dirty stays true until Save.
+        }
         try {
             syncActiveProfileFromSession();
             document.setActiveProfile(selected);
@@ -122,6 +153,7 @@ final class ProfileUiCoordinator {
             document.setActiveProfile(name);
             reloadActiveProfile.run();
             refreshCombo();
+            markDirty.run();
             userFeedback.info("Створено профіль: " + name);
         } catch (ConfigError ex) {
             userFeedback.error(ex.getMessage());
@@ -139,10 +171,22 @@ final class ProfileUiCoordinator {
             document.removeProfile(active);
             reloadActiveProfile.run();
             refreshCombo();
+            markDirty.run();
             userFeedback.info("Видалено профіль: " + active);
         } catch (ConfigError ex) {
             userFeedback.error(ex.getMessage());
         }
+    }
+
+    private void revertComboSelection(String previous) {
+        setSwitchingProfile.accept(true);
+        profileCombo.getSelectionModel().select(previous);
+        setSwitchingProfile.accept(false);
+    }
+
+    private ConfirmDialogs.UnsavedDecision confirmUnsavedDialog() {
+        Window owner = profileCombo.getScene() != null ? profileCombo.getScene().getWindow() : null;
+        return ConfirmDialogs.confirmUnsaved(owner);
     }
 
     private boolean confirmDeleteProfileDialog(String profileName) {

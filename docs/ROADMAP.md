@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P20-003** |
+| **Поточна задача** | **P20-004** |
 | **Фаза** | 20 — GUI UX |
-| **DoD (коротко)** | Dirty / unsaved indicator; Save очищає; switch profile Confirm |
+| **DoD (коротко)** | Route diff visual (color/icons) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -105,7 +105,7 @@
 | 59 | **P19-006** | [x] | PostgreSQL driver optional scope |
 | 60 | **P20-001** | [x] | Feedback у Simple (помилки не silent) |
 | 61 | **P20-002** | [x] | Confirm delete host / profile |
-| 62 | **P20-003** | [ ] | Dirty / unsaved indicator |
+| 62 | **P20-003** | [x] | Dirty / unsaved indicator |
 | 63 | **P20-004** | [ ] | Route diff visual (color/icons) |
 | 64 | **P20-005** | [ ] | Export зараз з меню |
 | 65 | **P20-006** | [ ] | Keyboard accelerators |
@@ -116,7 +116,7 @@
 | 70 | **P20-011** | [ ] | Alerts settings GUI |
 | 71 | **P20-012** | [ ] | Graph UX: zoom/pan / copy / tooltip |
 
-**Стан черги:** відкрита — **NEXT = P20-003** (фаза 20 — GUI UX: швидкий UX → polish → feature depth).
+**Стан черги:** відкрита — **NEXT = P20-004** (фаза 20 — GUI UX: швидкий UX → polish → feature depth).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -734,7 +734,7 @@ flowchart TD
 |----|--------|-------|-----|
 | **P20-001** | [x] Feedback у Simple | `MainController`, `HostListPresenter`, callers `appendLog` | Помилки add/edit/delete/tags видимі в Simple (Alert або status bar); Extended log лишається; unit/UI smoke |
 | **P20-002** | [x] Confirm delete | `HostListPresenter`, `ProfileUiCoordinator` | Confirm перед delete host і delete profile; Cancel без змін; CHECKLIST smoke |
-| **P20-003** | [ ] Dirty / unsaved | `MainController`, profile/telemetry/persistence apply paths | Індикатор «є незбережені зміни»; Save очищає; switch profile з dirty → Confirm discard/save; CHANGELOG |
+| **P20-003** | [x] Dirty / unsaved | `MainController`, profile/telemetry/persistence apply paths | Індикатор «є незбережені зміни»; Save очищає; switch profile з dirty → Confirm discard/save; CHANGELOG |
 | **P20-004** | [ ] Route diff visual | `RouteDiffPresenter` | CHANGED/ADDED/REMOVED з кольором або іконкою (не лише plain text); `./gradlew check` |
 | **P20-005** | [ ] Export з меню | `AppMenuDialogs` / `MainController`, `SessionReportExporter` | Пункт меню «Експорт зараз…» → CSV/HTML (паритет CLI export); без SQLite — зрозуміла помилка |
 | **P20-006** | [ ] Keyboard accelerators | `MainController` | Hotkeys: Save, Add host, Help(F1); документувати в Help; не ламати TextField focus |
@@ -829,7 +829,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Лінійна черга — **NEXT=P20-003**.
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Лінійна черга — **NEXT=P20-004**.
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

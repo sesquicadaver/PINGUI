@@ -61,6 +61,7 @@ final class HostListPresenter {
     private boolean refreshingChips;
     private BiFunction<String, List<String>, Optional<List<String>>> tagsEditor = HostTagsDialog::show;
     private Function<String, Boolean> confirmDeleteHost = this::confirmDeleteHostDialog;
+    private Runnable markDirty = () -> {};
 
     HostListPresenter(
             ObservableList<HostItem> hostItems,
@@ -195,6 +196,11 @@ final class HostListPresenter {
         this.confirmDeleteHost = confirmDeleteHost != null ? confirmDeleteHost : this::confirmDeleteHostDialog;
     }
 
+    /** Package-visible for tests / wiring: mark YAML dirty after config mutations. */
+    void setMarkDirty(Runnable markDirty) {
+        this.markDirty = markDirty != null ? markDirty : () -> {};
+    }
+
     String activeFilterTag() {
         return activeFilterTag;
     }
@@ -240,6 +246,7 @@ final class HostListPresenter {
                 hostList.getSelectionModel().select(item);
             }
             hostList.refresh();
+            markDirty.run();
             userFeedback.info(
                     "Теги [" + host + "]: " + (updated.get().isEmpty() ? "(немає)" : String.join(", ", updated.get())));
         } catch (ConfigError ex) {
@@ -290,6 +297,7 @@ final class HostListPresenter {
             }
             selectHostWithoutHistoryFilterSync(item);
             hostInput.clear();
+            markDirty.run();
             userFeedback.info("Додано ціль: " + host);
             syncControls.run();
             redrawRoute.run();
@@ -322,6 +330,7 @@ final class HostListPresenter {
             selected.hostProperty().set(renamed);
             hostInput.setText(renamed);
             onHostRenamed.accept(oldHost, renamed);
+            markDirty.run();
             userFeedback.info("Змінено ціль: " + oldHost + " → " + renamed);
             clearHistoryReplay.run();
             redrawRoute.run();
@@ -344,6 +353,7 @@ final class HostListPresenter {
             store.get().removeHost(host);
             hostItems.remove(selected);
             hostInput.clear();
+            markDirty.run();
             userFeedback.info("Видалено ціль: " + host);
             syncControls.run();
             redrawRoute.run();
@@ -433,6 +443,7 @@ final class HostListPresenter {
             syncMetrics(item);
             clearHistoryReplay.run();
             redrawRoute.run();
+            markDirty.run();
         } catch (ConfigError ex) {
             userFeedback.error(ex.getMessage());
             updatingList = true;
@@ -462,6 +473,7 @@ final class HostListPresenter {
             hostList.refresh();
             clearHistoryReplay.run();
             redrawRoute.run();
+            markDirty.run();
             userFeedback.info("Ping only [" + item.getHost() + "]: " + (pingOnly ? "увімкнено" : "вимкнено"));
         } catch (ConfigError ex) {
             userFeedback.error(ex.getMessage());
@@ -482,6 +494,7 @@ final class HostListPresenter {
         try {
             session.setPingExpert(item.getHost(), updated.get());
             item.setExpertConfigured(updated.get().isConfigured());
+            markDirty.run();
             userFeedback.info("Expert ping [" + item.getHost() + "]: "
                     + (updated.get().isConfigured() ? updated.get().args() : "скинуто"));
         } catch (ConfigError ex) {
@@ -504,6 +517,7 @@ final class HostListPresenter {
                 String mtu = result.discovery().recommendedMtu().isPresent()
                         ? Integer.toString(result.discovery().recommendedMtu().getAsInt())
                         : "?";
+                markDirty.run();
                 userFeedback.info("MTU wizard [" + item.getHost() + "]: MTU≈" + mtu + " → " + next.args());
             } catch (ConfigError ex) {
                 userFeedback.error(ex.getMessage());

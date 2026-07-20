@@ -40,10 +40,11 @@ public final class PinguiApplication extends Application {
             controller = new MainController(options, document);
             AppMenuDialogs.bindHostServices(getHostServices());
             Scene scene = controller.createScene();
-            stage.setTitle("PINGUI — Сесійний монітор маршрутів (Java)");
+            stage.setTitle(MainController.windowTitle());
             stage.setScene(scene);
             stage.show();
             controller.onSceneShown();
+            controller.refreshDirtyUi();
         } catch (ConfigError | IllegalArgumentException ex) {
             failCli(ex.getMessage());
         } catch (IOException ex) {

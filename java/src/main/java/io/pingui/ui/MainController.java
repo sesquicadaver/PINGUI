@@ -57,6 +57,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
 
@@ -66,6 +67,12 @@ public final class MainController {
             DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
     private static final double SIMPLE_PANEL_MIN_WIDTH = 580.0;
     private static final Duration EASTER_EGG_DURATION = Duration.seconds(30);
+    private static final String WINDOW_TITLE = "PINGUI — Сесійний монітор маршрутів (Java)";
+
+    /** Window title without dirty suffix (shared with {@link io.pingui.PinguiApplication}). */
+    public static String windowTitle() {
+        return WINDOW_TITLE;
+    }
 
     private final AppOptions options;
     private ProfileDocument profileDocument;
@@ -90,6 +97,8 @@ public final class MainController {
     private final BorderPane root = new BorderPane();
     private final ComboBox<String> profileCombo = new ComboBox<>();
     private final SimpleBooleanProperty expertMode = new SimpleBooleanProperty(false);
+    private final Button saveButton = new Button("Зберегти");
+    private final ConfigDirtyState dirtyState = new ConfigDirtyState(this::updateDirtyUi);
     private RadioButton simpleModeButton;
     private RadioButton extendedModeButton;
     private UiViewMode viewModeBeforeEasterEgg = UiViewMode.SIMPLE;
@@ -138,13 +147,13 @@ public final class MainController {
         Button editButton = new Button("Змінити");
         Button tagsButton = new Button("Теги");
         Button removeButton = new Button("Видалити");
-        Button saveButton = new Button("Зберегти");
         addButton.setOnAction(e -> hostListPresenter.addHost());
         editButton.setOnAction(e -> hostListPresenter.editHost());
         tagsButton.setOnAction(e -> hostListPresenter.editSelectedHostTags());
         removeButton.setOnAction(e -> hostListPresenter.removeHost());
         saveButton.setOnAction(e -> onSaveConfig());
         hostInput.setOnAction(e -> hostListPresenter.addHost());
+        updateDirtyUi();
 
         RadioButton simpleMode = new RadioButton("Простий");
         extendedModeButton = new RadioButton("Розширений");
@@ -272,6 +281,7 @@ public final class MainController {
                 this::reloadActiveProfile,
                 () -> profileUi.refreshCombo(),
                 userFeedback);
+        profileUi.setDirtyHooks(dirtyState::mark, dirtyState::isDirty, this::onSaveConfig, this::confirmUnsavedChanges);
 
         hostListPresenter = new HostListPresenter(
                 hostItems,
@@ -288,6 +298,7 @@ public final class MainController {
                 this::startEasterEgg,
                 () -> viewModeController.fitWindowToContent(),
                 historyHostSync::runWhileSyncing);
+        hostListPresenter.setMarkDirty(dirtyState::mark);
 
         routeGraphPresenter = new RouteGraphPresenter(
                 graphCanvas,
@@ -510,6 +521,10 @@ public final class MainController {
             monitor.setPendingPersistencePolicy(result.policy());
         }
         userFeedback.info("Політика persistence оновлена (з наступного poll-циклу)");
+        // YAML Save currently persists sessionDb override; policy-only Apply stays session-runtime.
+        if (result.sessionDbPath().isPresent()) {
+            dirtyState.mark();
+        }
     }
 
     private void onTelemetrySettings() {
@@ -532,6 +547,7 @@ public final class MainController {
         if (viewModeController.isExtended()) {
             statusLabel.setText("Телеметрія: " + sinks);
         }
+        dirtyState.mark();
     }
 
     private void notifyPersistenceConnected(Path dbPath) {
@@ -624,7 +640,8 @@ public final class MainController {
         redrawRouteGraph();
     }
 
-    private void onSaveConfig() {
+    /** @return {@code true} when YAML was written successfully */
+    private boolean onSaveConfig() {
         try {
             if (sessionGuiDbOverride.isPresent() && options.sessionDbPath().isEmpty()) {
                 TracingProfile active = profileDocument.active();
@@ -633,10 +650,31 @@ public final class MainController {
             }
             profileUi.syncActiveProfileFromSession();
             ProfilesConfig.save(options.configPath(), profileDocument);
+            dirtyState.clear();
             userFeedback.info("Конфіг збережено (усі профілі): " + options.configPath());
+            return true;
         } catch (IOException | ConfigError ex) {
             userFeedback.error("Не вдалося зберегти конфіг: " + ex.getMessage());
+            return false;
         }
+    }
+
+    /** Re-applies dirty indicator after the Stage is shown. */
+    public void refreshDirtyUi() {
+        updateDirtyUi();
+    }
+
+    private void updateDirtyUi() {
+        boolean dirty = dirtyState.isDirty();
+        saveButton.setText(dirty ? "Зберегти *" : "Зберегти");
+        Window window = root.getScene() != null ? root.getScene().getWindow() : null;
+        if (window instanceof Stage stage) {
+            stage.setTitle(dirty ? WINDOW_TITLE + " *" : WINDOW_TITLE);
+        }
+    }
+
+    private ConfirmDialogs.UnsavedDecision confirmUnsavedChanges() {
+        return ConfirmDialogs.confirmUnsaved(dialogOwner());
     }
 
     private void handleData(String host, RouteSnapshot snapshot) {

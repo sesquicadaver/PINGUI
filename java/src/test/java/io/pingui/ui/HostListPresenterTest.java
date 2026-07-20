@@ -12,6 +12,7 @@ import io.pingui.monitor.SessionStore;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
@@ -145,6 +146,24 @@ class HostListPresenterTest {
             assertEquals("1.1.1.1", harness.hostItems.get(0).getHost());
             assertTrue(!harness.store.containsHost("8.8.8.8"));
             assertTrue(harness.infos.stream().anyMatch(line -> line.contains("Видалено ціль: 8.8.8.8")));
+            assertEquals(1, harness.dirtyMarks.get());
+            monitor.close();
+        });
+    }
+
+    @Test
+    void addHostMarksDirtyOnSuccess() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            MonitorService monitor = MonitorFixtures.idle();
+            Harness harness = new Harness(List.of(tagged("8.8.8.8")), () -> monitor);
+            harness.presenter.configure();
+            harness.presenter.rebuild(harness.entries);
+            harness.hostInput.setText("1.1.1.1");
+
+            harness.presenter.addHost();
+
+            assertTrue(harness.store.containsHost("1.1.1.1"));
+            assertEquals(1, harness.dirtyMarks.get());
             monitor.close();
         });
     }
@@ -161,6 +180,7 @@ class HostListPresenterTest {
         final SessionStore store;
         final List<String> infos = new ArrayList<>();
         final List<String> errors = new ArrayList<>();
+        final AtomicInteger dirtyMarks = new AtomicInteger();
         final HostListPresenter presenter;
 
         Harness(List<HostEntry> entries) {
@@ -198,6 +218,7 @@ class HostListPresenterTest {
                     () -> {},
                     () -> {},
                     Runnable::run);
+            this.presenter.setMarkDirty(dirtyMarks::incrementAndGet);
         }
 
         FlowPane chipPane() {
