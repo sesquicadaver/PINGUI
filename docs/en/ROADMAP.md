@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P20-006** |
+| **Current task** | **P20-007** |
 | **Phase** | 20 — GUI UX |
-| **DoD (short)** | Keyboard accelerators (Save/Add/Help) |
+| **DoD (short)** | Empty states (Extended / SQLite hints) |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -108,7 +108,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 62 | **P20-003** | [x] | Dirty / unsaved indicator |
 | 63 | **P20-004** | [x] | Route diff visual (color/icons) |
 | 64 | **P20-005** | [x] | Export now from menu |
-| 65 | **P20-006** | [ ] | Keyboard accelerators |
+| 65 | **P20-006** | [x] | Keyboard accelerators |
 | 66 | **P20-007** | [ ] | Empty states (Extended / SQLite hints) |
 | 67 | **P20-008** | [ ] | Self-check ProgressBar |
 | 68 | **P20-009** | [ ] | Wire `log_aggregates` to bus |
@@ -116,7 +116,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 70 | **P20-011** | [ ] | Alerts settings GUI |
 | 71 | **P20-012** | [ ] | Graph UX: zoom/pan / copy / tooltip |
 
-**Queue status:** open — **NEXT = P20-006** (phase 20 — GUI UX: quick UX → polish → feature depth).
+**Queue status:** open — **NEXT = P20-007** (phase 20 — GUI UX: quick UX → polish → feature depth).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -737,7 +737,7 @@ flowchart TD
 | **P20-003** | [x] Dirty / unsaved | `MainController`, profile/telemetry/persistence apply paths | Unsaved-changes indicator; Save clears; profile switch with dirty → Confirm discard/save; CHANGELOG |
 | **P20-004** | [x] Route diff visual | `RouteDiffPresenter` | CHANGED/ADDED/REMOVED with color or icon (not plain text only); `./gradlew check` |
 | **P20-005** | [x] Export from menu | `SessionExportUi`, `MainController`, `SessionReportExporter` | Menu «Export now…» → CSV/HTML (CLI export parity); clear error without SQLite |
-| **P20-006** | [ ] Keyboard accelerators | `MainController` | Hotkeys: Save, Add host, Help(F1); document in Help; do not break TextField focus |
+| **P20-006** | [x] Keyboard accelerators | `AppAccelerators`, `MainController`, `AppMenuDialogs` | Hotkeys: Save, Add host, Help(F1); document in Help; do not break TextField focus |
 | **P20-007** | [ ] Empty states | `RouteHistoryPresenter`, `MainController` / view mode | Hints when no SQLite / empty history / Simple without log; UK/EN |
 | **P20-008** | [ ] Self-check ProgressBar | `PresetSelfCheckUi` | Progress during batch (like MTU wizard); Stop or disabled until done; tests |
 | **P20-009** | [ ] Wire `log_aggregates` | `AggregateTelemetryJob`, `TelemetryAttachment` / daemon+GUI | Checkbox on → job on bus; off → off; tooltip without «backlog»; LIVING_SPEC |
@@ -829,7 +829,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Linear queue — **NEXT=P20-006**.
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Linear queue — **NEXT=P20-007**.
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

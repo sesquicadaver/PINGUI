@@ -412,13 +412,22 @@ public final class MainController {
     }
 
     private MenuBar createMenuBar() {
+        MenuItem saveItem = new MenuItem("Зберегти");
+        saveItem.setAccelerator(KeyCombination.valueOf(AppAccelerators.SAVE));
+        saveItem.setOnAction(e -> onSaveConfig());
+        MenuItem addHostItem = new MenuItem("Додати ціль");
+        addHostItem.setAccelerator(KeyCombination.valueOf(AppAccelerators.ADD_HOST));
+        addHostItem.setOnAction(e -> hostListPresenter.addHost());
+        Menu fileMenu = new Menu("Файл");
+        fileMenu.getItems().addAll(saveItem, addHostItem);
+
         MenuItem aboutItem = new MenuItem("Про PINGUI…");
         aboutItem.setOnAction(e -> AppMenuDialogs.showAbout(dialogOwner()));
         Menu aboutMenu = new Menu("Про");
         aboutMenu.getItems().add(aboutItem);
 
         MenuItem helpItem = new MenuItem("Довідка…");
-        helpItem.setAccelerator(KeyCombination.valueOf("F1"));
+        helpItem.setAccelerator(KeyCombination.valueOf(AppAccelerators.HELP));
         helpItem.setOnAction(e -> AppMenuDialogs.showHelp(dialogOwner()));
         Menu helpMenu = new Menu("Довідка");
         helpMenu.getItems().add(helpItem);
@@ -432,7 +441,7 @@ public final class MainController {
         Menu settingsMenu = new Menu("Налаштування");
         settingsMenu.getItems().addAll(databaseItem, telemetryItem, exportItem);
 
-        MenuBar menuBar = new MenuBar(aboutMenu, settingsMenu, helpMenu);
+        MenuBar menuBar = new MenuBar(fileMenu, aboutMenu, settingsMenu, helpMenu);
         menuBar.setUseSystemMenuBar(true);
         return menuBar;
     }

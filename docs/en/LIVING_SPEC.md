@@ -85,6 +85,7 @@ Module → unit test matrix. Update when adding features.
 | Dirty / unsaved (P20-003) | `ConfigDirtyState`, `ConfirmDialogs.confirmUnsaved`, `MainController`, `HostListPresenter`, `ProfileUiCoordinator` | `ConfigDirtyStateTest`, `ProfileUiCoordinatorTest` (Cancel/Save/Discard), `HostListPresenterTest.addHostMarksDirtyOnSuccess` |
 | Route diff visual (P20-004) | `RouteDiffStyle`, `RouteDiffPresenter` | `RouteDiffStyleTest`, `RouteDiffPresenterTest.showChangedRowExposesKindForStyledCell` |
 | Export from menu (P20-005) | `SessionExportUi`, `SessionReportExporter`, `MainController` | `SessionExportUiTest`, `SessionReportExporterTest.isHtmlReportMatchesHtmlExtensionsOnly`, `exportChoosesFormatByExtension`, `AppMenuDialogsTest` |
+| Keyboard accelerators (P20-006) | `AppAccelerators`, `MainController`, `AppMenuDialogs` | `AppAcceleratorsTest`, `AppMenuDialogsTest` |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |

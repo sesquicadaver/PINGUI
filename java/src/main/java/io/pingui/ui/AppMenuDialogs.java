@@ -131,6 +131,7 @@ public final class AppMenuDialogs {
                 • Додати / Змінити / Видалити — цілі в поточному профілі.
                 • Зберегти — запис усіх профілів у YAML (--config), включно з telemetry:.
 
+                %s
                 CLI (термінал)
                 • ./pingui-java.sh [--config PATH] [--interval SEC] …
                 • --interval / --max-hops / --timeout / --probe перезаписують YAML лише якщо передані.
@@ -141,7 +142,7 @@ public final class AppMenuDialogs {
                 • Linux — рекомендована ОС (швидкий traceroute, Expert ping).
                 • Windows — повний trace через tracert може тривати хвилини; Ping only або interval ≥ 30 с.
                 """
-                .formatted(expert);
+                .formatted(expert, AppAccelerators.helpSection());
     }
 
     private static void openRepository() {

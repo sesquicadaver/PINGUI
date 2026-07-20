@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P20-006 — Keyboard accelerators:** File menu — `Shortcut+S` Save / `Shortcut+N` Add / F1 Help (`AppAccelerators`); Help § shortcuts; ROADMAP NEXT → **P20-007**.
 - **P20-005 — Export from menu:** `SessionExportUi` + `SessionReportExporter.isHtmlReport`/`export`; Settings → «Export now…» (CSV/HTML, CLI parity); without SQLite — error; Help; ROADMAP NEXT → **P20-006**.
 - **P20-004 — Route diff visual:** `RouteDiffStyle` — prefix (`=`/`~`/`+`/`−`) + color per Kind; ListCell in `RouteDiffPresenter`; ROADMAP NEXT → **P20-005**.
 - **P20-003 — Dirty/unsaved:** `ConfigDirtyState` — Save*/title* indicator; mark after CRUD/settings; Save clears; profile switch Confirm Save/Discard/Cancel; ROADMAP NEXT → **P20-004**.
