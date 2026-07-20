@@ -18,6 +18,8 @@ class AppMenuDialogsTest {
     void helpTextDocumentsTelemetryMenuAndSessionVsTelemetrySqlite() {
         String help = AppMenuDialogs.helpText();
         assertTrue(help.contains("Телеметрія…"));
+        assertTrue(help.contains("Експорт зараз…"));
+        assertTrue(help.contains("--export-report"));
         assertTrue(help.contains("persistence.session_db"));
         assertTrue(help.contains("telemetry.sqlite"));
         assertTrue(help.contains("--telemetry-syslog"));

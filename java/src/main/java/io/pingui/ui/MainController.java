@@ -427,8 +427,10 @@ public final class MainController {
         databaseItem.setOnAction(e -> onPersistenceSettings());
         MenuItem telemetryItem = new MenuItem("Телеметрія…");
         telemetryItem.setOnAction(e -> onTelemetrySettings());
+        MenuItem exportItem = new MenuItem("Експорт зараз…");
+        exportItem.setOnAction(e -> onExportNow());
         Menu settingsMenu = new Menu("Налаштування");
-        settingsMenu.getItems().addAll(databaseItem, telemetryItem);
+        settingsMenu.getItems().addAll(databaseItem, telemetryItem, exportItem);
 
         MenuBar menuBar = new MenuBar(aboutMenu, settingsMenu, helpMenu);
         menuBar.setUseSystemMenuBar(true);
@@ -489,6 +491,19 @@ public final class MainController {
         PersistencePolicy effective = sessionPersistenceOverride.orElse(baseline);
         service.setPendingPersistencePolicy(effective);
         service.persistencePolicy().applyPendingAfterCycle();
+    }
+
+    private void onExportNow() {
+        if (!store.hasPersistence() || store.database() == null) {
+            userFeedback.error(SessionExportUi.noSqliteMessage());
+            return;
+        }
+        try {
+            Optional<Path> written = SessionExportUi.chooseAndExport(dialogOwner(), store.database());
+            written.ifPresent(path -> userFeedback.info(SessionExportUi.successMessage(path)));
+        } catch (IOException | RuntimeException ex) {
+            userFeedback.error(SessionExportUi.failureMessage(ex));
+        }
     }
 
     private void onPersistenceSettings() {

@@ -2,7 +2,7 @@
 
 # PINGUI documentation
 
-On **`main`** and **`beta`** — full package (Java Pro + Python) after merge; **`beta`** is the development branch, **`main`** is the last stable snapshot. Linear ROADMAP queue: **NEXT = P20-005** (phase 20 — [ROADMAP.md § NEXT](ROADMAP.md#next--single-source-of-truth)). Branches: [README.en.md](../README.en.md).
+On **`main`** and **`beta`** — full package (Java Pro + Python) after merge; **`beta`** is the development branch, **`main`** is the last stable snapshot. Linear ROADMAP queue: **NEXT = P20-006** (phase 20 — [ROADMAP.md § NEXT](ROADMAP.md#next--single-source-of-truth)). Branches: [README.en.md](../README.en.md).
 
 ## Navigation
 
@@ -11,7 +11,7 @@ On **`main`** and **`beta`** — full package (Java Pro + Python) after merge; *
 | [CHECKLIST.md](CHECKLIST.md) | Admin / DevOps | Checklist Linux / Windows / macOS |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Admin / DevOps | JDK 21, venv, cap_net_raw, systemd |
 | [JAVA.md](JAVA.md) | Developer | Probe, monitor, UI, YAML |
-| [ROADMAP.md](ROADMAP.md) | Developer | Official plan: phases 0–20 (Pro/NOC + telemetry + hardening + GUI UX); NEXT=P20-005 |
+| [ROADMAP.md](ROADMAP.md) | Developer | Official plan: phases 0–20 (Pro/NOC + telemetry + hardening + GUI UX); NEXT=P20-006 |
 | [LIVING_SPEC.md](LIVING_SPEC.md) | Developer | Module → tests matrix |
 | [ADR_IPV6.md](ADR_IPV6.md) | Developer | Dual-stack config ADR (V6-002) |
 | [ADR_ALERTS.md](ADR_ALERTS.md) | Developer | Route-change alerts ADR (P10-001) |

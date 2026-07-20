@@ -9,6 +9,7 @@
 
 ### Changed
 
+- **P20-005 — Export з меню:** `SessionExportUi` + `SessionReportExporter.isHtmlReport`/`export`; Налаштування → «Експорт зараз…» (CSV/HTML, паритет CLI); без SQLite — error; Help; ROADMAP NEXT → **P20-006**.
 - **P20-004 — Route diff visual:** `RouteDiffStyle` — prefix (`=`/`~`/`+`/`−`) + колір для Kind; ListCell у `RouteDiffPresenter`; ROADMAP NEXT → **P20-005**.
 - **P20-003 — Dirty/unsaved:** `ConfigDirtyState` — індикатор Save*/title*; mark після CRUD/settings; Save очищає; switch profile Confirm Зберегти/Не зберігати/Скасувати; ROADMAP NEXT → **P20-004**.
 - **P20-002 — Confirm delete:** Confirm перед delete host/profile (`ConfirmDialogs`); Cancel без змін; ROADMAP NEXT → **P20-003**.

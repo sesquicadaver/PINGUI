@@ -1,6 +1,7 @@
 package io.pingui.export;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.model.Models.HopNode;
@@ -18,6 +19,30 @@ class SessionReportExporterTest {
 
     @TempDir
     Path tempDir;
+
+    @Test
+    void isHtmlReportMatchesHtmlExtensionsOnly() {
+        assertTrue(SessionReportExporter.isHtmlReport(Path.of("a.html")));
+        assertTrue(SessionReportExporter.isHtmlReport(Path.of("B.HTM")));
+        assertFalse(SessionReportExporter.isHtmlReport(Path.of("a.csv")));
+        assertFalse(SessionReportExporter.isHtmlReport(Path.of("report.txt")));
+        assertFalse(SessionReportExporter.isHtmlReport(Path.of("/")));
+        assertTrue(SessionReportExporter.isHtmlReport(Path.of("Report.HTML")));
+    }
+
+    @Test
+    void exportChoosesFormatByExtension() throws Exception {
+        Path dbPath = tempDir.resolve("session.db");
+        seedSampleHost(dbPath, "8.8.8.8");
+        Path csvPath = tempDir.resolve("out.csv");
+        Path htmlPath = tempDir.resolve("out.html");
+        try (SessionDatabase database = new SessionDatabase(dbPath)) {
+            SessionReportExporter.export(database, csvPath);
+            SessionReportExporter.export(database, htmlPath);
+        }
+        assertTrue(Files.readString(csvPath).contains("route_kind"));
+        assertTrue(Files.readString(htmlPath).contains("<title>PINGUI session report</title>"));
+    }
 
     @Test
     void exportCsvContainsRouteRows() throws Exception {

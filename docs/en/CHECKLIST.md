@@ -286,6 +286,7 @@ Run on **Linux** (regression for “black frame” after profile CRUD):
 - [ ] **New profile** → name `test` → host list empty, window without black bars
 - [ ] **Delete profile** (return to default) → Simple mode, window shrinks correctly (no oversized frame left)
 - [ ] **Extended** → graph + log; **Simple** → compact layout again
+- [ ] **P20-005 Export:** Settings → Export now… → CSV/HTML; without SQLite → clear error
 - [ ] **P20-004 Route diff:** Extended — route change → rows with `~`/`+`/`−` and color
 - [ ] **P20-003 Dirty/unsaved:** mutate host → «Save *»; profile switch → Confirm; Save clears *
 - [ ] **P20-002 Confirm delete:** Delete host / profile → Confirm; Cancel is a no-op

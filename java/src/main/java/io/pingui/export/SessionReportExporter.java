@@ -16,6 +16,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /** CSV/HTML session reports from SQLite {@code host_session} (P11-030). */
@@ -27,6 +28,28 @@ public final class SessionReportExporter {
     };
 
     private SessionReportExporter() {}
+
+    /**
+     * True when the path should be written as HTML ({@code .html}/{@code .htm}); otherwise CSV.
+     * Shared by CLI {@code --export-report} and GUI «Експорт зараз…».
+     */
+    public static boolean isHtmlReport(Path path) {
+        Path fileName = path.getFileName();
+        if (fileName == null) {
+            return false;
+        }
+        String name = fileName.toString().toLowerCase(Locale.ROOT);
+        return name.endsWith(".html") || name.endsWith(".htm");
+    }
+
+    /** Export CSV or HTML based on {@link #isHtmlReport(Path)}. */
+    public static void export(SessionDatabase database, Path path) throws IOException {
+        if (isHtmlReport(path)) {
+            exportHtml(database, path);
+        } else {
+            exportCsv(database, path);
+        }
+    }
 
     public static void exportCsv(SessionDatabase database, Path path) throws IOException {
         List<SessionReportRouteRow> rows = buildRouteRows(database);

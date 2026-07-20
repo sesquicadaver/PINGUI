@@ -445,11 +445,7 @@ public final class PinguiApplication extends Application {
         Path reportPath = options.exportReportPath().orElseThrow();
         try (SessionDatabase database =
                 new SessionDatabase(options.sessionDbPath().orElseThrow())) {
-            if (isHtmlReport(reportPath)) {
-                SessionReportExporter.exportHtml(database, reportPath);
-            } else {
-                SessionReportExporter.exportCsv(database, reportPath);
-            }
+            SessionReportExporter.export(database, reportPath);
             System.out.println("Session report written: " + reportPath.toAbsolutePath());
         } catch (IOException | RuntimeException ex) {
             failCli("Export failed: " + ex.getMessage());
@@ -514,11 +510,6 @@ public final class PinguiApplication extends Application {
         } catch (IOException | RuntimeException ex) {
             failCli("Telemetry dump failed: " + ex.getMessage());
         }
-    }
-
-    private static boolean isHtmlReport(Path path) {
-        String name = path.getFileName().toString().toLowerCase();
-        return name.endsWith(".html") || name.endsWith(".htm");
     }
 
     private static void runDaemon(AppOptions options) {
