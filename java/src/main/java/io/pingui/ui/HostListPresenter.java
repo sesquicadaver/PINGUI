@@ -44,7 +44,7 @@ final class HostListPresenter {
     private final Supplier<SessionStore> store;
     private final Supplier<MonitorService> monitor;
     private final SimpleBooleanProperty expertMode;
-    private final Consumer<String> appendLog;
+    private final UserFeedback userFeedback;
     private final Runnable syncControls;
     private final Runnable redrawRoute;
     private final Runnable clearHistoryReplay;
@@ -67,7 +67,7 @@ final class HostListPresenter {
             Supplier<SessionStore> store,
             Supplier<MonitorService> monitor,
             SimpleBooleanProperty expertMode,
-            Consumer<String> appendLog,
+            UserFeedback userFeedback,
             Runnable syncControls,
             Runnable redrawRoute,
             Runnable clearHistoryReplay,
@@ -82,7 +82,7 @@ final class HostListPresenter {
         this.store = store;
         this.monitor = monitor;
         this.expertMode = expertMode;
-        this.appendLog = appendLog;
+        this.userFeedback = userFeedback;
         this.syncControls = syncControls;
         this.redrawRoute = redrawRoute;
         this.clearHistoryReplay = clearHistoryReplay;
@@ -213,7 +213,7 @@ final class HostListPresenter {
     void editSelectedHostTags() {
         HostItem selected = hostList.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            appendLog.accept("Оберіть ціль, щоб змінити теги");
+            userFeedback.error("Оберіть ціль, щоб змінити теги");
             return;
         }
         Optional<List<String>> updated = tagsEditor.apply(selected.getHost(), selected.getTags());
@@ -233,10 +233,10 @@ final class HostListPresenter {
                 hostList.getSelectionModel().select(item);
             }
             hostList.refresh();
-            appendLog.accept(
+            userFeedback.info(
                     "Теги [" + host + "]: " + (updated.get().isEmpty() ? "(немає)" : String.join(", ", updated.get())));
         } catch (ConfigError ex) {
-            appendLog.accept(ex.getMessage());
+            userFeedback.error(ex.getMessage());
         }
     }
 
@@ -283,11 +283,11 @@ final class HostListPresenter {
             }
             selectHostWithoutHistoryFilterSync(item);
             hostInput.clear();
-            appendLog.accept("Додано ціль: " + host);
+            userFeedback.info("Додано ціль: " + host);
             syncControls.run();
             redrawRoute.run();
         } catch (ConfigError ex) {
-            appendLog.accept("Не вдалося додати ціль: " + ex.getMessage());
+            userFeedback.error("Не вдалося додати ціль: " + ex.getMessage());
         }
     }
 
@@ -315,11 +315,11 @@ final class HostListPresenter {
             selected.hostProperty().set(renamed);
             hostInput.setText(renamed);
             onHostRenamed.accept(oldHost, renamed);
-            appendLog.accept("Змінено ціль: " + oldHost + " → " + renamed);
+            userFeedback.info("Змінено ціль: " + oldHost + " → " + renamed);
             clearHistoryReplay.run();
             redrawRoute.run();
         } catch (ConfigError ex) {
-            appendLog.accept("Не вдалося змінити ціль: " + ex.getMessage());
+            userFeedback.error("Не вдалося змінити ціль: " + ex.getMessage());
         }
     }
 
@@ -334,11 +334,11 @@ final class HostListPresenter {
             store.get().removeHost(host);
             hostItems.remove(selected);
             hostInput.clear();
-            appendLog.accept("Видалено ціль: " + host);
+            userFeedback.info("Видалено ціль: " + host);
             syncControls.run();
             redrawRoute.run();
         } catch (ConfigError ex) {
-            appendLog.accept(ex.getMessage());
+            userFeedback.error(ex.getMessage());
         }
     }
 
@@ -415,7 +415,7 @@ final class HostListPresenter {
             clearHistoryReplay.run();
             redrawRoute.run();
         } catch (ConfigError ex) {
-            appendLog.accept(ex.getMessage());
+            userFeedback.error(ex.getMessage());
             updatingList = true;
             item.enabledProperty().set(store.get().get(item.getHost()).isEnabled());
             updatingList = false;
@@ -443,9 +443,9 @@ final class HostListPresenter {
             hostList.refresh();
             clearHistoryReplay.run();
             redrawRoute.run();
-            appendLog.accept("Ping only [" + item.getHost() + "]: " + (pingOnly ? "увімкнено" : "вимкнено"));
+            userFeedback.info("Ping only [" + item.getHost() + "]: " + (pingOnly ? "увімкнено" : "вимкнено"));
         } catch (ConfigError ex) {
-            appendLog.accept(ex.getMessage());
+            userFeedback.error(ex.getMessage());
             updatingList = true;
             item.pingOnlyProperty().set(store.get().isPingOnly(item.getHost()));
             updatingList = false;
@@ -463,10 +463,10 @@ final class HostListPresenter {
         try {
             session.setPingExpert(item.getHost(), updated.get());
             item.setExpertConfigured(updated.get().isConfigured());
-            appendLog.accept("Expert ping [" + item.getHost() + "]: "
+            userFeedback.info("Expert ping [" + item.getHost() + "]: "
                     + (updated.get().isConfigured() ? updated.get().args() : "скинуто"));
         } catch (ConfigError ex) {
-            appendLog.accept(ex.getMessage());
+            userFeedback.error(ex.getMessage());
         }
     }
 
@@ -485,9 +485,9 @@ final class HostListPresenter {
                 String mtu = result.discovery().recommendedMtu().isPresent()
                         ? Integer.toString(result.discovery().recommendedMtu().getAsInt())
                         : "?";
-                appendLog.accept("MTU wizard [" + item.getHost() + "]: MTU≈" + mtu + " → " + next.args());
+                userFeedback.info("MTU wizard [" + item.getHost() + "]: MTU≈" + mtu + " → " + next.args());
             } catch (ConfigError ex) {
-                appendLog.accept(ex.getMessage());
+                userFeedback.error(ex.getMessage());
             }
         });
     }

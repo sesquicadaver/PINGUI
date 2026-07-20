@@ -88,7 +88,21 @@ class HostListPresenterTest {
             assertEquals(
                     "8.8.8.8",
                     harness.hostList.getSelectionModel().getSelectedItem().getHost());
-            assertTrue(harness.logs.stream().anyMatch(line -> line.contains("Теги [8.8.8.8]")));
+            assertTrue(harness.infos.stream().anyMatch(line -> line.contains("Теги [8.8.8.8]")));
+            assertTrue(harness.errors.isEmpty());
+        });
+    }
+
+    @Test
+    void addHostValidationFailureCallsErrorFeedback() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            Harness harness = new Harness(List.of(tagged("8.8.8.8", "dc")));
+            harness.presenter.configure();
+            harness.presenter.rebuild(harness.entries);
+            harness.hostInput.setText("8.8.8.8");
+            harness.presenter.addHost();
+            assertTrue(harness.errors.stream().anyMatch(line -> line.contains("Не вдалося додати ціль")));
+            assertTrue(harness.infos.isEmpty());
         });
     }
 
@@ -102,12 +116,24 @@ class HostListPresenterTest {
         final ListView<HostItem> hostList = new ListView<>();
         final TextField hostInput = new TextField();
         final SessionStore store;
-        final List<String> logs = new ArrayList<>();
+        final List<String> infos = new ArrayList<>();
+        final List<String> errors = new ArrayList<>();
         final HostListPresenter presenter;
 
         Harness(List<HostEntry> entries) {
             this.entries = entries;
             this.store = SessionStore.fromEntries(entries);
+            UserFeedback feedback = new UserFeedback() {
+                @Override
+                public void info(String message) {
+                    infos.add(message);
+                }
+
+                @Override
+                public void error(String message) {
+                    errors.add(message);
+                }
+            };
             this.presenter = new HostListPresenter(
                     hostItems,
                     hostList,
@@ -117,7 +143,7 @@ class HostListPresenterTest {
                         throw new UnsupportedOperationException("monitor unused");
                     },
                     new SimpleBooleanProperty(false),
-                    logs::add,
+                    feedback,
                     () -> {},
                     () -> {},
                     () -> {},

@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P20-001 — Simple feedback:** `UserFeedback`/`UiFeedbackRouter` — Simple info→status, error→status+Alert; Extended log only (no Alert); `statusLabel` visible in Simple; ROADMAP NEXT → **P20-002**.
 - **ROADMAP phase 20:** opened GUI UX (P20-001…012) — waves quick UX → polish → feature depth; linear queue #60–71; NEXT → **P20-001**.
 - **P19-006 — PostgreSQL optional:** JDBC driver is `compileOnly` (+ `testImplementation`); default `installDist`/jpackage omit `postgresql.jar`; Timescale needs `-PwithPostgresql=true`; ROADMAP NEXT → **DONE** (phase 19 closed).
 - **P19-005 — HostRegistry slice:** host list / enabled / probe mode / poll bookmarks extracted from `MonitorService` into `HostRegistry`; behavior unchanged; ROADMAP NEXT → **P19-006**.

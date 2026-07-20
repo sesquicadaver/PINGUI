@@ -36,7 +36,9 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -100,6 +102,7 @@ public final class MainController {
     private ProfileUiCoordinator profileUi;
     private HostListPresenter hostListPresenter;
     private ViewModeController viewModeController;
+    private UserFeedback userFeedback;
     private RouteGraphPresenter routeGraphPresenter;
     private RouteHistoryPresenter routeHistoryPresenter;
     private final RouteDiffPresenter routeDiffPresenter = new RouteDiffPresenter();
@@ -128,6 +131,8 @@ public final class MainController {
         hostInput.setPromptText("IP або hostname…");
         logArea.setEditable(false);
         logArea.setWrapText(true);
+        statusLabel.setWrapText(true);
+        statusLabel.setMaxWidth(SIMPLE_PANEL_MIN_WIDTH - 16);
 
         Button addButton = new Button("Додати");
         Button editButton = new Button("Змінити");
@@ -238,6 +243,26 @@ public final class MainController {
     }
 
     private void initCoordinators() {
+        viewModeController = new ViewModeController(
+                graphPanel,
+                leftPanel,
+                root,
+                logArea,
+                statusLabel,
+                () -> {
+                    if (routeGraphPresenter != null) {
+                        routeGraphPresenter.redrawIfExtended();
+                    }
+                    refreshRouteHistory();
+                },
+                this::showEasterEggCanvas,
+                () -> easterEggActive);
+        userFeedback = new UiFeedbackRouter(
+                () -> viewModeController.isExtended(),
+                statusLabel::setText,
+                message -> logArea.appendText("[" + TIME_FMT.format(java.time.Instant.now()) + "] " + message + "\n"),
+                this::showSimpleErrorAlert);
+
         profileUi = new ProfileUiCoordinator(
                 () -> profileDocument,
                 () -> store,
@@ -246,7 +271,7 @@ public final class MainController {
                 value -> switchingProfile = value,
                 this::reloadActiveProfile,
                 () -> profileUi.refreshCombo(),
-                this::appendLog);
+                userFeedback);
 
         hostListPresenter = new HostListPresenter(
                 hostItems,
@@ -255,7 +280,7 @@ public final class MainController {
                 () -> store,
                 () -> monitor,
                 expertMode,
-                this::appendLog,
+                userFeedback,
                 () -> hostListPresenter.syncInputLimits(),
                 this::redrawRouteGraph,
                 this::clearHistoryReplay,
@@ -263,19 +288,6 @@ public final class MainController {
                 this::startEasterEgg,
                 () -> viewModeController.fitWindowToContent(),
                 historyHostSync::runWhileSyncing);
-
-        viewModeController = new ViewModeController(
-                graphPanel,
-                leftPanel,
-                root,
-                logArea,
-                statusLabel,
-                () -> {
-                    routeGraphPresenter.redrawIfExtended();
-                    refreshRouteHistory();
-                },
-                this::showEasterEggCanvas,
-                () -> easterEggActive);
 
         routeGraphPresenter = new RouteGraphPresenter(
                 graphCanvas,
@@ -434,7 +446,8 @@ public final class MainController {
 
                     @Override
                     public void onProbeError(String host, String message) {
-                        Platform.runLater(() -> appendLog("Помилка [" + host + "]: " + message));
+                        // info (not error): avoid Alert spam on recurring poll failures in Simple.
+                        Platform.runLater(() -> userFeedback.info("Probe [" + host + "]: " + message));
                     }
                 },
                 options.alertOverrides().applyTo(profile.alerts()),
@@ -496,7 +509,7 @@ public final class MainController {
             sessionPersistenceOverride = Optional.of(result.policy());
             monitor.setPendingPersistencePolicy(result.policy());
         }
-        appendLog("Політика persistence оновлена (з наступного poll-циклу)");
+        userFeedback.info("Політика persistence оновлена (з наступного poll-циклу)");
     }
 
     private void onTelemetrySettings() {
@@ -514,13 +527,18 @@ public final class MainController {
         String sinks = telemetry != null && !telemetry.registeredIds().isEmpty()
                 ? String.join(", ", telemetry.registeredIds())
                 : "немає активних sinks";
-        appendLog("Телеметрія оновлена: " + sinks + " — " + result.telemetry().toRedactedString());
-        statusLabel.setText("Телеметрія: " + sinks);
+        userFeedback.info(
+                "Телеметрія оновлена: " + sinks + " — " + result.telemetry().toRedactedString());
+        if (viewModeController.isExtended()) {
+            statusLabel.setText("Телеметрія: " + sinks);
+        }
     }
 
     private void notifyPersistenceConnected(Path dbPath) {
-        appendLog("SQLite підключено: " + dbPath.toAbsolutePath());
-        statusLabel.setText("SQLite: " + dbPath.toAbsolutePath());
+        userFeedback.info("SQLite підключено: " + dbPath.toAbsolutePath());
+        if (viewModeController.isExtended()) {
+            statusLabel.setText("SQLite: " + dbPath.toAbsolutePath());
+        }
     }
 
     private Optional<Path> resolveSessionDbPath() {
@@ -615,9 +633,9 @@ public final class MainController {
             }
             profileUi.syncActiveProfileFromSession();
             ProfilesConfig.save(options.configPath(), profileDocument);
-            appendLog("Конфіг збережено (усі профілі): " + options.configPath());
+            userFeedback.info("Конфіг збережено (усі профілі): " + options.configPath());
         } catch (IOException | ConfigError ex) {
-            appendLog("Не вдалося зберегти конфіг: " + ex.getMessage());
+            userFeedback.error("Не вдалося зберегти конфіг: " + ex.getMessage());
         }
     }
 
@@ -647,7 +665,7 @@ public final class MainController {
         if (viewModeController.isExtended() && !easterEggActive) {
             if (!oldIps.isEmpty()) {
                 String oldStr = String.join(" -> ", oldIps);
-                appendLog("⚠ ЗМІНА МАРШРУТУ до " + host + "\nБуло: " + oldStr + "\nСтало: "
+                userFeedback.info("⚠ ЗМІНА МАРШРУТУ до " + host + "\nБуло: " + oldStr + "\nСтало: "
                         + String.join(" -> ", newIps));
             }
             routeHistoryPresenter.onRouteChanged(host);
@@ -703,10 +721,15 @@ public final class MainController {
         viewModeController.restoreMode(viewModeBeforeEasterEgg, () -> simpleModeButton, () -> extendedModeButton);
     }
 
-    private void appendLog(String message) {
-        if (!viewModeController.isExtended()) {
-            return;
+    /** Modal error for Simple mode only (injected into {@link UiFeedbackRouter}). */
+    private void showSimpleErrorAlert(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
+        alert.setTitle("Помилка");
+        alert.setHeaderText(null);
+        Window owner = dialogOwner();
+        if (owner != null) {
+            alert.initOwner(owner);
         }
-        logArea.appendText("[" + TIME_FMT.format(java.time.Instant.now()) + "] " + message + "\n");
+        alert.showAndWait();
     }
 }

@@ -286,6 +286,7 @@ Run on **Linux** (regression for “black frame” after profile CRUD):
 - [ ] **New profile** → name `test` → host list empty, window without black bars
 - [ ] **Delete profile** (return to default) → Simple mode, window shrinks correctly (no oversized frame left)
 - [ ] **Extended** → graph + log; **Simple** → compact layout again
+- [ ] **P20-001 Simple feedback:** failed add host (duplicate) → status + Alert; Extended fail → log only (no Alert); live «Last update…» in Extended is not overwritten by feedback info
 - [ ] Add `8.8.8.8` → **Save** → restart `./pingui-java.sh` → target and profile persist
 - [ ] Profile switching in ComboBox — hosts update
 

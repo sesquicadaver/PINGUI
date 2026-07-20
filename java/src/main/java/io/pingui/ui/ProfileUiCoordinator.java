@@ -22,7 +22,7 @@ final class ProfileUiCoordinator {
     private final Consumer<Boolean> setSwitchingProfile;
     private final Runnable reloadActiveProfile;
     private final Runnable refreshProfileCombo;
-    private final Consumer<String> appendLog;
+    private final UserFeedback userFeedback;
 
     ProfileUiCoordinator(
             Supplier<ProfileDocument> profileDocument,
@@ -32,7 +32,7 @@ final class ProfileUiCoordinator {
             Consumer<Boolean> setSwitchingProfile,
             Runnable reloadActiveProfile,
             Runnable refreshProfileCombo,
-            Consumer<String> appendLog) {
+            UserFeedback userFeedback) {
         this.profileDocument = profileDocument;
         this.store = store;
         this.profileCombo = profileCombo;
@@ -40,7 +40,7 @@ final class ProfileUiCoordinator {
         this.setSwitchingProfile = setSwitchingProfile;
         this.reloadActiveProfile = reloadActiveProfile;
         this.refreshProfileCombo = refreshProfileCombo;
-        this.appendLog = appendLog;
+        this.userFeedback = userFeedback;
     }
 
     void syncActiveProfileFromSession() {
@@ -85,9 +85,9 @@ final class ProfileUiCoordinator {
             syncActiveProfileFromSession();
             document.setActiveProfile(selected);
             reloadActiveProfile.run();
-            appendLog.accept("Завантажено профіль: " + selected);
+            userFeedback.info("Завантажено профіль: " + selected);
         } catch (ConfigError ex) {
-            appendLog.accept(ex.getMessage());
+            userFeedback.error(ex.getMessage());
             refreshCombo();
         }
     }
@@ -104,7 +104,7 @@ final class ProfileUiCoordinator {
         String name = result.get().strip();
         ProfileDocument document = profileDocument.get();
         if (document.hasProfile(name)) {
-            appendLog.accept("Профіль уже існує: " + name);
+            userFeedback.error("Профіль уже існує: " + name);
             return;
         }
         try {
@@ -113,9 +113,9 @@ final class ProfileUiCoordinator {
             document.setActiveProfile(name);
             reloadActiveProfile.run();
             refreshCombo();
-            appendLog.accept("Створено профіль: " + name);
+            userFeedback.info("Створено профіль: " + name);
         } catch (ConfigError ex) {
-            appendLog.accept(ex.getMessage());
+            userFeedback.error(ex.getMessage());
         }
     }
 
@@ -127,9 +127,9 @@ final class ProfileUiCoordinator {
             document.removeProfile(active);
             reloadActiveProfile.run();
             refreshCombo();
-            appendLog.accept("Видалено профіль: " + active);
+            userFeedback.info("Видалено профіль: " + active);
         } catch (ConfigError ex) {
-            appendLog.accept(ex.getMessage());
+            userFeedback.error(ex.getMessage());
         }
     }
 }

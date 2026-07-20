@@ -70,8 +70,9 @@ final class ViewModeController {
         graphPanel.setManaged(extended);
         logArea.setVisible(extended);
         logArea.setManaged(extended);
-        statusLabel.setVisible(extended);
-        statusLabel.setManaged(extended);
+        // P20-001: status stays visible in Simple (operator feedback) and Extended (live tick).
+        statusLabel.setVisible(true);
+        statusLabel.setManaged(true);
         root.setCenter(extended ? graphPanel : null);
         BorderPane.setMargin(leftPanel, extended ? new Insets(0, 4, 0, 0) : Insets.EMPTY);
         if (extended) {

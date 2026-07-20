@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P20-001** |
+| **Current task** | **P20-002** |
 | **Phase** | 20 — GUI UX |
-| **DoD (short)** | Simple-mode feedback: errors not silent (Alert / status, not Extended log only) |
+| **DoD (short)** | Confirm before delete host and delete profile |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -103,7 +103,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 57 | **P19-004** | [x] | Remove legacy `pingOnly` / `PingOnlyResolver` |
 | 58 | **P19-005** | [x] | `MonitorService` slice: `HostRegistry` |
 | 59 | **P19-006** | [x] | PostgreSQL driver optional scope |
-| 60 | **P20-001** | [ ] | Simple-mode feedback (errors not silent) |
+| 60 | **P20-001** | [x] | Simple-mode feedback (errors not silent) |
 | 61 | **P20-002** | [ ] | Confirm delete host / profile |
 | 62 | **P20-003** | [ ] | Dirty / unsaved indicator |
 | 63 | **P20-004** | [ ] | Route diff visual (color/icons) |
@@ -116,7 +116,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 70 | **P20-011** | [ ] | Alerts settings GUI |
 | 71 | **P20-012** | [ ] | Graph UX: zoom/pan / copy / tooltip |
 
-**Queue status:** open — **NEXT = P20-001** (phase 20 — GUI UX: quick UX → polish → feature depth).
+**Queue status:** open — **NEXT = P20-002** (phase 20 — GUI UX: quick UX → polish → feature depth).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -732,7 +732,7 @@ flowchart TD
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **P20-001** | [ ] Simple-mode feedback | `MainController`, `HostListPresenter`, `appendLog` callers | add/edit/delete/tags errors visible in Simple (Alert or status bar); Extended log kept; unit/UI smoke |
+| **P20-001** | [x] Simple-mode feedback | `MainController`, `HostListPresenter`, `appendLog` callers | add/edit/delete/tags errors visible in Simple (Alert or status bar); Extended log kept; unit/UI smoke |
 | **P20-002** | [ ] Confirm delete | `HostListPresenter`, `ProfileUiCoordinator` | Confirm before delete host and delete profile; Cancel no-op; CHECKLIST smoke |
 | **P20-003** | [ ] Dirty / unsaved | `MainController`, profile/telemetry/persistence apply paths | Unsaved-changes indicator; Save clears; profile switch with dirty → Confirm discard/save; CHANGELOG |
 | **P20-004** | [ ] Route diff visual | `RouteDiffPresenter` | CHANGED/ADDED/REMOVED with color or icon (not plain text only); `./gradlew check` |
@@ -829,7 +829,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Linear queue — **NEXT=P20-001**.
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Linear queue — **NEXT=P20-002**.
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

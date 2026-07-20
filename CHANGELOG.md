@@ -9,6 +9,7 @@
 
 ### Changed
 
+- **P20-001 — Simple feedback:** `UserFeedback`/`UiFeedbackRouter` — у Simple info→status, error→status+Alert; Extended лише log (без Alert); `statusLabel` видимий у Simple; ROADMAP NEXT → **P20-002**.
 - **ROADMAP фаза 20:** відкрито GUI UX (P20-001…012) — хвилі швидкий UX → polish → feature depth; лінійна черга #60–71; NEXT → **P20-001**.
 - **P19-006 — PostgreSQL optional:** JDBC драйвер `compileOnly` (+ `testImplementation`); default `installDist`/jpackage без `postgresql.jar`; Timescale потребує `-PwithPostgresql=true`; ROADMAP NEXT → **DONE** (фаза 19 закрита).
 - **P19-005 — HostRegistry slice:** host list / enabled / probe mode / poll bookmarks винесено з `MonitorService` у `HostRegistry`; поведінка без змін; ROADMAP NEXT → **P19-006**.
