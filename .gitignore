@@ -44,3 +44,4 @@ java/out/
 /.cursor
 /.cursor/rules
 *.mdc
+/java/data
