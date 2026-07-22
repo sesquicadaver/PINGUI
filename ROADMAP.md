@@ -8,7 +8,7 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **[P22-003](docs/ROADMAP.md#фаза-22--host-problem-ux-beta-p1)** |
+| **Поточна задача** | **[P22-004](docs/ROADMAP.md#фаза-22--host-problem-ux-beta-p1)** |
 | **Правило** | якщо не `DONE` — `/autopilot` = цей ID; якщо `DONE` — зупинитись / чекати явного нового ID. **Не питати** «який пункт?». |
 
 Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна) (фаза 22, #75–79).
@@ -43,7 +43,7 @@
 | **19** | Production hardening (version, CI, coverage, probe-mode debt) | ✅ **DONE** |
 | **20** | GUI UX (Simple feedback, confirm, dirty, polish, settings depth) | ✅ **DONE** |
 | **21** | Якісні alert rules (`endpoint_down` → engine/GUI) | ✅ **DONE** |
-| **22** | Host problem UX (icon + dialog + auto session DB) | 🔄 **P22-003** |
+| **22** | Host problem UX (icon + dialog + auto session DB) | 🔄 **P22-004** |
 
 ---
 

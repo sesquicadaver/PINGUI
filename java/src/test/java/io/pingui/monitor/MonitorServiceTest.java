@@ -275,6 +275,57 @@ class MonitorServiceTest {
     }
 
     @Test
+    void persistsEndpointDownEvenWhenNotifyResolvedFalse() throws Exception {
+        RouteSnapshot up = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "8.8.8.8", 10.0, false)));
+        RouteSnapshot down = new RouteSnapshot(
+                "8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "*", null, true)));
+        AtomicInteger probeCalls = new AtomicInteger();
+        RouteProbe probe = (targetHost, maxHops, timeoutSeconds) -> {
+            int call = probeCalls.getAndIncrement();
+            return call < 4 ? down : up;
+        };
+        RecordingAlertDispatcher alerts = new RecordingAlertDispatcher();
+        Path dbPath = java.nio.file.Files.createTempDirectory("pingui-ed").resolve("session.db");
+        try (SessionDatabase database = new SessionDatabase(dbPath)) {
+            MonitorService service = new MonitorService(0.05, 20, 0.5, probe);
+            service.setAlertDispatcher(alerts);
+            service.setEndpointDownRule(new EndpointDownRuleConfig(true, 3, 2, 15));
+            service.setNotifyResolved(false);
+            service.setPersistenceEventWriter(
+                    new io.pingui.persistence.PersistenceEventWriter(database, service.persistencePolicy()));
+            service.setListener(new MonitorService.Listener() {
+                @Override
+                public void onDataReceived(String host, RouteSnapshot snap) {}
+
+                @Override
+                public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
+
+                @Override
+                public void onProbeError(String host, String message) {}
+            });
+            service.addHost("8.8.8.8", true);
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(20);
+            while (database.countEvents(PersistenceEventType.ENDPOINT_DOWN) < 1 && System.nanoTime() < deadline) {
+                Thread.sleep(50);
+            }
+            assertEquals(1, database.countEvents(PersistenceEventType.ENDPOINT_DOWN));
+            assertEquals(1, alerts.qualityEvents().size());
+            assertEquals(
+                    QualityAlertEvent.STATE_FIRING,
+                    alerts.qualityEvents().get(0).state());
+            while (database.countEvents(PersistenceEventType.ENDPOINT_DOWN) < 2 && System.nanoTime() < deadline) {
+                Thread.sleep(50);
+            }
+            assertEquals(2, database.countEvents(PersistenceEventType.ENDPOINT_DOWN));
+            assertEquals(1, alerts.qualityEvents().size());
+            service.close();
+        }
+    }
+
+    @Test
     void updatesPrometheusViaTelemetrySinkOnPoll() throws Exception {
         RouteSnapshot reachable = new RouteSnapshot(
                 "8.8.8.8",

@@ -23,6 +23,7 @@ public final class PersistencePolicySupport {
         return switch (type) {
             case ROUTE_CHANGE -> "зміни маршруту";
             case PROBE_ERROR -> "помилки probe";
+            case ENDPOINT_DOWN -> "недоступність цілі";
         };
     }
 }

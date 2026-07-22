@@ -27,15 +27,10 @@ public final class AlertRuleEngine {
      * Observes one poll sample for a host.
      *
      * @param down {@code true} when the endpoint is unreachable / timed out
-     * @return FIRING or RESOLVED event when a notification edge occurs
+     * @return FIRING or RESOLVED event when a lifecycle edge occurs (channels may still suppress RESOLVED)
      */
     public Optional<QualityAlertEvent> observeEndpointDown(
-            String host,
-            boolean down,
-            Instant now,
-            String profile,
-            EndpointDownRuleConfig rule,
-            boolean notifyResolved) {
+            String host, boolean down, Instant now, String profile, EndpointDownRuleConfig rule) {
         if (host == null || host.isBlank()) {
             throw new IllegalArgumentException("host required");
         }
@@ -48,7 +43,7 @@ public final class AlertRuleEngine {
             if (down) {
                 return onDown(host, at, profile, rule, state);
             }
-            return onUp(host, at, profile, rule, notifyResolved, state);
+            return onUp(host, at, profile, rule, state);
         }
     }
 
@@ -149,12 +144,7 @@ public final class AlertRuleEngine {
     }
 
     private Optional<QualityAlertEvent> onUp(
-            String host,
-            Instant now,
-            String profile,
-            EndpointDownRuleConfig rule,
-            boolean notifyResolved,
-            HostState state) {
+            String host, Instant now, String profile, EndpointDownRuleConfig rule, HostState state) {
         state.failStreak = 0;
         if (state.phase != Phase.FIRING) {
             state.phase = Phase.OK;
@@ -166,9 +156,6 @@ public final class AlertRuleEngine {
             return Optional.empty();
         }
         leaveFiring(state, now);
-        if (!notifyResolved) {
-            return Optional.empty();
-        }
         Map<String, Object> detail = QualityAlertEvent.detailOf(rule.failAfter(), 0, rule.clearAfter());
         return Optional.of(QualityAlertEvent.endpointDownResolved(host, profile, now, detail));
     }

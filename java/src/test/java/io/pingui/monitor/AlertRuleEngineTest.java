@@ -25,10 +25,10 @@ class AlertRuleEngineTest {
 
     @Test
     void requiresConsecutiveFailsBeforeFiring() {
-        assertTrue(engine.observeEndpointDown("h", true, t0, "p", rule, false).isEmpty());
-        assertTrue(engine.observeEndpointDown("h", true, t0.plusSeconds(1), "p", rule, false)
+        assertTrue(engine.observeEndpointDown("h", true, t0, "p", rule).isEmpty());
+        assertTrue(engine.observeEndpointDown("h", true, t0.plusSeconds(1), "p", rule)
                 .isEmpty());
-        Optional<QualityAlertEvent> firing = engine.observeEndpointDown("h", true, t0.plusSeconds(2), "p", rule, false);
+        Optional<QualityAlertEvent> firing = engine.observeEndpointDown("h", true, t0.plusSeconds(2), "p", rule);
         assertTrue(firing.isPresent());
         assertEquals(QualityAlertEvent.STATE_FIRING, firing.get().state());
         assertEquals(QualityAlertEvent.EVENT_ENDPOINT_DOWN, firing.get().event());
@@ -39,7 +39,7 @@ class AlertRuleEngineTest {
     void disabledRuleNeverFires() {
         EndpointDownRuleConfig off = EndpointDownRuleConfig.disabled();
         for (int i = 0; i < 5; i++) {
-            assertTrue(engine.observeEndpointDown("h", true, t0.plusSeconds(i), "p", off, true)
+            assertTrue(engine.observeEndpointDown("h", true, t0.plusSeconds(i), "p", off)
                     .isEmpty());
         }
     }
@@ -47,50 +47,48 @@ class AlertRuleEngineTest {
     @Test
     void noRepeatWhileStillDownThenResolvedOptional() {
         fireOnce();
-        assertTrue(engine.observeEndpointDown("h", true, t0.plusSeconds(10), "p", rule, true)
+        assertTrue(engine.observeEndpointDown("h", true, t0.plusSeconds(10), "p", rule)
                 .isEmpty());
-        assertTrue(engine.observeEndpointDown("h", false, t0.plusSeconds(11), "p", rule, true)
+        assertTrue(engine.observeEndpointDown("h", false, t0.plusSeconds(11), "p", rule)
                 .isEmpty());
-        Optional<QualityAlertEvent> resolved =
-                engine.observeEndpointDown("h", false, t0.plusSeconds(12), "p", rule, true);
+        Optional<QualityAlertEvent> resolved = engine.observeEndpointDown("h", false, t0.plusSeconds(12), "p", rule);
         assertTrue(resolved.isPresent());
         assertEquals(QualityAlertEvent.STATE_RESOLVED, resolved.get().state());
     }
 
     @Test
-    void resolvedSuppressedWhenNotifyResolvedFalse() {
+    void resolvedLifecycleEdgeAlwaysEmittedForPersistence() {
         fireOnce();
-        assertTrue(engine.observeEndpointDown("h", false, t0.plusSeconds(11), "p", rule, false)
+        assertTrue(engine.observeEndpointDown("h", false, t0.plusSeconds(11), "p", rule)
                 .isEmpty());
-        assertTrue(engine.observeEndpointDown("h", false, t0.plusSeconds(12), "p", rule, false)
-                .isEmpty());
+        Optional<QualityAlertEvent> resolved = engine.observeEndpointDown("h", false, t0.plusSeconds(12), "p", rule);
+        assertTrue(resolved.isPresent());
+        assertEquals(QualityAlertEvent.STATE_RESOLVED, resolved.get().state());
     }
 
     @Test
     void cooldownBlocksImmediateRefireAfterRecovery() {
         fireOnce();
         // recover
-        engine.observeEndpointDown("h", false, t0.plusSeconds(11), "p", rule, false);
-        engine.observeEndpointDown("h", false, t0.plusSeconds(12), "p", rule, false);
+        engine.observeEndpointDown("h", false, t0.plusSeconds(11), "p", rule);
+        engine.observeEndpointDown("h", false, t0.plusSeconds(12), "p", rule);
         // down again within cooldown
-        assertTrue(engine.observeEndpointDown("h", true, t0.plusSeconds(13), "p", rule, false)
+        assertTrue(engine.observeEndpointDown("h", true, t0.plusSeconds(13), "p", rule)
                 .isEmpty());
-        assertTrue(engine.observeEndpointDown("h", true, t0.plusSeconds(14), "p", rule, false)
+        assertTrue(engine.observeEndpointDown("h", true, t0.plusSeconds(14), "p", rule)
                 .isEmpty());
-        Optional<QualityAlertEvent> blocked =
-                engine.observeEndpointDown("h", true, t0.plusSeconds(15), "p", rule, false);
+        Optional<QualityAlertEvent> blocked = engine.observeEndpointDown("h", true, t0.plusSeconds(15), "p", rule);
         assertTrue(blocked.isEmpty());
         // after cooldown
         Instant later = t0.plusSeconds(15).plusSeconds(15 * 60L);
         // already in FIRING from blocked transition — need recover then fail again after cooldown
-        engine.observeEndpointDown("h", false, later, "p", rule, false);
-        engine.observeEndpointDown("h", false, later.plusSeconds(1), "p", rule, false);
-        assertTrue(engine.observeEndpointDown("h", true, later.plusSeconds(2), "p", rule, false)
+        engine.observeEndpointDown("h", false, later, "p", rule);
+        engine.observeEndpointDown("h", false, later.plusSeconds(1), "p", rule);
+        assertTrue(engine.observeEndpointDown("h", true, later.plusSeconds(2), "p", rule)
                 .isEmpty());
-        assertTrue(engine.observeEndpointDown("h", true, later.plusSeconds(3), "p", rule, false)
+        assertTrue(engine.observeEndpointDown("h", true, later.plusSeconds(3), "p", rule)
                 .isEmpty());
-        Optional<QualityAlertEvent> again =
-                engine.observeEndpointDown("h", true, later.plusSeconds(4), "p", rule, false);
+        Optional<QualityAlertEvent> again = engine.observeEndpointDown("h", true, later.plusSeconds(4), "p", rule);
         assertTrue(again.isPresent());
         assertEquals(QualityAlertEvent.STATE_FIRING, again.get().state());
     }
@@ -122,11 +120,13 @@ class AlertRuleEngineTest {
                 engine.problemSummary("h", t0.plusSeconds(2).plusSeconds(90)).orElseThrow();
         assertEquals(Duration.ofSeconds(90), open.maxDuration());
 
-        // clear without notify emit still closes incident for duration stats
-        assertTrue(engine.observeEndpointDown("h", false, t0.plusSeconds(100), "p", rule, false)
+        // clear closes incident; RESOLVED edge always emitted (channel gating is MonitorService)
+        assertTrue(engine.observeEndpointDown("h", false, t0.plusSeconds(100), "p", rule)
                 .isEmpty());
-        assertTrue(engine.observeEndpointDown("h", false, t0.plusSeconds(101), "p", rule, false)
-                .isEmpty());
+        Optional<QualityAlertEvent> resolvedEdge =
+                engine.observeEndpointDown("h", false, t0.plusSeconds(101), "p", rule);
+        assertTrue(resolvedEdge.isPresent());
+        assertEquals(QualityAlertEvent.STATE_RESOLVED, resolvedEdge.get().state());
         HostProblemSummary resolved =
                 engine.problemSummary("h", t0.plusSeconds(101)).orElseThrow();
         assertTrue(resolved.unread());
@@ -144,10 +144,9 @@ class AlertRuleEngineTest {
 
         // second FIRING after cooldown window
         Instant later = t0.plusSeconds(101).plusSeconds(15 * 60L);
-        engine.observeEndpointDown("h", true, later, "p", rule, false);
-        engine.observeEndpointDown("h", true, later.plusSeconds(1), "p", rule, false);
-        Optional<QualityAlertEvent> again =
-                engine.observeEndpointDown("h", true, later.plusSeconds(2), "p", rule, false);
+        engine.observeEndpointDown("h", true, later, "p", rule);
+        engine.observeEndpointDown("h", true, later.plusSeconds(1), "p", rule);
+        Optional<QualityAlertEvent> again = engine.observeEndpointDown("h", true, later.plusSeconds(2), "p", rule);
         assertTrue(again.isPresent());
         HostProblemSummary second =
                 engine.problemSummary("h", later.plusSeconds(2)).orElseThrow();
@@ -166,9 +165,9 @@ class AlertRuleEngineTest {
     }
 
     private void fireOnce() {
-        engine.observeEndpointDown("h", true, t0, "p", rule, false);
-        engine.observeEndpointDown("h", true, t0.plusSeconds(1), "p", rule, false);
-        Optional<QualityAlertEvent> firing = engine.observeEndpointDown("h", true, t0.plusSeconds(2), "p", rule, false);
+        engine.observeEndpointDown("h", true, t0, "p", rule);
+        engine.observeEndpointDown("h", true, t0.plusSeconds(1), "p", rule);
+        Optional<QualityAlertEvent> firing = engine.observeEndpointDown("h", true, t0.plusSeconds(2), "p", rule);
         assertTrue(firing.isPresent());
     }
 }

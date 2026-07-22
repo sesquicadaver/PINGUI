@@ -526,10 +526,30 @@ public final class MonitorService implements AutoCloseable {
         Instant now = Instant.now();
         try {
             alertRuleEngine
-                    .observeEndpointDown(host, down, now, alertProfileName, rule, notifyResolved)
-                    .ifPresent(this::dispatchQualityAlert);
+                    .observeEndpointDown(host, down, now, alertProfileName, rule)
+                    .ifPresent(this::onQualityAlertEdge);
         } catch (RuntimeException ex) {
             LOG.warn("endpoint_down rule failed for {}: {}", host, ex.getMessage());
+        }
+    }
+
+    private void onQualityAlertEdge(QualityAlertEvent event) {
+        persistQualityAlert(event);
+        if (QualityAlertEvent.STATE_RESOLVED.equals(event.state()) && !notifyResolved) {
+            return;
+        }
+        dispatchQualityAlert(event);
+    }
+
+    private void persistQualityAlert(QualityAlertEvent event) {
+        PersistenceEventWriter events = persistenceEvents;
+        if (events == null || event == null) {
+            return;
+        }
+        try {
+            events.writeQualityAlert(event);
+        } catch (RuntimeException ex) {
+            LOG.warn("Persistence endpoint_down failed for {}: {}", event.host(), ex.getMessage());
         }
     }
 
