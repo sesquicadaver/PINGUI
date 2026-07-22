@@ -92,6 +92,7 @@ Module → unit test matrix. Update when adding features.
 | Profile params GUI (P20-010) | `ProfileParamsSettingsDialog`, `TracingProfile`, `MainController` | `ProfileParamsSettingsDialogTest`, `AppMenuDialogsTest` |
 | Alerts settings GUI (P20-011) | `AlertsSettingsDialog`, `AlertConfig`, `MainController`, `AlertDispatchers` | `AlertsSettingsDialogTest`, `AppMenuDialogsTest` |
 | Alert rules ADR (P21-001) | `docs/ADR_ALERT_RULES.md`, `docs/en/ADR_ALERT_RULES.md`; related `ADR_ALERTS` | Doc parity; contract for `endpoint_down` lifecycle |
+| AlertRuleEngine endpoint_down (P21-002) | `AlertRuleEngine`, `QualityAlertEvent`, `EndpointDownRuleConfig`, `MonitorService` | `AlertRuleEngineTest`, `MonitorServiceTest.dispatchesEndpointDownAfterConsecutiveUnreachablePolls` |
 | Graph UX (P20-012) | `GraphCanvas`, `RouteGraphInteraction`, `RouteGraphLayout`, `MainController` | `RouteGraphInteractionTest`, `RouteGraphLayoutTest`, `AppMenuDialogsTest` |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |

@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P21-002 — AlertRuleEngine endpoint_down:** FIRING/RESOLVED lifecycle + cooldown; wire `MonitorService` after snapshot; `dispatchQuality` on channels; ROADMAP NEXT → **P21-003**.
 - **P21-001 — ADR_ALERT_RULES:** formalize quality alerts (`endpoint_down` v1, lifecycle, `notify_resolved`); Related patch on ADR_ALERTS; phase 21; NEXT → **P21-002**.
 - **Alerts settings layout:** `AlertsSettingsDialog` — label column no longer shrinks (`USE_PREF_SIZE` + `ColumnConstraints`); prefWidth 560.
 - **P20-012 — Graph UX:** Extended graph — zoom/pan, hover tooltip, double-click copy hop IP (`RouteGraphInteraction`); ROADMAP NEXT → **DONE** (phase 20).

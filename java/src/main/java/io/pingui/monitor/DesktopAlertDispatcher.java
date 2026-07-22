@@ -35,7 +35,27 @@ public final class DesktopAlertDispatcher implements AlertDispatcher {
         String oldStr = event.oldIps().isEmpty() ? "(none)" : String.join(" -> ", event.oldIps());
         String newStr = event.newIps().isEmpty() ? "(none)" : String.join(" -> ", event.newIps());
         String body = event.host() + ": " + oldStr + " → " + newStr;
-        ProcessBuilder builder = new ProcessBuilder(notifySendPath, "PINGUI route change", body);
+        send("PINGUI route change", body);
+    }
+
+    @Override
+    public void dispatchQuality(QualityAlertEvent event) {
+        if (event == null) {
+            return;
+        }
+        if (notifySendPath == null) {
+            LOG.debug("notify-send not found; skipping desktop quality alert");
+            return;
+        }
+        if (!isLinux()) {
+            LOG.debug("Desktop alerts unsupported on this OS; skipping");
+            return;
+        }
+        send(event.desktopTitle(), event.desktopBody());
+    }
+
+    private void send(String title, String body) {
+        ProcessBuilder builder = new ProcessBuilder(notifySendPath, title, body);
         builder.redirectErrorStream(true);
         try {
             Process process = builder.start();

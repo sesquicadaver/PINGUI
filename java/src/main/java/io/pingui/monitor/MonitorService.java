@@ -71,6 +71,9 @@ public final class MonitorService implements AutoCloseable {
     private Listener listener;
     private volatile AlertDispatcher alertDispatcher = AlertDispatcher.noop();
     private volatile String alertProfileName = "default";
+    private final AlertRuleEngine alertRuleEngine = new AlertRuleEngine();
+    private volatile EndpointDownRuleConfig endpointDownRule = EndpointDownRuleConfig.disabled();
+    private volatile boolean notifyResolved;
     private volatile PingExpertResolver expertResolver;
     private volatile HostProbeModeResolver probeModeResolver;
     private volatile HostPollIntervalResolver intervalResolver;
@@ -153,6 +156,19 @@ public final class MonitorService implements AutoCloseable {
         this.alertDispatcher = alertDispatcher != null ? alertDispatcher : AlertDispatcher.noop();
     }
 
+    /**
+     * In-memory {@code endpoint_down} rule (P21-002). Default disabled; YAML/GUI wiring is P21-003.
+     */
+    public void setEndpointDownRule(EndpointDownRuleConfig endpointDownRule) {
+        this.endpointDownRule = endpointDownRule != null ? endpointDownRule : EndpointDownRuleConfig.disabled();
+        alertRuleEngine.clearAll();
+    }
+
+    /** When true, emit {@code endpoint_down} RESOLVED after clear_after successes (ADR). */
+    public void setNotifyResolved(boolean notifyResolved) {
+        this.notifyResolved = notifyResolved;
+    }
+
     public void setAlertProfileName(String alertProfileName) {
         if (alertProfileName == null || alertProfileName.isBlank()) {
             this.alertProfileName = "default";
@@ -222,6 +238,7 @@ public final class MonitorService implements AutoCloseable {
     public void removeHost(String host) {
         registry.remove(host);
         burstPolicy.clearHost(host);
+        alertRuleEngine.clearHost(host);
     }
 
     public void renameHost(String oldHost, String newHost) {
@@ -352,6 +369,7 @@ public final class MonitorService implements AutoCloseable {
             }
             offerTelemetrySuccess(host, probeMode, snapshot, durationMs);
             current.onDataReceived(host, snapshot);
+            evaluateEndpointDown(host, snapshot);
         }
         if (outcome.routeChanged() && BurstSchedulePolicy.shouldArmBurst(outcome.oldIps(), outcome.newIps())) {
             burstPolicy.onRouteChange(host, Instant.now());
@@ -480,6 +498,34 @@ public final class MonitorService implements AutoCloseable {
             dispatcher.dispatch(event);
         } catch (RuntimeException ex) {
             LOG.warn("Alert dispatch failed for {}: {}", host, ex.getMessage());
+        }
+    }
+
+    private void evaluateEndpointDown(String host, RouteSnapshot snapshot) {
+        EndpointDownRuleConfig rule = endpointDownRule;
+        if (rule == null || !rule.enabled() || snapshot == null) {
+            return;
+        }
+        boolean down = !isTargetReachable(snapshot);
+        Instant now = Instant.now();
+        try {
+            alertRuleEngine
+                    .observeEndpointDown(host, down, now, alertProfileName, rule, notifyResolved)
+                    .ifPresent(this::dispatchQualityAlert);
+        } catch (RuntimeException ex) {
+            LOG.warn("endpoint_down rule failed for {}: {}", host, ex.getMessage());
+        }
+    }
+
+    private void dispatchQualityAlert(QualityAlertEvent event) {
+        AlertDispatcher dispatcher = alertDispatcher;
+        if (dispatcher == null || event == null) {
+            return;
+        }
+        try {
+            dispatcher.dispatchQuality(event);
+        } catch (RuntimeException ex) {
+            LOG.warn("Quality alert dispatch failed for {}: {}", event.host(), ex.getMessage());
         }
     }
 

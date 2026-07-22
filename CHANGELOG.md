@@ -9,6 +9,7 @@
 
 ### Changed
 
+- **P21-002 — AlertRuleEngine endpoint_down:** lifecycle FIRING/RESOLVED + cooldown; wire `MonitorService` після snapshot; `dispatchQuality` на channels; ROADMAP NEXT → **P21-003**.
 - **P21-001 — ADR_ALERT_RULES:** формалізація якісних алертів (`endpoint_down` v1, lifecycle, `notify_resolved`); патч Related у ADR_ALERTS; фаза 21; NEXT → **P21-002**.
 - **Alerts settings layout:** `AlertsSettingsDialog` — колонка підписів не стискається (`USE_PREF_SIZE` + `ColumnConstraints`); prefWidth 560.
 - **P20-012 — Graph UX:** Extended граф — zoom/pan, hover tooltip, double-click copy hop IP (`RouteGraphInteraction`); ROADMAP NEXT → **DONE** (фаза 20).

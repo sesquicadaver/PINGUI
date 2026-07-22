@@ -227,6 +227,47 @@ class MonitorServiceTest {
     }
 
     @Test
+    void dispatchesEndpointDownAfterConsecutiveUnreachablePolls() throws Exception {
+        RouteSnapshot up = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "8.8.8.8", 10.0, false)));
+        RouteSnapshot down = new RouteSnapshot(
+                "8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "*", null, true)));
+        AtomicInteger probeCalls = new AtomicInteger();
+        RouteProbe probe = (targetHost, maxHops, timeoutSeconds) -> {
+            int call = probeCalls.getAndIncrement();
+            return call == 0 ? up : down;
+        };
+        RecordingAlertDispatcher alerts = new RecordingAlertDispatcher();
+        MonitorService service = new MonitorService(0.05, 20, 0.5, probe);
+        service.setAlertDispatcher(alerts);
+        service.setEndpointDownRule(new EndpointDownRuleConfig(true, 3, 2, 15));
+        service.setNotifyResolved(false);
+        service.setListener(new MonitorService.Listener() {
+            @Override
+            public void onDataReceived(String host, RouteSnapshot snap) {}
+
+            @Override
+            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
+
+            @Override
+            public void onProbeError(String host, String message) {}
+        });
+        service.addHost("8.8.8.8", true);
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+        while (alerts.qualityEvents().isEmpty() && System.nanoTime() < deadline) {
+            Thread.sleep(50);
+        }
+        assertEquals(1, alerts.qualityEvents().size());
+        QualityAlertEvent quality = alerts.qualityEvents().get(0);
+        assertEquals(QualityAlertEvent.EVENT_ENDPOINT_DOWN, quality.event());
+        assertEquals(QualityAlertEvent.STATE_FIRING, quality.state());
+        assertEquals("8.8.8.8", quality.host());
+        service.close();
+    }
+
+    @Test
     void updatesPrometheusViaTelemetrySinkOnPoll() throws Exception {
         RouteSnapshot reachable = new RouteSnapshot(
                 "8.8.8.8",
