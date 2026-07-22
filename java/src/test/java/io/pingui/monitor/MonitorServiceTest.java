@@ -1,6 +1,7 @@
 package io.pingui.monitor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -265,6 +266,11 @@ class MonitorServiceTest {
         assertEquals(QualityAlertEvent.EVENT_ENDPOINT_DOWN, quality.event());
         assertEquals(QualityAlertEvent.STATE_FIRING, quality.state());
         assertEquals("8.8.8.8", quality.host());
+        HostProblemSummary summary = service.hostProblemSummary("8.8.8.8").orElseThrow();
+        assertTrue(summary.unread());
+        assertEquals(1, summary.fireCount());
+        assertTrue(service.ackHostProblem("8.8.8.8"));
+        assertFalse(service.hostProblemSummary("8.8.8.8").orElseThrow().showBadge());
         service.close();
     }
 

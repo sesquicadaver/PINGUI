@@ -8,9 +8,11 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Pure quality-alert state machine for {@code endpoint_down} (P21-002 / ADR_ALERT_RULES).
+ * Pure quality-alert state machine for {@code endpoint_down} (P21-002 / P22-002 /
+ * ADR_ALERT_RULES + ADR_HOST_PROBLEM_INDICATOR).
  *
  * <p>Thread-safe per host. Probe errors are not observed here — only boolean reachability samples.
+ * Session problem stats ({@link HostProblemSummary}) survive channel suppressions and {@link #ack}.
  */
 public final class AlertRuleEngine {
     private enum Phase {
@@ -50,6 +52,71 @@ public final class AlertRuleEngine {
         }
     }
 
+    /**
+     * Session problem view for a host, or empty when no FIRING occurred this session.
+     *
+     * @param now used to extend {@code max_duration} while still FIRING
+     */
+    public Optional<HostProblemSummary> problemSummary(String host, Instant now) {
+        if (host == null || host.isBlank()) {
+            return Optional.empty();
+        }
+        HostState state = states.get(host);
+        if (state == null) {
+            return Optional.empty();
+        }
+        Instant at = now != null ? now : Instant.now();
+        synchronized (state) {
+            if (state.fireCount == 0) {
+                return Optional.empty();
+            }
+            Duration maxDuration = state.maxDuration;
+            if (state.incidentStartedAt != null) {
+                Duration open = Duration.between(state.incidentStartedAt, at);
+                if (!open.isNegative() && open.compareTo(maxDuration) > 0) {
+                    maxDuration = open;
+                }
+            }
+            return Optional.of(new HostProblemSummary(
+                    host,
+                    QualityAlertEvent.EVENT_ENDPOINT_DOWN,
+                    state.unread,
+                    state.fireCount,
+                    maxDuration,
+                    state.lastStartedAt,
+                    state.lastResolvedAt,
+                    state.lastState,
+                    HostProblemSummary.DESCRIPTION_ENDPOINT_DOWN));
+        }
+    }
+
+    public Optional<HostProblemSummary> problemSummary(String host) {
+        return problemSummary(host, Instant.now());
+    }
+
+    /**
+     * Marks the host problem as viewed: clears {@code unread} (badge off) until the next FIRING.
+     * Counters and timestamps are preserved.
+     *
+     * @return {@code true} when host state existed
+     */
+    public boolean ack(String host) {
+        if (host == null || host.isBlank()) {
+            return false;
+        }
+        HostState state = states.get(host);
+        if (state == null) {
+            return false;
+        }
+        synchronized (state) {
+            state.unread = false;
+            if (state.phase != Phase.FIRING) {
+                state.lastState = HostProblemSummary.STATE_OK;
+            }
+            return true;
+        }
+    }
+
     /** Drops per-host state (tests / host removed). */
     public void clearHost(String host) {
         if (host != null) {
@@ -72,7 +139,7 @@ public final class AlertRuleEngine {
             state.phase = Phase.PENDING;
             return Optional.empty();
         }
-        state.phase = Phase.FIRING;
+        enterFiring(state, now);
         if (!cooldownElapsed(state, now, rule)) {
             return Optional.empty();
         }
@@ -98,13 +165,35 @@ public final class AlertRuleEngine {
         if (state.okStreak < rule.clearAfter()) {
             return Optional.empty();
         }
-        state.phase = Phase.OK;
-        state.okStreak = 0;
+        leaveFiring(state, now);
         if (!notifyResolved) {
             return Optional.empty();
         }
         Map<String, Object> detail = QualityAlertEvent.detailOf(rule.failAfter(), 0, rule.clearAfter());
         return Optional.of(QualityAlertEvent.endpointDownResolved(host, profile, now, detail));
+    }
+
+    private static void enterFiring(HostState state, Instant now) {
+        state.phase = Phase.FIRING;
+        state.fireCount++;
+        state.unread = true;
+        state.incidentStartedAt = now;
+        state.lastStartedAt = now;
+        state.lastState = HostProblemSummary.STATE_FIRING;
+    }
+
+    private static void leaveFiring(HostState state, Instant now) {
+        state.phase = Phase.OK;
+        state.okStreak = 0;
+        if (state.incidentStartedAt != null) {
+            Duration duration = Duration.between(state.incidentStartedAt, now);
+            if (!duration.isNegative() && duration.compareTo(state.maxDuration) > 0) {
+                state.maxDuration = duration;
+            }
+            state.incidentStartedAt = null;
+        }
+        state.lastResolvedAt = now;
+        state.lastState = HostProblemSummary.STATE_RESOLVED;
     }
 
     private static boolean cooldownElapsed(HostState state, Instant now, EndpointDownRuleConfig rule) {
@@ -120,5 +209,12 @@ public final class AlertRuleEngine {
         private int failStreak;
         private int okStreak;
         private Instant lastFiringEmit;
+        private boolean unread;
+        private int fireCount;
+        private Duration maxDuration = Duration.ZERO;
+        private Instant lastStartedAt;
+        private Instant lastResolvedAt;
+        private Instant incidentStartedAt;
+        private String lastState = HostProblemSummary.STATE_OK;
     }
 }

@@ -216,4 +216,4 @@ pingui-java.bat --package    REM .msi
 
 ## Майбутнє
 
-Лінійна черга ROADMAP: **NEXT = P22-002** (фаза 20 — GUI UX). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT.
+Лінійна черга ROADMAP: **NEXT = P22-003** (фаза 22 — host problem UX). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT.

@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P22-002 — Session problem stats + ack:** `HostProblemSummary` in `AlertRuleEngine` (fire_count, max_duration, unread/ack); `MonitorService` accessors; NEXT→P22-003.
 - **P22-001 — ADR host problem indicator:** badge/ack/session stats + auto session-DB naming; phase 22 opened, NEXT→P22-002.
 - **P21-003 — YAML/GUI alert rules:** `alerts.notify_resolved` + `alerts.rules.endpoint_down` in YAML/GUI; wire `MonitorLifecycle`; phase 21 → **DONE**.
 - **P21-002 — AlertRuleEngine endpoint_down:** FIRING/RESOLVED lifecycle + cooldown; wire `MonitorService` after snapshot; `dispatchQuality` on channels; ROADMAP NEXT → **P21-003**.

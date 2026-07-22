@@ -19,6 +19,7 @@ import io.pingui.telemetry.TelemetryEvent;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -168,6 +169,20 @@ public final class MonitorService implements AutoCloseable {
     /** When true, emit {@code endpoint_down} RESOLVED after clear_after successes (ADR). */
     public void setNotifyResolved(boolean notifyResolved) {
         this.notifyResolved = notifyResolved;
+    }
+
+    /** Session {@code endpoint_down} problem summary for host-row badge (P22-002). */
+    public Optional<HostProblemSummary> hostProblemSummary(String host) {
+        return alertRuleEngine.problemSummary(host, Instant.now());
+    }
+
+    /**
+     * Acknowledges the host problem (badge off until next FIRING). Counters preserved.
+     *
+     * @return {@code true} when engine had state for the host
+     */
+    public boolean ackHostProblem(String host) {
+        return alertRuleEngine.ack(host);
     }
 
     public void setAlertProfileName(String alertProfileName) {

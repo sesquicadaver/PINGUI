@@ -216,4 +216,4 @@ Tests and CI — on **`main`** and **`beta`** (ROADMAP development on `beta`).
 
 ## Future
 
-The linear ROADMAP queue: **NEXT = P22-002** (phase 20 — GUI UX). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT.
+The linear ROADMAP queue: **NEXT = P22-003** (phase 22 — host problem UX). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT.

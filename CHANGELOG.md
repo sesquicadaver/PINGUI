@@ -9,6 +9,7 @@
 
 ### Changed
 
+- **P22-002 — Session problem stats + ack:** `HostProblemSummary` у `AlertRuleEngine` (fire_count, max_duration, unread/ack); `MonitorService` accessors; NEXT→P22-003.
 - **P22-001 — ADR host problem indicator:** badge/ack/session stats + auto session-DB naming; фаза 22 відкрита, NEXT→P22-002.
 - **P21-003 — YAML/GUI alert rules:** `alerts.notify_resolved` + `alerts.rules.endpoint_down` у YAML/GUI; wire `MonitorLifecycle`; фаза 21 → **DONE**.
 - **P21-002 — AlertRuleEngine endpoint_down:** lifecycle FIRING/RESOLVED + cooldown; wire `MonitorService` після snapshot; `dispatchQuality` на channels; ROADMAP NEXT → **P21-003**.
