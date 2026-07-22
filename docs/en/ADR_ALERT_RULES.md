@@ -15,7 +15,7 @@ User decisions (2026-07-22):
 |-------|----------|
 | v1 scope | **`endpoint_down` only**; `loss_high` / `latency_high` → **v2** |
 | RESOLVED | User option (`notify_resolved`, default **false**) |
-| Latency (v2) | Absolute **and** baseline-relative, chosen via preset |
+| Latency (v2) | Default: `rtt ≥ 2×AVG`; FIRING after **3** consecutive bad pings (**no** time window); absolute/other multiplier only when set |
 | Per-host overrides | **Not in v1** (reserved; see below) |
 | ADR shape | Separate **ADR_ALERT_RULES**; ADR_ALERTS remains SSOT for channels |
 
@@ -122,7 +122,11 @@ Priority: CLI (future flags) > profile YAML > defaults.
 ### 7. Reserved (v2 — do not implement under P21-001…003 without a dedicated ID)
 
 - **`loss_high`:** threshold + clear (hysteresis) + window + sustain.
-- **`latency_high`:** `absolute` \| `baseline_relative` + presets; warm-up without alert.
+- **`latency_high`** (locked 2026-07-22 — «critical» preset / defaults):
+  - **Default signal:** `rtt ≥ 2 × AVG` (terminal RTT; AVG from successful session samples). Other multiplier / absolute `threshold_ms` only when set explicitly in YAML/GUI.
+  - **FIRING:** **`fail_after = 3`** consecutive bad pings; **no** time window (poll interval is irrelevant to the condition).
+  - Lifecycle otherwise as in §2: `clear_after`, `cooldown_minutes`, `notify_resolved`; warm-up until AVG exists (no relative alert before AVG).
+  - Distinct from `endpoint_down`: high latency with a successful reply is `latency_high` only.
 - **Sparse per-host YAML** rule overrides (same pattern as `intervalSecondsOverride`); GUI per-host only after YAML + clear demand.
 
 ### 8. Non-goals (X-003)

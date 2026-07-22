@@ -15,7 +15,7 @@
 |------|---------|
 | Scope v1 | Лише **`endpoint_down`**; `loss_high` / `latency_high` → **v2** |
 | RESOLVED | Опція користувача (`notify_resolved`, default **false**) |
-| Latency (v2) | Absolute **і** baseline-relative, вибір пресетом |
+| Latency (v2) | Default: `rtt ≥ 2×AVG`; FIRING після **3** поганих пінгів **поспіль** (без часового вікна); absolute/інший множник — лише якщо задано |
 | Per-host overrides | **Не в v1** (зарезервовано; див. нижче) |
 | Форма ADR | Окремий **ADR_ALERT_RULES**; `ADR_ALERTS` лишається SSOT каналів |
 
@@ -122,7 +122,11 @@ alerts:
 ### 7. Зарезервовано (v2, не імплементувати в P21-001…003 без окремого ID)
 
 - **`loss_high`:** threshold + clear (hysteresis) + window + sustain.
-- **`latency_high`:** режим `absolute` \| `baseline_relative` + пресети; warm-up без alert.
+- **`latency_high`** (рішення 2026-07-22 — пресет «критичний» / defaults):
+  - **Сигнал за замовчуванням:** `rtt ≥ 2 × AVG` (terminal RTT; AVG з успішних проб сесії). Інший множник / absolute `threshold_ms` — лише якщо явно задано в YAML/GUI.
+  - **FIRING:** **`fail_after = 3`** послідовні «погані» пінги; **без** часового вікна (interval не входить у умову).
+  - Lifecycle далі як у §2: `clear_after`, `cooldown_minutes`, `notify_resolved`; warm-up до появи AVG (немає relative-алерту, доки AVG ще немає).
+  - Не плутати з `endpoint_down`: висока затримка при успішному reply — лише `latency_high`.
 - **Sparse per-host YAML override** правил (патерн як `intervalSecondsOverride`); GUI per-host — лише після YAML і явного попиту.
 
 ### 8. Non-goals (X-003)
