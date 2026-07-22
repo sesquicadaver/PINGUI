@@ -153,11 +153,110 @@ class ProfilesConfigTest {
                       desktop: true
                       webhook: https://hooks.example.com/ping
                       rate_limit: 5
+                      notify_resolved: true
+                      rules:
+                        endpoint_down:
+                          enabled: true
+                          preset: calm
                 """);
         TracingProfile profile = ProfilesConfig.load(path).active();
         assertTrue(profile.alerts().desktopAlerts());
         assertEquals("https://hooks.example.com/ping", profile.alerts().normalizedWebhook());
         assertEquals(5, profile.alerts().maxAlertsPerHour());
+        assertTrue(profile.alerts().notifyResolved());
+        assertTrue(profile.alerts().endpointDown().enabled());
+        assertEquals(5, profile.alerts().endpointDown().failAfter());
+        assertEquals(3, profile.alerts().endpointDown().clearAfter());
+        assertEquals(30, profile.alerts().endpointDown().cooldownMinutes());
+    }
+
+    @Test
+    void saveAndReloadEndpointDownRules() throws Exception {
+        Path path = tempDir.resolve("alerts-rules-save.yaml");
+        AlertConfig alerts = new AlertConfig(false, null, 10, true, new EndpointDownRuleConfig(true, 4, 2, 20));
+        TracingProfile profile = new TracingProfile(
+                1.0,
+                20,
+                0.5,
+                ProbeMode.AUTO,
+                List.of(HostEntry.basic("8.8.8.8", false)),
+                alerts,
+                PersistenceConfig.defaults());
+        ProfilesConfig.save(path, ProfileDocument.singleDefault(profile));
+        String yaml = Files.readString(path);
+        assertTrue(yaml.contains("fail_after: 4"));
+        assertTrue(yaml.contains("notify_resolved: true"));
+        TracingProfile reloaded = ProfilesConfig.load(path).active();
+        assertTrue(reloaded.alerts().notifyResolved());
+        assertTrue(reloaded.alerts().endpointDown().enabled());
+        assertEquals(4, reloaded.alerts().endpointDown().failAfter());
+        assertEquals(2, reloaded.alerts().endpointDown().clearAfter());
+        assertEquals(20, reloaded.alerts().endpointDown().cooldownMinutes());
+    }
+
+    @Test
+    void loadEndpointDownNumericFieldsAndRejectBadPreset() throws Exception {
+        Path path = tempDir.resolve("alerts-numeric.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: noc
+                profiles:
+                  noc:
+                    hosts:
+                      - "8.8.8.8"
+                    alerts:
+                      rules:
+                        endpoint_down:
+                          enabled: true
+                          fail_after: 4
+                          clear_after: 1
+                          cooldown_minutes: 0
+                """);
+        EndpointDownRuleConfig rule =
+                ProfilesConfig.load(path).active().alerts().endpointDown();
+        assertTrue(rule.enabled());
+        assertEquals(4, rule.failAfter());
+        assertEquals(1, rule.clearAfter());
+        assertEquals(0, rule.cooldownMinutes());
+
+        Path bad = tempDir.resolve("alerts-bad-preset.yaml");
+        Files.writeString(
+                bad,
+                """
+                active_profile: noc
+                profiles:
+                  noc:
+                    hosts:
+                      - "8.8.8.8"
+                    alerts:
+                      rules:
+                        endpoint_down:
+                          enabled: true
+                          preset: aggressive
+                """);
+        ConfigError error = assertThrows(ConfigError.class, () -> ProfilesConfig.load(bad));
+        assertTrue(error.getMessage().contains("preset"));
+    }
+
+    @Test
+    void saveEndpointDownWritesPresetWhenMatched() throws Exception {
+        Path path = tempDir.resolve("alerts-preset-save.yaml");
+        AlertConfig alerts = new AlertConfig(false, null, 10, false, EndpointDownRuleConfig.sensitive(true));
+        TracingProfile profile = new TracingProfile(
+                1.0,
+                20,
+                0.5,
+                ProbeMode.AUTO,
+                List.of(HostEntry.basic("8.8.8.8", false)),
+                alerts,
+                PersistenceConfig.defaults());
+        ProfilesConfig.save(path, ProfileDocument.singleDefault(profile));
+        String yaml = Files.readString(path);
+        assertTrue(yaml.contains("preset: sensitive"));
+        assertEquals(
+                "sensitive",
+                ProfilesConfig.load(path).active().alerts().endpointDown().matchingPreset());
     }
 
     @Test

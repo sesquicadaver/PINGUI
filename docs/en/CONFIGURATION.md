@@ -119,7 +119,7 @@ profiles:
 
 Alerts are disabled by default (`NoOp` dispatcher).
 
-**Quality rules (P21, ADR):** YAML contract reserved in [ADR_ALERT_RULES.md](ADR_ALERT_RULES.md). v1 (after P21-002/003) — `endpoint_down` + `notify_resolved` only; `loss_high`/`latency_high` — v2. `endpoint_down` engine shipped (P21-002) via `MonitorService.setEndpointDownRule` (default off). YAML keys `alerts.rules` / `notify_resolved` are **not parsed yet** — P21-003. Channel keys `desktop`/`webhook`/`rate_limit` unchanged (P10).
+**Quality rules (P21, ADR):** YAML contract reserved in [ADR_ALERT_RULES.md](ADR_ALERT_RULES.md). v1 (after P21-002/003) — `endpoint_down` + `notify_resolved` only; `loss_high`/`latency_high` — v2. `endpoint_down` engine (P21-002) + YAML/GUI (P21-003): `alerts.notify_resolved`, `alerts.rules.endpoint_down` (`enabled` / `preset` or fail_after/clear_after/cooldown_minutes). GUI: Settings → Alerts… Channel keys `desktop`/`webhook`/`rate_limit` unchanged (P10).
 
 ```yaml
     alerts:

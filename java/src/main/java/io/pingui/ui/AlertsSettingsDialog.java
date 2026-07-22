@@ -2,13 +2,16 @@ package io.pingui.ui;
 
 import io.pingui.CliAlertOverrides;
 import io.pingui.config.AlertConfig;
+import io.pingui.config.EndpointDownRuleConfig;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import javafx.collections.FXCollections;
 import javafx.geometry.HPos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
@@ -22,17 +25,30 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Window;
 
 /**
- * GUI for profile {@code alerts:} — desktop / webhook / rate_limit (P20-011). Apply updates
- * in-memory profile + dispatcher; YAML persist via main «Зберегти». Not a full NMS.
+ * GUI for profile {@code alerts:} — channels + {@code endpoint_down} / {@code notify_resolved}
+ * (P20-011 / P21-003). Not a full NMS.
  */
 public final class AlertsSettingsDialog {
+    private static final String PRESET_CALM = "Спокійно";
+    private static final String PRESET_BALANCED = "Збалансовано";
+    private static final String PRESET_SENSITIVE = "Чутливо";
+    private static final String PRESET_CUSTOM = "Власні значення";
+
     private AlertsSettingsDialog() {}
 
     /** Result from the alerts settings dialog. */
     public record Result(AlertConfig alerts) {}
 
     /** Dialog field snapshot used by {@link #buildConfig} (unit-tested). */
-    public record FormInput(boolean desktop, String webhookText, String rateLimitText) {}
+    public record FormInput(
+            boolean desktop,
+            String webhookText,
+            String rateLimitText,
+            boolean notifyResolved,
+            boolean endpointDownEnabled,
+            String failAfterText,
+            String clearAfterText,
+            String cooldownText) {}
 
     /**
      * Shows alert settings and invokes {@code onApply} on successful Apply.
@@ -48,7 +64,7 @@ public final class AlertsSettingsDialog {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.initOwner(owner);
         dialog.setTitle("Сповіщення");
-        dialog.setHeaderText("alerts.desktop / webhook / rate_limit (без NMS)");
+        dialog.setHeaderText("Канали + endpoint_down (без NMS)");
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
 
         CheckBox desktopCheck = new CheckBox("Desktop alerts (системне сповіщення)");
@@ -71,14 +87,49 @@ public final class AlertsSettingsDialog {
             rateField.setTooltip(new Tooltip("Заблоковано CLI (--alert-rate-limit)"));
         }
 
+        CheckBox notifyResolvedCheck = new CheckBox("Сповіщати про RESOLVED (endpoint_up)");
+        notifyResolvedCheck.setSelected(current.notifyResolved());
+        notifyResolvedCheck.setTooltip(new Tooltip("alerts.notify_resolved — окремий emit після clear_after"));
+
+        CheckBox endpointDownCheck = new CheckBox("Правило endpoint_down (недоступність цілі)");
+        endpointDownCheck.setSelected(current.endpointDown().enabled());
+
+        ComboBox<String> presetCombo = new ComboBox<>(
+                FXCollections.observableArrayList(PRESET_CALM, PRESET_BALANCED, PRESET_SENSITIVE, PRESET_CUSTOM));
+        TextField failField =
+                new TextField(Integer.toString(current.endpointDown().failAfter()));
+        TextField clearField =
+                new TextField(Integer.toString(current.endpointDown().clearAfter()));
+        TextField cooldownField =
+                new TextField(Integer.toString(current.endpointDown().cooldownMinutes()));
+        String matched = current.endpointDown().matchingPreset();
+        presetCombo.setValue(
+                switch (matched) {
+                    case "calm" -> PRESET_CALM;
+                    case "sensitive" -> PRESET_SENSITIVE;
+                    case "balanced" -> PRESET_BALANCED;
+                    default -> PRESET_CUSTOM;
+                });
+        Runnable applyPreset = () -> {
+            String selected = presetCombo.getValue();
+            if (PRESET_CUSTOM.equals(selected) || selected == null) {
+                return;
+            }
+            EndpointDownRuleConfig preset = EndpointDownRuleConfig.fromPreset(presetKey(selected), true);
+            failField.setText(Integer.toString(preset.failAfter()));
+            clearField.setText(Integer.toString(preset.clearAfter()));
+            cooldownField.setText(Integer.toString(preset.cooldownMinutes()));
+        };
+        presetCombo.valueProperty().addListener((obs, oldV, newV) -> applyPreset.run());
+
         TextArea statusArea = new TextArea(current.toRedactedString());
         statusArea.setEditable(false);
         statusArea.setWrapText(true);
-        statusArea.setPrefRowCount(2);
+        statusArea.setPrefRowCount(3);
         statusArea.setMaxWidth(Double.MAX_VALUE);
 
-        Label hint = new Label("Застосувати оновлює активний профіль і dispatcher. "
-                + "«Зберегти» у головному вікні записує YAML. Статус — URL без секретів.");
+        Label hint = new Label("Застосувати оновлює профіль, dispatcher і endpoint_down engine. "
+                + "«Зберегти» → YAML. Default: правило вимкнено.");
         hint.setWrapText(true);
 
         GridPane grid = new GridPane();
@@ -91,13 +142,23 @@ public final class AlertsSettingsDialog {
         grid.add(webhookField, 1, row++);
         grid.add(formLabel("rate_limit / год:"), 0, row);
         grid.add(rateField, 1, row++);
+        grid.add(notifyResolvedCheck, 0, row++, 2, 1);
+        grid.add(endpointDownCheck, 0, row++, 2, 1);
+        grid.add(formLabel("пресет:"), 0, row);
+        grid.add(presetCombo, 1, row++);
+        grid.add(formLabel("fail_after:"), 0, row);
+        grid.add(failField, 1, row++);
+        grid.add(formLabel("clear_after:"), 0, row);
+        grid.add(clearField, 1, row++);
+        grid.add(formLabel("cooldown (хв):"), 0, row);
+        grid.add(cooldownField, 1, row++);
         grid.add(formLabel("Статус:"), 0, row);
         grid.add(statusArea, 1, row);
         GridPane.setHgrow(webhookField, Priority.ALWAYS);
         GridPane.setHgrow(statusArea, Priority.ALWAYS);
 
         VBox content = new VBox(10, grid, hint);
-        content.setPrefWidth(560);
+        content.setPrefWidth(580);
         dialog.getDialogPane().setContent(content);
 
         Optional<ButtonType> answer = dialog.showAndWait();
@@ -105,7 +166,15 @@ public final class AlertsSettingsDialog {
             return;
         }
         try {
-            FormInput form = new FormInput(desktopCheck.isSelected(), webhookField.getText(), rateField.getText());
+            FormInput form = new FormInput(
+                    desktopCheck.isSelected(),
+                    webhookField.getText(),
+                    rateField.getText(),
+                    notifyResolvedCheck.isSelected(),
+                    endpointDownCheck.isSelected(),
+                    failField.getText(),
+                    clearField.getText(),
+                    cooldownField.getText());
             AlertConfig next = buildConfig(current, form, locks);
             onApply.accept(new Result(next));
         } catch (IllegalArgumentException ex) {
@@ -123,7 +192,7 @@ public final class AlertsSettingsDialog {
     /**
      * Builds validated {@link AlertConfig} from form text, applying CLI locks over form values.
      *
-     * @throws IllegalArgumentException on invalid rate_limit
+     * @throws IllegalArgumentException on invalid numbers
      */
     public static AlertConfig buildConfig(AlertConfig baseline, FormInput form, CliAlertOverrides locks) {
         Objects.requireNonNull(baseline, "baseline");
@@ -137,8 +206,23 @@ public final class AlertsSettingsDialog {
                 effective.webhookUrl().isPresent() ? effective.webhookUrl().get() : blankToNull(form.webhookText());
         int rate = effective.rateLimitPerHour().isPresent()
                 ? effective.rateLimitPerHour().getAsInt()
-                : parseRateLimit(form.rateLimitText());
-        return new AlertConfig(desktop, webhook, rate);
+                : parsePositiveInt(form.rateLimitText(), "rate_limit");
+        EndpointDownRuleConfig endpointDown = new EndpointDownRuleConfig(
+                form.endpointDownEnabled(),
+                parsePositiveInt(form.failAfterText(), "fail_after"),
+                parsePositiveInt(form.clearAfterText(), "clear_after"),
+                parseNonNegativeInt(form.cooldownText(), "cooldown_minutes"));
+        return new AlertConfig(desktop, webhook, rate, form.notifyResolved(), endpointDown);
+    }
+
+    static String presetKey(String uiLabel) {
+        if (PRESET_CALM.equals(uiLabel)) {
+            return "calm";
+        }
+        if (PRESET_SENSITIVE.equals(uiLabel)) {
+            return "sensitive";
+        }
+        return "balanced";
     }
 
     /** Label that refuses to shrink below preferred width (avoids clipped left-column text). */
@@ -169,19 +253,35 @@ public final class AlertsSettingsDialog {
         return text.strip();
     }
 
-    private static int parseRateLimit(String text) {
+    private static int parsePositiveInt(String text, String field) {
         String raw = text == null ? "" : text.strip();
         if (raw.isEmpty()) {
-            throw new IllegalArgumentException("rate_limit must be an integer >= 1");
+            throw new IllegalArgumentException(field + " must be an integer >= 1");
         }
         try {
             int value = Integer.parseInt(raw);
             if (value < 1) {
-                throw new IllegalArgumentException("rate_limit must be >= 1");
+                throw new IllegalArgumentException(field + " must be >= 1");
             }
             return value;
         } catch (NumberFormatException ex) {
-            throw new IllegalArgumentException("rate_limit must be an integer >= 1");
+            throw new IllegalArgumentException(field + " must be an integer >= 1");
+        }
+    }
+
+    private static int parseNonNegativeInt(String text, String field) {
+        String raw = text == null ? "" : text.strip();
+        if (raw.isEmpty()) {
+            throw new IllegalArgumentException(field + " must be an integer >= 0");
+        }
+        try {
+            int value = Integer.parseInt(raw);
+            if (value < 0) {
+                throw new IllegalArgumentException(field + " must be >= 0");
+            }
+            return value;
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException(field + " must be an integer >= 0");
         }
     }
 }

@@ -1,5 +1,6 @@
 package io.pingui.monitor;
 
+import io.pingui.config.EndpointDownRuleConfig;
 import io.pingui.config.PingExpertEntry;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;

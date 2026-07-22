@@ -119,7 +119,7 @@ profiles:
 
 За замовчуванням alerts вимкнено (`NoOp` dispatcher).
 
-**Якісні правила (P21, ADR):** контракт YAML зарезервовано в [ADR_ALERT_RULES.md](ADR_ALERT_RULES.md). У v1 (після P21-002/003) — лише `endpoint_down` + `notify_resolved`; `loss_high`/`latency_high` — v2. Engine `endpoint_down` змерджено (P21-002) через `MonitorService.setEndpointDownRule` (default off). Ключі `alerts.rules` / `notify_resolved` у YAML **ще не парсяться** — P21-003. Канали `desktop`/`webhook`/`rate_limit` без змін (P10).
+**Якісні правила (P21, ADR):** контракт YAML зарезервовано в [ADR_ALERT_RULES.md](ADR_ALERT_RULES.md). У v1 (після P21-002/003) — лише `endpoint_down` + `notify_resolved`; `loss_high`/`latency_high` — v2. Engine `endpoint_down` (P21-002) + YAML/GUI (P21-003): `alerts.notify_resolved`, `alerts.rules.endpoint_down` (`enabled` / `preset` або fail_after/clear_after/cooldown_minutes). GUI: Налаштування → Сповіщення… Канали `desktop`/`webhook`/`rate_limit` без змін (P10).
 
 ```yaml
     alerts:

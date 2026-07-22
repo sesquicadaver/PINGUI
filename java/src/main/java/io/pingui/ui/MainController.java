@@ -600,6 +600,7 @@ public final class MainController {
         profileDocument.putProfile(profileDocument.activeProfile(), active.withAlerts(result.alerts()));
         AlertConfig effective = options.alertOverrides().applyTo(result.alerts());
         monitor.setAlertDispatcher(AlertDispatchers.build(effective));
+        MonitorLifecycle.applyAlertRules(monitor, effective);
         dirtyState.mark();
         userFeedback.info("Сповіщення оновлено: " + result.alerts().toRedactedString() + " — «Зберегти» → YAML");
     }

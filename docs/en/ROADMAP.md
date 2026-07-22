@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P21-003** |
-| **Phase** | 21 — Alert rules |
-| **DoD (short)** | YAML/GUI alerts.rules + notify_resolved |
+| **Current task** | **DONE** |
+| **Phase** | — |
+| **DoD (short)** | linear queue exhausted |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -117,9 +117,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 71 | **P20-012** | [x] | Graph UX: zoom/pan / copy / tooltip |
 | 72 | **P21-001** | [x] | ADR_ALERT_RULES (endpoint_down v1) |
 | 73 | **P21-002** | [x] | AlertRuleEngine endpoint_down |
-| 74 | **P21-003** | [ ] | YAML/GUI alerts.rules + notify_resolved |
+| 74 | **P21-003** | [x] | YAML/GUI alerts.rules + notify_resolved |
 
-**Queue status:** open — **NEXT = P21-003** (phase 21 — quality alert rules).
+**Queue status:** closed — **NEXT = DONE** (phase 21 alert rules complete).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -758,7 +758,7 @@ flowchart TD
 |----|------|-------|-----|
 | **P21-001** | [x] ADR: quality alert rules | `docs/ADR_ALERT_RULES.md`, `docs/en/ADR_ALERT_RULES.md`, patch `ADR_ALERTS` | Lifecycle + `endpoint_down` v1; loss/latency reserved v2; `notify_resolved` optional; no per-host v1 |
 | **P21-002** | [x] AlertRuleEngine `endpoint_down` | `AlertRuleEngine`, `QualityAlertEvent`, `MonitorService` | Pure engine + wire poll→FIRING; cooldown; `./gradlew check` |
-| **P21-003** | [ ] YAML/GUI rules | `AlertConfig`, `ProfilesConfig`, `AlertsSettingsDialog` | `alerts.rules` + `notify_resolved`; Apply/Save; no NMS UI |
+| **P21-003** | [x] YAML/GUI rules | `AlertConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `alerts.rules` + `notify_resolved`; Apply/Save; no NMS UI |
 
 ---
 
@@ -844,7 +844,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Linear queue — **NEXT=P21-003**.
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Linear queue — **NEXT=DONE**.
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

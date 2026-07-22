@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P21-003 — YAML/GUI alert rules:** `alerts.notify_resolved` + `alerts.rules.endpoint_down` in YAML/GUI; wire `MonitorLifecycle`; phase 21 → **DONE**.
 - **P21-002 — AlertRuleEngine endpoint_down:** FIRING/RESOLVED lifecycle + cooldown; wire `MonitorService` after snapshot; `dispatchQuality` on channels; ROADMAP NEXT → **P21-003**.
 - **P21-001 — ADR_ALERT_RULES:** formalize quality alerts (`endpoint_down` v1, lifecycle, `notify_resolved`); Related patch on ADR_ALERTS; phase 21; NEXT → **P21-002**.
 - **Alerts settings layout:** `AlertsSettingsDialog` — label column no longer shrinks (`USE_PREF_SIZE` + `ColumnConstraints`); prefWidth 560.

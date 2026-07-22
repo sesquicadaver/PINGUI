@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P21-003** |
-| **Фаза** | 21 — Alert rules |
-| **DoD (коротко)** | YAML/GUI alerts.rules + notify_resolved |
+| **Поточна задача** | **DONE** |
+| **Фаза** | — |
+| **DoD (коротко)** | лінійна черга вичерпана |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -117,9 +117,9 @@
 | 71 | **P20-012** | [x] | Graph UX: zoom/pan / copy / tooltip |
 | 72 | **P21-001** | [x] | ADR_ALERT_RULES (endpoint_down v1) |
 | 73 | **P21-002** | [x] | AlertRuleEngine endpoint_down |
-| 74 | **P21-003** | [ ] | YAML/GUI alerts.rules + notify_resolved |
+| 74 | **P21-003** | [x] | YAML/GUI alerts.rules + notify_resolved |
 
-**Стан черги:** відкрита — **NEXT = P21-003** (фаза 21 — якісні alert rules).
+**Стан черги:** закрита — **NEXT = DONE** (фаза 21 alert rules завершена).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -758,7 +758,7 @@ flowchart TD
 |----|--------|-------|-----|
 | **P21-001** | [x] ADR: quality alert rules | `docs/ADR_ALERT_RULES.md`, `docs/en/ADR_ALERT_RULES.md`, патч `ADR_ALERTS` | Lifecycle + `endpoint_down` v1; loss/latency reserved v2; `notify_resolved` optional; no per-host v1 |
 | **P21-002** | [x] AlertRuleEngine `endpoint_down` | `AlertRuleEngine`, `QualityAlertEvent`, `MonitorService` | Pure engine + wire poll→FIRING; cooldown; `./gradlew check` |
-| **P21-003** | [ ] YAML/GUI rules | `AlertConfig`, `ProfilesConfig`, `AlertsSettingsDialog` | `alerts.rules` + `notify_resolved`; Apply/Save; без NMS UI |
+| **P21-003** | [x] YAML/GUI rules | `AlertConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `alerts.rules` + `notify_resolved`; Apply/Save; без NMS UI |
 
 ---
 
@@ -844,7 +844,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Лінійна черга — **NEXT=P21-003**.
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Лінійна черга — **NEXT=DONE**.
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

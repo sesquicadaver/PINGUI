@@ -286,6 +286,7 @@ chmod +x pingui-java.sh gradlew
 - [ ] **Новий профіль** → ім'я `test` → список хостів порожній, вікно без чорних смуг
 - [ ] **Видалити профіль** (повернення до default) → Simple mode, вікно зменшується коректно (не лишається oversized frame)
 - [ ] **Розширений** → граф + лог; **Простий** → знову compact layout
+- [ ] **P21-003 Alerts rules:** Налаштування → Сповіщення… → endpoint_down + пресет/параметри + notify_resolved; Apply + Зберегти → YAML `alerts.rules`
 - [ ] **P20-012 Graph UX:** Extended → граф: zoom (колесо), pan (drag), tooltip на hop, double-click → copy IP; empty double-click → reset
 - [ ] **P20-011 Alerts:** Налаштування → Сповіщення… → desktop/webhook/rate_limit; підписи зліва повністю видимі (не обрізані); статус з redacted URL; Apply + Зберегти
 - [ ] **P20-010 Profile params:** Налаштування → Профіль… → interval/max_hops/timeout/probe → Apply → Зберегти YAML

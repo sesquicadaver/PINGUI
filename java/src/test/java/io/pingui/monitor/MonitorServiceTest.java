@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.config.ConfigError;
+import io.pingui.config.EndpointDownRuleConfig;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.persistence.PersistenceEventType;

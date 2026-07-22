@@ -18,9 +18,12 @@ public record CliAlertOverrides(
 
     /** Returns alert config with only present CLI fields replaced. */
     public AlertConfig applyTo(AlertConfig yaml) {
+        AlertConfig base = yaml != null ? yaml : AlertConfig.disabled();
         return new AlertConfig(
-                desktopAlerts.orElse(yaml.desktopAlerts()),
-                webhookUrl.orElse(yaml.webhookUrl()),
-                rateLimitPerHour.orElse(yaml.maxAlertsPerHour()));
+                desktopAlerts.orElse(base.desktopAlerts()),
+                webhookUrl.orElse(base.webhookUrl()),
+                rateLimitPerHour.orElse(base.maxAlertsPerHour()),
+                base.notifyResolved(),
+                base.endpointDown());
     }
 }

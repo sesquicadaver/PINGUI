@@ -1,5 +1,6 @@
 package io.pingui.monitor;
 
+import io.pingui.config.EndpointDownRuleConfig;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
