@@ -11,9 +11,28 @@ import io.pingui.config.AlertConfig;
 import io.pingui.ui.AlertsSettingsDialog.FormInput;
 import java.util.Optional;
 import java.util.OptionalInt;
+import javafx.scene.control.Label;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import org.junit.jupiter.api.Test;
 
 class AlertsSettingsDialogTest {
+    @Test
+    void formLabelAndColumnsKeepLabelColumnFromShrinking() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            Label label = AlertsSettingsDialog.formLabel("rate_limit / год:");
+            assertEquals(Region.USE_PREF_SIZE, label.getMinWidth(), 0.0);
+            GridPane grid = new GridPane();
+            AlertsSettingsDialog.applyLabelFieldColumns(grid);
+            assertEquals(2, grid.getColumnConstraints().size());
+            assertEquals(Priority.NEVER, grid.getColumnConstraints().get(0).getHgrow());
+            assertEquals(Priority.ALWAYS, grid.getColumnConstraints().get(1).getHgrow());
+            assertEquals(
+                    Region.USE_PREF_SIZE, grid.getColumnConstraints().get(0).getMinWidth(), 0.0);
+        });
+    }
+
     @Test
     void buildConfigSetsDesktopWebhookAndRate() {
         AlertConfig next = AlertsSettingsDialog.buildConfig(

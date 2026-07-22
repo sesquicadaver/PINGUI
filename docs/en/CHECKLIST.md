@@ -287,7 +287,7 @@ Run on **Linux** (regression for “black frame” after profile CRUD):
 - [ ] **Delete profile** (return to default) → Simple mode, window shrinks correctly (no oversized frame left)
 - [ ] **Extended** → graph + log; **Simple** → compact layout again
 - [ ] **P20-012 Graph UX:** Extended → graph: zoom (wheel), pan (drag), hop tooltip, double-click → copy IP; empty double-click → reset
-- [ ] **P20-011 Alerts:** Settings → Alerts… → desktop/webhook/rate_limit; redacted URL status; Apply + Save
+- [ ] **P20-011 Alerts:** Settings → Alerts… → desktop/webhook/rate_limit; left labels fully visible (not clipped); redacted URL status; Apply + Save
 - [ ] **P20-010 Profile params:** Settings → Profile… → interval/max_hops/timeout/probe → Apply → Save YAML
 - [ ] **P20-009 log_aggregates:** Telemetry → enable log_aggregates → rtt_aggregate after poll/close (no «backlog» tooltip)
 - [ ] **P20-008 Self-check ProgressBar:** Expert → Self-check → ProgressBar; buttons disabled until done; result Alert

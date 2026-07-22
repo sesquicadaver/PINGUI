@@ -5,6 +5,7 @@ import io.pingui.config.AlertConfig;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import javafx.geometry.HPos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
@@ -13,8 +14,10 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Window;
 
@@ -81,20 +84,21 @@ public final class AlertsSettingsDialog {
         GridPane grid = new GridPane();
         grid.setHgap(8);
         grid.setVgap(8);
+        applyLabelFieldColumns(grid);
         int row = 0;
         grid.add(desktopCheck, 0, row++, 2, 1);
-        grid.add(new Label("webhook URL:"), 0, row);
+        grid.add(formLabel("webhook URL:"), 0, row);
         grid.add(webhookField, 1, row++);
-        grid.add(new Label("rate_limit / год:"), 0, row);
+        grid.add(formLabel("rate_limit / год:"), 0, row);
         grid.add(rateField, 1, row++);
-        grid.add(new Label("Статус:"), 0, row);
-        grid.add(statusArea, 1, row++);
+        grid.add(formLabel("Статус:"), 0, row);
+        grid.add(statusArea, 1, row);
         GridPane.setHgrow(webhookField, Priority.ALWAYS);
         GridPane.setHgrow(statusArea, Priority.ALWAYS);
 
         VBox content = new VBox(10, grid, hint);
+        content.setPrefWidth(560);
         dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().setPrefWidth(520);
 
         Optional<ButtonType> answer = dialog.showAndWait();
         if (answer.isEmpty() || answer.get() != ButtonType.APPLY) {
@@ -135,6 +139,27 @@ public final class AlertsSettingsDialog {
                 ? effective.rateLimitPerHour().getAsInt()
                 : parseRateLimit(form.rateLimitText());
         return new AlertConfig(desktop, webhook, rate);
+    }
+
+    /** Label that refuses to shrink below preferred width (avoids clipped left-column text). */
+    static Label formLabel(String text) {
+        Label label = new Label(text);
+        label.setMinWidth(Region.USE_PREF_SIZE);
+        label.setMaxWidth(Double.MAX_VALUE);
+        return label;
+    }
+
+    /** Column 0 hugs labels; column 1 grows with fields. */
+    static void applyLabelFieldColumns(GridPane grid) {
+        Objects.requireNonNull(grid, "grid");
+        ColumnConstraints labels = new ColumnConstraints();
+        labels.setHgrow(Priority.NEVER);
+        labels.setMinWidth(Region.USE_PREF_SIZE);
+        labels.setHalignment(HPos.LEFT);
+        ColumnConstraints fields = new ColumnConstraints();
+        fields.setHgrow(Priority.ALWAYS);
+        fields.setFillWidth(true);
+        grid.getColumnConstraints().setAll(labels, fields);
     }
 
     private static String blankToNull(String text) {
