@@ -1,5 +1,6 @@
 package io.pingui.ui;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.probe.PresetSelfCheckResult;
@@ -25,5 +26,13 @@ class PresetSelfCheckUiTest {
         assertTrue(body.contains("avgRTT=4.20 ms"));
         assertTrue(body.contains("-M do"));
         assertTrue(body.contains("не змінює форму Expert"));
+    }
+
+    @Test
+    void progressFractionAndStatusLine() {
+        PresetSelfCheckUi.Progress mid = new PresetSelfCheckUi.Progress(2, 3, "dscp");
+        assertEquals(2.0 / 3.0, mid.fraction(), 1e-9);
+        assertEquals("Self-check: dscp (2/3)", mid.statusLine());
+        assertEquals(1.0, new PresetSelfCheckUi.Progress(0, 0, "x").fraction(), 1e-9);
     }
 }

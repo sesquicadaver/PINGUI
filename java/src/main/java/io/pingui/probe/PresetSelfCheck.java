@@ -13,10 +13,16 @@ import java.util.OptionalDouble;
 /**
  * Short informational ping batch for Expert presets DF / DSCP / Burst (P17-030).
  *
- * <p>Does not mutate Expert form args and is not an MTU wizard — callers show an Alert with {@link
- * PresetSelfCheckResult}.
+ * <p>Does not mutate Expert form args and is not an MTU wizard — callers show progress + Alert with
+ * {@link PresetSelfCheckResult}.
  */
 public final class PresetSelfCheck {
+    /** Called after each preset finishes ({@code completed} is 1-based). */
+    @FunctionalInterface
+    public interface ProgressListener {
+        void onPresetCompleted(int completed, int total, String presetId);
+    }
+
     private final ExpertPingOnce ping;
 
     public PresetSelfCheck(ExpertPingOnce ping) {
@@ -33,6 +39,16 @@ public final class PresetSelfCheck {
      * @throws IllegalArgumentException if a preset id is missing from {@link PingPresets}
      */
     public PresetSelfCheckResult run(String target, PresetSelfCheckConfig config) throws IOException {
+        return run(target, config, null);
+    }
+
+    /**
+     * Same as {@link #run(String, PresetSelfCheckConfig)} with optional per-preset progress (P20-008).
+     *
+     * @param progress may be {@code null}; invoked after each preset completes
+     */
+    public PresetSelfCheckResult run(String target, PresetSelfCheckConfig config, ProgressListener progress)
+            throws IOException {
         Objects.requireNonNull(target, "target");
         Objects.requireNonNull(config, "config");
         if (target.isBlank()) {
@@ -42,8 +58,11 @@ public final class PresetSelfCheck {
         List<PresetSelfCheckResult.PresetCheck> checks = new ArrayList<>();
         boolean anyWarn = false;
         List<String> afOnly = List.of(config.ipv6() ? "-6" : "-4");
+        List<String> presetIds = config.presetIds();
+        int total = presetIds.size();
+        int completed = 0;
 
-        for (String presetId : config.presetIds()) {
+        for (String presetId : presetIds) {
             PingPreset preset = requirePreset(presetId);
             List<String> args = PingPresets.mergeKeepingAddressFamily(afOnly, preset.args());
             PingExpertEntry expert = new PingExpertEntry(false, args);
@@ -68,6 +87,10 @@ public final class PresetSelfCheck {
             OptionalDouble avg = rttCount > 0 ? OptionalDouble.of(rttSum / rttCount) : OptionalDouble.empty();
             checks.add(new PresetSelfCheckResult.PresetCheck(
                     preset.id(), preset.label(), args, sent, lost, lossPct, avg, warn));
+            completed++;
+            if (progress != null) {
+                progress.onPresetCompleted(completed, total, presetId);
+            }
         }
         return new PresetSelfCheckResult(checks, anyWarn);
     }

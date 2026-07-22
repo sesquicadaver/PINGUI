@@ -125,7 +125,7 @@ public final class AppMenuDialogs {
                 Expert ping (Linux)
                 • Експерт → Exten. / MTU — пресети, MTU wizard і Self-check (DF/DSCP/Burst → Alert).
                 • «MTU probe» пресет ≠ перебір MTU: кнопка MTU / «MTU wizard…» (sweep -s + -M do → Apply).
-                • Self-check — короткий batch пресетів DF/DSCP/Burst; не змінює форму Expert.
+                • Self-check — короткий batch пресетів DF/DSCP/Burst з ProgressBar; не змінює форму Expert.
 
                 Кнопки
                 • Додати / Змінити / Видалити — цілі в поточному профілі.

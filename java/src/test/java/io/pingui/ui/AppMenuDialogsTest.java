@@ -28,6 +28,7 @@ class AppMenuDialogsTest {
         assertTrue(help.contains("--telemetry-syslog"));
         assertTrue(help.contains("MTU wizard"));
         assertTrue(help.contains("Self-check"));
+        assertTrue(help.contains("ProgressBar"));
         assertFalse(help.contains("у розробці"));
     }
 }
