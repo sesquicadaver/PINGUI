@@ -22,4 +22,17 @@ public record AlertConfig(boolean desktopAlerts, String webhookUrl, int maxAlert
         }
         return webhookUrl.strip();
     }
+
+    /** Debug-safe summary: webhook without userinfo/query (P20-011 / P16-042 redact path). */
+    public String toRedactedString() {
+        String webhook = normalizedWebhook();
+        String redacted = webhook == null ? "(off)" : TelemetryConfig.redactUrl(webhook);
+        return "AlertConfig{desktop="
+                + desktopAlerts
+                + ", webhook="
+                + redacted
+                + ", rate_limit="
+                + maxAlertsPerHour
+                + "}";
+    }
 }

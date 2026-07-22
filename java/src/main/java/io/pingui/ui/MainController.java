@@ -4,6 +4,7 @@ import io.pingui.AppOptions;
 import io.pingui.CliProfileOverrides;
 import io.pingui.CliTelemetryOverrides;
 import io.pingui.TelemetryAttachment;
+import io.pingui.config.AlertConfig;
 import io.pingui.config.ConfigError;
 import io.pingui.config.HostEntry;
 import io.pingui.config.PersistenceConfig;
@@ -16,6 +17,7 @@ import io.pingui.dns.DnsResolver;
 import io.pingui.geoip.AsnLookup;
 import io.pingui.geoip.GeoCountry;
 import io.pingui.model.Models.RouteSnapshot;
+import io.pingui.monitor.AlertDispatchers;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
 import io.pingui.persistence.PersistencePolicy;
@@ -439,12 +441,14 @@ public final class MainController {
         databaseItem.setOnAction(e -> onPersistenceSettings());
         MenuItem profileParamsItem = new MenuItem("Профіль…");
         profileParamsItem.setOnAction(e -> onProfileParamsSettings());
+        MenuItem alertsItem = new MenuItem("Сповіщення…");
+        alertsItem.setOnAction(e -> onAlertsSettings());
         MenuItem telemetryItem = new MenuItem("Телеметрія…");
         telemetryItem.setOnAction(e -> onTelemetrySettings());
         MenuItem exportItem = new MenuItem("Експорт зараз…");
         exportItem.setOnAction(e -> onExportNow());
         Menu settingsMenu = new Menu("Налаштування");
-        settingsMenu.getItems().addAll(databaseItem, profileParamsItem, telemetryItem, exportItem);
+        settingsMenu.getItems().addAll(databaseItem, profileParamsItem, alertsItem, telemetryItem, exportItem);
 
         MenuBar menuBar = new MenuBar(fileMenu, aboutMenu, settingsMenu, helpMenu);
         menuBar.setUseSystemMenuBar(true);
@@ -580,6 +584,23 @@ public final class MainController {
         if (result.sessionDbPath().isPresent()) {
             dirtyState.mark();
         }
+    }
+
+    private void onAlertsSettings() {
+        AlertsSettingsDialog.show(
+                dialogOwner(),
+                options.alertOverrides().applyTo(profileDocument.active().alerts()),
+                options.alertOverrides(),
+                this::handleAlertsSettings);
+    }
+
+    private void handleAlertsSettings(AlertsSettingsDialog.Result result) {
+        TracingProfile active = profileDocument.active();
+        profileDocument.putProfile(profileDocument.activeProfile(), active.withAlerts(result.alerts()));
+        AlertConfig effective = options.alertOverrides().applyTo(result.alerts());
+        monitor.setAlertDispatcher(AlertDispatchers.build(effective));
+        dirtyState.mark();
+        userFeedback.info("Сповіщення оновлено: " + result.alerts().toRedactedString() + " — «Зберегти» → YAML");
     }
 
     private void onTelemetrySettings() {

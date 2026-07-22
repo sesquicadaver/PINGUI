@@ -9,6 +9,7 @@
 
 ### Changed
 
+- **P20-011 — Alerts settings GUI:** Налаштування → «Сповіщення…» (`AlertsSettingsDialog`) — desktop/webhook/rate_limit; `AlertConfig.toRedactedString`; Apply → dispatcher; ROADMAP NEXT → **P20-012**.
 - **P20-010 — Profile params GUI:** Налаштування → «Профіль…» (`ProfileParamsSettingsDialog`) — interval/max_hops/timeout/probe; CLI locks; Apply + dirty → YAML Save; ROADMAP NEXT → **P20-011**.
 - **P20-009 — Wire log_aggregates:** `TelemetryAttachment` → `AggregateTelemetryJob` на `TelemetryBus` (accept/flushDue/flushAll); tooltip без backlog; ROADMAP NEXT → **P20-010**.
 - **P20-008 — Self-check ProgressBar:** per-preset progress у `PresetSelfCheck` + inline ProgressBar у Expert; Self-check/MTU disabled до кінця; ROADMAP NEXT → **P20-009**.

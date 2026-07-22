@@ -19,6 +19,7 @@ class AppMenuDialogsTest {
         String help = AppMenuDialogs.helpText();
         assertTrue(help.contains("Телеметрія…"));
         assertTrue(help.contains("Профіль…"));
+        assertTrue(help.contains("Сповіщення…"));
         assertTrue(help.contains("Експорт зараз…"));
         assertTrue(help.contains("--export-report"));
         assertTrue(help.contains("Ctrl/Cmd+S"));
