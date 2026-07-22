@@ -286,6 +286,7 @@ chmod +x pingui-java.sh gradlew
 - [ ] **Новий профіль** → ім'я `test` → список хостів порожній, вікно без чорних смуг
 - [ ] **Видалити профіль** (повернення до default) → Simple mode, вікно зменшується коректно (не лишається oversized frame)
 - [ ] **Розширений** → граф + лог; **Простий** → знову compact layout
+- [ ] **P20-010 Profile params:** Налаштування → Профіль… → interval/max_hops/timeout/probe → Apply → Зберегти YAML
 - [ ] **P20-009 log_aggregates:** Телеметрія → увімкнути log_aggregates → після poll/закриття з’являються rtt_aggregate (не «backlog»)
 - [ ] **P20-008 Self-check ProgressBar:** Expert → Self-check → ProgressBar; кнопки disabled до кінця; Alert з результатом
 - [ ] **P20-007 Empty states:** Extended без SQLite → підказка База даних; порожня історія → placeholder; Simple → status про Розширений

@@ -437,12 +437,14 @@ public final class MainController {
 
         MenuItem databaseItem = new MenuItem("База даних…");
         databaseItem.setOnAction(e -> onPersistenceSettings());
+        MenuItem profileParamsItem = new MenuItem("Профіль…");
+        profileParamsItem.setOnAction(e -> onProfileParamsSettings());
         MenuItem telemetryItem = new MenuItem("Телеметрія…");
         telemetryItem.setOnAction(e -> onTelemetrySettings());
         MenuItem exportItem = new MenuItem("Експорт зараз…");
         exportItem.setOnAction(e -> onExportNow());
         Menu settingsMenu = new Menu("Налаштування");
-        settingsMenu.getItems().addAll(databaseItem, telemetryItem, exportItem);
+        settingsMenu.getItems().addAll(databaseItem, profileParamsItem, telemetryItem, exportItem);
 
         MenuBar menuBar = new MenuBar(fileMenu, aboutMenu, settingsMenu, helpMenu);
         menuBar.setUseSystemMenuBar(true);
@@ -516,6 +518,32 @@ public final class MainController {
         } catch (IOException | RuntimeException ex) {
             userFeedback.error(SessionExportUi.failureMessage(ex));
         }
+    }
+
+    private void onProfileParamsSettings() {
+        ProfileParamsSettingsDialog.show(
+                dialogOwner(), profileDocument.active(), options.profileOverrides(), this::handleProfileParamsSettings);
+    }
+
+    private void handleProfileParamsSettings(ProfileParamsSettingsDialog.Result result) {
+        List<HostEntry> liveEntries = HostViewRules.entriesForConfig(store.toHostEntries());
+        TracingProfile next = profileDocument
+                .active()
+                .withPollSettings(
+                        result.intervalSeconds(), result.maxHops(), result.timeoutSeconds(), result.probeMode())
+                .withHosts(liveEntries);
+        profileDocument.putProfile(profileDocument.activeProfile(), next);
+        monitor.close();
+        closeTelemetry();
+        monitor = createMonitor(next, liveEntries);
+        dirtyState.mark();
+        userFeedback.info(String.format(
+                java.util.Locale.ROOT,
+                "Параметри профілю: interval=%.3g с, max_hops=%d, timeout=%.3g с, probe=%s — «Зберегти» → YAML",
+                next.intervalSeconds(),
+                next.maxHops(),
+                next.timeoutSeconds(),
+                next.probeMode().cliValue()));
     }
 
     private void onPersistenceSettings() {

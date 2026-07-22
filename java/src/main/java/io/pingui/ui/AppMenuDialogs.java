@@ -118,6 +118,7 @@ public final class AppMenuDialogs {
 
                 Налаштування
                 • База даних… — SQLite session (історія route_change), не telemetry archive.
+                • Профіль… — interval / max_hops / timeout / probe активного профілю; Apply + «Зберегти».
                 • Телеметрія… — sinks (sqlite/jsonl/syslog/GELF/Loki/OTLP), events_only; Apply + «Зберегти».
                 • Експорт зараз… — CSV/HTML звіт сесії (як CLI --export-report); потрібен SQLite session.
                 • persistence.session_db ≠ telemetry.sqlite (різні ролі).

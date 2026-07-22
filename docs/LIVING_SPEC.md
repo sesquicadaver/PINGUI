@@ -89,6 +89,7 @@
 | Empty states (P20-007) | `EmptyStateHints`, `RouteHistoryPresenter`, `ViewModeController`, `MainController` | `EmptyStateHintsTest`, `RouteHistoryPresenterTest` (placeholders), `ViewModeControllerTest` |
 | Self-check ProgressBar (P20-008) | `PresetSelfCheck`, `PresetSelfCheckUi`, `PingExpertDialog` | `PresetSelfCheckTest.reportsProgressAfterEachPreset`, `PresetSelfCheckUiTest.progressFractionAndStatusLine` |
 | Wire log_aggregates (P20-009) | `AggregateTelemetryJob`, `TelemetryBus`, `TelemetryAttachment`, `TelemetrySettingsDialog` | `TelemetryBusTest.enabledAggregatesEmitRttAggregateOnClose`, `TelemetryAttachmentTest.attachEnablesAggregateJobWhenLogAggregatesTrue` |
+| Profile params GUI (P20-010) | `ProfileParamsSettingsDialog`, `TracingProfile`, `MainController` | `ProfileParamsSettingsDialogTest`, `AppMenuDialogsTest` |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
