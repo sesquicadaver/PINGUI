@@ -286,6 +286,7 @@ Run on **Linux** (regression for “black frame” after profile CRUD):
 - [ ] **New profile** → name `test` → host list empty, window without black bars
 - [ ] **Delete profile** (return to default) → Simple mode, window shrinks correctly (no oversized frame left)
 - [ ] **Extended** → graph + log; **Simple** → compact layout again
+- [ ] **P22-004 Problem badge:** enable endpoint_down → after FIRING see `!` on row; click → dialog; close hides badge
 - [ ] **P21-003 Alerts rules:** Settings → Alerts… → endpoint_down + preset/params + notify_resolved; Apply + Save → YAML `alerts.rules`
 - [ ] **P20-012 Graph UX:** Extended → graph: zoom (wheel), pan (drag), hop tooltip, double-click → copy IP; empty double-click → reset
 - [ ] **P20-011 Alerts:** Settings → Alerts… → desktop/webhook/rate_limit; left labels fully visible (not clipped); redacted URL status; Apply + Save

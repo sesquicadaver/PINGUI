@@ -18,16 +18,17 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
-/** Host list row: enable, Ping only, optional Exten./MTU, name, metrics, RTT color fill. */
+/** Host list row: enable, Ping only, optional Exten./MTU, problem badge, name, metrics. */
 final class HostListCell extends ListCell<HostItem> {
     private final CheckBox checkBox = new CheckBox();
     private final CheckBox pingOnlyCheck = new CheckBox("Ping only");
     private final Button extenButton = new Button("Exten.");
     private final Button mtuButton = new Button("MTU");
+    private final Button problemButton = new Button("!");
     private final Label hostLabel = new Label();
     private final Label tagsLabel = new Label();
     private final Label metricsLabel = new Label();
-    private final HBox hostRow = new HBox(6, extenButton, mtuButton, hostLabel);
+    private final HBox hostRow = new HBox(6, extenButton, mtuButton, problemButton, hostLabel);
     private final VBox textBox = new VBox(2, hostRow, tagsLabel, metricsLabel);
     private final HBox root = new HBox(8, checkBox, textBox, pingOnlyCheck);
     private final BiConsumer<HostItem, Boolean> onEnabledChanged;
@@ -35,10 +36,12 @@ final class HostListCell extends ListCell<HostItem> {
     private final BooleanProperty expertMode;
     private final BiConsumer<HostItem, Void> onExpertOpen;
     private final BiConsumer<HostItem, Void> onMtuWizardOpen;
+    private final BiConsumer<HostItem, Void> onProblemOpen;
     private HostItem boundItem;
     private ChangeListener<String> rowColorListener;
     private ChangeListener<Boolean> expertConfiguredListener;
     private ChangeListener<Boolean> expertModeListener;
+    private ChangeListener<Boolean> problemUnreadListener;
     private boolean updating;
 
     HostListCell(
@@ -46,15 +49,20 @@ final class HostListCell extends ListCell<HostItem> {
             BiConsumer<HostItem, Boolean> onPingOnlyChanged,
             BooleanProperty expertMode,
             BiConsumer<HostItem, Void> onExpertOpen,
-            BiConsumer<HostItem, Void> onMtuWizardOpen) {
+            BiConsumer<HostItem, Void> onMtuWizardOpen,
+            BiConsumer<HostItem, Void> onProblemOpen) {
         this.onEnabledChanged = onEnabledChanged;
         this.onPingOnlyChanged = onPingOnlyChanged;
         this.expertMode = expertMode;
         this.onExpertOpen = onExpertOpen;
         this.onMtuWizardOpen = onMtuWizardOpen;
+        this.onProblemOpen = onProblemOpen;
         extenButton.setMinWidth(56);
         mtuButton.setMinWidth(48);
         mtuButton.setTooltip(new Tooltip("MTU discovery wizard (−s sweep + −M do)"));
+        problemButton.setMinWidth(28);
+        problemButton.setStyle("-fx-font-weight: bold; -fx-text-fill: #b71c1c;");
+        problemButton.setTooltip(new Tooltip("Проблема доступності (endpoint_down)"));
         pingOnlyCheck.setStyle("-fx-font-size: 10px;");
         pingOnlyCheck.setMinWidth(72);
         extenButton.setOnAction(e -> {
@@ -67,6 +75,12 @@ final class HostListCell extends ListCell<HostItem> {
             HostItem item = getItem();
             if (item != null) {
                 onMtuWizardOpen.accept(item, null);
+            }
+        });
+        problemButton.setOnAction(e -> {
+            HostItem item = getItem();
+            if (item != null) {
+                onProblemOpen.accept(item, null);
             }
         });
         metricsLabel.setStyle("-fx-font-family: monospace; -fx-font-size: 10px;");
@@ -89,6 +103,7 @@ final class HostListCell extends ListCell<HostItem> {
         });
         expertModeListener = (obs, was, on) -> refreshExpertControls(getItem());
         expertMode.addListener(expertModeListener);
+        refreshProblemBadge(false);
     }
 
     @Override
@@ -115,9 +130,12 @@ final class HostListCell extends ListCell<HostItem> {
         item.rowColorProperty().addListener(rowColorListener);
         expertConfiguredListener = (obs, was, configured) -> styleExtenButton(configured);
         item.expertConfiguredProperty().addListener(expertConfiguredListener);
+        problemUnreadListener = (obs, was, unread) -> refreshProblemBadge(unread);
+        item.problemUnreadProperty().addListener(problemUnreadListener);
         applyBackground(item.rowColorProperty().get());
         styleExtenButton(item.isExpertConfigured());
         refreshExpertControls(item);
+        refreshProblemBadge(item.isProblemUnread());
         updating = false;
         setGraphic(root);
     }
@@ -128,6 +146,11 @@ final class HostListCell extends ListCell<HostItem> {
         extenButton.setManaged(show);
         mtuButton.setVisible(show);
         mtuButton.setManaged(show);
+    }
+
+    private void refreshProblemBadge(boolean unread) {
+        problemButton.setVisible(unread);
+        problemButton.setManaged(unread);
     }
 
     private void styleExtenButton(boolean configured) {
@@ -156,6 +179,10 @@ final class HostListCell extends ListCell<HostItem> {
         if (expertConfiguredListener != null) {
             boundItem.expertConfiguredProperty().removeListener(expertConfiguredListener);
             expertConfiguredListener = null;
+        }
+        if (problemUnreadListener != null) {
+            boundItem.problemUnreadProperty().removeListener(problemUnreadListener);
+            problemUnreadListener = null;
         }
         boundItem = null;
     }

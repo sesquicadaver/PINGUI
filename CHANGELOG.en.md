@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P22-004 — Host problem icon + dialog:** `!` badge on host row for unread `endpoint_down`; click → details + ack; NEXT→P22-005.
 - **P22-003 — SQLite quality incidents:** `persistence_event.endpoint_down` on FIRING/RESOLVED (RESOLVED persisted even without channel notify); NEXT→P22-004.
 - **P22-002 — Session problem stats + ack:** `HostProblemSummary` in `AlertRuleEngine` (fire_count, max_duration, unread/ack); `MonitorService` accessors; NEXT→P22-003.
 - **P22-001 — ADR host problem indicator:** badge/ack/session stats + auto session-DB naming; phase 22 opened, NEXT→P22-002.

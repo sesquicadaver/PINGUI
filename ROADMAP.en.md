@@ -8,7 +8,7 @@
 
 | Field | Value |
 |------|----------|
-| **Current task** | **[P22-004](docs/en/ROADMAP.md#phase-22--host-problem-ux-beta-p1)** |
+| **Current task** | **[P22-005](docs/en/ROADMAP.md#phase-22--host-problem-ux-beta-p1)** |
 | **Rule** | if not `DONE` — `/autopilot` = this ID; if `DONE` — stop / wait for an explicit new ID. **Do not ask** “which item?”. |
 
 Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (phase 22, #75–79).
@@ -43,7 +43,7 @@ Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#e
 | **19** | Production hardening (version, CI, coverage, probe-mode debt) | ✅ **DONE** |
 | **20** | GUI UX (Simple feedback, confirm, dirty, polish, settings depth) | ✅ **DONE** |
 | **21** | Quality alert rules (`endpoint_down` → engine/GUI) | ✅ **DONE** |
-| **22** | Host problem UX (icon + dialog + auto session DB) | 🔄 **P22-004** |
+| **22** | Host problem UX (icon + dialog + auto session DB) | 🔄 **P22-005** |
 
 ---
 

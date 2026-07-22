@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P22-004** |
+| **Поточна задача** | **P22-005** |
 | **Фаза** | 22 — Host problem UX |
-| **DoD (коротко)** | UI: host problem icon + detail dialog |
+| **DoD (коротко)** | UI: auto-create session DB (Date-Time-LocalIP) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -121,10 +121,10 @@
 | 75 | **P22-001** | [x] | ADR host problem indicator + session DB auto-name |
 | 76 | **P22-002** | [x] | Engine: session incident stats + ack API |
 | 77 | **P22-003** | [x] | SQLite: persist quality incidents |
-| 78 | **P22-004** | [ ] | UI: host problem icon + detail dialog |
+| 78 | **P22-004** | [x] | UI: host problem icon + detail dialog |
 | 79 | **P22-005** | [ ] | UI: auto-create session DB (Date-Time-LocalIP) |
 
-**Стан черги:** відкрита — **NEXT = P22-004** (фаза 22 — host problem UX).
+**Стан черги:** відкрита — **NEXT = P22-005** (фаза 22 — host problem UX).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -777,7 +777,7 @@ flowchart TD
 | **P22-001** | [x] ADR: host problem indicator | `docs/ADR_HOST_PROBLEM_INDICATOR.md`, `docs/en/…`, cross-link ADR_ALERT_RULES | Icon only endpoint_down v1; ack after view; RAM+SQLite; auto DB name Date-Time-LocalIP |
 | **P22-002** | [x] Engine session stats + ack | `AlertRuleEngine`, `HostProblemSummary`, `MonitorService` | fire_count, max_duration, last_* ; ack clears badge until next FIRING |
 | **P22-003** | [x] SQLite quality incidents | `PersistenceEventType`, `PersistenceEventWriter`, `MonitorService` | Write FIRING/RESOLVED when session DB connected; RESOLVED even if notify_resolved=false; survive ack |
-| **P22-004** | [ ] Host icon + dialog | `HostItem`, `HostListCell`, ProblemDetailsDialog | Icon visible with unread problem; click → dialog; ack on view |
+| **P22-004** | [x] Host icon + dialog | `HostItem`, `HostListCell`, `ProblemDetailsDialog`, `HostListPresenter` | Icon visible with unread problem; click → dialog; ack on view |
 | **P22-005** | [ ] Auto session DB | `PersistenceSettingsDialog`, LocalIp, SessionDbAutoName | Button beside Browse; `data/YYYY-MM-DD_HH-mm-ss_<ip>.db` |
 
 ---
@@ -864,7 +864,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Лінійна черга — **NEXT=P22-004**.
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Лінійна черга — **NEXT=P22-005**.
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

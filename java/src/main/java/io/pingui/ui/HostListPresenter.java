@@ -6,6 +6,7 @@ import io.pingui.config.HostTags;
 import io.pingui.config.HostsConfig;
 import io.pingui.config.PingExpertEntry;
 import io.pingui.monitor.HostProbeMode;
+import io.pingui.monitor.HostProblemSummary;
 import io.pingui.monitor.HostTargetStats;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
@@ -134,7 +135,8 @@ final class HostListPresenter {
                 this::onTogglePingOnly,
                 expertMode,
                 this::onOpenExpertPing,
-                this::onOpenMtuWizard));
+                this::onOpenMtuWizard,
+                this::onOpenProblem));
     }
 
     void rebuild(List<HostEntry> entries) {
@@ -265,6 +267,16 @@ final class HostListPresenter {
             return;
         }
         item.applyMetrics(stats);
+    }
+
+    /** Syncs unread endpoint_down badge from {@link MonitorService} (P22-004). */
+    void syncProblem(HostItem item) {
+        MonitorService service = monitor.get();
+        if (service == null) {
+            item.clearProblem();
+            return;
+        }
+        item.applyProblem(service.hostProblemSummary(item.getHost()).orElse(null));
     }
 
     HostItem findItem(String host) {
@@ -523,5 +535,22 @@ final class HostListPresenter {
                 userFeedback.error(ex.getMessage());
             }
         });
+    }
+
+    private void onOpenProblem(HostItem item, Void ignored) {
+        HostProblemSummary summary = item.problemSummary();
+        if (summary == null || !summary.showBadge()) {
+            return;
+        }
+        Window owner = hostList.getScene() != null ? hostList.getScene().getWindow() : null;
+        ProblemDetailsDialog.show(owner, summary);
+        MonitorService service = monitor.get();
+        if (service != null) {
+            service.ackHostProblem(item.getHost());
+            item.applyProblem(service.hostProblemSummary(item.getHost()).orElse(null));
+        } else {
+            item.clearProblem();
+        }
+        hostList.refresh();
     }
 }

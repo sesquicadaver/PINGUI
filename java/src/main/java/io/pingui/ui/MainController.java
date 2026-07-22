@@ -764,6 +764,7 @@ public final class MainController {
         HostItem item = hostListPresenter.findItem(host);
         if (item != null) {
             hostListPresenter.syncMetrics(item);
+            hostListPresenter.syncProblem(item);
         }
         if (viewModeController.isExtended() && !easterEggActive) {
             String activeHost = viewHost();
