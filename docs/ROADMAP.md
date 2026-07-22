@@ -10,7 +10,7 @@
 
 | Поле | Значення |
 |------|----------|
-| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (лінійна черга **P21**). Обидві: Java Pro (P9–P19) + Python після merge |
+| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (лінійна черга **P22**). Обидві: Java Pro (P9–P19) + Python після merge |
 | **Пріоритет** | P0 критично · P1 важливо · P2 бажано |
 | **DoD** | Definition of Done — умова закриття задачі |
 
@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **DONE** |
-| **Фаза** | — |
-| **DoD (коротко)** | лінійна черга вичерпана |
+| **Поточна задача** | **P22-002** |
+| **Фаза** | 22 — Host problem UX |
+| **DoD (коротко)** | Engine: session incident stats + ack API |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -118,8 +118,13 @@
 | 72 | **P21-001** | [x] | ADR_ALERT_RULES (endpoint_down v1) |
 | 73 | **P21-002** | [x] | AlertRuleEngine endpoint_down |
 | 74 | **P21-003** | [x] | YAML/GUI alerts.rules + notify_resolved |
+| 75 | **P22-001** | [x] | ADR host problem indicator + session DB auto-name |
+| 76 | **P22-002** | [ ] | Engine: session incident stats + ack API |
+| 77 | **P22-003** | [ ] | SQLite: persist quality incidents |
+| 78 | **P22-004** | [ ] | UI: host problem icon + detail dialog |
+| 79 | **P22-005** | [ ] | UI: auto-create session DB (Date-Time-LocalIP) |
 
-**Стан черги:** закрита — **NEXT = DONE** (фаза 21 alert rules завершена).
+**Стан черги:** відкрита — **NEXT = P22-002** (фаза 22 — host problem UX).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -762,6 +767,21 @@ flowchart TD
 
 ---
 
+
+## Фаза 22 — Host problem UX (`beta`, P1)
+
+**Контекст:** оператору потрібна індикація `endpoint_down` у рядку хоста + деталі інциденту; автоіменування session DB. Latency — пізніше з `latency_high` (ADR_ALERT_RULES v2).
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P22-001** | [x] ADR: host problem indicator | `docs/ADR_HOST_PROBLEM_INDICATOR.md`, `docs/en/…`, cross-link ADR_ALERT_RULES | Icon only endpoint_down v1; ack after view; RAM+SQLite; auto DB name Date-Time-LocalIP |
+| **P22-002** | [ ] Engine session stats + ack | `AlertRuleEngine`, HostProblemSummary | fire_count, max_duration, last_* ; ack clears badge until next FIRING |
+| **P22-003** | [ ] SQLite quality incidents | `PersistenceEventType`, `PersistenceEventWriter`, schema if needed | Write on FIRING/RESOLVED when session DB connected; survive ack |
+| **P22-004** | [ ] Host icon + dialog | `HostItem`, `HostListCell`, ProblemDetailsDialog | Icon visible with unread problem; click → dialog; ack on view |
+| **P22-005** | [ ] Auto session DB | `PersistenceSettingsDialog`, LocalIp, SessionDbAutoName | Button beside Browse; `data/YYYY-MM-DD_HH-mm-ss_<ip>.db` |
+
+---
+
 ## Поза scope (не плануємо)
 
 | ID | Ідея | Чому ні |
@@ -844,7 +864,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Лінійна черга — **NEXT=DONE**.
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Лінійна черга — **NEXT=P22-002**.
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

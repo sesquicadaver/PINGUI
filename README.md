@@ -15,7 +15,7 @@
 | | **`main`** | **`beta`** |
 |---|------------|------------|
 | **Роль** | Стабільний зріз після merge з `beta` (production) | Активна розробка (`/autopilot` — лише якщо NEXT ≠ DONE) |
-| **Java desktop** | ✅ GUI + Pro (IPv6, SQLite, alerts, history, daemon, export, telemetry, Expert MTU) — як у останньому merge | ✅ Те саме **+** будь-які зміни до merge; лінійна черга ROADMAP **DONE** (фаза 21) |
+| **Java desktop** | ✅ GUI + Pro (IPv6, SQLite, alerts, history, daemon, export, telemetry, Expert MTU) — як у останньому merge | ✅ Те саме **+** будь-які зміни до merge; лінійна черга ROADMAP **P22-002** (фаза 22) |
 | **Сесія** | RAM за замовчуванням; опційно **SQLite** | Те саме |
 | **Оповіщення / історія / daemon / IPv6** | ✅ (після merge фаз 9–12+) | ✅ + новіші зміни до merge |
 | **Python PyQt6** | ✅ `src/pingui/`, `./pingui.sh`, pytest (може трохи відставати від `beta`) | ✅ Найновіший Python-шар |

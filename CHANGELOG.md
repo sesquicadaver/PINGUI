@@ -9,6 +9,7 @@
 
 ### Changed
 
+- **P22-001 — ADR host problem indicator:** badge/ack/session stats + auto session-DB naming; фаза 22 відкрита, NEXT→P22-002.
 - **P21-003 — YAML/GUI alert rules:** `alerts.notify_resolved` + `alerts.rules.endpoint_down` у YAML/GUI; wire `MonitorLifecycle`; фаза 21 → **DONE**.
 - **P21-002 — AlertRuleEngine endpoint_down:** lifecycle FIRING/RESOLVED + cooldown; wire `MonitorService` після snapshot; `dispatchQuality` на channels; ROADMAP NEXT → **P21-003**.
 - **P21-001 — ADR_ALERT_RULES:** формалізація якісних алертів (`endpoint_down` v1, lifecycle, `notify_resolved`); патч Related у ADR_ALERTS; фаза 21; NEXT → **P21-002**.

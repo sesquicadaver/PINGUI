@@ -149,6 +149,7 @@ YAML/GUI rules + notify_resolved  # P21-003
 - Python parity rules — окремо після Java engine (якщо потрібно).
 
 ## Посилання
+- [ADR_HOST_PROBLEM_INDICATOR.md](ADR_HOST_PROBLEM_INDICATOR.md) — in-app badge / ack / session stats (P22)
 
 - [ADR_ALERTS.md](ADR_ALERTS.md) — канали й `route_change`
 - [ROADMAP.md](ROADMAP.md) — фаза 21 (P21-*)
