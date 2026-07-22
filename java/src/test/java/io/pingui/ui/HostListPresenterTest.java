@@ -6,10 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.config.HostEntry;
 import io.pingui.config.PingExpertEntry;
+import io.pingui.monitor.MonitorFixtures;
+import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -88,7 +92,79 @@ class HostListPresenterTest {
             assertEquals(
                     "8.8.8.8",
                     harness.hostList.getSelectionModel().getSelectedItem().getHost());
-            assertTrue(harness.logs.stream().anyMatch(line -> line.contains("Теги [8.8.8.8]")));
+            assertTrue(harness.infos.stream().anyMatch(line -> line.contains("Теги [8.8.8.8]")));
+            assertTrue(harness.errors.isEmpty());
+        });
+    }
+
+    @Test
+    void addHostValidationFailureCallsErrorFeedback() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            Harness harness = new Harness(List.of(tagged("8.8.8.8", "dc")));
+            harness.presenter.configure();
+            harness.presenter.rebuild(harness.entries);
+            harness.hostInput.setText("8.8.8.8");
+            harness.presenter.addHost();
+            assertTrue(harness.errors.stream().anyMatch(line -> line.contains("Не вдалося додати ціль")));
+            assertTrue(harness.infos.isEmpty());
+        });
+    }
+
+    @Test
+    void removeHostCancelDoesNotMutate() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            Harness harness = new Harness(List.of(tagged("8.8.8.8"), tagged("1.1.1.1")));
+            harness.presenter.configure();
+            harness.presenter.rebuild(harness.entries);
+            harness.hostList.getSelectionModel().select(0);
+            harness.presenter.setConfirmDeleteHost(host -> false);
+
+            harness.presenter.removeHost();
+
+            assertEquals(2, harness.hostItems.size());
+            assertTrue(harness.store.containsHost("8.8.8.8"));
+            assertTrue(harness.infos.isEmpty());
+            assertTrue(harness.errors.isEmpty());
+        });
+    }
+
+    @Test
+    void removeHostOkDeletesSelectedHost() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            MonitorService monitor = MonitorFixtures.idle();
+            monitor.addHost("8.8.8.8", true);
+            monitor.addHost("1.1.1.1", true);
+            Harness harness = new Harness(List.of(tagged("8.8.8.8"), tagged("1.1.1.1")), () -> monitor);
+            harness.presenter.configure();
+            harness.presenter.rebuild(harness.entries);
+            harness.hostList.getSelectionModel().select(0);
+            harness.presenter.setConfirmDeleteHost(host -> true);
+
+            harness.presenter.removeHost();
+
+            assertEquals(1, harness.hostItems.size());
+            assertEquals("1.1.1.1", harness.hostItems.get(0).getHost());
+            assertTrue(!harness.store.containsHost("8.8.8.8"));
+            assertTrue(harness.infos.stream().anyMatch(line -> line.contains("Видалено ціль: 8.8.8.8")));
+            assertEquals(1, harness.dirtyMarks.get());
+            monitor.close();
+        });
+    }
+
+    @Test
+    void addHostMarksDirtyOnSuccess() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            MonitorService monitor = MonitorFixtures.idle();
+            Harness harness = new Harness(List.of(tagged("8.8.8.8")), () -> monitor);
+            harness.presenter.configure();
+            harness.presenter.rebuild(harness.entries);
+            harness.hostInput.setText("1.1.1.1");
+
+            harness.presenter.addHost();
+
+            assertTrue(harness.store.containsHost("1.1.1.1"));
+            assertEquals(1, harness.dirtyMarks.get());
+            monitor.close();
         });
     }
 
@@ -102,22 +178,39 @@ class HostListPresenterTest {
         final ListView<HostItem> hostList = new ListView<>();
         final TextField hostInput = new TextField();
         final SessionStore store;
-        final List<String> logs = new ArrayList<>();
+        final List<String> infos = new ArrayList<>();
+        final List<String> errors = new ArrayList<>();
+        final AtomicInteger dirtyMarks = new AtomicInteger();
         final HostListPresenter presenter;
 
         Harness(List<HostEntry> entries) {
+            this(entries, () -> {
+                throw new UnsupportedOperationException("monitor unused");
+            });
+        }
+
+        Harness(List<HostEntry> entries, Supplier<MonitorService> monitor) {
             this.entries = entries;
             this.store = SessionStore.fromEntries(entries);
+            UserFeedback feedback = new UserFeedback() {
+                @Override
+                public void info(String message) {
+                    infos.add(message);
+                }
+
+                @Override
+                public void error(String message) {
+                    errors.add(message);
+                }
+            };
             this.presenter = new HostListPresenter(
                     hostItems,
                     hostList,
                     hostInput,
                     () -> store,
-                    () -> {
-                        throw new UnsupportedOperationException("monitor unused");
-                    },
+                    monitor,
                     new SimpleBooleanProperty(false),
-                    logs::add,
+                    feedback,
                     () -> {},
                     () -> {},
                     () -> {},
@@ -125,6 +218,7 @@ class HostListPresenterTest {
                     () -> {},
                     () -> {},
                     Runnable::run);
+            this.presenter.setMarkDirty(dirtyMarks::incrementAndGet);
         }
 
         FlowPane chipPane() {

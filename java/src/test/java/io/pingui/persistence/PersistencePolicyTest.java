@@ -11,6 +11,7 @@ class PersistencePolicyTest {
         PersistencePolicy policy = PersistencePolicy.defaults();
         assertTrue(policy.allows(PersistenceEventType.ROUTE_CHANGE));
         assertTrue(policy.allows(PersistenceEventType.PROBE_ERROR));
+        assertTrue(policy.allows(PersistenceEventType.ENDPOINT_DOWN));
     }
 
     @Test
@@ -18,5 +19,6 @@ class PersistencePolicyTest {
         PersistencePolicy policy = PersistencePolicy.of(true, false);
         assertTrue(policy.allows(PersistenceEventType.ROUTE_CHANGE));
         assertFalse(policy.allows(PersistenceEventType.PROBE_ERROR));
+        assertTrue(policy.allows(PersistenceEventType.ENDPOINT_DOWN));
     }
 }

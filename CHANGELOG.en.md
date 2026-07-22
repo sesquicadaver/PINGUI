@@ -9,6 +9,28 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P22-005 — Auto session DB name:** “Create…” button → `data/YYYY-MM-DD_HH-mm-ss_<lan-ip>.db`; phase 22 → **DONE**.
+- **P22-004 — Host problem icon + dialog:** `!` badge on host row for unread `endpoint_down`; click → details + ack; NEXT→P22-005.
+- **P22-003 — SQLite quality incidents:** `persistence_event.endpoint_down` on FIRING/RESOLVED (RESOLVED persisted even without channel notify); NEXT→P22-004.
+- **P22-002 — Session problem stats + ack:** `HostProblemSummary` in `AlertRuleEngine` (fire_count, max_duration, unread/ack); `MonitorService` accessors; NEXT→P22-003.
+- **P22-001 — ADR host problem indicator:** badge/ack/session stats + auto session-DB naming; phase 22 opened, NEXT→P22-002.
+- **P21-003 — YAML/GUI alert rules:** `alerts.notify_resolved` + `alerts.rules.endpoint_down` in YAML/GUI; wire `MonitorLifecycle`; phase 21 → **DONE**.
+- **P21-002 — AlertRuleEngine endpoint_down:** FIRING/RESOLVED lifecycle + cooldown; wire `MonitorService` after snapshot; `dispatchQuality` on channels; ROADMAP NEXT → **P21-003**.
+- **P21-001 — ADR_ALERT_RULES:** formalize quality alerts (`endpoint_down` v1, lifecycle, `notify_resolved`); Related patch on ADR_ALERTS; phase 21; NEXT → **P21-002**.
+- **Alerts settings layout:** `AlertsSettingsDialog` — label column no longer shrinks (`USE_PREF_SIZE` + `ColumnConstraints`); prefWidth 560.
+- **P20-012 — Graph UX:** Extended graph — zoom/pan, hover tooltip, double-click copy hop IP (`RouteGraphInteraction`); ROADMAP NEXT → **DONE** (phase 20).
+- **P20-011 — Alerts settings GUI:** Settings → «Alerts…» (`AlertsSettingsDialog`) — desktop/webhook/rate_limit; `AlertConfig.toRedactedString`; Apply → dispatcher; ROADMAP NEXT → **P20-012**.
+- **P20-010 — Profile params GUI:** Settings → «Profile…» (`ProfileParamsSettingsDialog`) — interval/max_hops/timeout/probe; CLI locks; Apply + dirty → YAML Save; ROADMAP NEXT → **P20-011**.
+- **P20-009 — Wire log_aggregates:** `TelemetryAttachment` → `AggregateTelemetryJob` on `TelemetryBus` (accept/flushDue/flushAll); tooltip without backlog; ROADMAP NEXT → **P20-010**.
+- **P20-008 — Self-check ProgressBar:** per-preset progress in `PresetSelfCheck` + inline ProgressBar in Expert; Self-check/MTU disabled until done; ROADMAP NEXT → **P20-009**.
+- **P20-007 — Empty states:** `EmptyStateHints` + ListView placeholder (no SQLite / empty / no host); Simple idle status → journal in Extended; ROADMAP NEXT → **P20-008**.
+- **P20-006 — Keyboard accelerators:** File menu — `Shortcut+S` Save / `Shortcut+N` Add / F1 Help (`AppAccelerators`); Help § shortcuts; ROADMAP NEXT → **P20-007**.
+- **P20-005 — Export from menu:** `SessionExportUi` + `SessionReportExporter.isHtmlReport`/`export`; Settings → «Export now…» (CSV/HTML, CLI parity); without SQLite — error; Help; ROADMAP NEXT → **P20-006**.
+- **P20-004 — Route diff visual:** `RouteDiffStyle` — prefix (`=`/`~`/`+`/`−`) + color per Kind; ListCell in `RouteDiffPresenter`; ROADMAP NEXT → **P20-005**.
+- **P20-003 — Dirty/unsaved:** `ConfigDirtyState` — Save*/title* indicator; mark after CRUD/settings; Save clears; profile switch Confirm Save/Discard/Cancel; ROADMAP NEXT → **P20-004**.
+- **P20-002 — Confirm delete:** Confirm before delete host/profile (`ConfirmDialogs`); Cancel is a no-op; ROADMAP NEXT → **P20-003**.
+- **P20-001 — Simple feedback:** `UserFeedback`/`UiFeedbackRouter` — Simple info→status, error→status+Alert; Extended log only (no Alert); `statusLabel` visible in Simple; ROADMAP NEXT → **P20-002**.
+- **ROADMAP phase 20:** opened GUI UX (P20-001…012) — waves quick UX → polish → feature depth; linear queue #60–71; NEXT → **P20-001**.
 - **P19-006 — PostgreSQL optional:** JDBC driver is `compileOnly` (+ `testImplementation`); default `installDist`/jpackage omit `postgresql.jar`; Timescale needs `-PwithPostgresql=true`; ROADMAP NEXT → **DONE** (phase 19 closed).
 - **P19-005 — HostRegistry slice:** host list / enabled / probe mode / poll bookmarks extracted from `MonitorService` into `HostRegistry`; behavior unchanged; ROADMAP NEXT → **P19-006**.
 - **P19-004 — legacy pingOnly removal:** `MonitorService` no longer keeps dual `Map pingOnly` / `PingOnlyResolver`; only `probeModes` + `HostProbeModeResolver`; UI toggles via `setProbeMode`/`setHostProbeMode`; ROADMAP NEXT → **P19-005**.

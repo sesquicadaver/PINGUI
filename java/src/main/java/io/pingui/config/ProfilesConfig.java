@@ -246,6 +246,8 @@ public final class ProfilesConfig {
         boolean desktop = false;
         String webhook = null;
         int rateLimit = 10;
+        boolean notifyResolved = false;
+        EndpointDownRuleConfig endpointDown = EndpointDownRuleConfig.disabled();
         Object topWebhook = map.get("alert_webhook");
         if (topWebhook instanceof String topStr && !topStr.isBlank()) {
             webhook = topStr.strip();
@@ -258,8 +260,61 @@ public final class ProfilesConfig {
                 webhook = webhookStr.strip();
             }
             rateLimit = readPositiveInt(alertsMap.get("rate_limit"), rateLimit, profileName, "alerts.rate_limit");
+            notifyResolved = readBoolean(alertsMap.get("notify_resolved"), notifyResolved);
+            endpointDown = parseEndpointDownRule(alertsMap.get("rules"), profileName);
         }
-        return new AlertConfig(desktop, webhook, rateLimit);
+        return new AlertConfig(desktop, webhook, rateLimit, notifyResolved, endpointDown);
+    }
+
+    private static EndpointDownRuleConfig parseEndpointDownRule(Object rulesObj, String profileName) {
+        if (!(rulesObj instanceof Map<?, ?> rulesMap)) {
+            return EndpointDownRuleConfig.disabled();
+        }
+        Object endpointObj = rulesMap.get("endpoint_down");
+        if (!(endpointObj instanceof Map<?, ?> endpointMap)) {
+            return EndpointDownRuleConfig.disabled();
+        }
+        boolean enabled = readBoolean(endpointMap.get("enabled"), false);
+        Object presetObj = endpointMap.get("preset");
+        if (presetObj instanceof String presetStr && !presetStr.isBlank()) {
+            try {
+                return EndpointDownRuleConfig.fromPreset(presetStr, enabled);
+            } catch (IllegalArgumentException ex) {
+                throw new ConfigError(
+                        "Profile '" + profileName + "' alerts.rules.endpoint_down.preset: " + ex.getMessage());
+            }
+        }
+        EndpointDownRuleConfig defaults = EndpointDownRuleConfig.balanced(enabled);
+        int failAfter = readPositiveInt(
+                endpointMap.get("fail_after"),
+                defaults.failAfter(),
+                profileName,
+                "alerts.rules.endpoint_down.fail_after");
+        int clearAfter = readPositiveInt(
+                endpointMap.get("clear_after"),
+                defaults.clearAfter(),
+                profileName,
+                "alerts.rules.endpoint_down.clear_after");
+        int cooldown = readNonNegativeInt(
+                endpointMap.get("cooldown_minutes"),
+                defaults.cooldownMinutes(),
+                profileName,
+                "alerts.rules.endpoint_down.cooldown_minutes");
+        return new EndpointDownRuleConfig(enabled, failAfter, clearAfter, cooldown);
+    }
+
+    private static int readNonNegativeInt(Object value, int fallback, String profileName, String label) {
+        if (value == null) {
+            return fallback;
+        }
+        if (value instanceof Number number) {
+            int parsed = number.intValue();
+            if (parsed < 0) {
+                throw new ConfigError("Profile '" + profileName + "' " + label + " must be >= 0");
+            }
+            return parsed;
+        }
+        throw new ConfigError("Profile '" + profileName + "' " + label + " must be an integer");
     }
 
     private static int readPositiveInt(Object value, int fallback, String profileName, String label) {
@@ -364,7 +419,7 @@ public final class ProfilesConfig {
             hostsOut.add(hostEntryToMap(host));
         }
         map.put("hosts", hostsOut);
-        if (profile.alerts().isEnabled() || profile.alerts().maxAlertsPerHour() != 10) {
+        if (profile.alerts().hasYamlContent()) {
             Map<String, Object> alertsOut = new LinkedHashMap<>();
             if (profile.alerts().desktopAlerts()) {
                 alertsOut.put("desktop", true);
@@ -374,6 +429,25 @@ public final class ProfilesConfig {
             }
             if (profile.alerts().maxAlertsPerHour() != 10) {
                 alertsOut.put("rate_limit", profile.alerts().maxAlertsPerHour());
+            }
+            if (profile.alerts().notifyResolved()) {
+                alertsOut.put("notify_resolved", true);
+            }
+            EndpointDownRuleConfig endpointDown = profile.alerts().endpointDown();
+            if (!endpointDown.isDefaultDisabled()) {
+                Map<String, Object> endpointOut = new LinkedHashMap<>();
+                endpointOut.put("enabled", endpointDown.enabled());
+                String preset = endpointDown.matchingPreset();
+                if (!preset.isEmpty()) {
+                    endpointOut.put("preset", preset);
+                } else {
+                    endpointOut.put("fail_after", endpointDown.failAfter());
+                    endpointOut.put("clear_after", endpointDown.clearAfter());
+                    endpointOut.put("cooldown_minutes", endpointDown.cooldownMinutes());
+                }
+                Map<String, Object> rulesOut = new LinkedHashMap<>();
+                rulesOut.put("endpoint_down", endpointOut);
+                alertsOut.put("rules", rulesOut);
             }
             map.put("alerts", alertsOut);
         }

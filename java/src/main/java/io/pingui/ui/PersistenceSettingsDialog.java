@@ -1,6 +1,7 @@
 package io.pingui.ui;
 
 import io.pingui.CliPersistenceOverrides;
+import io.pingui.config.SessionDbAutoName;
 import io.pingui.config.SessionDbResolver;
 import io.pingui.persistence.PersistenceEventType;
 import io.pingui.persistence.PersistencePolicy;
@@ -25,7 +26,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 
-/** GUI for SQLite path and persistence event policy (P11-014, P11-016). */
+/** GUI for SQLite path and persistence event policy (P11-014, P11-016, P22-005). */
 public final class PersistenceSettingsDialog {
     private static final ButtonType KEEP_HISTORY = new ButtonType("Залишити історію", ButtonBar.ButtonData.NO);
     private static final ButtonType DELETE_HISTORY = new ButtonType("Видалити", ButtonBar.ButtonData.YES);
@@ -88,13 +89,19 @@ public final class PersistenceSettingsDialog {
             }
         });
 
+        Button autoButton = new Button("Створити…");
+        autoButton.setDisable(!canPickPath);
+        autoButton.setTooltip(new Tooltip("data/YYYY-MM-DD_HH-mm-ss_<локальний-IP>.db"));
+        autoButton.setOnAction(
+                e -> pathField.setText(SessionDbAutoName.generate().toString()));
+
         if (pathLockedByCli) {
             pathField.setTooltip(new Tooltip("Шлях задано CLI (--session-db)"));
         } else if (!canPickPath) {
             pathField.setTooltip(new Tooltip("Шлях задано YAML (persistence.session_db)"));
         }
 
-        HBox pathRow = new HBox(8, pathField, browseButton);
+        HBox pathRow = new HBox(8, pathField, browseButton, autoButton);
         HBox.setHgrow(pathField, Priority.ALWAYS);
 
         CheckBox routeChangeCheck = new CheckBox("Зміни маршруту (route_change)");
@@ -113,7 +120,7 @@ public final class PersistenceSettingsDialog {
 
         Label hint = new Label(
                 database == null
-                        ? "Оберіть файл бази та натисніть «Застосувати» для збереження сесії між перезапусками."
+                        ? "Оберіть файл, «Створити…» (автоімʼя) або вкажіть шлях, потім «Застосувати»."
                         : "Зміни політики набувають чинності після завершення поточного poll-циклу.");
         hint.setWrapText(true);
 

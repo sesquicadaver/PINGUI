@@ -80,6 +80,26 @@ Module → unit test matrix. Update when adding features.
 | Legacy pingOnly removal (P19-004) | `MonitorService` (`probeModes` only), `HostListPresenter` | `MonitorServiceTest.setHostProbeModeGuardsUnknownHost`, `hostProbeModeResolverOverridesMap`, stale-discard tests without `PingOnlyResolver` |
 | HostRegistry slice (P19-005) | `HostRegistry`, `MonitorService` | `HostRegistryTest`; existing `MonitorServiceTest` regression |
 | PostgreSQL optional (P19-006) | `build.gradle.kts` (`compileOnly` + `-PwithPostgresql`), `TimescaleTimeSeriesBackend.requirePostgresqlDriver` | `TimeSeriesBackendsTest.requirePostgresqlDriverSucceedsWhenOnTestClasspath`; `installDist` lib without `postgresql*.jar` |
+| Simple-mode feedback (P20-001) | `UserFeedback`, `UiFeedbackRouter`, `ViewModeController`, `MainController`, `HostListPresenter`, `ProfileUiCoordinator` | `UiFeedbackRouterTest`, `ViewModeControllerTest`, `HostListPresenterTest.addHostValidationFailureCallsErrorFeedback` |
+| Confirm delete host/profile (P20-002) | `ConfirmDialogs`, `HostListPresenter`, `ProfileUiCoordinator` | `HostListPresenterTest.removeHostCancelDoesNotMutate`, `removeHostOkDeletesSelectedHost`, `ProfileUiCoordinatorTest` |
+| Dirty / unsaved (P20-003) | `ConfigDirtyState`, `ConfirmDialogs.confirmUnsaved`, `MainController`, `HostListPresenter`, `ProfileUiCoordinator` | `ConfigDirtyStateTest`, `ProfileUiCoordinatorTest` (Cancel/Save/Discard), `HostListPresenterTest.addHostMarksDirtyOnSuccess` |
+| Route diff visual (P20-004) | `RouteDiffStyle`, `RouteDiffPresenter` | `RouteDiffStyleTest`, `RouteDiffPresenterTest.showChangedRowExposesKindForStyledCell` |
+| Export from menu (P20-005) | `SessionExportUi`, `SessionReportExporter`, `MainController` | `SessionExportUiTest`, `SessionReportExporterTest.isHtmlReportMatchesHtmlExtensionsOnly`, `exportChoosesFormatByExtension`, `AppMenuDialogsTest` |
+| Keyboard accelerators (P20-006) | `AppAccelerators`, `MainController`, `AppMenuDialogs` | `AppAcceleratorsTest`, `AppMenuDialogsTest` |
+| Empty states (P20-007) | `EmptyStateHints`, `RouteHistoryPresenter`, `ViewModeController`, `MainController` | `EmptyStateHintsTest`, `RouteHistoryPresenterTest` (placeholders), `ViewModeControllerTest` |
+| Self-check ProgressBar (P20-008) | `PresetSelfCheck`, `PresetSelfCheckUi`, `PingExpertDialog` | `PresetSelfCheckTest.reportsProgressAfterEachPreset`, `PresetSelfCheckUiTest.progressFractionAndStatusLine` |
+| Wire log_aggregates (P20-009) | `AggregateTelemetryJob`, `TelemetryBus`, `TelemetryAttachment`, `TelemetrySettingsDialog` | `TelemetryBusTest.enabledAggregatesEmitRttAggregateOnClose`, `TelemetryAttachmentTest.attachEnablesAggregateJobWhenLogAggregatesTrue` |
+| Profile params GUI (P20-010) | `ProfileParamsSettingsDialog`, `TracingProfile`, `MainController` | `ProfileParamsSettingsDialogTest`, `AppMenuDialogsTest` |
+| Alerts settings GUI (P20-011) | `AlertsSettingsDialog`, `AlertConfig`, `MainController`, `AlertDispatchers` | `AlertsSettingsDialogTest`, `AppMenuDialogsTest` |
+| Alert rules ADR (P21-001) | `docs/ADR_ALERT_RULES.md`, `docs/en/ADR_ALERT_RULES.md`; related `ADR_ALERTS` | Doc parity; contract for `endpoint_down` lifecycle |
+| AlertRuleEngine endpoint_down (P21-002) | `AlertRuleEngine`, `QualityAlertEvent`, `EndpointDownRuleConfig`, `MonitorService` | `AlertRuleEngineTest`, `MonitorServiceTest.dispatchesEndpointDownAfterConsecutiveUnreachablePolls` |
+| YAML/GUI alerts.rules (P21-003) | `AlertConfig`, `EndpointDownRuleConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `ProfilesConfigTest`, `AlertsSettingsDialogTest`, `AppMenuDialogsTest` |
+| Host problem indicator ADR (P22-001) | `docs/ADR_HOST_PROBLEM_INDICATOR.md` | docs review / ROADMAP P22 |
+| HostProblemSummary (P22-002) | `AlertRuleEngine`, `HostProblemSummary`, `MonitorService` | `AlertRuleEngineTest`, `MonitorServiceTest` |
+| endpoint_down SQLite (P22-003) | `PersistenceEventType`, `PersistenceEventWriter`, `MonitorService` | `PersistenceEventWriterTest`, `MonitorServiceTest` |
+| Host problem icon (P22-004) | `HostItem`, `HostListCell`, `ProblemDetailsDialog`, `HostListPresenter` | `ProblemDetailsDialogTest`, `HostItemProblemTest` |
+| Session DB auto-name (P22-005) | `LocalIpv4`, `SessionDbAutoName`, `PersistenceSettingsDialog` | `LocalIpv4Test`, `SessionDbAutoNameTest` |
+| Graph UX (P20-012) | `GraphCanvas`, `RouteGraphInteraction`, `RouteGraphLayout`, `MainController` | `RouteGraphInteractionTest`, `RouteGraphLayoutTest`, `AppMenuDialogsTest` |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |

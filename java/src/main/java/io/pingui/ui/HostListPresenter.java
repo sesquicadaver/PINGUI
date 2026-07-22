@@ -6,6 +6,7 @@ import io.pingui.config.HostTags;
 import io.pingui.config.HostsConfig;
 import io.pingui.config.PingExpertEntry;
 import io.pingui.monitor.HostProbeMode;
+import io.pingui.monitor.HostProblemSummary;
 import io.pingui.monitor.HostTargetStats;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ListChangeListener;
@@ -44,7 +46,7 @@ final class HostListPresenter {
     private final Supplier<SessionStore> store;
     private final Supplier<MonitorService> monitor;
     private final SimpleBooleanProperty expertMode;
-    private final Consumer<String> appendLog;
+    private final UserFeedback userFeedback;
     private final Runnable syncControls;
     private final Runnable redrawRoute;
     private final Runnable clearHistoryReplay;
@@ -59,6 +61,8 @@ final class HostListPresenter {
     private boolean updatingList;
     private boolean refreshingChips;
     private BiFunction<String, List<String>, Optional<List<String>>> tagsEditor = HostTagsDialog::show;
+    private Function<String, Boolean> confirmDeleteHost = this::confirmDeleteHostDialog;
+    private Runnable markDirty = () -> {};
 
     HostListPresenter(
             ObservableList<HostItem> hostItems,
@@ -67,7 +71,7 @@ final class HostListPresenter {
             Supplier<SessionStore> store,
             Supplier<MonitorService> monitor,
             SimpleBooleanProperty expertMode,
-            Consumer<String> appendLog,
+            UserFeedback userFeedback,
             Runnable syncControls,
             Runnable redrawRoute,
             Runnable clearHistoryReplay,
@@ -82,7 +86,7 @@ final class HostListPresenter {
         this.store = store;
         this.monitor = monitor;
         this.expertMode = expertMode;
-        this.appendLog = appendLog;
+        this.userFeedback = userFeedback;
         this.syncControls = syncControls;
         this.redrawRoute = redrawRoute;
         this.clearHistoryReplay = clearHistoryReplay;
@@ -131,7 +135,8 @@ final class HostListPresenter {
                 this::onTogglePingOnly,
                 expertMode,
                 this::onOpenExpertPing,
-                this::onOpenMtuWizard));
+                this::onOpenMtuWizard,
+                this::onOpenProblem));
     }
 
     void rebuild(List<HostEntry> entries) {
@@ -188,6 +193,16 @@ final class HostListPresenter {
         this.tagsEditor = tagsEditor != null ? tagsEditor : HostTagsDialog::show;
     }
 
+    /** Package-visible for tests: inject delete confirmation without modal Alert. */
+    void setConfirmDeleteHost(Function<String, Boolean> confirmDeleteHost) {
+        this.confirmDeleteHost = confirmDeleteHost != null ? confirmDeleteHost : this::confirmDeleteHostDialog;
+    }
+
+    /** Package-visible for tests / wiring: mark YAML dirty after config mutations. */
+    void setMarkDirty(Runnable markDirty) {
+        this.markDirty = markDirty != null ? markDirty : () -> {};
+    }
+
     String activeFilterTag() {
         return activeFilterTag;
     }
@@ -213,7 +228,7 @@ final class HostListPresenter {
     void editSelectedHostTags() {
         HostItem selected = hostList.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            appendLog.accept("Оберіть ціль, щоб змінити теги");
+            userFeedback.error("Оберіть ціль, щоб змінити теги");
             return;
         }
         Optional<List<String>> updated = tagsEditor.apply(selected.getHost(), selected.getTags());
@@ -233,10 +248,11 @@ final class HostListPresenter {
                 hostList.getSelectionModel().select(item);
             }
             hostList.refresh();
-            appendLog.accept(
+            markDirty.run();
+            userFeedback.info(
                     "Теги [" + host + "]: " + (updated.get().isEmpty() ? "(немає)" : String.join(", ", updated.get())));
         } catch (ConfigError ex) {
-            appendLog.accept(ex.getMessage());
+            userFeedback.error(ex.getMessage());
         }
     }
 
@@ -251,6 +267,16 @@ final class HostListPresenter {
             return;
         }
         item.applyMetrics(stats);
+    }
+
+    /** Syncs unread endpoint_down badge from {@link MonitorService} (P22-004). */
+    void syncProblem(HostItem item) {
+        MonitorService service = monitor.get();
+        if (service == null) {
+            item.clearProblem();
+            return;
+        }
+        item.applyProblem(service.hostProblemSummary(item.getHost()).orElse(null));
     }
 
     HostItem findItem(String host) {
@@ -283,11 +309,12 @@ final class HostListPresenter {
             }
             selectHostWithoutHistoryFilterSync(item);
             hostInput.clear();
-            appendLog.accept("Додано ціль: " + host);
+            markDirty.run();
+            userFeedback.info("Додано ціль: " + host);
             syncControls.run();
             redrawRoute.run();
         } catch (ConfigError ex) {
-            appendLog.accept("Не вдалося додати ціль: " + ex.getMessage());
+            userFeedback.error("Не вдалося додати ціль: " + ex.getMessage());
         }
     }
 
@@ -315,11 +342,12 @@ final class HostListPresenter {
             selected.hostProperty().set(renamed);
             hostInput.setText(renamed);
             onHostRenamed.accept(oldHost, renamed);
-            appendLog.accept("Змінено ціль: " + oldHost + " → " + renamed);
+            markDirty.run();
+            userFeedback.info("Змінено ціль: " + oldHost + " → " + renamed);
             clearHistoryReplay.run();
             redrawRoute.run();
         } catch (ConfigError ex) {
-            appendLog.accept("Не вдалося змінити ціль: " + ex.getMessage());
+            userFeedback.error("Не вдалося змінити ціль: " + ex.getMessage());
         }
     }
 
@@ -329,17 +357,30 @@ final class HostListPresenter {
             return;
         }
         String host = selected.getHost();
+        if (!Boolean.TRUE.equals(confirmDeleteHost.apply(host))) {
+            return;
+        }
         try {
             monitor.get().removeHost(host);
             store.get().removeHost(host);
             hostItems.remove(selected);
             hostInput.clear();
-            appendLog.accept("Видалено ціль: " + host);
+            markDirty.run();
+            userFeedback.info("Видалено ціль: " + host);
             syncControls.run();
             redrawRoute.run();
         } catch (ConfigError ex) {
-            appendLog.accept(ex.getMessage());
+            userFeedback.error(ex.getMessage());
         }
+    }
+
+    private boolean confirmDeleteHostDialog(String host) {
+        Window owner = hostList.getScene() != null ? hostList.getScene().getWindow() : null;
+        return ConfirmDialogs.confirm(
+                owner,
+                "Видалити ціль",
+                "Видалити «" + host + "» зі списку?",
+                "Ціль зникне з поточної сесії. Збережіть конфіг, щоб зміна потрапила у YAML.");
     }
 
     void syncInputLimits() {
@@ -414,8 +455,9 @@ final class HostListPresenter {
             syncMetrics(item);
             clearHistoryReplay.run();
             redrawRoute.run();
+            markDirty.run();
         } catch (ConfigError ex) {
-            appendLog.accept(ex.getMessage());
+            userFeedback.error(ex.getMessage());
             updatingList = true;
             item.enabledProperty().set(store.get().get(item.getHost()).isEnabled());
             updatingList = false;
@@ -443,9 +485,10 @@ final class HostListPresenter {
             hostList.refresh();
             clearHistoryReplay.run();
             redrawRoute.run();
-            appendLog.accept("Ping only [" + item.getHost() + "]: " + (pingOnly ? "увімкнено" : "вимкнено"));
+            markDirty.run();
+            userFeedback.info("Ping only [" + item.getHost() + "]: " + (pingOnly ? "увімкнено" : "вимкнено"));
         } catch (ConfigError ex) {
-            appendLog.accept(ex.getMessage());
+            userFeedback.error(ex.getMessage());
             updatingList = true;
             item.pingOnlyProperty().set(store.get().isPingOnly(item.getHost()));
             updatingList = false;
@@ -463,10 +506,11 @@ final class HostListPresenter {
         try {
             session.setPingExpert(item.getHost(), updated.get());
             item.setExpertConfigured(updated.get().isConfigured());
-            appendLog.accept("Expert ping [" + item.getHost() + "]: "
+            markDirty.run();
+            userFeedback.info("Expert ping [" + item.getHost() + "]: "
                     + (updated.get().isConfigured() ? updated.get().args() : "скинуто"));
         } catch (ConfigError ex) {
-            appendLog.accept(ex.getMessage());
+            userFeedback.error(ex.getMessage());
         }
     }
 
@@ -485,10 +529,28 @@ final class HostListPresenter {
                 String mtu = result.discovery().recommendedMtu().isPresent()
                         ? Integer.toString(result.discovery().recommendedMtu().getAsInt())
                         : "?";
-                appendLog.accept("MTU wizard [" + item.getHost() + "]: MTU≈" + mtu + " → " + next.args());
+                markDirty.run();
+                userFeedback.info("MTU wizard [" + item.getHost() + "]: MTU≈" + mtu + " → " + next.args());
             } catch (ConfigError ex) {
-                appendLog.accept(ex.getMessage());
+                userFeedback.error(ex.getMessage());
             }
         });
+    }
+
+    private void onOpenProblem(HostItem item, Void ignored) {
+        HostProblemSummary summary = item.problemSummary();
+        if (summary == null || !summary.showBadge()) {
+            return;
+        }
+        Window owner = hostList.getScene() != null ? hostList.getScene().getWindow() : null;
+        ProblemDetailsDialog.show(owner, summary);
+        MonitorService service = monitor.get();
+        if (service != null) {
+            service.ackHostProblem(item.getHost());
+            item.applyProblem(service.hostProblemSummary(item.getHost()).orElse(null));
+        } else {
+            item.clearProblem();
+        }
+        hostList.refresh();
     }
 }

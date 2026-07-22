@@ -8,8 +8,9 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 
-/** Hop-by-hop «було → стало» panel for extended view (P14-010). */
+/** Hop-by-hop «було → стало» panel for extended view (P14-010 / P20-004). */
 final class RouteDiffPresenter {
     private final ListView<RouteDiff.Row> diffList = new ListView<>();
     private final Label header = new Label("Diff маршруту");
@@ -23,7 +24,13 @@ final class RouteDiffPresenter {
             @Override
             protected void updateItem(RouteDiff.Row item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.summary());
+                if (empty || item == null) {
+                    setText(null);
+                    setTextFill(Color.BLACK);
+                    return;
+                }
+                setText(RouteDiffStyle.cellText(item));
+                setTextFill(RouteDiffStyle.textFill(item.kind()));
             }
         });
         panel.getChildren().addAll(header, diffList);

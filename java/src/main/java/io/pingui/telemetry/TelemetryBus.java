@@ -13,7 +13,8 @@ import java.util.logging.Logger;
 
 /**
  * Async telemetry bus: non-blocking offer → bounded queue → batch flush into {@link SinkRegistry}
- * (P16-012 / ADR_TELEMETRY).
+ * (P16-012 / ADR_TELEMETRY). Optionally feeds {@link AggregateTelemetryJob} for {@code log_aggregates}
+ * (P20-009).
  *
  * <p><b>Drop policy:</b> see {@link DropPolicy}. Overflow never blocks the poll loop; discarded
  * items are counted via {@link #droppedCount()}.
@@ -28,6 +29,7 @@ public final class TelemetryBus implements AutoCloseable {
     public static final Duration DEFAULT_FLUSH_INTERVAL = Duration.ofMillis(50);
 
     private final SinkRegistry registry;
+    private final AggregateTelemetryJob aggregates;
     private final ArrayBlockingQueue<BusItem> queue;
     private final DropPolicy dropPolicy;
     private final int batchSize;
@@ -37,12 +39,34 @@ public final class TelemetryBus implements AutoCloseable {
     private final Thread worker;
 
     public TelemetryBus(SinkRegistry registry) {
-        this(registry, DEFAULT_CAPACITY, DropPolicy.DROP_OLDEST, DEFAULT_BATCH_SIZE, DEFAULT_FLUSH_INTERVAL);
+        this(registry, AggregateTelemetryJob.disabled(registry));
+    }
+
+    /** Bus with optional 5m RTT aggregate job (YAML {@code log_aggregates}). */
+    public TelemetryBus(SinkRegistry registry, AggregateTelemetryJob aggregates) {
+        this(
+                registry,
+                DEFAULT_CAPACITY,
+                DropPolicy.DROP_OLDEST,
+                DEFAULT_BATCH_SIZE,
+                DEFAULT_FLUSH_INTERVAL,
+                aggregates);
     }
 
     public TelemetryBus(
             SinkRegistry registry, int capacity, DropPolicy dropPolicy, int batchSize, Duration flushInterval) {
+        this(registry, capacity, dropPolicy, batchSize, flushInterval, AggregateTelemetryJob.disabled(registry));
+    }
+
+    public TelemetryBus(
+            SinkRegistry registry,
+            int capacity,
+            DropPolicy dropPolicy,
+            int batchSize,
+            Duration flushInterval,
+            AggregateTelemetryJob aggregates) {
         this.registry = Objects.requireNonNull(registry, "registry");
+        this.aggregates = Objects.requireNonNull(aggregates, "aggregates");
         if (capacity < 1) {
             throw new IllegalArgumentException("capacity must be >= 1");
         }
@@ -80,6 +104,11 @@ public final class TelemetryBus implements AutoCloseable {
 
     public SinkRegistry registry() {
         return registry;
+    }
+
+    /** Aggregate job wired for this bus (may be disabled). */
+    public AggregateTelemetryJob aggregates() {
+        return aggregates;
     }
 
     /**
@@ -149,10 +178,12 @@ public final class TelemetryBus implements AutoCloseable {
         for (BusItem item : batch) {
             if (item.sample() != null) {
                 registry.emitSample(item.sample());
+                aggregates.accept(item.sample());
             } else if (item.event() != null) {
                 registry.emitEvent(item.event());
             }
         }
+        aggregates.flushDue();
     }
 
     @Override
@@ -173,6 +204,7 @@ public final class TelemetryBus implements AutoCloseable {
         List<BusItem> leftover = new ArrayList<>();
         queue.drainTo(leftover);
         flushBatch(leftover);
+        aggregates.flushAll();
     }
 
     private record BusItem(MetricSample sample, TelemetryEvent event) {

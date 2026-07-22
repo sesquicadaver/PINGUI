@@ -1,5 +1,6 @@
 package io.pingui.monitor;
 
+import io.pingui.config.EndpointDownRuleConfig;
 import io.pingui.config.PingExpertEntry;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;
@@ -18,6 +19,7 @@ import io.pingui.telemetry.TelemetryEvent;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -71,6 +73,9 @@ public final class MonitorService implements AutoCloseable {
     private Listener listener;
     private volatile AlertDispatcher alertDispatcher = AlertDispatcher.noop();
     private volatile String alertProfileName = "default";
+    private final AlertRuleEngine alertRuleEngine = new AlertRuleEngine();
+    private volatile EndpointDownRuleConfig endpointDownRule = EndpointDownRuleConfig.disabled();
+    private volatile boolean notifyResolved;
     private volatile PingExpertResolver expertResolver;
     private volatile HostProbeModeResolver probeModeResolver;
     private volatile HostPollIntervalResolver intervalResolver;
@@ -153,6 +158,33 @@ public final class MonitorService implements AutoCloseable {
         this.alertDispatcher = alertDispatcher != null ? alertDispatcher : AlertDispatcher.noop();
     }
 
+    /**
+     * In-memory {@code endpoint_down} rule (P21-002). Default disabled; YAML/GUI wiring is P21-003.
+     */
+    public void setEndpointDownRule(EndpointDownRuleConfig endpointDownRule) {
+        this.endpointDownRule = endpointDownRule != null ? endpointDownRule : EndpointDownRuleConfig.disabled();
+        alertRuleEngine.clearAll();
+    }
+
+    /** When true, emit {@code endpoint_down} RESOLVED after clear_after successes (ADR). */
+    public void setNotifyResolved(boolean notifyResolved) {
+        this.notifyResolved = notifyResolved;
+    }
+
+    /** Session {@code endpoint_down} problem summary for host-row badge (P22-002). */
+    public Optional<HostProblemSummary> hostProblemSummary(String host) {
+        return alertRuleEngine.problemSummary(host, Instant.now());
+    }
+
+    /**
+     * Acknowledges the host problem (badge off until next FIRING). Counters preserved.
+     *
+     * @return {@code true} when engine had state for the host
+     */
+    public boolean ackHostProblem(String host) {
+        return alertRuleEngine.ack(host);
+    }
+
     public void setAlertProfileName(String alertProfileName) {
         if (alertProfileName == null || alertProfileName.isBlank()) {
             this.alertProfileName = "default";
@@ -222,6 +254,7 @@ public final class MonitorService implements AutoCloseable {
     public void removeHost(String host) {
         registry.remove(host);
         burstPolicy.clearHost(host);
+        alertRuleEngine.clearHost(host);
     }
 
     public void renameHost(String oldHost, String newHost) {
@@ -352,6 +385,7 @@ public final class MonitorService implements AutoCloseable {
             }
             offerTelemetrySuccess(host, probeMode, snapshot, durationMs);
             current.onDataReceived(host, snapshot);
+            evaluateEndpointDown(host, snapshot);
         }
         if (outcome.routeChanged() && BurstSchedulePolicy.shouldArmBurst(outcome.oldIps(), outcome.newIps())) {
             burstPolicy.onRouteChange(host, Instant.now());
@@ -480,6 +514,54 @@ public final class MonitorService implements AutoCloseable {
             dispatcher.dispatch(event);
         } catch (RuntimeException ex) {
             LOG.warn("Alert dispatch failed for {}: {}", host, ex.getMessage());
+        }
+    }
+
+    private void evaluateEndpointDown(String host, RouteSnapshot snapshot) {
+        EndpointDownRuleConfig rule = endpointDownRule;
+        if (rule == null || !rule.enabled() || snapshot == null) {
+            return;
+        }
+        boolean down = !isTargetReachable(snapshot);
+        Instant now = Instant.now();
+        try {
+            alertRuleEngine
+                    .observeEndpointDown(host, down, now, alertProfileName, rule)
+                    .ifPresent(this::onQualityAlertEdge);
+        } catch (RuntimeException ex) {
+            LOG.warn("endpoint_down rule failed for {}: {}", host, ex.getMessage());
+        }
+    }
+
+    private void onQualityAlertEdge(QualityAlertEvent event) {
+        persistQualityAlert(event);
+        if (QualityAlertEvent.STATE_RESOLVED.equals(event.state()) && !notifyResolved) {
+            return;
+        }
+        dispatchQualityAlert(event);
+    }
+
+    private void persistQualityAlert(QualityAlertEvent event) {
+        PersistenceEventWriter events = persistenceEvents;
+        if (events == null || event == null) {
+            return;
+        }
+        try {
+            events.writeQualityAlert(event);
+        } catch (RuntimeException ex) {
+            LOG.warn("Persistence endpoint_down failed for {}: {}", event.host(), ex.getMessage());
+        }
+    }
+
+    private void dispatchQualityAlert(QualityAlertEvent event) {
+        AlertDispatcher dispatcher = alertDispatcher;
+        if (dispatcher == null || event == null) {
+            return;
+        }
+        try {
+            dispatcher.dispatchQuality(event);
+        } catch (RuntimeException ex) {
+            LOG.warn("Quality alert dispatch failed for {}: {}", event.host(), ex.getMessage());
         }
     }
 

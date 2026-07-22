@@ -35,11 +35,11 @@ Multiple channels — **fan-out** (`CompositeAlertDispatcher`); one channel fail
 
 ### 3. Payload — `RouteChangeEvent`
 
-Single model for webhook and (future) persistence / telemetry (P16-050).
+Single model for webhook route-change and (future) persistence / telemetry (P16-050).
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `event` | string | yes | Always `"route_change"` |
+| `event` | string | yes | For this ADR — always `"route_change"`. Other values (`endpoint_down`, …) — [ADR_ALERT_RULES](ADR_ALERT_RULES.md) |
 | `host` | string | yes | Monitored target (YAML address) |
 | `old_ips` | string[] | yes | Previous route (hop IPs, no timeouts) |
 | `new_ips` | string[] | yes | New route |
@@ -104,21 +104,23 @@ Java: invoke from `MonitorService` after `onRouteChanged` (P10-011), not from th
 
 The Java GUI keeps journal/route graph as-is; desktop alert is an optional channel, not a UI replacement.
 
-### 8. Future (not v1)
+### 8. Future (not v1 of this ADR)
 
 - **P16-050:** ✅ `WebhookTelemetrySink` + `WebhookAlertDispatcher` delegates HTTP — single emit path, no duplicate client.
 - YAML `alerts:` section with multiple sinks (phase 16).
 - Payload enrichment (ASN, geo, diff summary) — separate tickets, backward-compatible fields.
+- **Quality rules** (`endpoint_down`, later loss/latency) — [ADR_ALERT_RULES](ADR_ALERT_RULES.md) (P21), not an expansion of this document.
 
 ## Consequences
 
 - **Python:** implementation matches this ADR; ROADMAP PY-041…045 — reference for Java.
 - **Java:** P10-010…P10-050 implement this ADR; tests — contract JSON + rate limit burst.
 - **Docs:** CONFIGURATION (P10-021), CHECKLIST alert smoke (P10-050), LIVING_SPEC matrix.
-- **Do not build:** separate alert engine, durable retry queue, ack/nack protocol.
+- **Do not build (within P10):** separate alert *rule* engine, durable retry queue, ack/nack protocol — see also non-goals in ADR_ALERT_RULES.
 
 ## References
 
-- [ROADMAP.md](ROADMAP.md) — phase 10 (P10-*), phase 16 (P16-050)  
+- [ADR_ALERT_RULES.md](ADR_ALERT_RULES.md) — lifecycle / `endpoint_down` (P21-001)
+- [ROADMAP.md](ROADMAP.md) — phase 10 (P10-*), phase 16 (P16-050), phase 21 (P21-*)  
 - Python: `src/pingui/models.py` (`RouteChangeEvent`), `src/pingui/monitor/alert_dispatcher.py`  
 - Java (shipped): `monitor/AlertDispatcher.java`, `monitor/WebhookAlertDispatcher.java`, …

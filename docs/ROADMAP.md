@@ -10,7 +10,7 @@
 
 | Поле | Значення |
 |------|----------|
-| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (лінійна черга **P19**). Обидві: Java Pro (P9–P18) + Python після merge |
+| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (лінійна черга **P22**). Обидві: Java Pro (P9–P19) + Python після merge |
 | **Пріоритет** | P0 критично · P1 важливо · P2 бажано |
 | **DoD** | Definition of Done — умова закриття задачі |
 
@@ -23,8 +23,8 @@
 | Поле | Значення |
 |------|----------|
 | **Поточна задача** | **DONE** |
-| **Фаза** | 19 — Production hardening |
-| **DoD (коротко)** | Лінійна черга фази 19 вичерпана |
+| **Фаза** | — |
+| **DoD (коротко)** | лінійна черга вичерпана |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -103,8 +103,28 @@
 | 57 | **P19-004** | [x] | Видалити legacy `pingOnly` / `PingOnlyResolver` |
 | 58 | **P19-005** | [x] | `MonitorService` slice: `HostRegistry` |
 | 59 | **P19-006** | [x] | PostgreSQL driver optional scope |
+| 60 | **P20-001** | [x] | Feedback у Simple (помилки не silent) |
+| 61 | **P20-002** | [x] | Confirm delete host / profile |
+| 62 | **P20-003** | [x] | Dirty / unsaved indicator |
+| 63 | **P20-004** | [x] | Route diff visual (color/icons) |
+| 64 | **P20-005** | [x] | Export зараз з меню |
+| 65 | **P20-006** | [x] | Keyboard accelerators |
+| 66 | **P20-007** | [x] | Empty states (Extended / SQLite hints) |
+| 67 | **P20-008** | [x] | Self-check ProgressBar |
+| 68 | **P20-009** | [x] | Wire `log_aggregates` to bus |
+| 69 | **P20-010** | [x] | Profile params GUI (interval/hops/timeout) |
+| 70 | **P20-011** | [x] | Alerts settings GUI |
+| 71 | **P20-012** | [x] | Graph UX: zoom/pan / copy / tooltip |
+| 72 | **P21-001** | [x] | ADR_ALERT_RULES (endpoint_down v1) |
+| 73 | **P21-002** | [x] | AlertRuleEngine endpoint_down |
+| 74 | **P21-003** | [x] | YAML/GUI alerts.rules + notify_resolved |
+| 75 | **P22-001** | [x] | ADR host problem indicator + session DB auto-name |
+| 76 | **P22-002** | [x] | Engine: session incident stats + ack API |
+| 77 | **P22-003** | [x] | SQLite: persist quality incidents |
+| 78 | **P22-004** | [x] | UI: host problem icon + detail dialog |
+| 79 | **P22-005** | [x] | UI: auto-create session DB (Date-Time-LocalIP) |
 
-**Стан черги:** **DONE** — фаза 19 закрита (P19-001…006); наступний `/autopilot` без аргументів не стартує, доки не задано новий ID.
+**Стан черги:** закрита — **NEXT = DONE** (фаза 22 host problem UX завершена).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -710,6 +730,58 @@ flowchart TD
 
 ---
 
+## Фаза 20 — GUI UX (`beta`, P1–P2)
+
+**Мета:** закрити операторський UX-борг після фази 19: зворотний зв’язок у Simple, захист від втрати конфігу, polish історії/графів, глибші Settings.
+
+**Контекст:** аналіз GUI 2026-07 — `appendLog` мовчить у Simple; delete без Confirm; Apply ≠ Save YAML; diff/export/keyboard/empty states; `log_aggregates` flag без wire; profile/alerts лише YAML/CLI.
+
+**Хвилі:** P20-001…003 швидкий UX · P20-004…008 polish · P20-009…012 feature depth.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P20-001** | [x] Feedback у Simple | `MainController`, `HostListPresenter`, callers `appendLog` | Помилки add/edit/delete/tags видимі в Simple (Alert або status bar); Extended log лишається; unit/UI smoke |
+| **P20-002** | [x] Confirm delete | `HostListPresenter`, `ProfileUiCoordinator` | Confirm перед delete host і delete profile; Cancel без змін; CHECKLIST smoke |
+| **P20-003** | [x] Dirty / unsaved | `MainController`, profile/telemetry/persistence apply paths | Індикатор «є незбережені зміни»; Save очищає; switch profile з dirty → Confirm discard/save; CHANGELOG |
+| **P20-004** | [x] Route diff visual | `RouteDiffPresenter` | CHANGED/ADDED/REMOVED з кольором або іконкою (не лише plain text); `./gradlew check` |
+| **P20-005** | [x] Export з меню | `SessionExportUi`, `MainController`, `SessionReportExporter` | Пункт меню «Експорт зараз…» → CSV/HTML (паритет CLI export); без SQLite — зрозуміла помилка |
+| **P20-006** | [x] Keyboard accelerators | `AppAccelerators`, `MainController`, `AppMenuDialogs` | Hotkeys: Save, Add host, Help(F1); документувати в Help; не ламати TextField focus |
+| **P20-007** | [x] Empty states | `EmptyStateHints`, `RouteHistoryPresenter`, `ViewModeController` | Підказки коли немає SQLite / порожня history / Simple без log; UK/EN |
+| **P20-008** | [x] Self-check ProgressBar | `PresetSelfCheck`, `PresetSelfCheckUi`, `PingExpertDialog` | Progress під час batch (як MTU wizard); Stop або disabled до кінця; тести |
+| **P20-009** | [x] Wire `log_aggregates` | `AggregateTelemetryJob`, `TelemetryBus`, `TelemetryAttachment` | Checkbox увімкнений → job на bus; вимкнений → off; tooltip без «backlog»; LIVING_SPEC |
+| **P20-010** | [x] Profile params GUI | `ProfileParamsSettingsDialog`, `TracingProfile`, `MainController` | Edit interval / max_hops / timeout (+ probe) активного профілю → YAML Save; валідація; тести |
+| **P20-011** | [x] Alerts settings GUI | `AlertsSettingsDialog`, `AlertConfig`, `MainController` | Desktop/webhook enable + URL (redacted); wire як YAML alerts; без повного NMS |
+| **P20-012** | [x] Graph UX | `GraphCanvas`, `RouteGraphInteraction`, `RouteGraphPresenter` | Zoom/pan + copy hop IP + hover tooltip; CHECKLIST smoke Extended |
+
+---
+
+## Фаза 21 — Якісні alert rules (`beta`, P1)
+
+**Контекст:** channels (P10 / ADR_ALERTS) покривають лише `route_change`. Потрібні формальні quality-правила без NMS (X-003).
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P21-001** | [x] ADR: quality alert rules | `docs/ADR_ALERT_RULES.md`, `docs/en/ADR_ALERT_RULES.md`, патч `ADR_ALERTS` | Lifecycle + `endpoint_down` v1; loss/latency reserved v2; `notify_resolved` optional; no per-host v1 |
+| **P21-002** | [x] AlertRuleEngine `endpoint_down` | `AlertRuleEngine`, `QualityAlertEvent`, `MonitorService` | Pure engine + wire poll→FIRING; cooldown; `./gradlew check` |
+| **P21-003** | [x] YAML/GUI rules | `AlertConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `alerts.rules` + `notify_resolved`; Apply/Save; без NMS UI |
+
+---
+
+
+## Фаза 22 — Host problem UX (`beta`, P1)
+
+**Контекст:** оператору потрібна індикація `endpoint_down` у рядку хоста + деталі інциденту; автоіменування session DB. Latency — пізніше з `latency_high` (ADR_ALERT_RULES v2).
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P22-001** | [x] ADR: host problem indicator | `docs/ADR_HOST_PROBLEM_INDICATOR.md`, `docs/en/…`, cross-link ADR_ALERT_RULES | Icon only endpoint_down v1; ack after view; RAM+SQLite; auto DB name Date-Time-LocalIP |
+| **P22-002** | [x] Engine session stats + ack | `AlertRuleEngine`, `HostProblemSummary`, `MonitorService` | fire_count, max_duration, last_* ; ack clears badge until next FIRING |
+| **P22-003** | [x] SQLite quality incidents | `PersistenceEventType`, `PersistenceEventWriter`, `MonitorService` | Write FIRING/RESOLVED when session DB connected; RESOLVED even if notify_resolved=false; survive ack |
+| **P22-004** | [x] Host icon + dialog | `HostItem`, `HostListCell`, `ProblemDetailsDialog`, `HostListPresenter` | Icon visible with unread problem; click → dialog; ack on view |
+| **P22-005** | [x] Auto session DB | `PersistenceSettingsDialog`, `LocalIpv4`, `SessionDbAutoName` | Button beside Browse; `data/YYYY-MM-DD_HH-mm-ss_<ip>.db` |
+
+---
+
 ## Поза scope (не плануємо)
 
 | ID | Ідея | Чому ні |
@@ -792,7 +864,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–18 (P10–P18)**; **Фаза 19 hardening — DONE**. Лінійна черга — **NEXT=DONE**.
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Лінійна черга — **NEXT=DONE**.
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

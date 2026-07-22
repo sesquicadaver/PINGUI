@@ -55,6 +55,17 @@ class PresetSelfCheckTest {
     }
 
     @Test
+    void reportsProgressAfterEachPreset() throws Exception {
+        List<String> seen = new ArrayList<>();
+        ExpertPingOnce ping = (target, expert, timeout) -> OptionalDouble.of(1.0);
+        PresetSelfCheckConfig config = new PresetSelfCheckConfig(1, 0.5, 50.0, false, List.of("df", "dscp", "burst"));
+        new PresetSelfCheck(ping).run("h", config, (completed, total, presetId) -> {
+            seen.add(completed + "/" + total + ":" + presetId);
+        });
+        assertEquals(List.of("1/3:df", "2/3:dscp", "3/3:burst"), seen);
+    }
+
+    @Test
     void ipv6UsesMinusSixAndRejectsBlank() throws Exception {
         List<PingExpertEntry> seen = new ArrayList<>();
         ExpertPingOnce ping = (target, expert, timeout) -> {

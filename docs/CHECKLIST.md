@@ -286,6 +286,21 @@ chmod +x pingui-java.sh gradlew
 - [ ] **Новий профіль** → ім'я `test` → список хостів порожній, вікно без чорних смуг
 - [ ] **Видалити профіль** (повернення до default) → Simple mode, вікно зменшується коректно (не лишається oversized frame)
 - [ ] **Розширений** → граф + лог; **Простий** → знову compact layout
+- [ ] **P22-005 Auto session DB:** Налаштування → База даних… → «Створити…» → шлях `data/YYYY-MM-DD_HH-mm-ss_<ip>.db`; Apply
+- [ ] **P22-004 Problem badge:** увімкнути endpoint_down → після FIRING зʼявляється `!` на рядку; клік → діалог; закриття ховає значок
+- [ ] **P21-003 Alerts rules:** Налаштування → Сповіщення… → endpoint_down + пресет/параметри + notify_resolved; Apply + Зберегти → YAML `alerts.rules`
+- [ ] **P20-012 Graph UX:** Extended → граф: zoom (колесо), pan (drag), tooltip на hop, double-click → copy IP; empty double-click → reset
+- [ ] **P20-011 Alerts:** Налаштування → Сповіщення… → desktop/webhook/rate_limit; підписи зліва повністю видимі (не обрізані); статус з redacted URL; Apply + Зберегти
+- [ ] **P20-010 Profile params:** Налаштування → Профіль… → interval/max_hops/timeout/probe → Apply → Зберегти YAML
+- [ ] **P20-009 log_aggregates:** Телеметрія → увімкнути log_aggregates → після poll/закриття з’являються rtt_aggregate (не «backlog»)
+- [ ] **P20-008 Self-check ProgressBar:** Expert → Self-check → ProgressBar; кнопки disabled до кінця; Alert з результатом
+- [ ] **P20-007 Empty states:** Extended без SQLite → підказка База даних; порожня історія → placeholder; Simple → status про Розширений
+- [ ] **P20-006 Hotkeys:** Ctrl/Cmd+S Save, Ctrl/Cmd+N Add, F1 Help; typing in host field still works
+- [ ] **P20-005 Export:** Налаштування → Експорт зараз… → CSV/HTML; без SQLite → зрозуміла помилка
+- [ ] **P20-004 Route diff:** Extended — зміна маршруту → рядки з `~`/`+`/`−` і кольором
+- [ ] **P20-003 Dirty/unsaved:** змінити хост → «Зберегти *»; switch profile → Confirm; Save очищає *
+- [ ] **P20-002 Confirm delete:** Видалити ціль / профіль → Confirm; Cancel без змін
+- [ ] **P20-001 Simple feedback:** помилка add host (дублікат) → status + Alert; Extended fail → лише лог (без Alert); live «Останнє оновлення…» в Extended не затирається feedback info
 - [ ] Додати `8.8.8.8` → **Зберегти** → перезапуск `./pingui-java.sh` → ціль і профіль на місці
 - [ ] Перемикання профілів у ComboBox — хости оновлюються
 

@@ -88,6 +88,35 @@ class TelemetryBusTest {
     }
 
     @Test
+    void enabledAggregatesEmitRttAggregateOnClose() throws Exception {
+        SinkRegistry registry = new SinkRegistry();
+        RecordingSink sink = new RecordingSink("agg", true);
+        registry.register(sink);
+        AggregateTelemetryJob job = AggregateTelemetryJob.enabled(registry);
+        TelemetryBus bus = new TelemetryBus(registry, 32, DropPolicy.DROP_OLDEST, 4, Duration.ofHours(1), job);
+        assertTrue(job.logAggregates());
+        assertTrue(bus.offerSample(sample(1)));
+        assertTrue(await(() -> sink.samples.isEmpty() && bus.queued() == 0, 2_000));
+        bus.close();
+        assertEquals(1, sink.events.size());
+        assertEquals(TelemetryEvent.RTT_AGGREGATE, sink.events.get(0).event());
+        assertTrue(sink.events.get(0).message().contains("\"hop\":1"));
+    }
+
+    @Test
+    void disabledAggregatesDoNotEmitOnClose() throws Exception {
+        SinkRegistry registry = new SinkRegistry();
+        RecordingSink sink = new RecordingSink("off", true);
+        registry.register(sink);
+        TelemetryBus bus = new TelemetryBus(
+                registry, 32, DropPolicy.DROP_OLDEST, 4, Duration.ofHours(1), AggregateTelemetryJob.disabled(registry));
+        assertFalse(bus.aggregates().logAggregates());
+        assertTrue(bus.offerSample(sample(2)));
+        bus.close();
+        assertTrue(sink.events.isEmpty());
+    }
+
+    @Test
     void rejectsInvalidConfig() {
         SinkRegistry registry = new SinkRegistry();
         assertThrows(

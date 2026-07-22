@@ -24,6 +24,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
@@ -148,6 +149,11 @@ public final class PingExpertDialog {
         Button selfCheckButton = new Button("Self-check");
         selfCheckButton.setTooltip(
                 new Tooltip("Короткий ping batch для пресетів DF / DSCP / Burst → Alert (без зміни форми)"));
+        ProgressBar selfCheckBar = new ProgressBar(0);
+        selfCheckBar.setMaxWidth(Double.MAX_VALUE);
+        selfCheckBar.setVisible(false);
+        selfCheckBar.setManaged(false);
+        HBox.setHgrow(selfCheckBar, Priority.ALWAYS);
         mtuWizardButton.setOnAction(event -> {
             boolean ipv6 = AF_IPV6.equals(addressFamily.getValue());
             Window owner = dialog.getDialogPane().getScene() != null
@@ -167,18 +173,34 @@ public final class PingExpertDialog {
             Window owner = dialog.getDialogPane().getScene() != null
                     ? dialog.getDialogPane().getScene().getWindow()
                     : null;
-            PresetSelfCheckUi.runAsync(owner, host, ipv6, busy -> {
-                selfCheckButton.setDisable(busy);
-                mtuWizardButton.setDisable(busy);
-                presetStatus.setText(busy ? "Self-check DF/DSCP/Burst…" : "Self-check завершено (див. Alert).");
-            });
+            PresetSelfCheckUi.runAsync(
+                    owner,
+                    host,
+                    ipv6,
+                    busy -> {
+                        selfCheckButton.setDisable(busy);
+                        mtuWizardButton.setDisable(busy);
+                        selfCheckBar.setVisible(busy);
+                        selfCheckBar.setManaged(busy);
+                        if (busy) {
+                            selfCheckBar.setProgress(0);
+                            presetStatus.setText("Self-check DF/DSCP/Burst…");
+                        } else {
+                            selfCheckBar.setProgress(1);
+                            presetStatus.setText("Self-check завершено (див. Alert).");
+                        }
+                    },
+                    progress -> {
+                        selfCheckBar.setProgress(progress.fraction());
+                        presetStatus.setText(progress.statusLine());
+                    });
         });
         HBox wizardBar = new HBox(6, mtuWizardButton, selfCheckButton);
 
         ScrollPane scroll = new ScrollPane(grid);
         scroll.setFitToWidth(true);
         scroll.setPrefViewportHeight(360);
-        VBox content = new VBox(8, chainCheck, presetsBar, wizardBar, presetStatus, scroll);
+        VBox content = new VBox(8, chainCheck, presetsBar, wizardBar, selfCheckBar, presetStatus, scroll);
         content.setPadding(new Insets(10));
         dialog.getDialogPane().setContent(content);
 

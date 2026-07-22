@@ -70,8 +70,9 @@ final class ViewModeController {
         graphPanel.setManaged(extended);
         logArea.setVisible(extended);
         logArea.setManaged(extended);
-        statusLabel.setVisible(extended);
-        statusLabel.setManaged(extended);
+        // P20-001: status stays visible in Simple (operator feedback) and Extended (live tick).
+        statusLabel.setVisible(true);
+        statusLabel.setManaged(true);
         root.setCenter(extended ? graphPanel : null);
         BorderPane.setMargin(leftPanel, extended ? new Insets(0, 4, 0, 0) : Insets.EMPTY);
         if (extended) {
@@ -85,6 +86,10 @@ final class ViewModeController {
         } else {
             leftPanel.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
             root.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+            // P20-007: Simple hides the log — idle status points to Extended (keep live feedback).
+            if (EmptyStateHints.isReplaceableSimpleStatus(statusLabel.getText())) {
+                statusLabel.setText(EmptyStateHints.simpleNoLog());
+            }
         }
         fitWindowToContent();
     }

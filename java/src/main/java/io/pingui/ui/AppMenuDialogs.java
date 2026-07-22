@@ -114,22 +114,27 @@ public final class AppMenuDialogs {
                 Режими інтерфейсу
                 • Простий — компактний список із метриками RTT і loss %%.
                 • Розширений — граф hop-ів і журнал змін маршруту.
+                • Граф: коліщатко — zoom, перетягування — pan, наведення — tooltip; подвійний клік по hop — копіювати IP (подвійний клік по порожньому — скинути вид).
                 • %s
 
                 Налаштування
                 • База даних… — SQLite session (історія route_change), не telemetry archive.
+                • Профіль… — interval / max_hops / timeout / probe активного профілю; Apply + «Зберегти».
+                • Сповіщення… — desktop / webhook / rate_limit; endpoint_down + notify_resolved; Apply + «Зберегти».
                 • Телеметрія… — sinks (sqlite/jsonl/syslog/GELF/Loki/OTLP), events_only; Apply + «Зберегти».
+                • Експорт зараз… — CSV/HTML звіт сесії (як CLI --export-report); потрібен SQLite session.
                 • persistence.session_db ≠ telemetry.sqlite (різні ролі).
 
                 Expert ping (Linux)
                 • Експерт → Exten. / MTU — пресети, MTU wizard і Self-check (DF/DSCP/Burst → Alert).
                 • «MTU probe» пресет ≠ перебір MTU: кнопка MTU / «MTU wizard…» (sweep -s + -M do → Apply).
-                • Self-check — короткий batch пресетів DF/DSCP/Burst; не змінює форму Expert.
+                • Self-check — короткий batch пресетів DF/DSCP/Burst з ProgressBar; не змінює форму Expert.
 
                 Кнопки
                 • Додати / Змінити / Видалити — цілі в поточному профілі.
                 • Зберегти — запис усіх профілів у YAML (--config), включно з telemetry:.
 
+                %s
                 CLI (термінал)
                 • ./pingui-java.sh [--config PATH] [--interval SEC] …
                 • --interval / --max-hops / --timeout / --probe перезаписують YAML лише якщо передані.
@@ -140,7 +145,7 @@ public final class AppMenuDialogs {
                 • Linux — рекомендована ОС (швидкий traceroute, Expert ping).
                 • Windows — повний trace через tracert може тривати хвилини; Ping only або interval ≥ 30 с.
                 """
-                .formatted(expert);
+                .formatted(expert, AppAccelerators.helpSection());
     }
 
     private static void openRepository() {

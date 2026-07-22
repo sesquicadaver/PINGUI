@@ -286,6 +286,21 @@ Run on **Linux** (regression for “black frame” after profile CRUD):
 - [ ] **New profile** → name `test` → host list empty, window without black bars
 - [ ] **Delete profile** (return to default) → Simple mode, window shrinks correctly (no oversized frame left)
 - [ ] **Extended** → graph + log; **Simple** → compact layout again
+- [ ] **P22-005 Auto session DB:** Settings → Database… → Create… → path `data/YYYY-MM-DD_HH-mm-ss_<ip>.db`; Apply
+- [ ] **P22-004 Problem badge:** enable endpoint_down → after FIRING see `!` on row; click → dialog; close hides badge
+- [ ] **P21-003 Alerts rules:** Settings → Alerts… → endpoint_down + preset/params + notify_resolved; Apply + Save → YAML `alerts.rules`
+- [ ] **P20-012 Graph UX:** Extended → graph: zoom (wheel), pan (drag), hop tooltip, double-click → copy IP; empty double-click → reset
+- [ ] **P20-011 Alerts:** Settings → Alerts… → desktop/webhook/rate_limit; left labels fully visible (not clipped); redacted URL status; Apply + Save
+- [ ] **P20-010 Profile params:** Settings → Profile… → interval/max_hops/timeout/probe → Apply → Save YAML
+- [ ] **P20-009 log_aggregates:** Telemetry → enable log_aggregates → rtt_aggregate after poll/close (no «backlog» tooltip)
+- [ ] **P20-008 Self-check ProgressBar:** Expert → Self-check → ProgressBar; buttons disabled until done; result Alert
+- [ ] **P20-007 Empty states:** Extended without SQLite → Database hint; empty history → placeholder; Simple → status points to Extended
+- [ ] **P20-006 Hotkeys:** Ctrl/Cmd+S Save, Ctrl/Cmd+N Add, F1 Help; typing in host field still works
+- [ ] **P20-005 Export:** Settings → Export now… → CSV/HTML; without SQLite → clear error
+- [ ] **P20-004 Route diff:** Extended — route change → rows with `~`/`+`/`−` and color
+- [ ] **P20-003 Dirty/unsaved:** mutate host → «Save *»; profile switch → Confirm; Save clears *
+- [ ] **P20-002 Confirm delete:** Delete host / profile → Confirm; Cancel is a no-op
+- [ ] **P20-001 Simple feedback:** failed add host (duplicate) → status + Alert; Extended fail → log only (no Alert); live «Last update…» in Extended is not overwritten by feedback info
 - [ ] Add `8.8.8.8` → **Save** → restart `./pingui-java.sh` → target and profile persist
 - [ ] Profile switching in ComboBox — hosts update
 

@@ -29,4 +29,16 @@ public final class RateLimitedAlertDispatcher implements AlertDispatcher {
         }
         inner.dispatch(event);
     }
+
+    @Override
+    public void dispatchQuality(QualityAlertEvent event) {
+        if (event == null) {
+            return;
+        }
+        if (!limiter.allow(event.host())) {
+            LOG.debug("Quality alert rate-limited for host {}", event.host());
+            return;
+        }
+        inner.dispatchQuality(event);
+    }
 }

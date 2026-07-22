@@ -37,4 +37,12 @@ public final class WebhookAlertDispatcher implements AlertDispatcher {
         }
         sink.postJson(event.toJson(), event.host());
     }
+
+    @Override
+    public void dispatchQuality(QualityAlertEvent event) {
+        if (event == null) {
+            return;
+        }
+        sink.postJson(event.toJson(), event.host());
+    }
 }

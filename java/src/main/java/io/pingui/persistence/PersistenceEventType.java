@@ -1,9 +1,10 @@
 package io.pingui.persistence;
 
-/** Discrete event types stored in {@code persistence_event} (SPIKE P11-002). */
+/** Discrete event types stored in {@code persistence_event} (SPIKE P11-002 / P22-003). */
 public enum PersistenceEventType {
     ROUTE_CHANGE("route_change"),
-    PROBE_ERROR("probe_error");
+    PROBE_ERROR("probe_error"),
+    ENDPOINT_DOWN("endpoint_down");
 
     private final String id;
 

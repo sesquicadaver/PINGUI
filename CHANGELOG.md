@@ -9,6 +9,28 @@
 
 ### Changed
 
+- **P22-005 — Auto session DB name:** кнопка «Створити…» → `data/YYYY-MM-DD_HH-mm-ss_<lan-ip>.db`; фаза 22 → **DONE**.
+- **P22-004 — Host problem icon + dialog:** значок `!` на рядку хоста при unread `endpoint_down`; клік → деталі + ack; NEXT→P22-005.
+- **P22-003 — SQLite quality incidents:** `persistence_event.endpoint_down` на FIRING/RESOLVED (RESOLVED пишеться навіть без channel notify); NEXT→P22-004.
+- **P22-002 — Session problem stats + ack:** `HostProblemSummary` у `AlertRuleEngine` (fire_count, max_duration, unread/ack); `MonitorService` accessors; NEXT→P22-003.
+- **P22-001 — ADR host problem indicator:** badge/ack/session stats + auto session-DB naming; фаза 22 відкрита, NEXT→P22-002.
+- **P21-003 — YAML/GUI alert rules:** `alerts.notify_resolved` + `alerts.rules.endpoint_down` у YAML/GUI; wire `MonitorLifecycle`; фаза 21 → **DONE**.
+- **P21-002 — AlertRuleEngine endpoint_down:** lifecycle FIRING/RESOLVED + cooldown; wire `MonitorService` після snapshot; `dispatchQuality` на channels; ROADMAP NEXT → **P21-003**.
+- **P21-001 — ADR_ALERT_RULES:** формалізація якісних алертів (`endpoint_down` v1, lifecycle, `notify_resolved`); патч Related у ADR_ALERTS; фаза 21; NEXT → **P21-002**.
+- **Alerts settings layout:** `AlertsSettingsDialog` — колонка підписів не стискається (`USE_PREF_SIZE` + `ColumnConstraints`); prefWidth 560.
+- **P20-012 — Graph UX:** Extended граф — zoom/pan, hover tooltip, double-click copy hop IP (`RouteGraphInteraction`); ROADMAP NEXT → **DONE** (фаза 20).
+- **P20-011 — Alerts settings GUI:** Налаштування → «Сповіщення…» (`AlertsSettingsDialog`) — desktop/webhook/rate_limit; `AlertConfig.toRedactedString`; Apply → dispatcher; ROADMAP NEXT → **P20-012**.
+- **P20-010 — Profile params GUI:** Налаштування → «Профіль…» (`ProfileParamsSettingsDialog`) — interval/max_hops/timeout/probe; CLI locks; Apply + dirty → YAML Save; ROADMAP NEXT → **P20-011**.
+- **P20-009 — Wire log_aggregates:** `TelemetryAttachment` → `AggregateTelemetryJob` на `TelemetryBus` (accept/flushDue/flushAll); tooltip без backlog; ROADMAP NEXT → **P20-010**.
+- **P20-008 — Self-check ProgressBar:** per-preset progress у `PresetSelfCheck` + inline ProgressBar у Expert; Self-check/MTU disabled до кінця; ROADMAP NEXT → **P20-009**.
+- **P20-007 — Empty states:** `EmptyStateHints` + ListView placeholder (no SQLite / empty / no host); Simple idle status → журнал у «Розширений»; ROADMAP NEXT → **P20-008**.
+- **P20-006 — Keyboard accelerators:** меню «Файл» — `Shortcut+S` Save / `Shortcut+N` Add / F1 Help (`AppAccelerators`); Help § Гарячі клавіші; ROADMAP NEXT → **P20-007**.
+- **P20-005 — Export з меню:** `SessionExportUi` + `SessionReportExporter.isHtmlReport`/`export`; Налаштування → «Експорт зараз…» (CSV/HTML, паритет CLI); без SQLite — error; Help; ROADMAP NEXT → **P20-006**.
+- **P20-004 — Route diff visual:** `RouteDiffStyle` — prefix (`=`/`~`/`+`/`−`) + колір для Kind; ListCell у `RouteDiffPresenter`; ROADMAP NEXT → **P20-005**.
+- **P20-003 — Dirty/unsaved:** `ConfigDirtyState` — індикатор Save*/title*; mark після CRUD/settings; Save очищає; switch profile Confirm Зберегти/Не зберігати/Скасувати; ROADMAP NEXT → **P20-004**.
+- **P20-002 — Confirm delete:** Confirm перед delete host/profile (`ConfirmDialogs`); Cancel без змін; ROADMAP NEXT → **P20-003**.
+- **P20-001 — Simple feedback:** `UserFeedback`/`UiFeedbackRouter` — у Simple info→status, error→status+Alert; Extended лише log (без Alert); `statusLabel` видимий у Simple; ROADMAP NEXT → **P20-002**.
+- **ROADMAP фаза 20:** відкрито GUI UX (P20-001…012) — хвилі швидкий UX → polish → feature depth; лінійна черга #60–71; NEXT → **P20-001**.
 - **P19-006 — PostgreSQL optional:** JDBC драйвер `compileOnly` (+ `testImplementation`); default `installDist`/jpackage без `postgresql.jar`; Timescale потребує `-PwithPostgresql=true`; ROADMAP NEXT → **DONE** (фаза 19 закрита).
 - **P19-005 — HostRegistry slice:** host list / enabled / probe mode / poll bookmarks винесено з `MonitorService` у `HostRegistry`; поведінка без змін; ROADMAP NEXT → **P19-006**.
 - **P19-004 — legacy pingOnly removal:** `MonitorService` більше не тримає dual `Map pingOnly` / `PingOnlyResolver`; лише `probeModes` + `HostProbeModeResolver`; UI перемикає через `setProbeMode`/`setHostProbeMode`; ROADMAP NEXT → **P19-005**.

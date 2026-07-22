@@ -119,6 +119,22 @@ profiles:
 
 Alerts are disabled by default (`NoOp` dispatcher).
 
+**Quality rules (P21, ADR):** YAML contract reserved in [ADR_ALERT_RULES.md](ADR_ALERT_RULES.md). v1 (after P21-002/003) — `endpoint_down` + `notify_resolved` only; `loss_high`/`latency_high` — v2. `endpoint_down` engine (P21-002) + YAML/GUI (P21-003): `alerts.notify_resolved`, `alerts.rules.endpoint_down` (`enabled` / `preset` or fail_after/clear_after/cooldown_minutes). GUI: Settings → Alerts… Channel keys `desktop`/`webhook`/`rate_limit` unchanged (P10).
+
+```yaml
+    alerts:
+      desktop: false
+      webhook: null
+      rate_limit: 10
+      notify_resolved: false   # optional RESOLVED emits
+      rules:
+        endpoint_down:
+          enabled: false
+          fail_after: 3
+          clear_after: 2
+          cooldown_minutes: 15
+```
+
 ### Telemetry (P16-040…052, P16-080, P16-090…092)
 
 Profile-level `telemetry:` (Java v2) or top-level (Python `load_telemetry_config`). Priority: **CLI > YAML > defaults**. Default: all sinks **off**; `events_only: true`; `log_aggregates: false`. ADR: [ADR_TELEMETRY.md](ADR_TELEMETRY.md). Example: `java/config/hosts.example.yaml`. Windows preset: `config/hosts.windows.example.yaml` (P16-043: `events_only`, no `jsonl_dir`).

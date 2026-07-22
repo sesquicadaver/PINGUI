@@ -35,11 +35,11 @@ Python містить референсну реалізацію (`alert_dispatch
 
 ### 3. Payload — `RouteChangeEvent`
 
-Єдина модель для webhook і (майбутньої) персистенції / telemetry (P16-050).
+Єдина модель для webhook route-change і (майбутньої) персистенції / telemetry (P16-050).
 
 | Поле | Тип | Обовʼязкове | Опис |
 |------|-----|-------------|------|
-| `event` | string | так | Завжди `"route_change"` |
+| `event` | string | так | Для цього ADR — завжди `"route_change"`. Інші значення (`endpoint_down`, …) — [ADR_ALERT_RULES](ADR_ALERT_RULES.md) |
 | `host` | string | так | Ціль моніторингу (YAML address) |
 | `old_ips` | string[] | так | Попередній маршрут (hop IP, без timeout) |
 | `new_ips` | string[] | так | Новий маршрут |
@@ -104,21 +104,23 @@ Java: виклик з `MonitorService` після `onRouteChanged` (P10-011), н
 
 GUI Java лишає journal/route graph як є; desktop alert — опційний канал, не заміна UI.
 
-### 8. Майбутнє (не v1)
+### 8. Майбутнє (не v1 цього ADR)
 
 - **P16-050:** ✅ `WebhookTelemetrySink` + `WebhookAlertDispatcher` делегує HTTP — один emit шлях, без дублювання клієнта.
 - YAML `alerts:` секція з кількома sinks (фаза 16).
 - Збагачення payload (ASN, geo, diff summary) — окремі ticket-и, backward-compatible поля.
+- **Якісні правила** (`endpoint_down`, пізніше loss/latency) — [ADR_ALERT_RULES](ADR_ALERT_RULES.md) (P21), не розширення цього документа.
 
 ## Наслідки
 
 - **Python:** реалізація відповідає ADR; ROADMAP PY-041…045 — reference для Java.
 - **Java:** P10-010…P10-050 реалізують цей ADR; тести — contract JSON + rate limit burst.
 - **Документація:** CONFIGURATION (P10-021), CHECKLIST alert smoke (P10-050), LIVING_SPEC матриця.
-- **Не робити:** окремий alert engine, retry queue з durable delivery, ack/nack протокол.
+- **Не робити (у межах P10):** окремий alert *rule* engine, retry queue з durable delivery, ack/nack протокол — див. також non-goals у ADR_ALERT_RULES.
 
 ## Посилання
 
-- [ROADMAP.md](ROADMAP.md) — фаза 10 (P10-*), фаза 16 (P16-050)  
+- [ADR_ALERT_RULES.md](ADR_ALERT_RULES.md) — lifecycle / `endpoint_down` (P21-001)
+- [ROADMAP.md](ROADMAP.md) — фаза 10 (P10-*), фаза 16 (P16-050), фаза 21 (P21-*)  
 - Python: `src/pingui/models.py` (`RouteChangeEvent`), `src/pingui/monitor/alert_dispatcher.py`  
 - Java (shipped): `monitor/AlertDispatcher.java`, `monitor/WebhookAlertDispatcher.java`, …

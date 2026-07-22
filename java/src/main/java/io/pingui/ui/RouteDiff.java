@@ -42,8 +42,8 @@ public final class RouteDiff {
             return switch (kind) {
                 case UNCHANGED -> hop + ": " + displayIp(newIp) + formatRtt(newRttMs) + "  (без змін)";
                 case CHANGED -> hop + ": " + displayIp(oldIp) + " → " + displayIp(newIp) + formatDelta();
-                case ADDED -> hop + ": — → " + displayIp(newIp) + formatRtt(newRttMs) + "  (+)";
-                case REMOVED -> hop + ": " + displayIp(oldIp) + formatRtt(oldRttMs) + " → —  (−)";
+                case ADDED -> hop + ": — → " + displayIp(newIp) + formatRtt(newRttMs);
+                case REMOVED -> hop + ": " + displayIp(oldIp) + formatRtt(oldRttMs) + " → —";
             };
         }
 

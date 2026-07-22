@@ -18,11 +18,22 @@ class AppMenuDialogsTest {
     void helpTextDocumentsTelemetryMenuAndSessionVsTelemetrySqlite() {
         String help = AppMenuDialogs.helpText();
         assertTrue(help.contains("Телеметрія…"));
+        assertTrue(help.contains("Профіль…"));
+        assertTrue(help.contains("Сповіщення…"));
+        assertTrue(help.contains("endpoint_down"));
+        assertTrue(help.contains("Експорт зараз…"));
+        assertTrue(help.contains("--export-report"));
+        assertTrue(help.contains("Ctrl/Cmd+S"));
+        assertTrue(help.contains("Ctrl/Cmd+N"));
+        assertTrue(help.contains("Гарячі клавіші"));
         assertTrue(help.contains("persistence.session_db"));
         assertTrue(help.contains("telemetry.sqlite"));
         assertTrue(help.contains("--telemetry-syslog"));
         assertTrue(help.contains("MTU wizard"));
         assertTrue(help.contains("Self-check"));
+        assertTrue(help.contains("ProgressBar"));
+        assertTrue(help.contains("zoom"));
+        assertTrue(help.contains("копіювати IP"));
         assertFalse(help.contains("у розробці"));
     }
 }

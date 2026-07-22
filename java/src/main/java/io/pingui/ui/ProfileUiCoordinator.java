@@ -9,9 +9,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextInputDialog;
+import javafx.stage.Window;
 
 /** Profile selection and CRUD in the main window. */
 final class ProfileUiCoordinator {
@@ -22,7 +24,12 @@ final class ProfileUiCoordinator {
     private final Consumer<Boolean> setSwitchingProfile;
     private final Runnable reloadActiveProfile;
     private final Runnable refreshProfileCombo;
-    private final Consumer<String> appendLog;
+    private final UserFeedback userFeedback;
+    private Function<String, Boolean> confirmDeleteProfile = this::confirmDeleteProfileDialog;
+    private Runnable markDirty = () -> {};
+    private BooleanSupplier isDirty = () -> false;
+    private BooleanSupplier saveYaml = () -> true;
+    private Supplier<ConfirmDialogs.UnsavedDecision> confirmUnsaved = this::confirmUnsavedDialog;
 
     ProfileUiCoordinator(
             Supplier<ProfileDocument> profileDocument,
@@ -32,7 +39,7 @@ final class ProfileUiCoordinator {
             Consumer<Boolean> setSwitchingProfile,
             Runnable reloadActiveProfile,
             Runnable refreshProfileCombo,
-            Consumer<String> appendLog) {
+            UserFeedback userFeedback) {
         this.profileDocument = profileDocument;
         this.store = store;
         this.profileCombo = profileCombo;
@@ -40,7 +47,25 @@ final class ProfileUiCoordinator {
         this.setSwitchingProfile = setSwitchingProfile;
         this.reloadActiveProfile = reloadActiveProfile;
         this.refreshProfileCombo = refreshProfileCombo;
-        this.appendLog = appendLog;
+        this.userFeedback = userFeedback;
+    }
+
+    /** Package-visible for tests: inject delete confirmation without modal Alert. */
+    void setConfirmDeleteProfile(Function<String, Boolean> confirmDeleteProfile) {
+        this.confirmDeleteProfile =
+                confirmDeleteProfile != null ? confirmDeleteProfile : this::confirmDeleteProfileDialog;
+    }
+
+    /** Package-visible for tests / wiring: YAML dirty tracking and save/confirm hooks. */
+    void setDirtyHooks(
+            Runnable markDirty,
+            BooleanSupplier isDirty,
+            BooleanSupplier saveYaml,
+            Supplier<ConfirmDialogs.UnsavedDecision> confirmUnsaved) {
+        this.markDirty = markDirty != null ? markDirty : () -> {};
+        this.isDirty = isDirty != null ? isDirty : () -> false;
+        this.saveYaml = saveYaml != null ? saveYaml : () -> true;
+        this.confirmUnsaved = confirmUnsaved != null ? confirmUnsaved : this::confirmUnsavedDialog;
     }
 
     void syncActiveProfileFromSession() {
@@ -81,13 +106,28 @@ final class ProfileUiCoordinator {
         if (selected == null || selected.equals(document.activeProfile())) {
             return;
         }
+        String previous = document.activeProfile();
+        if (isDirty.getAsBoolean()) {
+            ConfirmDialogs.UnsavedDecision decision = confirmUnsaved.get();
+            if (decision == ConfirmDialogs.UnsavedDecision.CANCEL) {
+                revertComboSelection(previous);
+                return;
+            }
+            if (decision == ConfirmDialogs.UnsavedDecision.SAVE) {
+                if (!saveYaml.getAsBoolean()) {
+                    revertComboSelection(previous);
+                    return;
+                }
+            }
+            // DISCARD: switch without YAML write; dirty stays true until Save.
+        }
         try {
             syncActiveProfileFromSession();
             document.setActiveProfile(selected);
             reloadActiveProfile.run();
-            appendLog.accept("Завантажено профіль: " + selected);
+            userFeedback.info("Завантажено профіль: " + selected);
         } catch (ConfigError ex) {
-            appendLog.accept(ex.getMessage());
+            userFeedback.error(ex.getMessage());
             refreshCombo();
         }
     }
@@ -104,7 +144,7 @@ final class ProfileUiCoordinator {
         String name = result.get().strip();
         ProfileDocument document = profileDocument.get();
         if (document.hasProfile(name)) {
-            appendLog.accept("Профіль уже існує: " + name);
+            userFeedback.error("Профіль уже існує: " + name);
             return;
         }
         try {
@@ -113,23 +153,48 @@ final class ProfileUiCoordinator {
             document.setActiveProfile(name);
             reloadActiveProfile.run();
             refreshCombo();
-            appendLog.accept("Створено профіль: " + name);
+            markDirty.run();
+            userFeedback.info("Створено профіль: " + name);
         } catch (ConfigError ex) {
-            appendLog.accept(ex.getMessage());
+            userFeedback.error(ex.getMessage());
         }
     }
 
     void onDeleteProfile() {
         ProfileDocument document = profileDocument.get();
         String active = document.activeProfile();
+        if (!Boolean.TRUE.equals(confirmDeleteProfile.apply(active))) {
+            return;
+        }
         try {
             syncActiveProfileFromSession();
             document.removeProfile(active);
             reloadActiveProfile.run();
             refreshCombo();
-            appendLog.accept("Видалено профіль: " + active);
+            markDirty.run();
+            userFeedback.info("Видалено профіль: " + active);
         } catch (ConfigError ex) {
-            appendLog.accept(ex.getMessage());
+            userFeedback.error(ex.getMessage());
         }
+    }
+
+    private void revertComboSelection(String previous) {
+        setSwitchingProfile.accept(true);
+        profileCombo.getSelectionModel().select(previous);
+        setSwitchingProfile.accept(false);
+    }
+
+    private ConfirmDialogs.UnsavedDecision confirmUnsavedDialog() {
+        Window owner = profileCombo.getScene() != null ? profileCombo.getScene().getWindow() : null;
+        return ConfirmDialogs.confirmUnsaved(owner);
+    }
+
+    private boolean confirmDeleteProfileDialog(String profileName) {
+        Window owner = profileCombo.getScene() != null ? profileCombo.getScene().getWindow() : null;
+        return ConfirmDialogs.confirm(
+                owner,
+                "Видалити профіль",
+                "Видалити профіль «" + profileName + "»?",
+                "Профіль зникне з документа. Збережіть конфіг, щоб зміна потрапила у YAML.");
     }
 }

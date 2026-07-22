@@ -35,7 +35,8 @@ class RouteDiffTest {
         List<HopNode> newRoute = List.of(new HopNode(1, "10.0.0.1", 1.0, false));
         List<RouteDiff.Row> rows = RouteDiff.compare(oldRoute, newRoute);
         assertEquals(RouteDiff.Kind.REMOVED, rows.get(1).kind());
-        assertTrue(rows.get(1).summary().contains("−"));
+        assertTrue(rows.get(1).summary().contains("→ —"));
+        assertTrue(RouteDiffStyle.cellText(rows.get(1)).startsWith("− "));
     }
 
     @Test

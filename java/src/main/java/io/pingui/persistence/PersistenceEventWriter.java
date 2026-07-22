@@ -1,10 +1,11 @@
 package io.pingui.persistence;
 
+import io.pingui.monitor.QualityAlertEvent;
 import io.pingui.monitor.RouteChangeEvent;
 import java.time.Instant;
 import java.util.Objects;
 
-/** Writes discrete events to SQLite (P11-011); policy gate (P11-013). */
+/** Writes discrete events to SQLite (P11-011); policy gate (P11-013 / P22-003). */
 public final class PersistenceEventWriter {
     private final SessionDatabase database;
     private final PersistencePolicyHolder policyHolder;
@@ -46,6 +47,19 @@ public final class PersistenceEventWriter {
         ensureHostRow(host);
         String payload = probeErrorPayload(host, message);
         database.insertEvent(PersistenceEventType.PROBE_ERROR, host, null, payload, Instant.now());
+    }
+
+    /**
+     * Persists {@code endpoint_down} FIRING/RESOLVED (P22-003). Survives UI ack; default allowed when DB
+     * is connected.
+     */
+    public void writeQualityAlert(QualityAlertEvent event) {
+        if (event == null || !policyHolder.active().allows(PersistenceEventType.ENDPOINT_DOWN)) {
+            return;
+        }
+        ensureHostRow(event.host());
+        database.insertEvent(
+                PersistenceEventType.ENDPOINT_DOWN, event.host(), event.profile(), event.toJson(), event.timestamp());
     }
 
     private void ensureHostRow(String host) {

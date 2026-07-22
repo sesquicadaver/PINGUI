@@ -1,10 +1,12 @@
 package io.pingui.monitor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.config.ConfigError;
+import io.pingui.config.EndpointDownRuleConfig;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.persistence.PersistenceEventType;
@@ -224,6 +226,103 @@ class MonitorServiceTest {
         assertEquals(List.of("192.168.1.1"), event.newIps());
         assertEquals("noc", event.profile());
         service.close();
+    }
+
+    @Test
+    void dispatchesEndpointDownAfterConsecutiveUnreachablePolls() throws Exception {
+        RouteSnapshot up = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "8.8.8.8", 10.0, false)));
+        RouteSnapshot down = new RouteSnapshot(
+                "8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "*", null, true)));
+        AtomicInteger probeCalls = new AtomicInteger();
+        RouteProbe probe = (targetHost, maxHops, timeoutSeconds) -> {
+            int call = probeCalls.getAndIncrement();
+            return call == 0 ? up : down;
+        };
+        RecordingAlertDispatcher alerts = new RecordingAlertDispatcher();
+        MonitorService service = new MonitorService(0.05, 20, 0.5, probe);
+        service.setAlertDispatcher(alerts);
+        service.setEndpointDownRule(new EndpointDownRuleConfig(true, 3, 2, 15));
+        service.setNotifyResolved(false);
+        service.setListener(new MonitorService.Listener() {
+            @Override
+            public void onDataReceived(String host, RouteSnapshot snap) {}
+
+            @Override
+            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
+
+            @Override
+            public void onProbeError(String host, String message) {}
+        });
+        service.addHost("8.8.8.8", true);
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+        while (alerts.qualityEvents().isEmpty() && System.nanoTime() < deadline) {
+            Thread.sleep(50);
+        }
+        assertEquals(1, alerts.qualityEvents().size());
+        QualityAlertEvent quality = alerts.qualityEvents().get(0);
+        assertEquals(QualityAlertEvent.EVENT_ENDPOINT_DOWN, quality.event());
+        assertEquals(QualityAlertEvent.STATE_FIRING, quality.state());
+        assertEquals("8.8.8.8", quality.host());
+        HostProblemSummary summary = service.hostProblemSummary("8.8.8.8").orElseThrow();
+        assertTrue(summary.unread());
+        assertEquals(1, summary.fireCount());
+        assertTrue(service.ackHostProblem("8.8.8.8"));
+        assertFalse(service.hostProblemSummary("8.8.8.8").orElseThrow().showBadge());
+        service.close();
+    }
+
+    @Test
+    void persistsEndpointDownEvenWhenNotifyResolvedFalse() throws Exception {
+        RouteSnapshot up = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "8.8.8.8", 10.0, false)));
+        RouteSnapshot down = new RouteSnapshot(
+                "8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "*", null, true)));
+        AtomicInteger probeCalls = new AtomicInteger();
+        RouteProbe probe = (targetHost, maxHops, timeoutSeconds) -> {
+            int call = probeCalls.getAndIncrement();
+            return call < 4 ? down : up;
+        };
+        RecordingAlertDispatcher alerts = new RecordingAlertDispatcher();
+        Path dbPath = java.nio.file.Files.createTempDirectory("pingui-ed").resolve("session.db");
+        try (SessionDatabase database = new SessionDatabase(dbPath)) {
+            MonitorService service = new MonitorService(0.05, 20, 0.5, probe);
+            service.setAlertDispatcher(alerts);
+            service.setEndpointDownRule(new EndpointDownRuleConfig(true, 3, 2, 15));
+            service.setNotifyResolved(false);
+            service.setPersistenceEventWriter(
+                    new io.pingui.persistence.PersistenceEventWriter(database, service.persistencePolicy()));
+            service.setListener(new MonitorService.Listener() {
+                @Override
+                public void onDataReceived(String host, RouteSnapshot snap) {}
+
+                @Override
+                public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
+
+                @Override
+                public void onProbeError(String host, String message) {}
+            });
+            service.addHost("8.8.8.8", true);
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(20);
+            while (database.countEvents(PersistenceEventType.ENDPOINT_DOWN) < 1 && System.nanoTime() < deadline) {
+                Thread.sleep(50);
+            }
+            assertEquals(1, database.countEvents(PersistenceEventType.ENDPOINT_DOWN));
+            assertEquals(1, alerts.qualityEvents().size());
+            assertEquals(
+                    QualityAlertEvent.STATE_FIRING,
+                    alerts.qualityEvents().get(0).state());
+            while (database.countEvents(PersistenceEventType.ENDPOINT_DOWN) < 2 && System.nanoTime() < deadline) {
+                Thread.sleep(50);
+            }
+            assertEquals(2, database.countEvents(PersistenceEventType.ENDPOINT_DOWN));
+            assertEquals(1, alerts.qualityEvents().size());
+            service.close();
+        }
     }
 
     @Test

@@ -12,11 +12,31 @@ import javafx.scene.control.Alert;
 import javafx.stage.Window;
 
 /**
- * Runs {@link PresetSelfCheck} off the FX thread and shows a short informational Alert (P17-030).
- * Not a wizard — no progress dialog / Apply.
+ * Runs {@link PresetSelfCheck} off the FX thread with optional progress updates and a result Alert
+ * (P17-030 / P20-008).
  */
 public final class PresetSelfCheckUi {
     private PresetSelfCheckUi() {}
+
+    /** Progress after each preset (FX thread). */
+    public record Progress(int completed, int total, String presetId) {
+        public Progress {
+            if (completed < 0 || total < 0) {
+                throw new IllegalArgumentException("completed/total must be >= 0");
+            }
+            Objects.requireNonNull(presetId, "presetId");
+        }
+
+        /** Fraction in {@code [0,1]} for a ProgressBar. */
+        public double fraction() {
+            return total == 0 ? 1.0 : Math.min(1.0, (double) completed / (double) total);
+        }
+
+        /** Status line for Expert dialog. */
+        public String statusLine() {
+            return "Self-check: " + presetId + " (" + completed + "/" + total + ")";
+        }
+    }
 
     /**
      * Starts the self-check for {@code host}.
@@ -24,18 +44,34 @@ public final class PresetSelfCheckUi {
      * @param setBusy optional FX-thread callback {@code true} while running / {@code false} when done
      */
     public static void runAsync(Window owner, String host, boolean ipv6, Consumer<Boolean> setBusy) {
+        runAsync(owner, host, ipv6, setBusy, null);
+    }
+
+    /**
+     * Starts the self-check with optional per-preset progress (P20-008).
+     *
+     * @param onProgress optional FX-thread callback after each preset
+     */
+    public static void runAsync(
+            Window owner, String host, boolean ipv6, Consumer<Boolean> setBusy, Consumer<Progress> onProgress) {
         Objects.requireNonNull(host, "host");
         if (host.isBlank()) {
             throw new IllegalArgumentException("host must be non-blank");
         }
         Consumer<Boolean> busy = setBusy != null ? setBusy : b -> {};
+        Consumer<Progress> progress = onProgress != null ? onProgress : p -> {};
         busy.accept(true);
         PresetSelfCheckConfig config =
                 ipv6 ? PresetSelfCheckConfig.ipv6Defaults() : PresetSelfCheckConfig.ipv4Defaults();
 
         Thread.ofVirtual().name("preset-self-check").start(() -> {
             try {
-                PresetSelfCheckResult result = new PresetSelfCheck().run(host, config);
+                PresetSelfCheckResult result = new PresetSelfCheck()
+                        .run(
+                                host,
+                                config,
+                                (completed, total, presetId) -> Platform.runLater(
+                                        () -> progress.accept(new Progress(completed, total, presetId))));
                 Platform.runLater(() -> {
                     busy.accept(false);
                     showResultAlert(owner, host, result);

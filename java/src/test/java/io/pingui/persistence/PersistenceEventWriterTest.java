@@ -3,6 +3,7 @@ package io.pingui.persistence;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.pingui.monitor.QualityAlertEvent;
 import io.pingui.monitor.RouteChangeEvent;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -42,6 +43,22 @@ class PersistenceEventWriterTest {
             PersistenceEventWriter writer = new PersistenceEventWriter(database);
             writer.writeProbeError("host", "timeout");
             assertEquals(1, database.countEvents(PersistenceEventType.PROBE_ERROR));
+        }
+    }
+
+    @Test
+    void writesEndpointDownQualityAlert() {
+        Path dbPath = tempDir.resolve("quality.db");
+        try (SessionDatabase database = new SessionDatabase(dbPath)) {
+            PersistenceEventWriter writer = new PersistenceEventWriter(database);
+            QualityAlertEvent firing = QualityAlertEvent.endpointDownFiring(
+                    "8.8.8.8", "noc", Instant.parse("2026-07-22T12:00:00Z"), java.util.Map.of("fail_after", 3));
+            writer.writeQualityAlert(firing);
+            assertEquals(1, database.countEvents(PersistenceEventType.ENDPOINT_DOWN));
+            assertTrue(database.listEvents(PersistenceEventType.ENDPOINT_DOWN, "8.8.8.8", Instant.EPOCH, 10)
+                    .get(0)
+                    .payloadJson()
+                    .contains("\"state\":\"firing\""));
         }
     }
 }

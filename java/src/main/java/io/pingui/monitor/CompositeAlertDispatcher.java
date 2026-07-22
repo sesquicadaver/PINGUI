@@ -27,4 +27,18 @@ public final class CompositeAlertDispatcher implements AlertDispatcher {
             }
         }
     }
+
+    @Override
+    public void dispatchQuality(QualityAlertEvent event) {
+        if (event == null) {
+            return;
+        }
+        for (AlertDispatcher dispatcher : dispatchers) {
+            try {
+                dispatcher.dispatchQuality(event);
+            } catch (RuntimeException ex) {
+                LOG.warn("Quality alert dispatcher failed for {}: {}", event.host(), ex.getMessage());
+            }
+        }
+    }
 }

@@ -41,6 +41,7 @@ public final class MonitorLifecycle {
                 profile.maxConcurrentTraces());
         service.setAlertProfileName(profileName);
         service.setAlertDispatcher(AlertDispatchers.build(alerts));
+        applyAlertRules(service, alerts);
         service.setExpertResolver(store::getPingExpert);
         service.setProfileProbeMode(profile.hostProbeMode());
         service.setHostProbeModeResolver(store::getProbeMode);
@@ -55,5 +56,12 @@ public final class MonitorLifecycle {
             }
         }
         return service;
+    }
+
+    /** Applies {@code endpoint_down} + {@code notify_resolved} from profile alerts (P21-003). */
+    public static void applyAlertRules(MonitorService service, AlertConfig alerts) {
+        AlertConfig effective = alerts != null ? alerts : AlertConfig.disabled();
+        service.setEndpointDownRule(effective.endpointDown());
+        service.setNotifyResolved(effective.notifyResolved());
     }
 }

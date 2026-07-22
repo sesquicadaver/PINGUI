@@ -154,6 +154,22 @@ public record TracingProfile(
                 newTelemetry);
     }
 
+    /** Poll / probe settings for the active profile (P20-010). */
+    public TracingProfile withPollSettings(
+            double newIntervalSeconds, int newMaxHops, double newTimeoutSeconds, ProbeMode newProbeMode) {
+        return new TracingProfile(
+                newIntervalSeconds,
+                newMaxHops,
+                newTimeoutSeconds,
+                newProbeMode,
+                hostProbeMode,
+                hosts,
+                alerts,
+                persistence,
+                maxConcurrentTraces,
+                telemetry);
+    }
+
     public List<String> hostAddresses() {
         List<String> out = new ArrayList<>();
         for (HostEntry entry : hosts) {

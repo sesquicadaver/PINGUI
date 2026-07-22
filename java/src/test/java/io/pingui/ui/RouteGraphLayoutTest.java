@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.dns.DnsResolver;
+import io.pingui.model.Models;
 import io.pingui.model.Models.HopNode;
 import io.pingui.ui.RouteGraphLayout.GraphNode;
 import io.pingui.ui.RouteGraphLayout.GraphScene;
@@ -94,5 +95,22 @@ class RouteGraphLayoutTest {
                 .findFirst()
                 .orElseThrow();
         assertTrue(hop.label().contains("[2001:4860:4860::8888]"));
+        assertEquals("2001:4860:4860::8888", hop.hopIp());
+    }
+
+    @Test
+    void originHasNullHopIpAndTimeoutIsNotCopyable() {
+        List<HopNode> route = List.of(new HopNode(1, "10.0.0.1", 5.0, false), Models.timeout(2));
+        GraphScene scene = RouteGraphLayout.buildScene(route, List.of(), ip -> 5.0);
+        GraphNode origin = scene.nodes().stream()
+                .filter(node -> node.id().endsWith("_localhost"))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(null, origin.hopIp());
+        GraphNode timeout = scene.nodes().stream()
+                .filter(node -> node.id().contains("_hop_2_"))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(null, timeout.hopIp());
     }
 }

@@ -18,7 +18,7 @@ import java.util.TreeMap;
  * <p>When {@code logAggregates} is {@code false} (default), the job is a no-op. When enabled, RTT hop
  * samples are bucketed into aligned windows and flushed as {@link TelemetryEvent#RTT_AGGREGATE}
  * events — so {@code events_only} LOG sinks still receive them, while raw high-freq samples stay
- * filtered. YAML {@code log_aggregates:} wiring is P16-040.
+ * filtered. Wired from YAML {@code log_aggregates} via TelemetryAttachment (P20-009).
  */
 public final class AggregateTelemetryJob {
     public static final Duration DEFAULT_WINDOW = Duration.ofMinutes(5);
