@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P20-012 — Graph UX:** Extended graph — zoom/pan, hover tooltip, double-click copy hop IP (`RouteGraphInteraction`); ROADMAP NEXT → **DONE** (phase 20).
 - **P20-011 — Alerts settings GUI:** Settings → «Alerts…» (`AlertsSettingsDialog`) — desktop/webhook/rate_limit; `AlertConfig.toRedactedString`; Apply → dispatcher; ROADMAP NEXT → **P20-012**.
 - **P20-010 — Profile params GUI:** Settings → «Profile…» (`ProfileParamsSettingsDialog`) — interval/max_hops/timeout/probe; CLI locks; Apply + dirty → YAML Save; ROADMAP NEXT → **P20-011**.
 - **P20-009 — Wire log_aggregates:** `TelemetryAttachment` → `AggregateTelemetryJob` on `TelemetryBus` (accept/flushDue/flushAll); tooltip without backlog; ROADMAP NEXT → **P20-010**.

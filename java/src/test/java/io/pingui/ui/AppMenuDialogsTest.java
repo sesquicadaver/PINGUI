@@ -31,6 +31,8 @@ class AppMenuDialogsTest {
         assertTrue(help.contains("MTU wizard"));
         assertTrue(help.contains("Self-check"));
         assertTrue(help.contains("ProgressBar"));
+        assertTrue(help.contains("zoom"));
+        assertTrue(help.contains("копіювати IP"));
         assertFalse(help.contains("у розробці"));
     }
 }

@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P20-012** |
-| **Фаза** | 20 — GUI UX |
-| **DoD (коротко)** | Graph UX: zoom/pan / copy / tooltip |
+| **Поточна задача** | **DONE** |
+| **Фаза** | — |
+| **DoD (коротко)** | лінійна черга вичерпана |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -114,9 +114,9 @@
 | 68 | **P20-009** | [x] | Wire `log_aggregates` to bus |
 | 69 | **P20-010** | [x] | Profile params GUI (interval/hops/timeout) |
 | 70 | **P20-011** | [x] | Alerts settings GUI |
-| 71 | **P20-012** | [ ] | Graph UX: zoom/pan / copy / tooltip |
+| 71 | **P20-012** | [x] | Graph UX: zoom/pan / copy / tooltip |
 
-**Стан черги:** відкрита — **NEXT = P20-012** (фаза 20 — GUI UX: швидкий UX → polish → feature depth).
+**Стан черги:** закрита — **NEXT = DONE** (фаза 20 GUI UX завершена).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -743,7 +743,7 @@ flowchart TD
 | **P20-009** | [x] Wire `log_aggregates` | `AggregateTelemetryJob`, `TelemetryBus`, `TelemetryAttachment` | Checkbox увімкнений → job на bus; вимкнений → off; tooltip без «backlog»; LIVING_SPEC |
 | **P20-010** | [x] Profile params GUI | `ProfileParamsSettingsDialog`, `TracingProfile`, `MainController` | Edit interval / max_hops / timeout (+ probe) активного профілю → YAML Save; валідація; тести |
 | **P20-011** | [x] Alerts settings GUI | `AlertsSettingsDialog`, `AlertConfig`, `MainController` | Desktop/webhook enable + URL (redacted); wire як YAML alerts; без повного NMS |
-| **P20-012** | [ ] Graph UX | `GraphCanvas`, `RouteGraphPresenter` | Мінімум 2 з: zoom/pan, copy hop IP, hover tooltip; CHECKLIST smoke Extended |
+| **P20-012** | [x] Graph UX | `GraphCanvas`, `RouteGraphInteraction`, `RouteGraphPresenter` | Zoom/pan + copy hop IP + hover tooltip; CHECKLIST smoke Extended |
 
 ---
 
@@ -829,7 +829,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Лінійна черга — **NEXT=P20-012**.
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Лінійна черга — **NEXT=DONE**.
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

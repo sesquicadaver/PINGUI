@@ -310,6 +310,7 @@ public final class MainController {
                 () -> viewModeController.isExtended(),
                 () -> easterEggActive,
                 routeDiffPresenter);
+        graphCanvas.setOnHopIpCopied(ip -> userFeedback.info("Скопійовано hop IP: " + ip));
         DnsResolver.addListener(() -> Platform.runLater(routeGraphPresenter::redrawIfExtended));
 
         routeHistoryPresenter = new RouteHistoryPresenter(

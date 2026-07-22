@@ -1,5 +1,6 @@
 package io.pingui.ui;
 
+import io.pingui.model.Models;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.HopStatsSummary;
 import java.util.ArrayList;
@@ -22,7 +23,12 @@ public final class RouteGraphLayout {
 
     public record ColumnLayout(double centerX, double width) {}
 
-    public record GraphNode(String id, String label, String color, double x, double y, double width, double height) {}
+    /**
+     * Layout node. {@code hopIp} is null for origin («Ваш ПК») and timeout hops; set for copy/tooltip
+     * (P20-012).
+     */
+    public record GraphNode(
+            String id, String label, String color, double x, double y, double width, double height, String hopIp) {}
 
     public record GraphScene(List<GraphNode> nodes, List<Edge> edges) {
         public record Edge(String fromId, String toId, boolean inactive) {}
@@ -108,6 +114,8 @@ public final class RouteGraphLayout {
         labels.add(pcLabel);
         colors.add(inactive ? INACTIVE_NODE : ORIGIN_COLOR);
         ids.add(pcId);
+        List<String> hopIps = new ArrayList<>();
+        hopIps.add(null);
 
         for (HopNode hop : route) {
             String label = PingColor.nodeLabel(hop, avgPingFn, inactive ? ignored -> null : hopStatsFn);
@@ -115,6 +123,7 @@ public final class RouteGraphLayout {
             labels.add(label);
             colors.add(PingColor.nodeColor(hop, avgPingFn, inactive));
             ids.add(nodeId);
+            hopIps.add(copyableHopIp(hop));
         }
 
         List<Double> heights = labels.stream().map(RouteGraphLayout::boxHeight).toList();
@@ -131,7 +140,8 @@ public final class RouteGraphLayout {
                 column.centerX(),
                 yCoords.get(0),
                 nodeWidth,
-                layoutHeights.get(0)));
+                layoutHeights.get(0),
+                hopIps.get(0)));
 
         for (int index = 1; index < labels.size(); index++) {
             nodes.add(new GraphNode(
@@ -141,11 +151,21 @@ public final class RouteGraphLayout {
                     column.centerX(),
                     yCoords.get(index),
                     nodeWidth,
-                    layoutHeights.get(index)));
+                    layoutHeights.get(index),
+                    hopIps.get(index)));
             edges.add(new GraphScene.Edge(prevId, ids.get(index), inactive));
             prevId = ids.get(index);
         }
         return new ChainResult(nodes, edges);
+    }
+
+    /** Reachable hop IP for clipboard; null for origin/timeout. */
+    static String copyableHopIp(HopNode hop) {
+        if (hop == null || hop.timeout() || Models.TIMEOUT_IP.equals(hop.ip())) {
+            return null;
+        }
+        String ip = hop.ip();
+        return ip == null || ip.isBlank() ? null : ip.strip();
     }
 
     private record ChainResult(List<GraphNode> nodes, List<GraphScene.Edge> edges) {}

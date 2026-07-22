@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P20-012** |
-| **Phase** | 20 — GUI UX |
-| **DoD (short)** | Graph UX: zoom/pan / copy / tooltip |
+| **Current task** | **DONE** |
+| **Phase** | — |
+| **DoD (short)** | linear queue exhausted |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -114,9 +114,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 68 | **P20-009** | [x] | Wire `log_aggregates` to bus |
 | 69 | **P20-010** | [x] | Profile params GUI (interval/hops/timeout) |
 | 70 | **P20-011** | [x] | Alerts settings GUI |
-| 71 | **P20-012** | [ ] | Graph UX: zoom/pan / copy / tooltip |
+| 71 | **P20-012** | [x] | Graph UX: zoom/pan / copy / tooltip |
 
-**Queue status:** open — **NEXT = P20-012** (phase 20 — GUI UX: quick UX → polish → feature depth).
+**Queue status:** closed — **NEXT = DONE** (phase 20 GUI UX complete).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -743,7 +743,7 @@ flowchart TD
 | **P20-009** | [x] Wire `log_aggregates` | `AggregateTelemetryJob`, `TelemetryBus`, `TelemetryAttachment` | Checkbox on → job on bus; off → off; tooltip without «backlog»; LIVING_SPEC |
 | **P20-010** | [x] Profile params GUI | `ProfileParamsSettingsDialog`, `TracingProfile`, `MainController` | Edit interval / max_hops / timeout (+ probe) of active profile → YAML Save; validation; tests |
 | **P20-011** | [x] Alerts settings GUI | `AlertsSettingsDialog`, `AlertConfig`, `MainController` | Desktop/webhook enable + URL (redacted); wire as YAML alerts; not a full NMS |
-| **P20-012** | [ ] Graph UX | `GraphCanvas`, `RouteGraphPresenter` | At least 2 of: zoom/pan, copy hop IP, hover tooltip; CHECKLIST smoke Extended |
+| **P20-012** | [x] Graph UX | `GraphCanvas`, `RouteGraphInteraction`, `RouteGraphPresenter` | Zoom/pan + copy hop IP + hover tooltip; CHECKLIST smoke Extended |
 
 ---
 
@@ -829,7 +829,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Linear queue — **NEXT=P20-012**.
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Linear queue — **NEXT=DONE**.
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 
