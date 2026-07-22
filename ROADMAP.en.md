@@ -8,10 +8,10 @@
 
 | Field | Value |
 |------|----------|
-| **Current task** | **[DONE](docs/en/ROADMAP.md#next--single-source-of-truth)** |
+| **Current task** | **[P21-002](docs/en/ROADMAP.md#phase-21--quality-alert-rules-beta-p1)** |
 | **Rule** | if not `DONE` — `/autopilot` = this ID; if `DONE` — stop / wait for an explicit new ID. **Do not ask** “which item?”. |
 
-Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (phase 20, #60–71).
+Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (phase 21, #72–74).
 
 **MVP status:** ✅ implemented (2026-06-26)
 
@@ -42,6 +42,7 @@ Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#e
 | **18** | Probe mode stability | ✅ |
 | **19** | Production hardening (version, CI, coverage, probe-mode debt) | ✅ **DONE** |
 | **20** | GUI UX (Simple feedback, confirm, dirty, polish, settings depth) | ✅ **DONE** |
+| **21** | Quality alert rules (`endpoint_down` → engine/GUI) | 🔄 **P21-002** |
 
 ---
 

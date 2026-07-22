@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P21-001 — ADR_ALERT_RULES:** formalize quality alerts (`endpoint_down` v1, lifecycle, `notify_resolved`); Related patch on ADR_ALERTS; phase 21; NEXT → **P21-002**.
 - **Alerts settings layout:** `AlertsSettingsDialog` — label column no longer shrinks (`USE_PREF_SIZE` + `ColumnConstraints`); prefWidth 560.
 - **P20-012 — Graph UX:** Extended graph — zoom/pan, hover tooltip, double-click copy hop IP (`RouteGraphInteraction`); ROADMAP NEXT → **DONE** (phase 20).
 - **P20-011 — Alerts settings GUI:** Settings → «Alerts…» (`AlertsSettingsDialog`) — desktop/webhook/rate_limit; `AlertConfig.toRedactedString`; Apply → dispatcher; ROADMAP NEXT → **P20-012**.

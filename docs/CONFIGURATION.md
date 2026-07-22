@@ -119,6 +119,22 @@ profiles:
 
 За замовчуванням alerts вимкнено (`NoOp` dispatcher).
 
+**Якісні правила (P21, ADR):** контракт YAML зарезервовано в [ADR_ALERT_RULES.md](ADR_ALERT_RULES.md). У v1 (після P21-002/003) — лише `endpoint_down` + `notify_resolved`; `loss_high`/`latency_high` — v2. Поки engine не змерджено, ключі `alerts.rules` / `notify_resolved` у YAML **ігноруються або ще не парсяться** (див. ticket P21-003). Канали `desktop`/`webhook`/`rate_limit` без змін (P10).
+
+```yaml
+    alerts:
+      desktop: false
+      webhook: null
+      rate_limit: 10
+      notify_resolved: false   # optional RESOLVED emits
+      rules:
+        endpoint_down:
+          enabled: false
+          fail_after: 3
+          clear_after: 2
+          cooldown_minutes: 15
+```
+
 ### Телеметрія (P16-040…052, P16-080, P16-090…092)
 
 Секція `telemetry:` у профілі v2 (Java) або top-level (Python `load_telemetry_config`). Пріоритет: **CLI > YAML > defaults**. За замовч. усі sinks **off**; `events_only: true`; `log_aggregates: false`. ADR: [ADR_TELEMETRY.md](ADR_TELEMETRY.md). Приклад: `java/config/hosts.example.yaml`. Windows-пресет: `config/hosts.windows.example.yaml` (P16-043: `events_only` без `jsonl_dir`).

@@ -10,7 +10,7 @@ Post-MVP roadmap (2026-06-26) for **professional users** (NOC/SRE, network engin
 
 | Field | Value |
 |-------|-------|
-| **Branch** | `main` — stable snapshot after merge; `beta` — development (linear queue **P20**). Both: Java Pro (P9–P19) + Python after merge |
+| **Branch** | `main` — stable snapshot after merge; `beta` — development (linear queue **P21**). Both: Java Pro (P9–P19) + Python after merge |
 | **Priority** | P0 critical · P1 important · P2 nice-to-have |
 | **DoD** | Definition of Done — task closure condition |
 
@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **DONE** |
-| **Phase** | — |
-| **DoD (short)** | linear queue exhausted |
+| **Current task** | **P21-002** |
+| **Phase** | 21 — Alert rules |
+| **DoD (short)** | AlertRuleEngine endpoint_down |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -115,8 +115,11 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 69 | **P20-010** | [x] | Profile params GUI (interval/hops/timeout) |
 | 70 | **P20-011** | [x] | Alerts settings GUI |
 | 71 | **P20-012** | [x] | Graph UX: zoom/pan / copy / tooltip |
+| 72 | **P21-001** | [x] | ADR_ALERT_RULES (endpoint_down v1) |
+| 73 | **P21-002** | [ ] | AlertRuleEngine endpoint_down |
+| 74 | **P21-003** | [ ] | YAML/GUI alerts.rules + notify_resolved |
 
-**Queue status:** closed — **NEXT = DONE** (phase 20 GUI UX complete).
+**Queue status:** open — **NEXT = P21-002** (phase 21 — quality alert rules).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -747,6 +750,18 @@ flowchart TD
 
 ---
 
+## Phase 21 — Quality alert rules (`beta`, P1)
+
+**Context:** channels (P10 / ADR_ALERTS) cover only `route_change`. Need formal quality rules without NMS (X-003).
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **P21-001** | [x] ADR: quality alert rules | `docs/ADR_ALERT_RULES.md`, `docs/en/ADR_ALERT_RULES.md`, patch `ADR_ALERTS` | Lifecycle + `endpoint_down` v1; loss/latency reserved v2; `notify_resolved` optional; no per-host v1 |
+| **P21-002** | [ ] AlertRuleEngine `endpoint_down` | `monitor/*Alert*`, `MonitorService`, tests | Pure engine + wire poll→FIRING; cooldown; `./gradlew check` |
+| **P21-003** | [ ] YAML/GUI rules | `AlertConfig`, `ProfilesConfig`, `AlertsSettingsDialog` | `alerts.rules` + `notify_resolved`; Apply/Save; no NMS UI |
+
+---
+
 ## Out of scope (not planned)
 
 | ID | Idea | Why not |
@@ -829,7 +844,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Linear queue — **NEXT=DONE**.
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Linear queue — **NEXT=P21-002**.
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

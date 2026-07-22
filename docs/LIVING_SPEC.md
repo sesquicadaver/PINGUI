@@ -91,6 +91,7 @@
 | Wire log_aggregates (P20-009) | `AggregateTelemetryJob`, `TelemetryBus`, `TelemetryAttachment`, `TelemetrySettingsDialog` | `TelemetryBusTest.enabledAggregatesEmitRttAggregateOnClose`, `TelemetryAttachmentTest.attachEnablesAggregateJobWhenLogAggregatesTrue` |
 | Profile params GUI (P20-010) | `ProfileParamsSettingsDialog`, `TracingProfile`, `MainController` | `ProfileParamsSettingsDialogTest`, `AppMenuDialogsTest` |
 | Alerts settings GUI (P20-011) | `AlertsSettingsDialog`, `AlertConfig`, `MainController`, `AlertDispatchers` | `AlertsSettingsDialogTest`, `AppMenuDialogsTest` |
+| ADR якісних алертів (P21-001) | `docs/ADR_ALERT_RULES.md`, `docs/en/ADR_ALERT_RULES.md`; related `ADR_ALERTS` | Doc parity; контракт lifecycle `endpoint_down` |
 | Graph UX (P20-012) | `GraphCanvas`, `RouteGraphInteraction`, `RouteGraphLayout`, `MainController` | `RouteGraphInteractionTest`, `RouteGraphLayoutTest`, `AppMenuDialogsTest` |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
