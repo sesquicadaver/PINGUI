@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P22-005** |
-| **Phase** | 22 — Host problem UX |
-| **DoD (short)** | UI: auto-create session DB (Date-Time-LocalIP) |
+| **Current task** | **DONE** |
+| **Phase** | — |
+| **DoD (short)** | linear queue exhausted |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -122,9 +122,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 76 | **P22-002** | [x] | Engine: session incident stats + ack API |
 | 77 | **P22-003** | [x] | SQLite: persist quality incidents |
 | 78 | **P22-004** | [x] | UI: host problem icon + detail dialog |
-| 79 | **P22-005** | [ ] | UI: auto-create session DB (Date-Time-LocalIP) |
+| 79 | **P22-005** | [x] | UI: auto-create session DB (Date-Time-LocalIP) |
 
-**Queue status:** open — **NEXT = P22-005** (phase 22 — host problem UX).
+**Queue status:** closed — **NEXT = DONE** (phase 22 host problem UX complete).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -778,7 +778,7 @@ flowchart TD
 | **P22-002** | [x] Engine session stats + ack | `AlertRuleEngine`, `HostProblemSummary`, `MonitorService` | fire_count, max_duration, last_* ; ack clears badge until next FIRING |
 | **P22-003** | [x] SQLite quality incidents | `PersistenceEventType`, `PersistenceEventWriter`, `MonitorService` | Write FIRING/RESOLVED when session DB connected; RESOLVED even if notify_resolved=false; survive ack |
 | **P22-004** | [x] Host icon + dialog | `HostItem`, `HostListCell`, `ProblemDetailsDialog`, `HostListPresenter` | Icon visible with unread problem; click → dialog; ack on view |
-| **P22-005** | [ ] Auto session DB | `PersistenceSettingsDialog`, LocalIp, SessionDbAutoName | Button beside Browse; `data/YYYY-MM-DD_HH-mm-ss_<ip>.db` |
+| **P22-005** | [x] Auto session DB | `PersistenceSettingsDialog`, `LocalIpv4`, `SessionDbAutoName` | Button beside Browse; `data/YYYY-MM-DD_HH-mm-ss_<ip>.db` |
 
 ---
 
@@ -864,7 +864,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Linear queue — **NEXT=P22-005**.
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Linear queue — **NEXT=DONE**.
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

@@ -98,6 +98,7 @@ Module → unit test matrix. Update when adding features.
 | HostProblemSummary (P22-002) | `AlertRuleEngine`, `HostProblemSummary`, `MonitorService` | `AlertRuleEngineTest`, `MonitorServiceTest` |
 | endpoint_down SQLite (P22-003) | `PersistenceEventType`, `PersistenceEventWriter`, `MonitorService` | `PersistenceEventWriterTest`, `MonitorServiceTest` |
 | Host problem icon (P22-004) | `HostItem`, `HostListCell`, `ProblemDetailsDialog`, `HostListPresenter` | `ProblemDetailsDialogTest`, `HostItemProblemTest` |
+| Session DB auto-name (P22-005) | `LocalIpv4`, `SessionDbAutoName`, `PersistenceSettingsDialog` | `LocalIpv4Test`, `SessionDbAutoNameTest` |
 | Graph UX (P20-012) | `GraphCanvas`, `RouteGraphInteraction`, `RouteGraphLayout`, `MainController` | `RouteGraphInteractionTest`, `RouteGraphLayoutTest`, `AppMenuDialogsTest` |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |

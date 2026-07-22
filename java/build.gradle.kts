@@ -124,6 +124,7 @@ tasks.jacocoTestCoverageVerification {
                         "io/pingui/ui/MtuDiscoveryDialog*.class",
                         "io/pingui/ui/AlertsSettingsDialog*.class",
                         "io/pingui/ui/ProblemDetailsDialog*.class",
+                        "io/pingui/ui/PersistenceSettingsDialog*.class",
                         "io/pingui/ui/PresetSelfCheckUi*.class",
                     )
                 }
