@@ -36,15 +36,20 @@ final class RouteGraphPresenter {
         if (!extendedView.getAsBoolean() || easterEggActive.getAsBoolean()) {
             return;
         }
-        if (replayEvent != null) {
-            // Replay uses reachable IP sequences from RouteChangeEvent (timeouts not stored).
-            List<io.pingui.model.Models.HopNode> newRoute = RouteHistoryPresenter.ipsToRoute(replayEvent.newIps());
-            List<io.pingui.model.Models.HopNode> oldRoute = RouteHistoryPresenter.ipsToRoute(replayEvent.oldIps());
-            graphCanvas.renderRoute(newRoute, ip -> null, oldRoute, hop -> null);
-            routeDiffPresenter.show(oldRoute, newRoute);
-            return;
-        }
         HostItem selected = hostList.getSelectionModel().getSelectedItem();
+        // Replay must match the selected target; otherwise the graph shows another host's path
+        // (e.g. history row for 1.1.1.1 while kernel.org is selected in the host list).
+        if (replayEvent != null) {
+            if (selected != null && replayEvent.host().equals(selected.getHost())) {
+                // Replay uses reachable IP sequences from RouteChangeEvent (timeouts not stored).
+                List<io.pingui.model.Models.HopNode> newRoute = RouteHistoryPresenter.ipsToRoute(replayEvent.newIps());
+                List<io.pingui.model.Models.HopNode> oldRoute = RouteHistoryPresenter.ipsToRoute(replayEvent.oldIps());
+                graphCanvas.renderRoute(newRoute, ip -> null, oldRoute, hop -> null);
+                routeDiffPresenter.show(oldRoute, newRoute);
+                return;
+            }
+            replayEvent = null;
+        }
         if (selected == null) {
             graphCanvas.renderRoute(java.util.List.of(), ip -> null, java.util.List.of());
             routeDiffPresenter.clear();

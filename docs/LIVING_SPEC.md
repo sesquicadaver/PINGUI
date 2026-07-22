@@ -109,6 +109,7 @@
 | Persistence policy (P11-013) | `PersistencePolicy`, `PersistencePolicyHolder`, `PersistenceEventWriter`, `MonitorService` | `PersistencePolicyTest`, `PersistencePolicyHolderTest`, `PersistenceEventWriterTest`, `MonitorServiceTest.appliesPersistencePolicyAfterPollCycle` |
 | Persistence GUI + YAML (P11-014…015) | `PersistenceSettingsDialog`, `PersistenceEventsConfig`, `CliPersistenceOverrides`, `ProfilesConfig` | `PersistencePolicySupportTest`, `ProfilesConfigTest.loadPersistenceEventsSection`, `PinguiApplicationTest.parseOptions_noPersistRouteChange` |
 | Route history UI (P11-020…021) | `RouteHistoryPresenter`, `RouteGraphPresenter`, `SessionDatabase.listEvents` | `SessionDatabaseTest.listRouteChangeEventsFiltersByHostAndTime`, `RouteHistoryPresenterTest` |
+| Graph host source (stale replay) | `RouteGraphPresenter`, `MainController.viewHost` | `RouteGraphPresenterTest.staleReplayForOtherHostFallsBackToLiveSelection` |
 | Session export (P11-030) | `SessionReportExporter`, `PinguiApplication.runExportReport` | `SessionReportExporterTest`, `SessionDatabaseTest.listHostsReturnsSortedNames`, `PinguiApplicationTest.parseOptions_exportReportPath` |
 | GUI SQLite connection (P11-016) | `PersistenceConfig`, `SessionDbResolver`, `PersistenceSettingsDialog`, `MainController` | `SessionDbResolverTest`, `ProfilesConfigTest.loadPersistenceSessionDbSection` |
 | Hop stats labels from history (P11-040) | `SessionStore`, `PingColor`, `RouteGraphPresenter` | `SessionStorePersistenceTest.hopStatsPersistAcrossReopen`, `PingColorTest.nodeLabelIncludesHopStats` |

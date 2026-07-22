@@ -373,7 +373,7 @@ YAML `persistence.events` + CLI `--no-persist-route-change` / `--no-persist-prob
 
 ### `RouteHistoryPresenter` (P11-020…021)
 
-“History” panel in extended mode: `listEvents(ROUTE_CHANGE, host, since)`; 24h/7d toggle; row selection → read-only replay on `GraphCanvas`.
+“History” panel in extended mode: `listEvents(ROUTE_CHANGE, host, since)`; 24h/7d toggle; host-filter sync with host list (`HistoryHostSync`); selecting a host in the left list clears timeline replay; `RouteGraphPresenter` ignores replay when `event.host` ≠ selected host; live updates use host-list selection; row selection → read-only replay on `GraphCanvas`.
 
 ### `PersistenceSettingsDialog` (P11-014)
 

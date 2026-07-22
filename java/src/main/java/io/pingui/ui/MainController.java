@@ -228,6 +228,10 @@ public final class MainController {
                 hostInput.setText(newItem.getHost());
             }
             hostListPresenter.syncInputLimits();
+            // Host list is the live-graph source of truth: drop timeline replay for another target.
+            if (oldItem != newItem) {
+                clearHistoryReplay();
+            }
             routeGraphPresenter.redrawIfExtended();
         });
         if (!hostItems.isEmpty()) {
@@ -393,13 +397,18 @@ public final class MainController {
         syncHistoryHostFilter();
     }
 
+    /**
+     * Active target for live graph updates — same source as {@link RouteGraphPresenter} (host list).
+     * History filter is kept in sync via {@link HistoryHostSync}; do not prefer the filter here or
+     * pings for host A can redraw while the list shows host B.
+     */
     private String viewHost() {
-        String filterHost = historyHostFilter.getValue();
-        if (filterHost != null && !filterHost.isBlank()) {
-            return filterHost;
-        }
         HostItem selected = hostList.getSelectionModel().getSelectedItem();
-        return selected != null ? selected.getHost() : null;
+        if (selected != null) {
+            return selected.getHost();
+        }
+        String filterHost = historyHostFilter.getValue();
+        return filterHost != null && !filterHost.isBlank() ? filterHost : null;
     }
 
     private void updateHistoryPanelVisibility() {
