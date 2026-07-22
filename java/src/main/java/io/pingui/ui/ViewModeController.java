@@ -86,6 +86,10 @@ final class ViewModeController {
         } else {
             leftPanel.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
             root.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+            // P20-007: Simple hides the log — idle status points to Extended (keep live feedback).
+            if (EmptyStateHints.isReplaceableSimpleStatus(statusLabel.getText())) {
+                statusLabel.setText(EmptyStateHints.simpleNoLog());
+            }
         }
         fitWindowToContent();
     }

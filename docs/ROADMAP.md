@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P20-007** |
+| **Поточна задача** | **P20-008** |
 | **Фаза** | 20 — GUI UX |
-| **DoD (коротко)** | Empty states (Extended / SQLite hints) |
+| **DoD (коротко)** | Self-check ProgressBar |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -109,14 +109,14 @@
 | 63 | **P20-004** | [x] | Route diff visual (color/icons) |
 | 64 | **P20-005** | [x] | Export зараз з меню |
 | 65 | **P20-006** | [x] | Keyboard accelerators |
-| 66 | **P20-007** | [ ] | Empty states (Extended / SQLite hints) |
+| 66 | **P20-007** | [x] | Empty states (Extended / SQLite hints) |
 | 67 | **P20-008** | [ ] | Self-check ProgressBar |
 | 68 | **P20-009** | [ ] | Wire `log_aggregates` to bus |
 | 69 | **P20-010** | [ ] | Profile params GUI (interval/hops/timeout) |
 | 70 | **P20-011** | [ ] | Alerts settings GUI |
 | 71 | **P20-012** | [ ] | Graph UX: zoom/pan / copy / tooltip |
 
-**Стан черги:** відкрита — **NEXT = P20-007** (фаза 20 — GUI UX: швидкий UX → polish → feature depth).
+**Стан черги:** відкрита — **NEXT = P20-008** (фаза 20 — GUI UX: швидкий UX → polish → feature depth).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -738,7 +738,7 @@ flowchart TD
 | **P20-004** | [x] Route diff visual | `RouteDiffPresenter` | CHANGED/ADDED/REMOVED з кольором або іконкою (не лише plain text); `./gradlew check` |
 | **P20-005** | [x] Export з меню | `SessionExportUi`, `MainController`, `SessionReportExporter` | Пункт меню «Експорт зараз…» → CSV/HTML (паритет CLI export); без SQLite — зрозуміла помилка |
 | **P20-006** | [x] Keyboard accelerators | `AppAccelerators`, `MainController`, `AppMenuDialogs` | Hotkeys: Save, Add host, Help(F1); документувати в Help; не ламати TextField focus |
-| **P20-007** | [ ] Empty states | `RouteHistoryPresenter`, `MainController` / view mode | Підказки коли немає SQLite / порожня history / Simple без log; UK/EN |
+| **P20-007** | [x] Empty states | `EmptyStateHints`, `RouteHistoryPresenter`, `ViewModeController` | Підказки коли немає SQLite / порожня history / Simple без log; UK/EN |
 | **P20-008** | [ ] Self-check ProgressBar | `PresetSelfCheckUi` | Progress під час batch (як MTU wizard); Stop або disabled до кінця; тести |
 | **P20-009** | [ ] Wire `log_aggregates` | `AggregateTelemetryJob`, `TelemetryAttachment` / daemon+GUI | Checkbox увімкнений → job на bus; вимкнений → off; tooltip без «backlog»; LIVING_SPEC |
 | **P20-010** | [ ] Profile params GUI | Settings dialog або profile panel | Edit interval / max_hops / timeout (+ опційно probe) активного профілю → YAML Save; валідація; тести |
@@ -829,7 +829,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Лінійна черга — **NEXT=P20-007**.
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Лінійна черга — **NEXT=P20-008**.
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

@@ -16,6 +16,7 @@ import java.util.function.Supplier;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.RadioButton;
@@ -33,6 +34,7 @@ final class RouteHistoryPresenter {
     private final BooleanSupplier extendedView;
     private final Consumer<RouteChangeEvent> onReplay;
     private final Runnable onClearReplay;
+    private final Label placeholderLabel = new Label();
 
     private Duration lookback = Duration.ofHours(24);
 
@@ -68,6 +70,11 @@ final class RouteHistoryPresenter {
             }
             resetAndRefresh();
         });
+
+        placeholderLabel.setWrapText(true);
+        placeholderLabel.setStyle("-fx-text-fill: #666;");
+        historyList.setPlaceholder(placeholderLabel);
+        updatePlaceholder();
 
         historyList.setCellFactory(list -> new ListCell<>() {
             @Override
@@ -122,6 +129,7 @@ final class RouteHistoryPresenter {
     private void clearHistoryContent() {
         historyList.getSelectionModel().clearSelection();
         historyList.setItems(FXCollections.observableArrayList());
+        updatePlaceholder();
         onClearReplay.run();
     }
 
@@ -150,11 +158,13 @@ final class RouteHistoryPresenter {
         SessionStore session = store.get();
         if (!session.hasPersistence() || !extendedView.getAsBoolean()) {
             historyList.setItems(items);
+            updatePlaceholder();
             return;
         }
         String host = hostFilter.getValue();
         if (host == null || host.isBlank()) {
             historyList.setItems(items);
+            updatePlaceholder();
             return;
         }
         SessionDatabase database = session.database();
@@ -170,11 +180,31 @@ final class RouteHistoryPresenter {
             }
         }
         historyList.setItems(items);
+        updatePlaceholder();
     }
 
     void clearSelection() {
         historyList.getSelectionModel().clearSelection();
         onClearReplay.run();
+    }
+
+    /** Visible placeholder text (for tests). */
+    String placeholderText() {
+        return placeholderLabel.getText();
+    }
+
+    private void updatePlaceholder() {
+        SessionStore session = store.get();
+        if (!session.hasPersistence()) {
+            placeholderLabel.setText(EmptyStateHints.noSqlite());
+            return;
+        }
+        String host = hostFilter.getValue();
+        if (host == null || host.isBlank()) {
+            placeholderLabel.setText(EmptyStateHints.noHostSelected());
+            return;
+        }
+        placeholderLabel.setText(EmptyStateHints.emptyHistory());
     }
 
     static List<HopNode> ipsToRoute(List<String> ips) {

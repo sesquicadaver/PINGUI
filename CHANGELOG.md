@@ -9,6 +9,7 @@
 
 ### Changed
 
+- **P20-007 — Empty states:** `EmptyStateHints` + ListView placeholder (no SQLite / empty / no host); Simple idle status → журнал у «Розширений»; ROADMAP NEXT → **P20-008**.
 - **P20-006 — Keyboard accelerators:** меню «Файл» — `Shortcut+S` Save / `Shortcut+N` Add / F1 Help (`AppAccelerators`); Help § Гарячі клавіші; ROADMAP NEXT → **P20-007**.
 - **P20-005 — Export з меню:** `SessionExportUi` + `SessionReportExporter.isHtmlReport`/`export`; Налаштування → «Експорт зараз…» (CSV/HTML, паритет CLI); без SQLite — error; Help; ROADMAP NEXT → **P20-006**.
 - **P20-004 — Route diff visual:** `RouteDiffStyle` — prefix (`=`/`~`/`+`/`−`) + колір для Kind; ListCell у `RouteDiffPresenter`; ROADMAP NEXT → **P20-005**.

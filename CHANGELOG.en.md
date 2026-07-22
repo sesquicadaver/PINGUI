@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P20-007 — Empty states:** `EmptyStateHints` + ListView placeholder (no SQLite / empty / no host); Simple idle status → journal in Extended; ROADMAP NEXT → **P20-008**.
 - **P20-006 — Keyboard accelerators:** File menu — `Shortcut+S` Save / `Shortcut+N` Add / F1 Help (`AppAccelerators`); Help § shortcuts; ROADMAP NEXT → **P20-007**.
 - **P20-005 — Export from menu:** `SessionExportUi` + `SessionReportExporter.isHtmlReport`/`export`; Settings → «Export now…» (CSV/HTML, CLI parity); without SQLite — error; Help; ROADMAP NEXT → **P20-006**.
 - **P20-004 — Route diff visual:** `RouteDiffStyle` — prefix (`=`/`~`/`+`/`−`) + color per Kind; ListCell in `RouteDiffPresenter`; ROADMAP NEXT → **P20-005**.

@@ -128,6 +128,57 @@ class RouteHistoryPresenterTest {
         });
     }
 
+    @Test
+    void placeholderShowsEmptyHistoryWhenNoEventsForHost() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            try (PresenterHarness harness = new PresenterHarness(tempDir.resolve("empty.db"))) {
+                harness.presenter.configure();
+                harness.filter.setValue("8.8.8.8");
+                // Clear seeded events by using a host with no rows.
+                harness.filter.setValue("9.9.9.9");
+                harness.presenter.refresh();
+                assertTrue(harness.historyList.getItems().isEmpty());
+                assertEquals(EmptyStateHints.emptyHistory(), harness.presenter.placeholderText());
+            }
+        });
+    }
+
+    @Test
+    void placeholderShowsNoHostWhenFilterEmpty() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            try (PresenterHarness harness = new PresenterHarness(tempDir.resolve("nohost.db"))) {
+                harness.presenter.configure();
+                harness.filter.setValue(null);
+                harness.presenter.refresh();
+                assertEquals(EmptyStateHints.noHostSelected(), harness.presenter.placeholderText());
+            }
+        });
+    }
+
+    @Test
+    void placeholderShowsNoSqliteWithoutPersistence() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            ComboBox<String> filter = new ComboBox<>();
+            ListView<RouteHistoryItem> historyList = new ListView<>();
+            SessionStore ramStore = SessionStore.fromEntries(
+                    List.of(new HostEntry("8.8.8.8", true, false, PingExpertEntry.empty())), null);
+            RouteHistoryPresenter presenter = new RouteHistoryPresenter(
+                    () -> ramStore,
+                    filter,
+                    historyList,
+                    new RadioButton("24 год"),
+                    new RadioButton("7 днів"),
+                    () -> true,
+                    event -> {},
+                    () -> {});
+            presenter.configure();
+            presenter.refresh();
+            assertFalse(ramStore.hasPersistence());
+            assertEquals(EmptyStateHints.noSqlite(), presenter.placeholderText());
+            ramStore.close();
+        });
+    }
+
     private static final class PresenterHarness implements AutoCloseable {
         final ComboBox<String> filter = new ComboBox<>();
         final ListView<RouteHistoryItem> historyList = new ListView<>();

@@ -1,5 +1,6 @@
 package io.pingui.ui;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import javafx.scene.control.Label;
@@ -12,7 +13,7 @@ class ViewModeControllerTest {
     @Test
     void statusLabelRemainsVisibleInSimpleMode() throws Exception {
         FxTestSupport.runOnFxThread(() -> {
-            Label status = new Label("status");
+            Label status = new Label(EmptyStateHints.waitingForData());
             TextArea log = new TextArea();
             ViewModeController controller = new ViewModeController(
                     new VBox(), new VBox(), new BorderPane(), log, status, () -> {}, () -> {}, () -> false);
@@ -21,6 +22,19 @@ class ViewModeControllerTest {
             assertTrue(status.isManaged());
             assertTrue(!log.isVisible());
             assertTrue(!log.isManaged());
+            assertEquals(EmptyStateHints.simpleNoLog(), status.getText());
+        });
+    }
+
+    @Test
+    void simpleModeKeepsLiveFeedbackStatus() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            Label status = new Label("Додано ціль: 8.8.8.8");
+            TextArea log = new TextArea();
+            ViewModeController controller = new ViewModeController(
+                    new VBox(), new VBox(), new BorderPane(), log, status, () -> {}, () -> {}, () -> false);
+            controller.apply();
+            assertEquals("Додано ціль: 8.8.8.8", status.getText());
         });
     }
 
@@ -37,6 +51,7 @@ class ViewModeControllerTest {
             assertTrue(status.isManaged());
             assertTrue(log.isVisible());
             assertTrue(log.isManaged());
+            assertEquals("status", status.getText());
         });
     }
 }

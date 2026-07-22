@@ -91,7 +91,7 @@ public final class MainController {
     private final ComboBox<String> historyHostFilter = new ComboBox<>();
     private final HBox historyFilterBar = new HBox(8);
     private final HBox historyRangeBar = new HBox(8);
-    private final Label statusLabel = new Label("Очікування даних…");
+    private final Label statusLabel = new Label(EmptyStateHints.waitingForData());
     private final VBox graphPanel = new VBox(8);
     private final VBox leftPanel = new VBox(8);
     private final BorderPane root = new BorderPane();
@@ -162,9 +162,10 @@ public final class MainController {
         simpleMode.setToggleGroup(modeGroup);
         extendedModeButton.setToggleGroup(modeGroup);
         simpleMode.setSelected(true);
-        modeGroup
-                .selectedToggleProperty()
-                .addListener((obs, oldToggle, newToggle) -> viewModeController.onToggleSelected(newToggle));
+        modeGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
+            viewModeController.onToggleSelected(newToggle);
+            updateHistoryPanelVisibility();
+        });
 
         CheckBox expertCheck = new CheckBox("Експерт");
         if (PlatformCapabilities.expertPingSupported()) {
@@ -399,15 +400,17 @@ public final class MainController {
     }
 
     private void updateHistoryPanelVisibility() {
+        // Extended graph panel owns history; always show list+label so empty-state hints are visible.
+        // Filter/range only when SQLite session is connected (P20-007).
         boolean persistence = store.hasPersistence();
-        historyLabel.setVisible(persistence);
-        historyLabel.setManaged(persistence);
+        historyLabel.setVisible(true);
+        historyLabel.setManaged(true);
+        historyList.setVisible(true);
+        historyList.setManaged(true);
         historyFilterBar.setVisible(persistence);
         historyFilterBar.setManaged(persistence);
         historyRangeBar.setVisible(persistence);
         historyRangeBar.setManaged(persistence);
-        historyList.setVisible(persistence);
-        historyList.setManaged(persistence);
         refreshRouteHistory();
     }
 
