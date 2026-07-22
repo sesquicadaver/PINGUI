@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P20-009** |
+| **Поточна задача** | **P20-010** |
 | **Фаза** | 20 — GUI UX |
-| **DoD (коротко)** | Wire log_aggregates to bus |
+| **DoD (коротко)** | Profile params GUI (interval/hops/timeout) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -111,12 +111,12 @@
 | 65 | **P20-006** | [x] | Keyboard accelerators |
 | 66 | **P20-007** | [x] | Empty states (Extended / SQLite hints) |
 | 67 | **P20-008** | [x] | Self-check ProgressBar |
-| 68 | **P20-009** | [ ] | Wire `log_aggregates` to bus |
+| 68 | **P20-009** | [x] | Wire `log_aggregates` to bus |
 | 69 | **P20-010** | [ ] | Profile params GUI (interval/hops/timeout) |
 | 70 | **P20-011** | [ ] | Alerts settings GUI |
 | 71 | **P20-012** | [ ] | Graph UX: zoom/pan / copy / tooltip |
 
-**Стан черги:** відкрита — **NEXT = P20-009** (фаза 20 — GUI UX: швидкий UX → polish → feature depth).
+**Стан черги:** відкрита — **NEXT = P20-010** (фаза 20 — GUI UX: швидкий UX → polish → feature depth).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -740,7 +740,7 @@ flowchart TD
 | **P20-006** | [x] Keyboard accelerators | `AppAccelerators`, `MainController`, `AppMenuDialogs` | Hotkeys: Save, Add host, Help(F1); документувати в Help; не ламати TextField focus |
 | **P20-007** | [x] Empty states | `EmptyStateHints`, `RouteHistoryPresenter`, `ViewModeController` | Підказки коли немає SQLite / порожня history / Simple без log; UK/EN |
 | **P20-008** | [x] Self-check ProgressBar | `PresetSelfCheck`, `PresetSelfCheckUi`, `PingExpertDialog` | Progress під час batch (як MTU wizard); Stop або disabled до кінця; тести |
-| **P20-009** | [ ] Wire `log_aggregates` | `AggregateTelemetryJob`, `TelemetryAttachment` / daemon+GUI | Checkbox увімкнений → job на bus; вимкнений → off; tooltip без «backlog»; LIVING_SPEC |
+| **P20-009** | [x] Wire `log_aggregates` | `AggregateTelemetryJob`, `TelemetryBus`, `TelemetryAttachment` | Checkbox увімкнений → job на bus; вимкнений → off; tooltip без «backlog»; LIVING_SPEC |
 | **P20-010** | [ ] Profile params GUI | Settings dialog або profile panel | Edit interval / max_hops / timeout (+ опційно probe) активного профілю → YAML Save; валідація; тести |
 | **P20-011** | [ ] Alerts settings GUI | Settings dialog | Desktop/webhook enable + URL (redacted); wire як YAML alerts; без повного NMS |
 | **P20-012** | [ ] Graph UX | `GraphCanvas`, `RouteGraphPresenter` | Мінімум 2 з: zoom/pan, copy hop IP, hover tooltip; CHECKLIST smoke Extended |
@@ -829,7 +829,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Лінійна черга — **NEXT=P20-009**.
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Лінійна черга — **NEXT=P20-010**.
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

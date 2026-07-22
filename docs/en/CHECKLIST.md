@@ -286,6 +286,7 @@ Run on **Linux** (regression for “black frame” after profile CRUD):
 - [ ] **New profile** → name `test` → host list empty, window without black bars
 - [ ] **Delete profile** (return to default) → Simple mode, window shrinks correctly (no oversized frame left)
 - [ ] **Extended** → graph + log; **Simple** → compact layout again
+- [ ] **P20-009 log_aggregates:** Telemetry → enable log_aggregates → rtt_aggregate after poll/close (no «backlog» tooltip)
 - [ ] **P20-008 Self-check ProgressBar:** Expert → Self-check → ProgressBar; buttons disabled until done; result Alert
 - [ ] **P20-007 Empty states:** Extended without SQLite → Database hint; empty history → placeholder; Simple → status points to Extended
 - [ ] **P20-006 Hotkeys:** Ctrl/Cmd+S Save, Ctrl/Cmd+N Add, F1 Help; typing in host field still works

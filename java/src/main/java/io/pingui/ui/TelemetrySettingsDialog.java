@@ -76,7 +76,7 @@ public final class TelemetrySettingsDialog {
         CheckBox logAggregatesCheck = new CheckBox("Зберігати log_aggregates у профілі (5m RTT → LOG)");
         logAggregatesCheck.setSelected(current.logAggregates());
         logAggregatesCheck.setTooltip(
-                new Tooltip("Пише YAML-флаг; emit AggregateTelemetryJob ще не підключений до bus (backlog)"));
+                new Tooltip("Увімкнено → 5m avg/max RTT hop → event rtt_aggregate на sinks (log_aggregates)"));
 
         TextField sqliteField =
                 new TextField(current.sqlitePath().map(Path::toString).orElse(""));

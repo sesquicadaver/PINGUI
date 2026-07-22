@@ -1,12 +1,14 @@
 package io.pingui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.config.TelemetryConfig;
 import io.pingui.monitor.MonitorService;
 import io.pingui.persistence.SessionDatabase;
 import io.pingui.persistence.SqliteTelemetrySink;
+import io.pingui.telemetry.MetricSample;
 import io.pingui.telemetry.TelemetryEvent;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -96,6 +98,49 @@ class TelemetryAttachmentTest {
         }
         try (SessionDatabase db = new SessionDatabase(firstDb)) {
             assertEquals(0, db.countTelemetryEvents());
+        }
+    }
+
+    @Test
+    void attachEnablesAggregateJobWhenLogAggregatesTrue() throws Exception {
+        Path telemetryDb = tempDir.resolve("agg-telemetry.db");
+        TelemetryConfig config = new TelemetryConfig(
+                true,
+                true,
+                Optional.of(telemetryDb),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty());
+        MonitorService monitor = new MonitorService(60, 20, 2);
+        TelemetryAttachment attachment = TelemetryAttachment.attach(monitor, config, Optional.empty());
+        try {
+            assertTrue(attachment.bus().aggregates().logAggregates());
+            attachment
+                    .bus()
+                    .offerSample(
+                            MetricSample.rttMs("8.8.8.8", 1, 12.0, Map.of(), Instant.parse("2026-07-14T12:00:00Z")));
+        } finally {
+            monitor.close();
+            attachment.close();
+        }
+        try (SessionDatabase db = new SessionDatabase(telemetryDb)) {
+            assertTrue(db.countTelemetryEvents() >= 1);
+        }
+    }
+
+    @Test
+    void attachKeepsAggregateJobDisabledByDefault() throws Exception {
+        Path telemetryDb = tempDir.resolve("no-agg.db");
+        MonitorService monitor = new MonitorService(60, 20, 2);
+        TelemetryAttachment attachment =
+                TelemetryAttachment.attach(monitor, sqliteConfig(telemetryDb), Optional.empty());
+        try {
+            assertFalse(attachment.bus().aggregates().logAggregates());
+        } finally {
+            monitor.close();
+            attachment.close();
         }
     }
 

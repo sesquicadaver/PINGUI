@@ -3,6 +3,7 @@ package io.pingui;
 import io.pingui.config.TelemetryConfig;
 import io.pingui.monitor.MonitorService;
 import io.pingui.persistence.SessionDatabase;
+import io.pingui.telemetry.AggregateTelemetryJob;
 import io.pingui.telemetry.SinkRegistry;
 import io.pingui.telemetry.TelemetryBus;
 import java.util.List;
@@ -13,7 +14,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Owns {@link SinkRegistry} + {@link TelemetryBus} + installer resources for one monitor
- * lifecycle (P16-090 / P16-071).
+ * lifecycle (P16-090 / P16-071 / P20-009).
  *
  * <p>Close order after {@link MonitorService#close()}: this attachment (bus → registry → owned
  * DBs), then the session store. Prefer {@link #replace} when re-wiring so the previous attachment
@@ -50,7 +51,8 @@ public final class TelemetryAttachment implements AutoCloseable {
     }
 
     /**
-     * Installs sinks from {@code config}, starts a bus, and attaches it to {@code service}.
+     * Installs sinks from {@code config}, starts a bus (with optional {@code log_aggregates} job),
+     * and attaches it to {@code service}.
      *
      * @param sessionDb optional session SQLite (reused when {@code telemetry.sqlite} matches)
      */
@@ -62,16 +64,26 @@ public final class TelemetryAttachment implements AutoCloseable {
 
         SinkRegistry registry = new SinkRegistry();
         TelemetrySinkInstaller.Result install = TelemetrySinkInstaller.install(registry, config, sessionDb);
-        TelemetryBus bus = new TelemetryBus(registry);
+        AggregateTelemetryJob aggregates = config.logAggregates()
+                ? AggregateTelemetryJob.enabled(registry)
+                : AggregateTelemetryJob.disabled(registry);
+        TelemetryBus bus = new TelemetryBus(registry, aggregates);
         service.setTelemetryBus(bus);
         if (!install.registeredIds().isEmpty()) {
             LOG.info("Telemetry attached ({})", String.join(",", install.registeredIds()));
+        }
+        if (config.logAggregates()) {
+            LOG.info("Telemetry log_aggregates enabled (5m RTT → rtt_aggregate)");
         }
         return new TelemetryAttachment(registry, bus, install);
     }
 
     public SinkRegistry registry() {
         return registry;
+    }
+
+    public TelemetryBus bus() {
+        return bus;
     }
 
     public List<String> registeredIds() {

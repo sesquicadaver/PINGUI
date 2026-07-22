@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P20-009 — Wire log_aggregates:** `TelemetryAttachment` → `AggregateTelemetryJob` on `TelemetryBus` (accept/flushDue/flushAll); tooltip without backlog; ROADMAP NEXT → **P20-010**.
 - **P20-008 — Self-check ProgressBar:** per-preset progress in `PresetSelfCheck` + inline ProgressBar in Expert; Self-check/MTU disabled until done; ROADMAP NEXT → **P20-009**.
 - **P20-007 — Empty states:** `EmptyStateHints` + ListView placeholder (no SQLite / empty / no host); Simple idle status → journal in Extended; ROADMAP NEXT → **P20-008**.
 - **P20-006 — Keyboard accelerators:** File menu — `Shortcut+S` Save / `Shortcut+N` Add / F1 Help (`AppAccelerators`); Help § shortcuts; ROADMAP NEXT → **P20-007**.
