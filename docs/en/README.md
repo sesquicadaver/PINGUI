@@ -15,6 +15,7 @@ On **`main`** and **`beta`** — full package (Java Pro + Python) after merge; *
 | [LIVING_SPEC.md](LIVING_SPEC.md) | Developer | Module → tests matrix |
 | [ADR_IPV6.md](ADR_IPV6.md) | Developer | Dual-stack config ADR (V6-002) |
 | [ADR_ALERT_RULES.md](ADR_ALERT_RULES.md) | Developer | Quality alert rules ADR (P21-001): endpoint_down lifecycle |
+| [ADR_HOST_PROBLEM_INDICATOR.md](ADR_HOST_PROBLEM_INDICATOR.md) | Developer | Host-row problem badge / ack / auto session DB (P22-001) |
 | [ADR_ALERTS.md](ADR_ALERTS.md) | Developer | Route-change alerts ADR (P10-001) |
 | [ADR_DAEMON.md](ADR_DAEMON.md) | Developer | Headless daemon ADR (P12-001) |
 | [ADR_PROBE_MODES.md](ADR_PROBE_MODES.md) | Developer | Probe modes trace/mtr/ping_only ADR (P13-001) |
