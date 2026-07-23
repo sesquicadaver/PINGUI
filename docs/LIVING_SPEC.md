@@ -93,6 +93,7 @@
 | Alerts settings GUI (P20-011) | `AlertsSettingsDialog`, `AlertConfig`, `MainController`, `AlertDispatchers` | `AlertsSettingsDialogTest`, `AppMenuDialogsTest` |
 | ADR якісних алертів (P21-001) | `docs/ADR_ALERT_RULES.md`, `docs/en/ADR_ALERT_RULES.md`; related `ADR_ALERTS` | Doc parity; контракт lifecycle `endpoint_down` |
 | AlertRuleEngine endpoint_down (P21-002) | `AlertRuleEngine`, `QualityAlertEvent`, `EndpointDownRuleConfig`, `MonitorService` | `AlertRuleEngineTest`, `MonitorServiceTest.dispatchesEndpointDownAfterConsecutiveUnreachablePolls` |
+| latency_high (P23) | `LatencyHighRuleConfig`, `AlertRuleEngine`, `MonitorService`, `AlertsSettingsDialog`, `PersistenceEventType.LATENCY_HIGH` | `AlertRuleEngineTest.latencyHigh*`, `ProfilesConfigTest.saveAndReloadLatencyHighRules`, `AlertsSettingsDialogTest.buildConfigEnablesLatencyHighCriticalDefaults` |
 | YAML/GUI alerts.rules (P21-003) | `AlertConfig`, `EndpointDownRuleConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `ProfilesConfigTest`, `AlertsSettingsDialogTest`, `AppMenuDialogsTest` |
 | Host problem indicator ADR (P22-001) | `docs/ADR_HOST_PROBLEM_INDICATOR.md` | docs review / ROADMAP P22 |
 | HostProblemSummary (P22-002) | `AlertRuleEngine`, `HostProblemSummary`, `MonitorService` | `AlertRuleEngineTest`, `MonitorServiceTest` |
@@ -109,6 +110,7 @@
 | Persistence policy (P11-013) | `PersistencePolicy`, `PersistencePolicyHolder`, `PersistenceEventWriter`, `MonitorService` | `PersistencePolicyTest`, `PersistencePolicyHolderTest`, `PersistenceEventWriterTest`, `MonitorServiceTest.appliesPersistencePolicyAfterPollCycle` |
 | Persistence GUI + YAML (P11-014…015) | `PersistenceSettingsDialog`, `PersistenceEventsConfig`, `CliPersistenceOverrides`, `ProfilesConfig` | `PersistencePolicySupportTest`, `ProfilesConfigTest.loadPersistenceEventsSection`, `PinguiApplicationTest.parseOptions_noPersistRouteChange` |
 | Route history UI (P11-020…021) | `RouteHistoryPresenter`, `RouteGraphPresenter`, `SessionDatabase.listEvents` | `SessionDatabaseTest.listRouteChangeEventsFiltersByHostAndTime`, `RouteHistoryPresenterTest` |
+| Graph host source (stale replay) | `RouteGraphPresenter`, `MainController.viewHost` | `RouteGraphPresenterTest.staleReplayForOtherHostFallsBackToLiveSelection` |
 | Session export (P11-030) | `SessionReportExporter`, `PinguiApplication.runExportReport` | `SessionReportExporterTest`, `SessionDatabaseTest.listHostsReturnsSortedNames`, `PinguiApplicationTest.parseOptions_exportReportPath` |
 | GUI SQLite connection (P11-016) | `PersistenceConfig`, `SessionDbResolver`, `PersistenceSettingsDialog`, `MainController` | `SessionDbResolverTest`, `ProfilesConfigTest.loadPersistenceSessionDbSection` |
 | Hop stats labels from history (P11-040) | `SessionStore`, `PingColor`, `RouteGraphPresenter` | `SessionStorePersistenceTest.hopStatsPersistAcrossReopen`, `PingColorTest.nodeLabelIncludesHopStats` |

@@ -7,6 +7,11 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **GUI launcher detach:** `pingui-java.sh` / `.bat` start the GUI in the background (Linux/macOS `nohup`, Windows `javaw`); the terminal is freed. `--foreground` for debug; daemon/export/help stay attached. Log: `~/.cache/pingui/gui.log` / `%LOCALAPPDATA%\pingui\gui.log` (`PINGUI_GUI_LOG`). Entry point `PinguiLauncher` (does not extend `Application`) so `installDist`/jpackage see JavaFX on the classpath.
+- **P23 — `latency_high`:** rule `rtt ≥ 2×AVG`, FIRING after 3 consecutive bad pings (no time window); YAML/GUI; badge/SQLite; AVG not poisoned by spike samples; phase 23 → **DONE**.
+
 ### Changed
 
 - **P22-005 — Auto session DB name:** “Create…” button → `data/YYYY-MM-DD_HH-mm-ss_<lan-ip>.db`; phase 22 → **DONE**.

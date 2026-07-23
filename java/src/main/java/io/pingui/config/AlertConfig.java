@@ -1,26 +1,51 @@
 package io.pingui.config;
 
-/** Per-profile alert channels + quality rules (P10-021 / P21-003 / ADR_ALERTS + ADR_ALERT_RULES). */
+/** Per-profile alert channels + quality rules (P10-021 / P21-003 / P23 / ADR_ALERTS + ADR_ALERT_RULES). */
 public record AlertConfig(
         boolean desktopAlerts,
         String webhookUrl,
         int maxAlertsPerHour,
         boolean notifyResolved,
-        EndpointDownRuleConfig endpointDown) {
+        EndpointDownRuleConfig endpointDown,
+        LatencyHighRuleConfig latencyHigh) {
     public AlertConfig {
         if (maxAlertsPerHour < 1) {
             throw new IllegalArgumentException("maxAlertsPerHour must be >= 1");
         }
         endpointDown = endpointDown != null ? endpointDown : EndpointDownRuleConfig.disabled();
+        latencyHigh = latencyHigh != null ? latencyHigh : LatencyHighRuleConfig.disabled();
     }
 
     /** Channel-only constructor (rules default off). */
     public AlertConfig(boolean desktopAlerts, String webhookUrl, int maxAlertsPerHour) {
-        this(desktopAlerts, webhookUrl, maxAlertsPerHour, false, EndpointDownRuleConfig.disabled());
+        this(
+                desktopAlerts,
+                webhookUrl,
+                maxAlertsPerHour,
+                false,
+                EndpointDownRuleConfig.disabled(),
+                LatencyHighRuleConfig.disabled());
+    }
+
+    /** Channels + endpoint_down (latency defaults off). */
+    public AlertConfig(
+            boolean desktopAlerts,
+            String webhookUrl,
+            int maxAlertsPerHour,
+            boolean notifyResolved,
+            EndpointDownRuleConfig endpointDown) {
+        this(
+                desktopAlerts,
+                webhookUrl,
+                maxAlertsPerHour,
+                notifyResolved,
+                endpointDown,
+                LatencyHighRuleConfig.disabled());
     }
 
     public static AlertConfig disabled() {
-        return new AlertConfig(false, null, 10, false, EndpointDownRuleConfig.disabled());
+        return new AlertConfig(
+                false, null, 10, false, EndpointDownRuleConfig.disabled(), LatencyHighRuleConfig.disabled());
     }
 
     public boolean isEnabled() {
@@ -29,7 +54,11 @@ public record AlertConfig(
 
     /** True when YAML should emit an {@code alerts:} block beyond empty defaults. */
     public boolean hasYamlContent() {
-        return isEnabled() || maxAlertsPerHour != 10 || notifyResolved || !endpointDown.isDefaultDisabled();
+        return isEnabled()
+                || maxAlertsPerHour != 10
+                || notifyResolved
+                || !endpointDown.isDefaultDisabled()
+                || !latencyHigh.isDefaultDisabled();
     }
 
     public String normalizedWebhook() {
@@ -53,6 +82,8 @@ public record AlertConfig(
                 + notifyResolved
                 + ", endpoint_down="
                 + (endpointDown.enabled() ? "on" : "off")
+                + ", latency_high="
+                + (latencyHigh.enabled() ? "on" : "off")
                 + "}";
     }
 }

@@ -121,6 +121,8 @@
 ```bash
 cd java
 ./pingui-java.sh -- --config config/hosts.example.yaml --session-db data/ping.db
+# Термінал одразу вільний (GUI у фоні). Дебаг: ./pingui-java.sh --foreground -- …
+# Лог GUI: ~/.cache/pingui/gui.log (або $PINGUI_GUI_LOG)
 ```
 
 Права ICMP / raw: див. [DEPLOYMENT.md](DEPLOYMENT.md) і `./scripts/check_caps.sh`. Деталі UI: [JAVA.md](JAVA.md).

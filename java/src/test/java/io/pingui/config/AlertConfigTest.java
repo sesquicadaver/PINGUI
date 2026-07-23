@@ -25,6 +25,9 @@ class AlertConfigTest {
         assertFalse(AlertConfig.disabled().hasYamlContent());
         assertTrue(new AlertConfig(false, null, 10, true, EndpointDownRuleConfig.disabled()).hasYamlContent());
         assertTrue(new AlertConfig(false, null, 10, false, EndpointDownRuleConfig.balanced(true)).hasYamlContent());
+        assertTrue(new AlertConfig(
+                        false, null, 10, false, EndpointDownRuleConfig.disabled(), LatencyHighRuleConfig.critical(true))
+                .hasYamlContent());
         assertTrue(new AlertConfig(false, null, 11, false, EndpointDownRuleConfig.disabled()).hasYamlContent());
     }
 

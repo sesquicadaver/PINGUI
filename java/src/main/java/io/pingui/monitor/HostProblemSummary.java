@@ -4,7 +4,7 @@ import java.time.Duration;
 import java.time.Instant;
 
 /**
- * Session-scoped {@code endpoint_down} problem view for the host-row badge (P22-002 /
+ * Session-scoped quality problem view for the host-row badge (P22-002 / P23 /
  * ADR_HOST_PROBLEM_INDICATOR).
  */
 public record HostProblemSummary(
@@ -21,6 +21,7 @@ public record HostProblemSummary(
     public static final String STATE_RESOLVED = "resolved";
     public static final String STATE_OK = "ok";
     public static final String DESCRIPTION_ENDPOINT_DOWN = "endpoint_down: target unreachable";
+    public static final String DESCRIPTION_LATENCY_HIGH = "latency_high: rtt ≥ 2×AVG";
 
     public HostProblemSummary {
         host = requireNonBlank(host, "host");

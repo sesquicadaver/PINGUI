@@ -24,6 +24,7 @@ public final class PersistencePolicySupport {
             case ROUTE_CHANGE -> "зміни маршруту";
             case PROBE_ERROR -> "помилки probe";
             case ENDPOINT_DOWN -> "недоступність цілі";
+            case LATENCY_HIGH -> "висока затримка (latency_high)";
         };
     }
 }

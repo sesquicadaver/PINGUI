@@ -121,6 +121,8 @@ Target scenario for an on-call NOC/SRE shift on the **Java edition** (`cd java &
 ```bash
 cd java
 ./pingui-java.sh -- --config config/hosts.example.yaml --session-db data/ping.db
+# Terminal returns immediately (GUI detached). Debug: ./pingui-java.sh --foreground -- …
+# GUI log: ~/.cache/pingui/gui.log (or $PINGUI_GUI_LOG)
 ```
 
 ICMP / raw permissions: see [DEPLOYMENT.md](DEPLOYMENT.md) and `./scripts/check_caps.sh`. UI details: [JAVA.md](JAVA.md).

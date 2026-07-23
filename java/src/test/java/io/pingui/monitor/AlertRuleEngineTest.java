@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.config.EndpointDownRuleConfig;
+import io.pingui.config.LatencyHighRuleConfig;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -162,6 +163,51 @@ class AlertRuleEngineTest {
         HostProblemSummary acked = engine.problemSummary("h", t0.plusSeconds(2)).orElseThrow();
         assertFalse(acked.unread());
         assertEquals(HostProblemSummary.STATE_FIRING, acked.lastState());
+    }
+
+    @Test
+    void latencyHighFiresAfterThreeConsecutiveDoubledRtt() {
+        LatencyHighRuleConfig rule = LatencyHighRuleConfig.critical(true);
+        assertTrue(engine.observeLatencyHigh("h", 10.0, t0, "p", rule).isEmpty());
+        assertEquals(10.0, engine.latencyAvg("h").orElseThrow(), 0.001);
+        assertTrue(engine.observeLatencyHigh("h", 100.0, t0.plusSeconds(1), "p", rule)
+                .isEmpty());
+        assertTrue(engine.observeLatencyHigh("h", 100.0, t0.plusSeconds(2), "p", rule)
+                .isEmpty());
+        Optional<QualityAlertEvent> firing = engine.observeLatencyHigh("h", 100.0, t0.plusSeconds(3), "p", rule);
+        assertTrue(firing.isPresent());
+        assertEquals(QualityAlertEvent.EVENT_LATENCY_HIGH, firing.get().event());
+        assertEquals(QualityAlertEvent.STATE_FIRING, firing.get().state());
+        // AVG frozen while high
+        assertEquals(10.0, engine.latencyAvg("h").orElseThrow(), 0.001);
+        HostProblemSummary summary =
+                engine.problemSummary("h", t0.plusSeconds(3)).orElseThrow();
+        assertTrue(summary.unread());
+        assertEquals(QualityAlertEvent.EVENT_LATENCY_HIGH, summary.rule());
+    }
+
+    @Test
+    void latencyHighDisabledNeverFires() {
+        LatencyHighRuleConfig off = LatencyHighRuleConfig.disabled();
+        for (int i = 0; i < 5; i++) {
+            assertTrue(engine.observeLatencyHigh("h", 1000.0, t0.plusSeconds(i), "p", off)
+                    .isEmpty());
+        }
+    }
+
+    @Test
+    void problemSummaryPrefersUnreadEndpointDownOverLatency() {
+        EndpointDownRuleConfig down = new EndpointDownRuleConfig(true, 1, 1, 0);
+        LatencyHighRuleConfig latency = LatencyHighRuleConfig.critical(true);
+        engine.observeLatencyHigh("h", 10.0, t0, "p", latency);
+        engine.observeLatencyHigh("h", 100.0, t0.plusSeconds(1), "p", latency);
+        engine.observeLatencyHigh("h", 100.0, t0.plusSeconds(2), "p", latency);
+        engine.observeLatencyHigh("h", 100.0, t0.plusSeconds(3), "p", latency);
+        Optional<QualityAlertEvent> downFire = engine.observeEndpointDown("h", true, t0.plusSeconds(4), "p", down);
+        assertTrue(downFire.isPresent());
+        HostProblemSummary summary =
+                engine.problemSummary("h", t0.plusSeconds(4)).orElseThrow();
+        assertEquals(QualityAlertEvent.EVENT_ENDPOINT_DOWN, summary.rule());
     }
 
     private void fireOnce() {

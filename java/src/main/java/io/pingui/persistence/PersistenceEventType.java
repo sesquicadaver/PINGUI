@@ -4,7 +4,8 @@ package io.pingui.persistence;
 public enum PersistenceEventType {
     ROUTE_CHANGE("route_change"),
     PROBE_ERROR("probe_error"),
-    ENDPOINT_DOWN("endpoint_down");
+    ENDPOINT_DOWN("endpoint_down"),
+    LATENCY_HIGH("latency_high");
 
     private final String id;
 

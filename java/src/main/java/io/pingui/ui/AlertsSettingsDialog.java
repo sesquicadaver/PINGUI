@@ -3,6 +3,7 @@ package io.pingui.ui;
 import io.pingui.CliAlertOverrides;
 import io.pingui.config.AlertConfig;
 import io.pingui.config.EndpointDownRuleConfig;
+import io.pingui.config.LatencyHighRuleConfig;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -25,8 +26,8 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Window;
 
 /**
- * GUI for profile {@code alerts:} — channels + {@code endpoint_down} / {@code notify_resolved}
- * (P20-011 / P21-003). Not a full NMS.
+ * GUI for profile {@code alerts:} — channels + {@code endpoint_down} / {@code latency_high} /
+ * {@code notify_resolved} (P20-011 / P21-003 / P23). Not a full NMS.
  */
 public final class AlertsSettingsDialog {
     private static final String PRESET_CALM = "Спокійно";
@@ -48,7 +49,12 @@ public final class AlertsSettingsDialog {
             boolean endpointDownEnabled,
             String failAfterText,
             String clearAfterText,
-            String cooldownText) {}
+            String cooldownText,
+            boolean latencyHighEnabled,
+            String latencyMultiplierText,
+            String latencyFailAfterText,
+            String latencyClearAfterText,
+            String latencyCooldownText) {}
 
     /**
      * Shows alert settings and invokes {@code onApply} on successful Apply.
@@ -64,7 +70,7 @@ public final class AlertsSettingsDialog {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.initOwner(owner);
         dialog.setTitle("Сповіщення");
-        dialog.setHeaderText("Канали + endpoint_down (без NMS)");
+        dialog.setHeaderText("Канали + endpoint_down / latency_high (без NMS)");
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
 
         CheckBox desktopCheck = new CheckBox("Desktop alerts (системне сповіщення)");
@@ -87,7 +93,7 @@ public final class AlertsSettingsDialog {
             rateField.setTooltip(new Tooltip("Заблоковано CLI (--alert-rate-limit)"));
         }
 
-        CheckBox notifyResolvedCheck = new CheckBox("Сповіщати про RESOLVED (endpoint_up)");
+        CheckBox notifyResolvedCheck = new CheckBox("Сповіщати про RESOLVED (quality rules)");
         notifyResolvedCheck.setSelected(current.notifyResolved());
         notifyResolvedCheck.setTooltip(new Tooltip("alerts.notify_resolved — окремий emit після clear_after"));
 
@@ -122,14 +128,26 @@ public final class AlertsSettingsDialog {
         };
         presetCombo.valueProperty().addListener((obs, oldV, newV) -> applyPreset.run());
 
+        CheckBox latencyHighCheck = new CheckBox("Правило latency_high (rtt ≥ multiplier × AVG)");
+        latencyHighCheck.setSelected(current.latencyHigh().enabled());
+        latencyHighCheck.setTooltip(new Tooltip("Default: 2×AVG, fail_after=3 поспіль (без вікна часу)"));
+        TextField latencyMultiplierField =
+                new TextField(Double.toString(current.latencyHigh().multiplier()));
+        TextField latencyFailField =
+                new TextField(Integer.toString(current.latencyHigh().failAfter()));
+        TextField latencyClearField =
+                new TextField(Integer.toString(current.latencyHigh().clearAfter()));
+        TextField latencyCooldownField =
+                new TextField(Integer.toString(current.latencyHigh().cooldownMinutes()));
+
         TextArea statusArea = new TextArea(current.toRedactedString());
         statusArea.setEditable(false);
         statusArea.setWrapText(true);
         statusArea.setPrefRowCount(3);
         statusArea.setMaxWidth(Double.MAX_VALUE);
 
-        Label hint = new Label("Застосувати оновлює профіль, dispatcher і endpoint_down engine. "
-                + "«Зберегти» → YAML. Default: правило вимкнено.");
+        Label hint = new Label("Застосувати оновлює профіль, dispatcher і quality engines. "
+                + "«Зберегти» → YAML. Default: правила вимкнено.");
         hint.setWrapText(true);
 
         GridPane grid = new GridPane();
@@ -144,7 +162,7 @@ public final class AlertsSettingsDialog {
         grid.add(rateField, 1, row++);
         grid.add(notifyResolvedCheck, 0, row++, 2, 1);
         grid.add(endpointDownCheck, 0, row++, 2, 1);
-        grid.add(formLabel("пресет:"), 0, row);
+        grid.add(formLabel("пресет down:"), 0, row);
         grid.add(presetCombo, 1, row++);
         grid.add(formLabel("fail_after:"), 0, row);
         grid.add(failField, 1, row++);
@@ -152,6 +170,15 @@ public final class AlertsSettingsDialog {
         grid.add(clearField, 1, row++);
         grid.add(formLabel("cooldown (хв):"), 0, row);
         grid.add(cooldownField, 1, row++);
+        grid.add(latencyHighCheck, 0, row++, 2, 1);
+        grid.add(formLabel("multiplier:"), 0, row);
+        grid.add(latencyMultiplierField, 1, row++);
+        grid.add(formLabel("lat fail_after:"), 0, row);
+        grid.add(latencyFailField, 1, row++);
+        grid.add(formLabel("lat clear_after:"), 0, row);
+        grid.add(latencyClearField, 1, row++);
+        grid.add(formLabel("lat cooldown:"), 0, row);
+        grid.add(latencyCooldownField, 1, row++);
         grid.add(formLabel("Статус:"), 0, row);
         grid.add(statusArea, 1, row);
         GridPane.setHgrow(webhookField, Priority.ALWAYS);
@@ -174,7 +201,12 @@ public final class AlertsSettingsDialog {
                     endpointDownCheck.isSelected(),
                     failField.getText(),
                     clearField.getText(),
-                    cooldownField.getText());
+                    cooldownField.getText(),
+                    latencyHighCheck.isSelected(),
+                    latencyMultiplierField.getText(),
+                    latencyFailField.getText(),
+                    latencyClearField.getText(),
+                    latencyCooldownField.getText());
             AlertConfig next = buildConfig(current, form, locks);
             onApply.accept(new Result(next));
         } catch (IllegalArgumentException ex) {
@@ -212,7 +244,14 @@ public final class AlertsSettingsDialog {
                 parsePositiveInt(form.failAfterText(), "fail_after"),
                 parsePositiveInt(form.clearAfterText(), "clear_after"),
                 parseNonNegativeInt(form.cooldownText(), "cooldown_minutes"));
-        return new AlertConfig(desktop, webhook, rate, form.notifyResolved(), endpointDown);
+        LatencyHighRuleConfig latencyHigh = new LatencyHighRuleConfig(
+                form.latencyHighEnabled(),
+                parsePositiveDouble(form.latencyMultiplierText(), "multiplier"),
+                parsePositiveInt(form.latencyFailAfterText(), "lat fail_after"),
+                parsePositiveInt(form.latencyClearAfterText(), "lat clear_after"),
+                parseNonNegativeInt(form.latencyCooldownText(), "lat cooldown"),
+                baseline.latencyHigh().thresholdMs());
+        return new AlertConfig(desktop, webhook, rate, form.notifyResolved(), endpointDown, latencyHigh);
     }
 
     static String presetKey(String uiLabel) {
@@ -282,6 +321,22 @@ public final class AlertsSettingsDialog {
             return value;
         } catch (NumberFormatException ex) {
             throw new IllegalArgumentException(field + " must be an integer >= 0");
+        }
+    }
+
+    private static double parsePositiveDouble(String text, String field) {
+        String raw = text == null ? "" : text.strip();
+        if (raw.isEmpty()) {
+            throw new IllegalArgumentException(field + " must be a number > 0");
+        }
+        try {
+            double value = Double.parseDouble(raw);
+            if (value <= 0.0 || Double.isNaN(value) || Double.isInfinite(value)) {
+                throw new IllegalArgumentException(field + " must be > 0");
+            }
+            return value;
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException(field + " must be a number > 0");
         }
     }
 }

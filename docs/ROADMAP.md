@@ -10,7 +10,7 @@
 
 | Поле | Значення |
 |------|----------|
-| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (лінійна черга **P22**). Обидві: Java Pro (P9–P19) + Python після merge |
+| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (лінійна черга **P23**). Обидві: Java Pro (P9–P19) + Python після merge |
 | **Пріоритет** | P0 критично · P1 важливо · P2 бажано |
 | **DoD** | Definition of Done — умова закриття задачі |
 
@@ -23,7 +23,7 @@
 | Поле | Значення |
 |------|----------|
 | **Поточна задача** | **DONE** |
-| **Фаза** | — |
+| **Фаза** | 23 — `latency_high` (закрита) |
 | **DoD (коротко)** | лінійна черга вичерпана |
 | **Гілка** | `beta` |
 
@@ -123,8 +123,13 @@
 | 77 | **P22-003** | [x] | SQLite: persist quality incidents |
 | 78 | **P22-004** | [x] | UI: host problem icon + detail dialog |
 | 79 | **P22-005** | [x] | UI: auto-create session DB (Date-Time-LocalIP) |
+| 80 | **P23-001** | [x] | ADR: `latency_high` v2 contract (2×AVG, fail_after=3) |
+| 81 | **P23-002** | [x] | `LatencyHighRuleConfig` + `AlertRuleEngine` baseline AVG |
+| 82 | **P23-003** | [x] | `MonitorService` wire terminal RTT → latency rule |
+| 83 | **P23-004** | [x] | YAML/GUI `alerts.rules.latency_high` |
+| 84 | **P23-005** | [x] | Badge/dialog + SQLite `latency_high` |
 
-**Стан черги:** закрита — **NEXT = DONE** (фаза 22 host problem UX завершена).
+**Стан черги:** закрита — **NEXT = DONE** (фаза 23 `latency_high` завершена).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -779,6 +784,20 @@ flowchart TD
 | **P22-003** | [x] SQLite quality incidents | `PersistenceEventType`, `PersistenceEventWriter`, `MonitorService` | Write FIRING/RESOLVED when session DB connected; RESOLVED even if notify_resolved=false; survive ack |
 | **P22-004** | [x] Host icon + dialog | `HostItem`, `HostListCell`, `ProblemDetailsDialog`, `HostListPresenter` | Icon visible with unread problem; click → dialog; ack on view |
 | **P22-005** | [x] Auto session DB | `PersistenceSettingsDialog`, `LocalIpv4`, `SessionDbAutoName` | Button beside Browse; `data/YYYY-MM-DD_HH-mm-ss_<ip>.db` |
+
+---
+
+## Фаза 23 — `latency_high` (`beta`, P1)
+
+**Контекст:** критичні цілі потребують алерту на ріст RTT (`rtt ≥ 2×AVG`, 3 погані пінги поспіль) окремо від `endpoint_down` (ADR_ALERT_RULES v2).
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P23-001** | [x] ADR: latency_high contract | `docs/ADR_ALERT_RULES.md`, `docs/en/…` | Default 2×AVG; fail_after=3; no time window; distinct from down |
+| **P23-002** | [x] Engine + config | `LatencyHighRuleConfig`, `AlertRuleEngine`, `QualityAlertEvent` | Running AVG; FIRING after 3; unit tests |
+| **P23-003** | [x] Monitor wire | `MonitorService` | Terminal RTT vs rule; skip when unreachable; `./gradlew check` |
+| **P23-004** | [x] YAML/GUI | `AlertConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `rules.latency_high`; Apply/Save |
+| **P23-005** | [x] Badge + SQLite | `HostProblemSummary`, `PersistenceEventType`, writer, UI | Unread badge; persist FIRING/RESOLVED |
 
 ---
 

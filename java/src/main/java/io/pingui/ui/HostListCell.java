@@ -62,7 +62,7 @@ final class HostListCell extends ListCell<HostItem> {
         mtuButton.setTooltip(new Tooltip("MTU discovery wizard (−s sweep + −M do)"));
         problemButton.setMinWidth(28);
         problemButton.setStyle("-fx-font-weight: bold; -fx-text-fill: #b71c1c;");
-        problemButton.setTooltip(new Tooltip("Проблема доступності (endpoint_down)"));
+        problemButton.setTooltip(new Tooltip("Проблема якості (endpoint_down / latency_high)"));
         pingOnlyCheck.setStyle("-fx-font-size: 10px;");
         pingOnlyCheck.setMinWidth(72);
         extenButton.setOnAction(e -> {

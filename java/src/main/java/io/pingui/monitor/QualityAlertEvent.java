@@ -6,7 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
-/** Quality alert payload ({@code endpoint_down}) per ADR_ALERT_RULES (P21-002). */
+/** Quality alert payload ({@code endpoint_down} / {@code latency_high}) per ADR_ALERT_RULES. */
 public record QualityAlertEvent(
         String event,
         String state,
@@ -16,6 +16,7 @@ public record QualityAlertEvent(
         String rule,
         Map<String, Object> detail) {
     public static final String EVENT_ENDPOINT_DOWN = "endpoint_down";
+    public static final String EVENT_LATENCY_HIGH = "latency_high";
     public static final String STATE_FIRING = "firing";
     public static final String STATE_RESOLVED = "resolved";
 
@@ -42,6 +43,18 @@ public record QualityAlertEvent(
             String host, String profile, Instant timestamp, Map<String, Object> detail) {
         return new QualityAlertEvent(
                 EVENT_ENDPOINT_DOWN, STATE_RESOLVED, host, timestamp, profile, EVENT_ENDPOINT_DOWN, detail);
+    }
+
+    public static QualityAlertEvent latencyHighFiring(
+            String host, String profile, Instant timestamp, Map<String, Object> detail) {
+        return new QualityAlertEvent(
+                EVENT_LATENCY_HIGH, STATE_FIRING, host, timestamp, profile, EVENT_LATENCY_HIGH, detail);
+    }
+
+    public static QualityAlertEvent latencyHighResolved(
+            String host, String profile, Instant timestamp, Map<String, Object> detail) {
+        return new QualityAlertEvent(
+                EVENT_LATENCY_HIGH, STATE_RESOLVED, host, timestamp, profile, EVENT_LATENCY_HIGH, detail);
     }
 
     public String toJson() {

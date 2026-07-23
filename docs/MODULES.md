@@ -373,7 +373,11 @@ YAML `persistence.events` + CLI `--no-persist-route-change` / `--no-persist-prob
 
 ### `RouteHistoryPresenter` (P11-020…021)
 
-Панель «Історія змін» у розширеному режимі: ComboBox **Ціль** (фільтр хоста), `listEvents(ROUTE_CHANGE, host, since)`; перемикач 24h/7d; зміна цілі синхронізує вибір у списку хостів і live-граф (`HistoryHostSync`); зміна цілі очищає replay; live `route_change` оновлює timeline лише для активного фільтра; Ping only / Enable скидають replay; вибір рядка → read-only replay на `GraphCanvas`.
+Панель «Історія змін» у розширеному режимі: ComboBox **Ціль** (фільтр хоста), `listEvents(ROUTE_CHANGE, host, since)`; перемикач 24h/7d; зміна цілі синхронізує вибір у списку хостів і live-граф (`HistoryHostSync`); зміна цілі очищає replay; **вибір хоста в лівому списку** також скидає replay (live-граф = вибраний рядок, не чужий timeline); `RouteGraphPresenter` ігнорує replay, якщо `event.host` ≠ selected host; `viewHost()` для live-оновлень бере host list; live `route_change` оновлює timeline лише для активного фільтра; Ping only / Enable скидають replay; вибір рядка → read-only replay на `GraphCanvas`.
+
+### `latency_high` (P23)
+
+Quality-правило окремо від `endpoint_down`: `rtt ≥ multiplier × AVG` (default 2.0), `fail_after=3` поспіль без часового вікна; YAML `alerts.rules.latency_high`; GUI «Сповіщення…»; badge/ack через `HostProblemSummary`; SQLite `persistence_event.latency_high`.
 
 ### `PersistenceSettingsDialog` (P11-014)
 

@@ -67,4 +67,37 @@ class RouteGraphPresenterTest {
             assertTrue(diff.listView().getItems().get(0).summary().contains("→"));
         });
     }
+
+    @Test
+    void staleReplayForOtherHostFallsBackToLiveSelection() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            GraphCanvas canvas = new GraphCanvas();
+            RouteDiffPresenter diff = new RouteDiffPresenter();
+            var items = javafx.collections.FXCollections.observableArrayList(
+                    new HostItem("1.1.1.1", true), new HostItem("kernel.org", true));
+            javafx.scene.control.ListView<HostItem> hostList = new javafx.scene.control.ListView<>(items);
+            SessionStore store = SessionStore.fromEntries(List.of(
+                    new HostEntry("1.1.1.1", true, false, PingExpertEntry.empty()),
+                    new HostEntry("kernel.org", true, false, PingExpertEntry.empty())));
+            store.updateRoute(
+                    "1.1.1.1", new RouteSnapshot("1.1.1.1", "1.1.1.1", List.of(new HopNode(1, "1.1.1.1", 1.0, false))));
+            store.updateRoute(
+                    "kernel.org",
+                    new RouteSnapshot("kernel.org", "kernel.org", List.of(new HopNode(1, "10.1.2.3", 2.0, false))));
+
+            RouteGraphPresenter presenter =
+                    new RouteGraphPresenter(canvas, hostList, () -> store, () -> true, () -> false, diff);
+            hostList.getSelectionModel().select(0);
+            RouteChangeEvent foreign = RouteChangeEvent.fromRouteChange(
+                    "1.1.1.1", List.of("9.9.9.9"), List.of("1.1.1.1"), "default", java.time.Instant.now());
+            presenter.replayRouteChange(foreign);
+            assertTrue(presenter.isReplaying());
+
+            hostList.getSelectionModel().select(1);
+            presenter.redrawIfExtended();
+
+            assertFalse(presenter.isReplaying());
+            assertTrue(diff.listView().getItems().isEmpty());
+        });
+    }
 }
