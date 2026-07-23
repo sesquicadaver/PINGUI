@@ -7,6 +7,10 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **P23 — `latency_high`:** rule `rtt ≥ 2×AVG`, FIRING after 3 consecutive bad pings (no time window); YAML/GUI; badge/SQLite; AVG not poisoned by spike samples; phase 23 → **DONE**.
+
 ### Changed
 
 - **P22-005 — Auto session DB name:** “Create…” button → `data/YYYY-MM-DD_HH-mm-ss_<lan-ip>.db`; phase 22 → **DONE**.

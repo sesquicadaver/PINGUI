@@ -10,7 +10,7 @@ Post-MVP roadmap (2026-06-26) for **professional users** (NOC/SRE, network engin
 
 | Field | Value |
 |-------|-------|
-| **Branch** | `main` — stable snapshot after merge; `beta` — development (linear queue **P22**). Both: Java Pro (P9–P19) + Python after merge |
+| **Branch** | `main` — stable snapshot after merge; `beta` — development (linear queue **P23**). Both: Java Pro (P9–P19) + Python after merge |
 | **Priority** | P0 critical · P1 important · P2 nice-to-have |
 | **DoD** | Definition of Done — task closure condition |
 
@@ -23,7 +23,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | Field | Value |
 |------|----------|
 | **Current task** | **DONE** |
-| **Phase** | — |
+| **Phase** | 23 — `latency_high` (closed) |
 | **DoD (short)** | linear queue exhausted |
 | **Branch** | `beta` |
 
@@ -123,8 +123,13 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 77 | **P22-003** | [x] | SQLite: persist quality incidents |
 | 78 | **P22-004** | [x] | UI: host problem icon + detail dialog |
 | 79 | **P22-005** | [x] | UI: auto-create session DB (Date-Time-LocalIP) |
+| 80 | **P23-001** | [x] | ADR: `latency_high` v2 contract (2×AVG, fail_after=3) |
+| 81 | **P23-002** | [x] | `LatencyHighRuleConfig` + `AlertRuleEngine` baseline AVG |
+| 82 | **P23-003** | [x] | `MonitorService` wire terminal RTT → latency rule |
+| 83 | **P23-004** | [x] | YAML/GUI `alerts.rules.latency_high` |
+| 84 | **P23-005** | [x] | Badge/dialog + SQLite `latency_high` |
 
-**Queue status:** closed — **NEXT = DONE** (phase 22 host problem UX complete).
+**Queue status:** closed — **NEXT = DONE** (phase 23 `latency_high` complete).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -779,6 +784,20 @@ flowchart TD
 | **P22-003** | [x] SQLite quality incidents | `PersistenceEventType`, `PersistenceEventWriter`, `MonitorService` | Write FIRING/RESOLVED when session DB connected; RESOLVED even if notify_resolved=false; survive ack |
 | **P22-004** | [x] Host icon + dialog | `HostItem`, `HostListCell`, `ProblemDetailsDialog`, `HostListPresenter` | Icon visible with unread problem; click → dialog; ack on view |
 | **P22-005** | [x] Auto session DB | `PersistenceSettingsDialog`, `LocalIpv4`, `SessionDbAutoName` | Button beside Browse; `data/YYYY-MM-DD_HH-mm-ss_<ip>.db` |
+
+---
+
+## Phase 23 — `latency_high` (`beta`, P1)
+
+**Context:** critical targets need RTT growth alerts (`rtt ≥ 2×AVG`, 3 consecutive bad pings) separate from `endpoint_down` (ADR_ALERT_RULES v2).
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **P23-001** | [x] ADR: latency_high contract | `docs/ADR_ALERT_RULES.md`, `docs/en/…` | Default 2×AVG; fail_after=3; no time window; distinct from down |
+| **P23-002** | [x] Engine + config | `LatencyHighRuleConfig`, `AlertRuleEngine`, `QualityAlertEvent` | Running AVG; FIRING after 3; unit tests |
+| **P23-003** | [x] Monitor wire | `MonitorService` | Terminal RTT vs rule; skip when unreachable; `./gradlew check` |
+| **P23-004** | [x] YAML/GUI | `AlertConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `rules.latency_high`; Apply/Save |
+| **P23-005** | [x] Badge + SQLite | `HostProblemSummary`, `PersistenceEventType`, writer, UI | Unread badge; persist FIRING/RESOLVED |
 
 ---
 

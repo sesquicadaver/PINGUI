@@ -7,6 +7,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- **P23 — `latency_high`:** правило `rtt ≥ 2×AVG`, FIRING після 3 поганих пінгів поспіль (без вікна часу); YAML/GUI; badge/SQLite; AVG не отруюється spike-семплами; фаза 23 → **DONE**.
+
 ### Changed
 
 - **P22-005 — Auto session DB name:** кнопка «Створити…» → `data/YYYY-MM-DD_HH-mm-ss_<lan-ip>.db`; фаза 22 → **DONE**.

@@ -248,6 +248,7 @@ public final class ProfilesConfig {
         int rateLimit = 10;
         boolean notifyResolved = false;
         EndpointDownRuleConfig endpointDown = EndpointDownRuleConfig.disabled();
+        LatencyHighRuleConfig latencyHigh = LatencyHighRuleConfig.disabled();
         Object topWebhook = map.get("alert_webhook");
         if (topWebhook instanceof String topStr && !topStr.isBlank()) {
             webhook = topStr.strip();
@@ -261,9 +262,11 @@ public final class ProfilesConfig {
             }
             rateLimit = readPositiveInt(alertsMap.get("rate_limit"), rateLimit, profileName, "alerts.rate_limit");
             notifyResolved = readBoolean(alertsMap.get("notify_resolved"), notifyResolved);
-            endpointDown = parseEndpointDownRule(alertsMap.get("rules"), profileName);
+            Object rulesObj = alertsMap.get("rules");
+            endpointDown = parseEndpointDownRule(rulesObj, profileName);
+            latencyHigh = parseLatencyHighRule(rulesObj, profileName);
         }
-        return new AlertConfig(desktop, webhook, rateLimit, notifyResolved, endpointDown);
+        return new AlertConfig(desktop, webhook, rateLimit, notifyResolved, endpointDown, latencyHigh);
     }
 
     private static EndpointDownRuleConfig parseEndpointDownRule(Object rulesObj, String profileName) {
@@ -301,6 +304,59 @@ public final class ProfilesConfig {
                 profileName,
                 "alerts.rules.endpoint_down.cooldown_minutes");
         return new EndpointDownRuleConfig(enabled, failAfter, clearAfter, cooldown);
+    }
+
+    private static LatencyHighRuleConfig parseLatencyHighRule(Object rulesObj, String profileName) {
+        if (!(rulesObj instanceof Map<?, ?> rulesMap)) {
+            return LatencyHighRuleConfig.disabled();
+        }
+        Object latencyObj = rulesMap.get("latency_high");
+        if (!(latencyObj instanceof Map<?, ?> latencyMap)) {
+            return LatencyHighRuleConfig.disabled();
+        }
+        boolean enabled = readBoolean(latencyMap.get("enabled"), false);
+        LatencyHighRuleConfig defaults = LatencyHighRuleConfig.critical(enabled);
+        double multiplier = readPositiveDouble(
+                latencyMap.get("multiplier"),
+                defaults.multiplier(),
+                profileName,
+                "alerts.rules.latency_high.multiplier");
+        int failAfter = readPositiveInt(
+                latencyMap.get("fail_after"),
+                defaults.failAfter(),
+                profileName,
+                "alerts.rules.latency_high.fail_after");
+        int clearAfter = readPositiveInt(
+                latencyMap.get("clear_after"),
+                defaults.clearAfter(),
+                profileName,
+                "alerts.rules.latency_high.clear_after");
+        int cooldown = readNonNegativeInt(
+                latencyMap.get("cooldown_minutes"),
+                defaults.cooldownMinutes(),
+                profileName,
+                "alerts.rules.latency_high.cooldown_minutes");
+        Double thresholdMs = null;
+        Object thresholdObj = latencyMap.get("threshold_ms");
+        if (thresholdObj != null) {
+            thresholdMs =
+                    readPositiveDouble(thresholdObj, Double.NaN, profileName, "alerts.rules.latency_high.threshold_ms");
+        }
+        return new LatencyHighRuleConfig(enabled, multiplier, failAfter, clearAfter, cooldown, thresholdMs);
+    }
+
+    private static double readPositiveDouble(Object value, double fallback, String profileName, String label) {
+        if (value == null) {
+            return fallback;
+        }
+        if (value instanceof Number number) {
+            double parsed = number.doubleValue();
+            if (parsed <= 0.0 || Double.isNaN(parsed) || Double.isInfinite(parsed)) {
+                throw new ConfigError("Profile '" + profileName + "' " + label + " must be > 0");
+            }
+            return parsed;
+        }
+        throw new ConfigError("Profile '" + profileName + "' " + label + " must be a number");
     }
 
     private static int readNonNegativeInt(Object value, int fallback, String profileName, String label) {
@@ -434,19 +490,34 @@ public final class ProfilesConfig {
                 alertsOut.put("notify_resolved", true);
             }
             EndpointDownRuleConfig endpointDown = profile.alerts().endpointDown();
-            if (!endpointDown.isDefaultDisabled()) {
-                Map<String, Object> endpointOut = new LinkedHashMap<>();
-                endpointOut.put("enabled", endpointDown.enabled());
-                String preset = endpointDown.matchingPreset();
-                if (!preset.isEmpty()) {
-                    endpointOut.put("preset", preset);
-                } else {
-                    endpointOut.put("fail_after", endpointDown.failAfter());
-                    endpointOut.put("clear_after", endpointDown.clearAfter());
-                    endpointOut.put("cooldown_minutes", endpointDown.cooldownMinutes());
-                }
+            LatencyHighRuleConfig latencyHigh = profile.alerts().latencyHigh();
+            if (!endpointDown.isDefaultDisabled() || !latencyHigh.isDefaultDisabled()) {
                 Map<String, Object> rulesOut = new LinkedHashMap<>();
-                rulesOut.put("endpoint_down", endpointOut);
+                if (!endpointDown.isDefaultDisabled()) {
+                    Map<String, Object> endpointOut = new LinkedHashMap<>();
+                    endpointOut.put("enabled", endpointDown.enabled());
+                    String preset = endpointDown.matchingPreset();
+                    if (!preset.isEmpty()) {
+                        endpointOut.put("preset", preset);
+                    } else {
+                        endpointOut.put("fail_after", endpointDown.failAfter());
+                        endpointOut.put("clear_after", endpointDown.clearAfter());
+                        endpointOut.put("cooldown_minutes", endpointDown.cooldownMinutes());
+                    }
+                    rulesOut.put("endpoint_down", endpointOut);
+                }
+                if (!latencyHigh.isDefaultDisabled()) {
+                    Map<String, Object> latencyOut = new LinkedHashMap<>();
+                    latencyOut.put("enabled", latencyHigh.enabled());
+                    latencyOut.put("multiplier", latencyHigh.multiplier());
+                    latencyOut.put("fail_after", latencyHigh.failAfter());
+                    latencyOut.put("clear_after", latencyHigh.clearAfter());
+                    latencyOut.put("cooldown_minutes", latencyHigh.cooldownMinutes());
+                    if (latencyHigh.hasAbsoluteThreshold()) {
+                        latencyOut.put("threshold_ms", latencyHigh.thresholdMs());
+                    }
+                    rulesOut.put("latency_high", latencyOut);
+                }
                 alertsOut.put("rules", rulesOut);
             }
             map.put("alerts", alertsOut);

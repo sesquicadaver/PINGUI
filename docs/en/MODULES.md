@@ -375,6 +375,10 @@ YAML `persistence.events` + CLI `--no-persist-route-change` / `--no-persist-prob
 
 “History” panel in extended mode: `listEvents(ROUTE_CHANGE, host, since)`; 24h/7d toggle; host-filter sync with host list (`HistoryHostSync`); selecting a host in the left list clears timeline replay; `RouteGraphPresenter` ignores replay when `event.host` ≠ selected host; live updates use host-list selection; row selection → read-only replay on `GraphCanvas`.
 
+### `latency_high` (P23)
+
+Quality rule distinct from `endpoint_down`: `rtt ≥ multiplier × AVG` (default 2.0), `fail_after=3` consecutive with no time window; YAML `alerts.rules.latency_high`; Alerts settings GUI; badge/ack via `HostProblemSummary`; SQLite `persistence_event.latency_high`.
+
 ### `PersistenceSettingsDialog` (P11-014)
 
 Menu **Settings → Database…** — event checkboxes, purge confirm on disable (`PersistencePolicySupport`).

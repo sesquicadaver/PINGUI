@@ -119,14 +119,38 @@ alerts:
 Priority: CLI (future flags) > profile YAML > defaults.  
 **Per-host `alerts:` — not in v1.**
 
-### 7. Reserved (v2 — do not implement under P21-001…003 without a dedicated ID)
+### 7. `latency_high` (v2 — accepted decisions 2026-07-22)
+
+Distinct from `endpoint_down`: a successful reply with high RTT is **not** down.
+
+| Parameter | Default (critical) | Description |
+|-----------|-------------------|-------------|
+| `enabled` | `false` | default off |
+| `multiplier` | `2.0` | signal: `rtt ≥ multiplier × AVG` (AVG = running mean of successful terminal RTTs **before** the current sample) |
+| `fail_after` | `3` | consecutive bad pings → FIRING (**no** time window) |
+| `clear_after` | `2` | consecutive ok → RESOLVED/OK |
+| `cooldown_minutes` | `15` | between repeat FIRING emits |
+| `threshold_ms` | omit | optional absolute OR with relative when set in YAML/GUI |
+
+Warm-up: until AVG exists (0 successful samples) relative does not fire. Unreachable poll → **does not** update latency state (only `endpoint_down`). Bad samples are **not** folded into AVG (anti-poison during spikes).
+
+YAML:
+
+```yaml
+alerts:
+  rules:
+    latency_high:
+      enabled: true
+      multiplier: 2.0
+      fail_after: 3
+      clear_after: 2
+      cooldown_minutes: 15
+      # optional: threshold_ms: 500
+```
+
+### 7b. Still reserved
 
 - **`loss_high`:** threshold + clear (hysteresis) + window + sustain.
-- **`latency_high`** (locked 2026-07-22 — «critical» preset / defaults):
-  - **Default signal:** `rtt ≥ 2 × AVG` (terminal RTT; AVG from successful session samples). Other multiplier / absolute `threshold_ms` only when set explicitly in YAML/GUI.
-  - **FIRING:** **`fail_after = 3`** consecutive bad pings; **no** time window (poll interval is irrelevant to the condition).
-  - Lifecycle otherwise as in §2: `clear_after`, `cooldown_minutes`, `notify_resolved`; warm-up until AVG exists (no relative alert before AVG).
-  - Distinct from `endpoint_down`: high latency with a successful reply is `latency_high` only.
 - **Sparse per-host YAML** rule overrides (same pattern as `intervalSecondsOverride`); GUI per-host only after YAML + clear demand.
 
 ### 8. Non-goals (X-003)

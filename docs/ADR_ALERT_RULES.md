@@ -119,14 +119,38 @@ alerts:
 Пріоритет: CLI (майбутні flags) > YAML профілю > defaults.  
 **Per-host `alerts:` — не в v1.**
 
-### 7. Зарезервовано (v2, не імплементувати в P21-001…003 без окремого ID)
+### 7. `latency_high` (v2 — accepted decisions 2026-07-22)
+
+Окремо від `endpoint_down`: успішний reply з високим RTT — **не** down.
+
+| Параметр | Default (критичний) | Опис |
+|----------|---------------------|------|
+| `enabled` | `false` | default off |
+| `multiplier` | `2.0` | сигнал: `rtt ≥ multiplier × AVG` (AVG = running mean успішних terminal RTT **до** поточної проби) |
+| `fail_after` | `3` | послідовні «погані» пінги → FIRING (**без** часового вікна) |
+| `clear_after` | `2` | послідовні ok → RESOLVED/OK |
+| `cooldown_minutes` | `15` | між повторними FIRING |
+| `threshold_ms` | omit | optional absolute OR з relative, якщо задано в YAML/GUI |
+
+Warm-up: доки немає AVG (0 успішних проб) — relative не спрацьовує. Unreachable poll → **не** оновлює latency-стан (лише `endpoint_down`). «Погані» семпли **не** входять у AVG (анти-отруєння baseline під час spike).
+
+YAML:
+
+```yaml
+alerts:
+  rules:
+    latency_high:
+      enabled: true
+      multiplier: 2.0
+      fail_after: 3
+      clear_after: 2
+      cooldown_minutes: 15
+      # optional: threshold_ms: 500
+```
+
+### 7b. Зарезервовано далі
 
 - **`loss_high`:** threshold + clear (hysteresis) + window + sustain.
-- **`latency_high`** (рішення 2026-07-22 — пресет «критичний» / defaults):
-  - **Сигнал за замовчуванням:** `rtt ≥ 2 × AVG` (terminal RTT; AVG з успішних проб сесії). Інший множник / absolute `threshold_ms` — лише якщо явно задано в YAML/GUI.
-  - **FIRING:** **`fail_after = 3`** послідовні «погані» пінги; **без** часового вікна (interval не входить у умову).
-  - Lifecycle далі як у §2: `clear_after`, `cooldown_minutes`, `notify_resolved`; warm-up до появи AVG (немає relative-алерту, доки AVG ще немає).
-  - Не плутати з `endpoint_down`: висока затримка при успішному reply — лише `latency_high`.
 - **Sparse per-host YAML override** правил (патерн як `intervalSecondsOverride`); GUI per-host — лише після YAML і явного попиту.
 
 ### 8. Non-goals (X-003)

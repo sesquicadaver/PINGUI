@@ -80,12 +80,10 @@ class RouteGraphPresenterTest {
                     new HostEntry("1.1.1.1", true, false, PingExpertEntry.empty()),
                     new HostEntry("kernel.org", true, false, PingExpertEntry.empty())));
             store.updateRoute(
-                    "1.1.1.1",
-                    new RouteSnapshot("1.1.1.1", "1.1.1.1", List.of(new HopNode(1, "1.1.1.1", 1.0, false))));
+                    "1.1.1.1", new RouteSnapshot("1.1.1.1", "1.1.1.1", List.of(new HopNode(1, "1.1.1.1", 1.0, false))));
             store.updateRoute(
                     "kernel.org",
-                    new RouteSnapshot(
-                            "kernel.org", "kernel.org", List.of(new HopNode(1, "10.1.2.3", 2.0, false))));
+                    new RouteSnapshot("kernel.org", "kernel.org", List.of(new HopNode(1, "10.1.2.3", 2.0, false))));
 
             RouteGraphPresenter presenter =
                     new RouteGraphPresenter(canvas, hostList, () -> store, () -> true, () -> false, diff);

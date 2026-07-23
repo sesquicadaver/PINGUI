@@ -58,10 +58,11 @@ public final class MonitorLifecycle {
         return service;
     }
 
-    /** Applies {@code endpoint_down} + {@code notify_resolved} from profile alerts (P21-003). */
+    /** Applies {@code endpoint_down} / {@code latency_high} + {@code notify_resolved} from profile alerts. */
     public static void applyAlertRules(MonitorService service, AlertConfig alerts) {
         AlertConfig effective = alerts != null ? alerts : AlertConfig.disabled();
-        service.setEndpointDownRule(effective.endpointDown());
         service.setNotifyResolved(effective.notifyResolved());
+        service.setEndpointDownRule(effective.endpointDown());
+        service.setLatencyHighRule(effective.latencyHigh());
     }
 }

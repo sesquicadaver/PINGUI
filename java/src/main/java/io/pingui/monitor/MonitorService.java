@@ -1,6 +1,7 @@
 package io.pingui.monitor;
 
 import io.pingui.config.EndpointDownRuleConfig;
+import io.pingui.config.LatencyHighRuleConfig;
 import io.pingui.config.PingExpertEntry;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;
@@ -75,6 +76,7 @@ public final class MonitorService implements AutoCloseable {
     private volatile String alertProfileName = "default";
     private final AlertRuleEngine alertRuleEngine = new AlertRuleEngine();
     private volatile EndpointDownRuleConfig endpointDownRule = EndpointDownRuleConfig.disabled();
+    private volatile LatencyHighRuleConfig latencyHighRule = LatencyHighRuleConfig.disabled();
     private volatile boolean notifyResolved;
     private volatile PingExpertResolver expertResolver;
     private volatile HostProbeModeResolver probeModeResolver;
@@ -166,12 +168,20 @@ public final class MonitorService implements AutoCloseable {
         alertRuleEngine.clearAll();
     }
 
-    /** When true, emit {@code endpoint_down} RESOLVED after clear_after successes (ADR). */
+    /**
+     * In-memory {@code latency_high} rule (P23). Default disabled. Clears latency baselines for all hosts.
+     */
+    public void setLatencyHighRule(LatencyHighRuleConfig latencyHighRule) {
+        this.latencyHighRule = latencyHighRule != null ? latencyHighRule : LatencyHighRuleConfig.disabled();
+        alertRuleEngine.clearAll();
+    }
+
+    /** When true, emit quality RESOLVED after clear_after successes (ADR). */
     public void setNotifyResolved(boolean notifyResolved) {
         this.notifyResolved = notifyResolved;
     }
 
-    /** Session {@code endpoint_down} problem summary for host-row badge (P22-002). */
+    /** Session quality problem summary for host-row badge (P22-002 / P23). */
     public Optional<HostProblemSummary> hostProblemSummary(String host) {
         return alertRuleEngine.problemSummary(host, Instant.now());
     }
@@ -386,6 +396,7 @@ public final class MonitorService implements AutoCloseable {
             offerTelemetrySuccess(host, probeMode, snapshot, durationMs);
             current.onDataReceived(host, snapshot);
             evaluateEndpointDown(host, snapshot);
+            evaluateLatencyHigh(host, snapshot);
         }
         if (outcome.routeChanged() && BurstSchedulePolicy.shouldArmBurst(outcome.oldIps(), outcome.newIps())) {
             burstPolicy.onRouteChange(host, Instant.now());
@@ -531,6 +542,51 @@ public final class MonitorService implements AutoCloseable {
         } catch (RuntimeException ex) {
             LOG.warn("endpoint_down rule failed for {}: {}", host, ex.getMessage());
         }
+    }
+
+    private void evaluateLatencyHigh(String host, RouteSnapshot snapshot) {
+        LatencyHighRuleConfig rule = latencyHighRule;
+        if (rule == null || !rule.enabled() || snapshot == null) {
+            return;
+        }
+        if (!isTargetReachable(snapshot)) {
+            return;
+        }
+        OptionalDouble rtt = terminalRttMs(snapshot);
+        if (rtt.isEmpty()) {
+            return;
+        }
+        Instant now = Instant.now();
+        try {
+            alertRuleEngine
+                    .observeLatencyHigh(host, rtt.getAsDouble(), now, alertProfileName, rule)
+                    .ifPresent(this::onQualityAlertEdge);
+        } catch (RuntimeException ex) {
+            LOG.warn("latency_high rule failed for {}: {}", host, ex.getMessage());
+        }
+    }
+
+    /** Terminal / target-hop RTT when reachable; empty when missing. */
+    static OptionalDouble terminalRttMs(RouteSnapshot snapshot) {
+        if (snapshot == null || snapshot.nodes().isEmpty()) {
+            return OptionalDouble.empty();
+        }
+        String targetIp = snapshot.targetIp();
+        if (targetIp != null && !targetIp.isBlank()) {
+            for (HopNode node : snapshot.nodes()) {
+                if (node.isReachable() && targetIp.equals(node.ip()) && node.pingMs() != null) {
+                    return OptionalDouble.of(node.pingMs());
+                }
+            }
+            return OptionalDouble.empty();
+        }
+        for (int i = snapshot.nodes().size() - 1; i >= 0; i--) {
+            HopNode node = snapshot.nodes().get(i);
+            if (node.isReachable() && node.pingMs() != null) {
+                return OptionalDouble.of(node.pingMs());
+            }
+        }
+        return OptionalDouble.empty();
     }
 
     private void onQualityAlertEdge(QualityAlertEvent event) {

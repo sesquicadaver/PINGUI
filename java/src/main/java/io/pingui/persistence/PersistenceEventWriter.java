@@ -50,16 +50,26 @@ public final class PersistenceEventWriter {
     }
 
     /**
-     * Persists {@code endpoint_down} FIRING/RESOLVED (P22-003). Survives UI ack; default allowed when DB
-     * is connected.
+     * Persists quality FIRING/RESOLVED ({@code endpoint_down} / {@code latency_high}). Survives UI ack;
+     * default allowed when DB is connected.
      */
     public void writeQualityAlert(QualityAlertEvent event) {
-        if (event == null || !policyHolder.active().allows(PersistenceEventType.ENDPOINT_DOWN)) {
+        if (event == null) {
+            return;
+        }
+        PersistenceEventType type = qualityEventType(event);
+        if (!policyHolder.active().allows(type)) {
             return;
         }
         ensureHostRow(event.host());
-        database.insertEvent(
-                PersistenceEventType.ENDPOINT_DOWN, event.host(), event.profile(), event.toJson(), event.timestamp());
+        database.insertEvent(type, event.host(), event.profile(), event.toJson(), event.timestamp());
+    }
+
+    private static PersistenceEventType qualityEventType(QualityAlertEvent event) {
+        if (QualityAlertEvent.EVENT_LATENCY_HIGH.equals(event.event())) {
+            return PersistenceEventType.LATENCY_HIGH;
+        }
+        return PersistenceEventType.ENDPOINT_DOWN;
     }
 
     private void ensureHostRow(String host) {

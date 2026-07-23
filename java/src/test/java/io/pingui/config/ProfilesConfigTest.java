@@ -195,6 +195,36 @@ class ProfilesConfigTest {
     }
 
     @Test
+    void saveAndReloadLatencyHighRules() throws Exception {
+        Path path = tempDir.resolve("alerts-latency-save.yaml");
+        AlertConfig alerts = new AlertConfig(
+                false,
+                null,
+                10,
+                false,
+                EndpointDownRuleConfig.disabled(),
+                new LatencyHighRuleConfig(true, 2.0, 3, 2, 15, 500.0));
+        TracingProfile profile = new TracingProfile(
+                1.0,
+                20,
+                0.5,
+                ProbeMode.AUTO,
+                List.of(HostEntry.basic("8.8.8.8", false)),
+                alerts,
+                PersistenceConfig.defaults());
+        ProfilesConfig.save(path, ProfileDocument.singleDefault(profile));
+        String yaml = Files.readString(path);
+        assertTrue(yaml.contains("latency_high:"));
+        assertTrue(yaml.contains("multiplier: 2.0") || yaml.contains("multiplier: 2"));
+        assertTrue(yaml.contains("threshold_ms: 500"));
+        TracingProfile reloaded = ProfilesConfig.load(path).active();
+        assertTrue(reloaded.alerts().latencyHigh().enabled());
+        assertEquals(2.0, reloaded.alerts().latencyHigh().multiplier(), 0.0);
+        assertEquals(3, reloaded.alerts().latencyHigh().failAfter());
+        assertEquals(500.0, reloaded.alerts().latencyHigh().thresholdMs(), 0.0);
+    }
+
+    @Test
     void loadEndpointDownNumericFieldsAndRejectBadPreset() throws Exception {
         Path path = tempDir.resolve("alerts-numeric.yaml");
         Files.writeString(
