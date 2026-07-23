@@ -5,8 +5,7 @@ import io.pingui.monitor.RouteChangeEvent;
 
 /** Manual smoke entry for desktop route-change popups (P10-020). */
 public final class RouteChangeNotifier {
-    private static final DesktopAlertDispatcher DISPATCHER =
-            new DesktopAlertDispatcher(new JavaFxDesktopAlertSink());
+    private static final DesktopAlertDispatcher DISPATCHER = new DesktopAlertDispatcher(new JavaFxDesktopAlertSink());
 
     private RouteChangeNotifier() {}
 

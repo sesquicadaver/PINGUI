@@ -608,7 +608,8 @@ public final class MainController {
         TracingProfile active = profileDocument.active();
         profileDocument.putProfile(profileDocument.activeProfile(), active.withAlerts(result.alerts()));
         AlertConfig effective = options.alertOverrides().applyTo(result.alerts());
-        MonitorLifecycle.applyAlertDispatcher(monitor, effective, MonitorLifecycle.javaFxDesktopSink(this::dialogOwner));
+        MonitorLifecycle.applyAlertDispatcher(
+                monitor, effective, MonitorLifecycle.javaFxDesktopSink(this::dialogOwner));
         MonitorLifecycle.applyAlertRules(monitor, effective);
         dirtyState.mark();
         userFeedback.info("Сповіщення оновлено: " + result.alerts().toRedactedString() + " — «Зберегти» → YAML");

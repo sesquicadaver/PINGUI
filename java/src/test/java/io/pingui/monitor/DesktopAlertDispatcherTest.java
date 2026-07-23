@@ -15,11 +15,10 @@ class DesktopAlertDispatcherTest {
     void dispatchRouteChangeUsesPopupSink() {
         List<String> titles = new ArrayList<>();
         List<String> bodies = new ArrayList<>();
-        DesktopAlertDispatcher dispatcher =
-                new DesktopAlertDispatcher((title, body) -> {
-                    titles.add(title);
-                    bodies.add(body);
-                });
+        DesktopAlertDispatcher dispatcher = new DesktopAlertDispatcher((title, body) -> {
+            titles.add(title);
+            bodies.add(body);
+        });
         RouteChangeEvent event = RouteChangeEvent.fromRouteChange(
                 "8.8.8.8", List.of("10.0.0.1"), List.of("10.0.0.2"), "default", Instant.parse("2026-07-23T12:00:00Z"));
         dispatcher.dispatch(event);
@@ -33,8 +32,7 @@ class DesktopAlertDispatcherTest {
     @Test
     void dispatchQualityUsesPopupSink() {
         List<String> seen = new ArrayList<>();
-        DesktopAlertDispatcher dispatcher =
-                new DesktopAlertDispatcher((title, body) -> seen.add(title + "|" + body));
+        DesktopAlertDispatcher dispatcher = new DesktopAlertDispatcher((title, body) -> seen.add(title + "|" + body));
         QualityAlertEvent event = QualityAlertEvent.endpointDownFiring(
                 "1.1.1.1", "lab", Instant.parse("2026-07-23T12:00:00Z"), Map.of("fail_streak", 3));
         dispatcher.dispatchQuality(event);
@@ -43,7 +41,8 @@ class DesktopAlertDispatcherTest {
 
     @Test
     void defaultConstructorIsNoopWithoutSink() {
-        new DesktopAlertDispatcher().dispatch(RouteChangeEvent.fromRouteChange(
-                "8.8.8.8", List.of("10.0.0.1"), List.of("10.0.0.2"), "default", Instant.now()));
+        new DesktopAlertDispatcher()
+                .dispatch(RouteChangeEvent.fromRouteChange(
+                        "8.8.8.8", List.of("10.0.0.1"), List.of("10.0.0.2"), "default", Instant.now()));
     }
 }

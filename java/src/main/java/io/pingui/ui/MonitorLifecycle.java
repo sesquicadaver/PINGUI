@@ -44,14 +44,7 @@ public final class MonitorLifecycle {
             SessionDatabase sessionDatabase,
             List<HostEntry> sessionHosts) {
         return create(
-                profile,
-                profileName,
-                store,
-                listener,
-                alerts,
-                sessionDatabase,
-                sessionHosts,
-                DesktopAlertSink.noop());
+                profile, profileName, store, listener, alerts, sessionDatabase, sessionHosts, DesktopAlertSink.noop());
     }
 
     public static MonitorService create(

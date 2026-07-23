@@ -449,8 +449,7 @@ class MonitorServiceTest {
             }
             return new RouteSnapshot(targetHost, targetHost, List.of(new HopNode(1, "10.0.0.1", 1.0, false)));
         };
-        MonitorService service =
-                new MonitorService(0.05, 20, 0.5, blockingProbe, TraceConcurrencyLimiter.DEFAULT_MAX);
+        MonitorService service = new MonitorService(0.05, 20, 0.5, blockingProbe, TraceConcurrencyLimiter.DEFAULT_MAX);
         for (int i = 0; i < hostCount; i++) {
             service.addHost("10.0.0." + (i + 1), true, HostProbeMode.TRACE);
         }
