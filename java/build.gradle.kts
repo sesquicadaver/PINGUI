@@ -139,7 +139,7 @@ javafx {
 }
 
 application {
-    mainClass.set("io.pingui.PinguiApplication")
+    mainClass.set("io.pingui.PinguiLauncher")
 }
 
 checkstyle {
@@ -270,7 +270,7 @@ tasks.register<Exec>("jpackageDeb") {
         "jpackage",
         "--input", libDir.get().asFile.absolutePath,
         "--name", "pingui",
-        "--main-class", "io.pingui.PinguiApplication",
+        "--main-class", "io.pingui.PinguiLauncher",
         "--main-jar", mainJar,
         "--type", "deb",
         "--java-options", "-Dprism.order=sw",
@@ -297,7 +297,7 @@ tasks.register<Exec>("jpackageMsi") {
         "jpackage",
         "--input", libDir.get().asFile.absolutePath,
         "--name", "pingui",
-        "--main-class", "io.pingui.PinguiApplication",
+        "--main-class", "io.pingui.PinguiLauncher",
         "--main-jar", mainJar,
         "--type", "msi",
         "--java-options", "-Dprism.order=sw",
@@ -324,7 +324,7 @@ tasks.register<Exec>("jpackageDmg") {
         "jpackage",
         "--input", libDir.get().asFile.absolutePath,
         "--name", "pingui",
-        "--main-class", "io.pingui.PinguiApplication",
+        "--main-class", "io.pingui.PinguiLauncher",
         "--main-jar", mainJar,
         "--type", "dmg",
         "--java-options", "-Dprism.order=sw",

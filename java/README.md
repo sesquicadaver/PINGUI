@@ -26,10 +26,13 @@
 ```bash
 cd java
 chmod +x pingui-java.sh gradlew
-./pingui-java.sh              # GUI
+./pingui-java.sh              # GUI у фоні (термінал звільняється; лог ~/.cache/pingui/gui.log)
+./pingui-java.sh --foreground # GUI + термінал (дебаг)
 ./pingui-java.sh --build      # збірка
 ./pingui-java.sh --package    # jpackage (.deb / .dmg / .msi)
 ./pingui-java.sh --help
+# CLI (daemon/export/…) лишаються в передньому плані:
+./pingui-java.sh -- --daemon --config config/hosts.example.yaml
 ```
 
 **Windows**
@@ -185,7 +188,7 @@ Unit-тести — `src/test/java`; матриця: [docs/LIVING_SPEC.md](../do
 
 ## Пакування (jpackage)
 
-Єдине джерело версії — `version` у `build.gradle.kts` (`0.2.0-SNAPSHOT` за замовч.). `generateBuildProperties` пише її в `pingui/build.properties` і JAR manifest; About (`AppInfo`) читає звідти. `jpackage --app-version` бере semver без суфікса `-SNAPSHOT` (напр. `0.2.0`).
+Єдине джерело версії — `version` у `build.gradle.kts` (`0.2.0-SNAPSHOT` за замовч.). `generateBuildProperties` пише її в `pingui/build.properties` і JAR manifest; About (`AppInfo`) читає звідти. `jpackage --app-version` бере semver без суфікса `-SNAPSHOT` (напр. `0.2.0`). Пакети GUI **без** `--win-console` (консольне вікно не відкривається).
 
 ```bash
 ./pingui-java.sh --package    # Linux / macOS

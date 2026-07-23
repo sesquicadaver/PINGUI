@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # PINGUI Java — launcher (Linux, macOS). Windows: pingui-java.bat
+# GUI за замовчуванням від’єднується від термінала; CLI-режими лишаються foreground.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,7 +18,7 @@ java_major_version() {
 }
 
 find_jdk21_home() {
-  local candidate java_bin major
+  local candidate major
   for candidate in \
     "${PINGUI_JAVA_HOME:-}" \
     "${JAVA_HOME:-}" \
@@ -65,6 +66,96 @@ resolve_java_home() {
   exit 1
 }
 
+# True when args require an attached console (daemon / export / help / …).
+needs_console() {
+  local a
+  for a in "$@"; do
+    case "$a" in
+      --daemon | --stop | --status | --help | -h | --export-report | --export-schedule | --telemetry-dump | --telemetry-retention)
+        return 0
+        ;;
+    esac
+  done
+  return 1
+}
+
+# Strip launcher-only flags; print remaining args as lines (safe for spaces via NUL — we use array rebuild).
+strip_launcher_flags() {
+  local -a out=()
+  local a foreground=0
+  for a in "$@"; do
+    case "$a" in
+      --foreground | --fg)
+        foreground=1
+        ;;
+      *)
+        out+=("$a")
+        ;;
+    esac
+  done
+  if [[ "$foreground" -eq 1 ]]; then
+    printf 'FOREGROUND\n'
+  else
+    printf 'DETACH\n'
+  fi
+  printf '%s\n' "${out[@]+"${out[@]}"}"
+}
+
+gui_log_path() {
+  local base
+  if [[ -n "${PINGUI_GUI_LOG:-}" ]]; then
+    printf '%s\n' "$PINGUI_GUI_LOG"
+    return
+  fi
+  base="${XDG_CACHE_HOME:-$HOME/.cache}/pingui"
+  mkdir -p "$base"
+  printf '%s\n' "$base/gui.log"
+}
+
+ensure_install_dist() {
+  ./gradlew installDist -q
+}
+
+run_app_foreground() {
+  ensure_install_dist
+  exec "$ROOT/build/install/pingui-java/bin/pingui-java" "$@"
+}
+
+run_gui_detached() {
+  local log pid
+  ensure_install_dist
+  log="$(gui_log_path)"
+  mkdir -p "$(dirname "$log")"
+  nohup "$ROOT/build/install/pingui-java/bin/pingui-java" "$@" >>"$log" 2>&1 &
+  pid=$!
+  disown "$pid" 2>/dev/null || true
+  echo "[pingui-java] GUI запущено у фоні (PID $pid)."
+  echo "[pingui-java] Лог: $log"
+  echo "[pingui-java] Передній план (дебаг): ./pingui-java.sh --foreground …"
+}
+
+run_gui_or_cli() {
+  local mode
+  local -a app_args=()
+  local line first=1
+  while IFS= read -r line; do
+    if [[ "$first" -eq 1 ]]; then
+      mode="$line"
+      first=0
+      continue
+    fi
+    app_args+=("$line")
+  done < <(strip_launcher_flags "$@")
+
+  if needs_console "${app_args[@]+"${app_args[@]}"}"; then
+    run_app_foreground "${app_args[@]+"${app_args[@]}"}"
+  fi
+  if [[ "$mode" == "FOREGROUND" ]]; then
+    run_app_foreground "${app_args[@]+"${app_args[@]}"}"
+  fi
+  run_gui_detached "${app_args[@]+"${app_args[@]}"}"
+}
+
 resolve_java_home
 
 # GTK/JavaFX: harmless when D-Bus AT-SPI is missing (SSH, Docker, sudo). Override: NO_AT_BRIDGE=0
@@ -74,23 +165,24 @@ CMD="${1:-run}"
 shift || true
 
 case "$CMD" in
-  --help|-h|help)
-    exec ./gradlew run --args="--help" -q
+  --help | -h | help)
+    ensure_install_dist
+    exec "$ROOT/build/install/pingui-java/bin/pingui-java" --help
     ;;
-  --build|build)
+  --build | build)
     exec ./gradlew build "$@"
     ;;
-  --package|package)
+  --package | package)
     exec ./gradlew jpackage "$@"
     ;;
-  --run|run)
-    if [[ $# -gt 0 ]]; then
-      exec ./gradlew run --args="$*" -q
-    else
-      exec ./gradlew run -q
-    fi
+  --foreground | --fg)
+    run_gui_or_cli --foreground "$@"
+    ;;
+  --run | run | --)
+    run_gui_or_cli "$@"
     ;;
   *)
-    exec ./gradlew run --args="$CMD $*" -q
+    # Pass first token + rest as app args (e.g. ./pingui-java.sh --daemon …)
+    run_gui_or_cli "$CMD" "$@"
     ;;
 esac

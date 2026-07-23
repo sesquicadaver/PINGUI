@@ -24,10 +24,13 @@ Runs on **Linux, macOS, and Windows**: route tracing via system
 ```bash
 cd java
 chmod +x pingui-java.sh gradlew
-./pingui-java.sh              # GUI
+./pingui-java.sh              # GUI in background (terminal freed; log ~/.cache/pingui/gui.log)
+./pingui-java.sh --foreground # GUI attached (debug)
 ./pingui-java.sh --build      # build
 ./pingui-java.sh --package    # jpackage (.deb / .dmg / .msi)
 ./pingui-java.sh --help
+# CLI (daemon/export/…) stay in the foreground:
+./pingui-java.sh -- --daemon --config config/hosts.example.yaml
 ```
 
 **Windows**
@@ -183,7 +186,7 @@ Unit tests — `src/test/java`; matrix: [docs/LIVING_SPEC.md](../docs/en/LIVING_
 
 ## Packaging (jpackage)
 
-Single version source: `version` in `build.gradle.kts` (default `0.2.0-SNAPSHOT`). `generateBuildProperties` writes it to `pingui/build.properties` and the JAR manifest; About (`AppInfo`) reads from there. `jpackage --app-version` uses semver without `-SNAPSHOT` (e.g. `0.2.0`).
+Single version source: `version` in `build.gradle.kts` (default `0.2.0-SNAPSHOT`). `generateBuildProperties` writes it to `pingui/build.properties` and the JAR manifest; About (`AppInfo`) reads from there. `jpackage --app-version` uses semver without `-SNAPSHOT` (e.g. `0.2.0`). GUI packages omit `--win-console` (no console window).
 
 ```bash
 ./pingui-java.sh --package    # Linux / macOS
