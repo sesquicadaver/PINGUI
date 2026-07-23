@@ -73,11 +73,13 @@ public final class AlertsSettingsDialog {
         dialog.setHeaderText("Канали + endpoint_down / latency_high (без NMS)");
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
 
-        CheckBox desktopCheck = new CheckBox("Desktop alerts (системне сповіщення)");
+        CheckBox desktopCheck = new CheckBox("Desktop alerts (спливаюче вікно)");
         desktopCheck.setSelected(current.desktopAlerts());
         if (locks.desktopAlerts().isPresent()) {
             desktopCheck.setDisable(true);
             desktopCheck.setTooltip(new Tooltip("Заблоковано CLI (--desktop-alerts)"));
+        } else {
+            desktopCheck.setTooltip(new Tooltip("In-app JavaFX popup — без notify-send / D-Bus / tray"));
         }
 
         TextField webhookField = new TextField(current.normalizedWebhook() != null ? current.normalizedWebhook() : "");

@@ -160,7 +160,7 @@ def _add_alert_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--desktop-alerts",
         action="store_true",
-        help="Linux desktop notifications on route change (notify-send)",
+        help="In-app desktop popup / log on route change (no notify-send)",
     )
     parser.add_argument(
         "--alert-rate-limit",

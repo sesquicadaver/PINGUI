@@ -14,6 +14,8 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Desktop alerts = in-app popup:** JavaFX `Alert` via `JavaFxDesktopAlertSink` (no `notify-send` / D-Bus / tray). Python — injectable popup or INFO log. ADR_ALERTS / CHECKLIST / CLI help updated.
+- **Trace concurrency default:** `max_concurrent_traces` default **10** (= `HostsConfig.MAX_HOSTS`). Enabled TRACE hosts in a session (up to 10) may run in parallel; lower the YAML value only for deliberate throttling.
 - **P22-005 — Auto session DB name:** “Create…” button → `data/YYYY-MM-DD_HH-mm-ss_<lan-ip>.db`; phase 22 → **DONE**.
 - **P22-004 — Host problem icon + dialog:** `!` badge on host row for unread `endpoint_down`; click → details + ack; NEXT→P22-005.
 - **P22-003 — SQLite quality incidents:** `persistence_event.endpoint_down` on FIRING/RESOLVED (RESOLVED persisted even without channel notify); NEXT→P22-004.

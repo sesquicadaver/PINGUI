@@ -571,7 +571,7 @@ public final class PinguiApplication extends Application {
                   --timeout SEC     Override probe timeout for this session
                   --probe MODE      Override probe: auto | process | raw
                   --alert-webhook URL  POST route-change JSON (secrets not logged)
-                  --desktop-alerts     Linux desktop notifications (notify-send)
+                  --desktop-alerts     In-app desktop popup (JavaFX; no notify-send)
                   --alert-rate-limit N Max alerts per host per hour (default: 10)
                   --session-db PATH  SQLite session metrics + events (optional)
                   --telemetry-syslog HOST:PORT  Override telemetry syslog sink (profile)

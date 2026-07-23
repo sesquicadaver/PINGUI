@@ -66,7 +66,9 @@ profiles:
 
 ### Паралелізм (P13-030)
 
-`max_concurrent_traces` (default **3**) обмежує одночасні subprocess/raw trace — не стосується `ping_only` (легкі ping).
+`max_concurrent_traces` (default **10** = `HostsConfig.MAX_HOSTS`) обмежує одночасні subprocess/raw trace — не стосується `ping_only` (легкі ping).
+
+**Операторський контракт:** якщо в сесії увімкнено TRACE на N хостах (N ≤ 10), усі N мають право йти паралельно. Default = ліміт сесії; зменшувати в YAML лише свідомо (навантаження).
 
 ### Платформи
 

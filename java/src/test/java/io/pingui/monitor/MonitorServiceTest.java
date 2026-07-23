@@ -427,6 +427,40 @@ class MonitorServiceTest {
     }
 
     @Test
+    void defaultConcurrencyAllowsFullSessionOfTraces() throws Exception {
+        int hostCount = TraceConcurrencyLimiter.DEFAULT_MAX;
+        AtomicInteger concurrent = new AtomicInteger();
+        AtomicInteger maxConcurrent = new AtomicInteger();
+        CountDownLatch allStarted = new CountDownLatch(hostCount);
+        CountDownLatch releaseAll = new CountDownLatch(1);
+        RouteProbe blockingProbe = (targetHost, maxHops, timeoutSeconds) -> {
+            int active = concurrent.incrementAndGet();
+            maxConcurrent.updateAndGet(prev -> Math.max(prev, active));
+            allStarted.countDown();
+            try {
+                if (!releaseAll.await(5, TimeUnit.SECONDS)) {
+                    throw new java.io.IOException("release wait timed out");
+                }
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new java.io.IOException("interrupted", ex);
+            } finally {
+                concurrent.decrementAndGet();
+            }
+            return new RouteSnapshot(targetHost, targetHost, List.of(new HopNode(1, "10.0.0.1", 1.0, false)));
+        };
+        MonitorService service =
+                new MonitorService(0.05, 20, 0.5, blockingProbe, TraceConcurrencyLimiter.DEFAULT_MAX);
+        for (int i = 0; i < hostCount; i++) {
+            service.addHost("10.0.0." + (i + 1), true, HostProbeMode.TRACE);
+        }
+        assertTrue(allStarted.await(5, TimeUnit.SECONDS), "all TRACE hosts should start together");
+        assertEquals(hostCount, maxConcurrent.get());
+        releaseAll.countDown();
+        service.close();
+    }
+
+    @Test
     void pingOnlyPollsWhileTraceSlotExhausted() throws Exception {
         CountDownLatch traceStarted = new CountDownLatch(1);
         CountDownLatch releaseTrace = new CountDownLatch(1);

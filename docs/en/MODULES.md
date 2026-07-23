@@ -279,7 +279,7 @@ Max N alerts per host / hour (PY-044).
 
 ## pingui.monitor.desktop_notifier
 
-`notify_route_change(event)` — Linux `notify-send` (PY-043).
+`notify_route_change(event)` — in-app/callback popup (no notify-send / D-Bus) (PY-043).
 
 ---
 

@@ -63,7 +63,7 @@ Details: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 ### Python alert smoke
 
 - [ ] `python -m pingui monitor --alert-webhook http://127.0.0.1:9/hook` — starts without crash (unreachable webhook → log)
-- [ ] `python -m pingui run --desktop-alerts` — GUI + notify-send on route change (Linux)
+- [ ] `python -m pingui run --desktop-alerts` — GUI + desktop popup/log on route change
 - [ ] `python -m pingui daemon --alert-webhook URL --session-db data/ping.db` — route change → POST JSON
 
 ### Java alert smoke (Linux)
@@ -71,7 +71,7 @@ Details: [JAVA.md](JAVA.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 - [ ] `./gradlew test --tests io.pingui.monitor.WebhookAlertDispatcherTest` — contract POST JSON (CI)
 - [ ] `./gradlew test --tests io.pingui.monitor.AlertRateLimiterTest` — burst rate limit (CI)
 - [ ] `./pingui-java.sh --alert-webhook http://127.0.0.1:9/hook` — starts without crash (unreachable webhook → WARNING)
-- [ ] `./pingui-java.sh --desktop-alerts` — GUI + `notify-send` on route change (requires `libnotify-bin`)
+- [ ] `./pingui-java.sh --desktop-alerts` — GUI + in-app JavaFX popup on route change (no `libnotify`)
 - [ ] YAML `alerts.webhook` / `alert_webhook` in profile — route change → POST without CLI override
 
 ### Java telemetry smoke (P16-071)

@@ -14,6 +14,8 @@
 
 ### Changed
 
+- **Desktop alerts = in-app popup:** JavaFX `Alert` через `JavaFxDesktopAlertSink` (без `notify-send` / D-Bus / tray). Python — injectable popup або INFO log. ADR_ALERTS / CHECKLIST / CLI help оновлено.
+- **Trace concurrency default:** `max_concurrent_traces` default **10** (= `HostsConfig.MAX_HOSTS`). Увімкнені TRACE-хости в сесії (до 10) можуть трасуватись паралельно; YAML-зниження — лише свідоме throttling.
 - **P22-005 — Auto session DB name:** кнопка «Створити…» → `data/YYYY-MM-DD_HH-mm-ss_<lan-ip>.db`; фаза 22 → **DONE**.
 - **P22-004 — Host problem icon + dialog:** значок `!` на рядку хоста при unread `endpoint_down`; клік → деталі + ack; NEXT→P22-005.
 - **P22-003 — SQLite quality incidents:** `persistence_event.endpoint_down` на FIRING/RESOLVED (RESOLVED пишеться навіть без channel notify); NEXT→P22-004.

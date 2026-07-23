@@ -89,7 +89,7 @@ Priority: CLI > YAML > default (both event types on).
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `--alert-webhook` | URL | — | POST JSON `RouteChangeEvent` on route change |
-| `--desktop-alerts` | flag | off | Linux `notify-send` on route change |
+| `--desktop-alerts` | flag | off | In-app popup on route change / quality alert |
 | `--alert-rate-limit` | int | `10` | Max alerts per host / hour |
 
 URL secrets are not logged; webhook failures are WARNING only (process continues).
@@ -99,7 +99,7 @@ URL secrets are not logged; webhook failures are WARNING only (process continues
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `--alert-webhook` | URL | — | POST JSON `RouteChangeEvent` on route change |
-| `--desktop-alerts` | flag | off | Linux `notify-send` on route change |
+| `--desktop-alerts` | flag | off | In-app popup on route change / quality alert |
 | `--alert-rate-limit` | int | `10` | Max alerts per host / hour |
 
 CLI overrides YAML. In v2 profiles:

@@ -279,7 +279,7 @@ POST JSON `RouteChangeEvent`; URL у логах без секретів.
 
 ## pingui.monitor.desktop_notifier
 
-`notify_route_change(event)` — Linux `notify-send` (PY-043).
+`notify_route_change(event)` — in-app/callback popup (no notify-send / D-Bus) (PY-043).
 
 ---
 

@@ -26,7 +26,7 @@ Python містить референсну реалізацію (`alert_dispatch
 | Канал | v1 | Реалізація | Примітка |
 |-------|----|------------|----------|
 | **Webhook** | ✅ | `POST` JSON | Generic schema; Slack Incoming Webhook приймає JSON — достатньо generic body або тонкий mapper у споживача |
-| **Desktop** | ✅ (Linux) | `notify-send` | Python: `DesktopAlertDispatcher`; Java: P10-020 (Linux пріоритет; Win/macOS — best-effort пізніше) |
+| **Desktop** | ✅ | In-app popup | Java: JavaFX `Alert` via `JavaFxDesktopAlertSink` (без `notify-send` / D-Bus / tray); Python: injectable popup або INFO log |
 | **Email** | ❌ | — | Out of scope v1 |
 | **SNMP trap** | ❌ | — | Out of scope v1 |
 | **PagerDuty/Opsgenie native** | ❌ | — | Через generic webhook |
@@ -73,7 +73,7 @@ Python містить референсну реалізацію (`alert_dispatch
 | Ситуація | Поведінка |
 |----------|-----------|
 | Webhook timeout / HTTP error | `WARNING` у лог; **без crash** |
-| Desktop notify недоступний | skip (Linux без `notify-send`) |
+| Desktop notify недоступний | skip / log (немає JavaFX toolkit або popup sink) |
 | URL webhook у логах | **redact** credentials/query (`redact_webhook_url`) |
 | TLS / self-signed | v1: стандартна поведінка HTTP-клієнта ОС; custom CA — out of scope v1 |
 

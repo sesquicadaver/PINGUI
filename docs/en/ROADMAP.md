@@ -419,7 +419,7 @@ flowchart TD
 | **PY-040** | [x] `RouteChangeEvent` in `models.py` | `models.py`, `tests/unit/test_route_change_event.py` | JSON serialize/deserialize; shared contract with P10-010 |
 | **PY-041** | [x] `AlertDispatcher` + `WebhookAlertDispatcher` | `monitor/alert_dispatcher.py` | POST JSON; contract test with mock HTTP |
 | **PY-042** | [x] CLI `--alert-webhook URL` | `__main__.py` | Secret not logged; network error → log, no crash |
-| **PY-043** | [x] Desktop notify (`notify-send`) | `monitor/desktop_notifier.py` | Linux smoke: route change → notification |
+| **PY-043** | [x] Desktop notify (in-app/callback popup) | `monitor/desktop_notifier.py` | Smoke: route change → popup/log |
 | **PY-044** | [x] Alert rate limit | `monitor/alert_rate_limiter.py` | Unit test burst per host |
 | **PY-045** | [x] Daemon + alerts | `daemon_runner.py` | Route change → webhook without GUI (Python P12-030) |
 
@@ -488,7 +488,7 @@ flowchart TD
 | **P10-001** | [x] ADR: alert policy (channels, rate limit, payload) | `docs/ADR_ALERTS.md`, `docs/en/ADR_ALERTS.md` | Webhook + desktop; SNMP/email — out of scope v1 |
 | **P10-010** | [x] Model `RouteChangeEvent` (host, old_ips, new_ips, ts, profile) | `monitor/RouteChangeEvent.java`, Python `models.py` | Unit test serialize/deserialize |
 | **P10-011** | [x] `AlertDispatcher` interface + no-op default | `monitor/AlertDispatcher.java`, `MonitorService` | Monitor calls on `onRouteChanged` |
-| **P10-020** | [x] Desktop notification (Linux notify-send / Windows toast / macOS) | `ui/RouteChangeNotifier.java` | Manual smoke: route change → notification |
+| **P10-020** | [x] Desktop notification (in-app JavaFX popup) | `ui/JavaFxDesktopAlertSink`, `RouteChangeNotifier` | Manual smoke: route change → popup |
 | **P10-021** | [x] YAML/CLI: `alerts.desktop: true\|false` | `ProfilesConfig`, `PinguiApplication` | Default off; documented in CONFIGURATION |
 | **P10-030** | [x] Webhook POST JSON (Slack-compatible + generic) | `monitor/WebhookAlertDispatcher.java` | Contract test with mock HTTP server |
 | **P10-031** | [x] CLI `--alert-webhook URL` + profile field `alert_webhook` | `CliAlertOverrides`, YAML schema | Do not log secrets; network error → log, no crash |
@@ -555,7 +555,7 @@ flowchart TD
 | **P13-011** | [x] YAML `probe_mode` per profile + host override | `ProfilesConfig`, `HostEntry`, `MonitorService` | `ProfilesConfigTest.loadProbeModeOnProfileAndHost`, `HostEntryProbeModeTest` |
 | **P13-020** | [x] Smart interval: `ping_only` 1–2s, `trace` 30–300s per host | `MonitorService`, `HostPollSchedule` | Profile default + per-host override |
 | **P13-021** | [x] Burst on change: after route change — interval ×0.25 for 5 min | `BurstSchedulePolicy.java` | Unit test timer |
-| **P13-030** | [x] Parallel poll: `max_concurrent_traces` (default 3) | `MonitorService`, `TraceConcurrencyLimiter` | At most N subprocess at once |
+| **P13-030** | [x] Parallel poll: `max_concurrent_traces` (default 10 = MAX_HOSTS) | `MonitorService`, `TraceConcurrencyLimiter` | N TRACE hosts ⇒ up to N concurrent (≤10) |
 | **P13-040** | [x] Windows profile preset: auto `ping_only` + `interval: 60` | `config/hosts.windows.example.yaml` | CHECKLIST Windows |
 | **P13-050** | [x] LIVING_SPEC + JAVA.md known limitations | `docs/JAVA.md` | MTR vs traceroute doc |
 

@@ -17,7 +17,6 @@ import io.pingui.dns.DnsResolver;
 import io.pingui.geoip.AsnLookup;
 import io.pingui.geoip.GeoCountry;
 import io.pingui.model.Models.RouteSnapshot;
-import io.pingui.monitor.AlertDispatchers;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
 import io.pingui.persistence.PersistencePolicy;
@@ -493,7 +492,8 @@ public final class MainController {
                 },
                 options.alertOverrides().applyTo(profile.alerts()),
                 store.database(),
-                sessionHosts);
+                sessionHosts,
+                MonitorLifecycle.javaFxDesktopSink(this::dialogOwner));
         applyPersistencePolicy(service, profile);
         attachTelemetry(service);
         return service;
@@ -608,7 +608,7 @@ public final class MainController {
         TracingProfile active = profileDocument.active();
         profileDocument.putProfile(profileDocument.activeProfile(), active.withAlerts(result.alerts()));
         AlertConfig effective = options.alertOverrides().applyTo(result.alerts());
-        monitor.setAlertDispatcher(AlertDispatchers.build(effective));
+        MonitorLifecycle.applyAlertDispatcher(monitor, effective, MonitorLifecycle.javaFxDesktopSink(this::dialogOwner));
         MonitorLifecycle.applyAlertRules(monitor, effective);
         dirtyState.mark();
         userFeedback.info("Сповіщення оновлено: " + result.alerts().toRedactedString() + " — «Зберегти» → YAML");

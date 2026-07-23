@@ -1,41 +1,36 @@
 package io.pingui.monitor;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Desktop notification channel via Linux {@code notify-send} (P10-020 / ADR_ALERTS). */
+/**
+ * Desktop alert channel via an in-app popup sink (P10-020 / ADR_ALERTS).
+ *
+ * <p>Does not call {@code notify-send}, D-Bus, tray toasts, or other OS notification APIs.
+ */
 public final class DesktopAlertDispatcher implements AlertDispatcher {
     private static final Logger LOG = LoggerFactory.getLogger(DesktopAlertDispatcher.class);
 
-    private final String notifySendPath;
+    private final DesktopAlertSink sink;
 
     public DesktopAlertDispatcher() {
-        this(resolveNotifySend());
+        this(DesktopAlertSink.noop());
     }
 
-    DesktopAlertDispatcher(String notifySendPath) {
-        this.notifySendPath = notifySendPath;
+    public DesktopAlertDispatcher(DesktopAlertSink sink) {
+        this.sink = Objects.requireNonNullElseGet(sink, DesktopAlertSink::noop);
     }
 
     @Override
     public void dispatch(RouteChangeEvent event) {
-        if (notifySendPath == null) {
-            LOG.debug("notify-send not found; skipping desktop alert");
-            return;
-        }
-        if (!isLinux()) {
-            LOG.debug("Desktop alerts unsupported on this OS; skipping");
+        if (event == null) {
             return;
         }
         String oldStr = event.oldIps().isEmpty() ? "(none)" : String.join(" -> ", event.oldIps());
         String newStr = event.newIps().isEmpty() ? "(none)" : String.join(" -> ", event.newIps());
         String body = event.host() + ": " + oldStr + " → " + newStr;
-        send("PINGUI route change", body);
+        show("PINGUI route change", body);
     }
 
     @Override
@@ -43,49 +38,14 @@ public final class DesktopAlertDispatcher implements AlertDispatcher {
         if (event == null) {
             return;
         }
-        if (notifySendPath == null) {
-            LOG.debug("notify-send not found; skipping desktop quality alert");
-            return;
-        }
-        if (!isLinux()) {
-            LOG.debug("Desktop alerts unsupported on this OS; skipping");
-            return;
-        }
-        send(event.desktopTitle(), event.desktopBody());
+        show(event.desktopTitle(), event.desktopBody());
     }
 
-    private void send(String title, String body) {
-        ProcessBuilder builder = new ProcessBuilder(notifySendPath, title, body);
-        builder.redirectErrorStream(true);
+    private void show(String title, String body) {
         try {
-            Process process = builder.start();
-            if (!process.waitFor(5, TimeUnit.SECONDS)) {
-                process.destroyForcibly();
-                LOG.warn("Desktop notification timed out");
-            }
-        } catch (IOException | InterruptedException ex) {
-            if (ex instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
-            LOG.warn("Desktop notification failed: {}", ex.getMessage());
+            sink.show(title, body);
+        } catch (RuntimeException ex) {
+            LOG.warn("Desktop alert popup failed: {}", ex.getMessage());
         }
-    }
-
-    private static boolean isLinux() {
-        String os = System.getProperty("os.name", "");
-        return os.toLowerCase().startsWith("linux");
-    }
-
-    private static String resolveNotifySend() {
-        if (!isLinux()) {
-            return null;
-        }
-        for (String dir : List.of("/usr/bin", "/bin", "/usr/local/bin")) {
-            Path candidate = Path.of(dir, "notify-send");
-            if (Files.isExecutable(candidate)) {
-                return candidate.toString();
-            }
-        }
-        return null;
     }
 }

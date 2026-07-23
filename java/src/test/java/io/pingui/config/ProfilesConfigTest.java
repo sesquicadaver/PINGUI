@@ -540,6 +540,24 @@ class ProfilesConfigTest {
     }
 
     @Test
+    void defaultMaxConcurrentTracesMatchesSessionHostCap() throws Exception {
+        Path path = tempDir.resolve("default-max-traces.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    hosts:
+                      - "8.8.8.8"
+                """);
+        assertEquals(
+                io.pingui.monitor.TraceConcurrencyLimiter.DEFAULT_MAX,
+                ProfilesConfig.load(path).active().maxConcurrentTraces());
+        assertEquals(HostsConfig.MAX_HOSTS, ProfilesConfig.load(path).active().maxConcurrentTraces());
+    }
+
+    @Test
     void loadHostIntervalOverride() throws Exception {
         Path path = tempDir.resolve("host-interval.yaml");
         Files.writeString(

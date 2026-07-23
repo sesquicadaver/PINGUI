@@ -79,7 +79,7 @@ gradlew.bat run        # Windows
 | `--timeout` | *(from YAML)* | Override probe timeout (s), **only if passed** |
 | `--probe` | *(from YAML)* | Override `auto`/`process`/`raw`, **only if passed** |
 | `--alert-webhook` | off | POST JSON `RouteChangeEvent` on route change |
-| `--desktop-alerts` | off | Linux `notify-send` on route change |
+| `--desktop-alerts` | off | In-app popup on route change |
 | `--alert-rate-limit` | `10` | Max alerts per host / hour |
 | `--session-db` | off | SQLite session metrics + events (`host_session`, `persistence_event`); alternative — YAML `persistence.session_db` or GUI **Database…** |
 | `--export-report` | off | Export CSV/HTML from `--session-db` and exit (no GUI) |

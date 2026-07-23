@@ -62,7 +62,7 @@ profiles:
   default:
     probe_mode: trace          # trace | mtr | ping_only
     interval: 30.0
-    max_concurrent_traces: 3
+    max_concurrent_traces: 10  # default = MAX_HOSTS; all enabled TRACE hosts may run in parallel
     hosts:
       - address: "8.8.8.8"
         probe_mode: ping_only  # optional override
@@ -159,7 +159,7 @@ profiles:
     timeout: 0.5
     probe: auto
     probe_mode: trace
-    max_concurrent_traces: 3
+    max_concurrent_traces: 10  # default = MAX_HOSTS; all enabled TRACE hosts may run in parallel
     hosts:
       - address: "8.8.8.8"
         enabled: true
