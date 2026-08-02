@@ -287,6 +287,7 @@ chmod +x pingui-java.sh gradlew
 - [ ] **Видалити профіль** (повернення до default) → Simple mode; панелі compact (граф/лог hidden); розмір вікна **не** форсується (P24-005)
 - [ ] **Розширений** → граф + лог; **Простий** → панелі compact знову; розмір вікна без стрибка на toggle (P24-005)
 - [ ] **P24-006 Window geometry:** resize/move вікна → restart → bounds ±1px; Extended → drag SplitPane divider → restart → divider; restart відновлює last `UiViewMode`
+- [ ] **Simple width fit:** старт у Простий → ширина Stage ≈ колонка хостів (не «порожня» широка рамка); висота без примусового стискання; Перехід у Розширений розширює width за потреби
 - [ ] **P24-008 CSS light theme:** старт GUI → фон `#fafafa` / панелі світлі; host list danger `!` і muted tags читабельні; немає «сирого» unstyled chrome (screenshot smoke, light)
 - [ ] **P24-009 Deferred startup:** вікно з’являється зі статусом «Завантаження…» до готовності; потім host list заповнюється; помилковий YAML → error feedback без hang
 - [ ] **P24-010 Perf smoke (desktop):** Extended → pan графа ~5 с (drag) → оновлення route (poll/replay) без видимого freeze; опційно JFR: `jcmd <pid> JFR.start name=pingui settings=profile` на час pan+route, потім `JFR.stop filename=pingui-gui.jfr` — шукати довгі FX pulse / `paintPixels`. CI: `GraphCanvasPerfTest` (100 drag ≤1 paint).

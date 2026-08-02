@@ -84,6 +84,8 @@ public final class MainController {
     private final RouteDiffPresenter routeDiffPresenter = new RouteDiffPresenter();
     private final HistoryHostSync historyHostSync = new HistoryHostSync();
     private WindowGeometry pendingDividerRestore;
+    private Stage mainStage;
+    private double extendedDefaultWidth = WindowGeometry.DEFAULT_EXTENDED_WIDTH;
 
     /**
      * Shell constructor (P24-009): FX chrome only — no profile YAML, SQLite, or GeoIP I/O. Heavy load
@@ -136,6 +138,7 @@ public final class MainController {
         // Cross-coordinator listeners (D4) — after assemble.
         mainView.modeGroup().selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
             viewModeController.onToggleSelected(newToggle);
+            ensureExtendedStageWidth();
             updateHistoryPanelVisibility();
         });
 
@@ -332,13 +335,26 @@ public final class MainController {
      * Loads prefs, clamps to the visual screen, applies mode/layout once, sets stage bounds, and
      * registers close-only save (P24-006). Call after {@link #createScene()} and before {@code
      * stage.show()}.
+     *
+     * @param defaultWidthSimple fallback width when prefs missing and mode is Simple
+     * @param defaultWidthExtended fallback width when Extended omits width; also expand target on toggle
+     * @param defaultHeight fallback height (Simple and Extended)
      */
-    public void prepareStageGeometry(Stage stage, double defaultWidth, double defaultHeight) {
+    public void prepareStageGeometry(
+            Stage stage, double defaultWidthSimple, double defaultWidthExtended, double defaultHeight) {
+        this.mainStage = stage;
+        this.extendedDefaultWidth = defaultWidthExtended;
         WindowGeometryStore store = WindowGeometryStore.userDefault();
-        WindowGeometry loaded = store.load(defaultWidth, defaultHeight);
+        WindowGeometry loaded = store.load(defaultWidthSimple, defaultWidthExtended, defaultHeight);
         Rectangle2D visual = visualBoundsFor(loaded);
+        double clampDefaultWidth = loaded.viewMode() == UiViewMode.EXTENDED ? defaultWidthExtended : defaultWidthSimple;
         WindowGeometry geometry = loaded.clamp(
-                visual.getMinX(), visual.getMinY(), visual.getWidth(), visual.getHeight(), defaultWidth, defaultHeight);
+                visual.getMinX(),
+                visual.getMinY(),
+                visual.getWidth(),
+                visual.getHeight(),
+                clampDefaultWidth,
+                defaultHeight);
         applyRestoredGeometry(geometry);
         if (!Double.isNaN(geometry.x())) {
             stage.setX(geometry.x());
@@ -352,14 +368,43 @@ public final class MainController {
         stage.setOnCloseRequest(event -> store.save(captureGeometry(stage)));
     }
 
-    /** Post-show: divider pulse + existing scene-shown redraw. */
+    /** Post-show: divider pulse, Simple width fit (height untouched), scene-shown redraw. */
     public void onStageShown() {
         if (pendingDividerRestore != null) {
             WindowGeometry geometry = pendingDividerRestore;
             pendingDividerRestore = null;
             Platform.runLater(() -> viewModeController.applyDivider(geometry.divider()));
         }
+        Platform.runLater(this::fitSimpleStageWidthIfNeeded);
         onSceneShown();
+    }
+
+    /**
+     * After layout: if Simple chrome is narrower than the Stage, shrink width only (leftover Extended
+     * width / oversized prefs). Does not change height or Extended layout.
+     */
+    void fitSimpleStageWidthIfNeeded() {
+        if (mainStage == null || viewModeController == null || viewModeController.isExtended()) {
+            return;
+        }
+        javafx.scene.layout.Region root = mainView.root();
+        root.applyCss();
+        root.layout();
+        double next = WindowGeometry.fitSimpleWidth(mainStage.getWidth(), root.prefWidth(-1));
+        if (next + 0.5 < mainStage.getWidth()) {
+            mainStage.setWidth(next);
+        }
+    }
+
+    /** When switching to Extended from a Simple-narrow Stage, expand width once (never shrink). */
+    void ensureExtendedStageWidth() {
+        if (mainStage == null || viewModeController == null || !viewModeController.isExtended()) {
+            return;
+        }
+        double next = WindowGeometry.ensureExtendedWidth(mainStage.getWidth(), extendedDefaultWidth);
+        if (next > mainStage.getWidth() + 0.5) {
+            mainStage.setWidth(next);
+        }
     }
 
     /**
@@ -925,6 +970,7 @@ public final class MainController {
             viewModeBeforeEasterEgg = viewModeController.viewMode();
             if (!viewModeController.isExtended()) {
                 viewModeController.forceExtended(mainView::extendedModeButton);
+                ensureExtendedStageWidth();
             }
         }
         showEasterEggCanvas();

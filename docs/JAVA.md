@@ -142,7 +142,7 @@ Chrome збірка (P24-007): пакет `io.pingui.ui.view` — `MainView` + `
 
 Старт (P24-009): `PinguiApplication.start` показує shell Scene → `StartupBootstrap.load` у фоні (YAML/GeoIP/SQLite/`SessionStore`) → FX `attachBootstrap` створює `MonitorService` (polling). До attach UI disabled + статус «Завантаження…».
 
-Політика paint/geometry (P24-010): [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md) — coalesced redraw, layout cache, no forced resize, Canvas invalidate, SplitPane persist, deferred startup. Perf smoke: `GraphCanvasPerfTest` + CHECKLIST Extended+pan+route (опційно JFR).
+Політика paint/geometry (P24-010): [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md) — coalesced redraw, layout cache, no forced resize on toggle, Canvas invalidate, SplitPane persist, deferred startup. Simple: Stage width підганяється під колонку хостів (висота без змін); Extended може розширити width. Perf smoke: `GraphCanvasPerfTest` + CHECKLIST Extended+pan+route (опційно JFR).
 
 - Меню **Про** / **Довідка** (F1) — `AppMenuDialogs`
 - Вибір **профілю трасування** (ComboBox + новий/видалити); усі профілі в одному YAML

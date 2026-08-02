@@ -7,7 +7,13 @@ package io.pingui.ui;
  */
 record WindowGeometry(double x, double y, double width, double height, double divider, UiViewMode viewMode) {
     static final double DEFAULT_DIVIDER = 0.35;
+    /** Matches Simple host-column min width ({@code HostListPanel.PANEL_MIN_WIDTH}). */
     static final double MIN_WIDTH = 580.0;
+    /** Cold-start / missing-prefs width for Simple (content-sized; height stays independent). */
+    static final double DEFAULT_SIMPLE_WIDTH = MIN_WIDTH;
+    /** Cold-start / missing-prefs width for Extended (graph + history). */
+    static final double DEFAULT_EXTENDED_WIDTH = 1100.0;
+
     static final double MIN_HEIGHT = 400.0;
     static final double MIN_DIVIDER = 0.05;
     static final double MAX_DIVIDER = 0.95;
@@ -80,6 +86,34 @@ record WindowGeometry(double x, double y, double width, double height, double di
                 Math.max(MIN_HEIGHT, defaultHeight),
                 DEFAULT_DIVIDER,
                 UiViewMode.SIMPLE);
+    }
+
+    /**
+     * Simple-mode stage width: shrink to laid-out content pref when the stage is wider. Height is
+     * never adjusted here (P24 geometry: width-only fit for compact Simple chrome).
+     */
+    static double fitSimpleWidth(double stageWidth, double contentPrefWidth) {
+        if (!finite(stageWidth) || !finite(contentPrefWidth) || contentPrefWidth <= 0) {
+            return stageWidth;
+        }
+        if (stageWidth <= contentPrefWidth + 0.5) {
+            return stageWidth;
+        }
+        return Math.max(MIN_WIDTH, contentPrefWidth);
+    }
+
+    /**
+     * Extended-mode stage width: expand up to the Extended default when the stage is still Simple-narrow
+     * after a mode toggle (never shrinks).
+     */
+    static double ensureExtendedWidth(double stageWidth, double extendedDefaultWidth) {
+        if (!finite(stageWidth) || !finite(extendedDefaultWidth) || extendedDefaultWidth < MIN_WIDTH) {
+            return stageWidth;
+        }
+        if (stageWidth + 0.5 >= extendedDefaultWidth) {
+            return stageWidth;
+        }
+        return extendedDefaultWidth;
     }
 
     private static boolean finite(double value) {

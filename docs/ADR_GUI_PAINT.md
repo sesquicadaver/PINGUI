@@ -60,6 +60,8 @@ Toggle Simple ↔ Extended **не** викликає `Stage.setWidth/Height` / `
 
 Clamp до `Screen.getVisualBounds()`; invalid → defaults.
 
+**Ширина vs режим:** cold-start Simple → default width = колонка (~580), не 1100. Після `show` у Simple — одноразове підрізання Stage width до `root.prefWidth` (висота без змін; прибирає «широку рамку» від залишку Extended). Toggle → Extended може **розширити** width до Extended default; назад у Simple **не** стискає (без jank на toggle).
+
 ### 7. View assembly + CSS
 
 - Chrome: `io.pingui.ui.view.*` (`MainView.assemble`); `createScene()` тонкий.

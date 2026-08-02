@@ -7,6 +7,10 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Simple window width:** cold-start / leftover Extended width no longer leaves a wide empty frame in Simple — Stage width fits the host-column pref (height unchanged); Extended may expand width on toggle.
+
 ### Added
 
 - **P24-010 — ADR_GUI_PAINT + perf smoke:** Canvas coalesce/cache, no forced resize, geometry persist, deferred startup policy; `GraphCanvasPerfTest` (100 drag ≤1 paint); CHECKLIST Extended+pan+route (+JFR); phase 24 → **DONE**.

@@ -16,13 +16,22 @@ class WindowGeometryStoreTest {
     @Test
     void missingFileReturnsDefaults() {
         WindowGeometryStore store = new WindowGeometryStore(tempDir.resolve("missing.properties"));
-        WindowGeometry geo = store.load(1100, 700);
-        assertEquals(1100, geo.width(), 0.01);
+        WindowGeometry geo = store.load(580, 1100, 700);
+        assertEquals(580, geo.width(), 0.01);
         assertEquals(700, geo.height(), 0.01);
         assertEquals(WindowGeometry.DEFAULT_DIVIDER, geo.divider(), 0.01);
         assertEquals(UiViewMode.SIMPLE, geo.viewMode());
         assertTrue(Double.isNaN(geo.x()));
         assertTrue(Double.isNaN(geo.y()));
+    }
+
+    @Test
+    void missingWidthUsesModeAwareFallback() throws Exception {
+        Path file = tempDir.resolve("mode-width.properties");
+        Files.writeString(file, "viewMode=EXTENDED\nheight=700\n");
+        WindowGeometry loaded = new WindowGeometryStore(file).load(580, 1100, 700);
+        assertEquals(1100, loaded.width(), 0.01);
+        assertEquals(UiViewMode.EXTENDED, loaded.viewMode());
     }
 
     @Test
@@ -33,7 +42,7 @@ class WindowGeometryStoreTest {
         store.save(original);
         assertTrue(Files.isRegularFile(file));
 
-        WindowGeometry loaded = store.load(1100, 700);
+        WindowGeometry loaded = store.load(580, 1100, 700);
         assertTrue(WindowGeometryStore.boundsNearlyEqual(original, loaded));
         assertEquals(0.42, loaded.divider(), 0.01);
         assertEquals(UiViewMode.EXTENDED, loaded.viewMode());
@@ -52,8 +61,8 @@ class WindowGeometryStoreTest {
                 x=100
                 y=bad
                 """);
-        WindowGeometry loaded = new WindowGeometryStore(file).load(1100, 700);
-        assertEquals(1100, loaded.width(), 0.01); // bad width → default
+        WindowGeometry loaded = new WindowGeometryStore(file).load(580, 1100, 700);
+        assertEquals(580, loaded.width(), 0.01); // bad width → Simple default
         assertEquals(650, loaded.height(), 0.01);
         assertEquals(WindowGeometry.MAX_DIVIDER, loaded.divider(), 0.01); // clamped from 1.5
         assertEquals(UiViewMode.SIMPLE, loaded.viewMode());
@@ -88,7 +97,7 @@ class WindowGeometryStoreTest {
         store.save(new WindowGeometry(0, 0, 1100, 700, 0.55, UiViewMode.EXTENDED));
         WindowGeometry simpleClose = new WindowGeometry(0, 0, 1100, 700, 0.55, UiViewMode.SIMPLE);
         store.save(simpleClose);
-        WindowGeometry loaded = store.load(1100, 700);
+        WindowGeometry loaded = store.load(580, 1100, 700);
         assertEquals(0.55, loaded.divider(), 0.01);
         assertEquals(UiViewMode.SIMPLE, loaded.viewMode());
         assertFalse(Files.readString(file).isBlank());

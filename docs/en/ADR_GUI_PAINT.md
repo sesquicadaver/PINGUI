@@ -60,6 +60,8 @@ Simple ↔ Extended toggle **must not** call `Stage.setWidth/Height` / `applyCss
 
 Clamp to `Screen.getVisualBounds()`; invalid → defaults.
 
+**Width vs mode:** cold-start Simple → default width = host column (~580), not 1100. After `show` in Simple — one-shot Stage width fit to `root.prefWidth` (height unchanged; clears leftover Extended “wide frame”). Toggle → Extended may **expand** width to the Extended default; back to Simple does **not** shrink (no toggle jank).
+
 ### 7. View assembly + CSS
 
 - Chrome: `io.pingui.ui.view.*` (`MainView.assemble`); thin `createScene()`.
