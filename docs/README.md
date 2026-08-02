@@ -33,6 +33,8 @@
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Контрибутор | PR, anti-stub |
 | [MVP_SPEC.md](MVP_SPEC.md) | Усі | MVP вимоги |
 | [USER_GUIDE.md](USER_GUIDE.md) | Користувач | Керівництво користувача |
+| [HOWTO.md](HOWTO.md) | Користувач | Швидкі сценарії (запуск, цілі, режими) |
+| [ADR_I18N.md](ADR_I18N.md) | Розробник | i18n: UI + **лише** user docs у інших мовах |
 | [../java/README.md](../java/README.md) | Усі | Java launcher, Gradle |
 | [../.github/workflows/java.yml](../.github/workflows/java.yml) | CI | Java `./gradlew check` |
 | [../.github/workflows/ci.yml](../.github/workflows/ci.yml) | CI | Python pytest |

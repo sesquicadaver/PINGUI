@@ -1,0 +1,56 @@
+package io.pingui.i18n;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+
+class UiI18nTest {
+    @AfterEach
+    void resetLocale() {
+        UiI18n.setLocale(UiLocale.UK);
+    }
+
+    @Test
+    void ukCanonProvidesMenuFile() {
+        UiI18n.setLocale(UiLocale.UK);
+        assertEquals("Файл", UiI18n.get("menu.file"));
+    }
+
+    @Test
+    void englishBundleSwitchesMenuFile() {
+        UiI18n.setLocale(UiLocale.EN);
+        assertEquals("File", UiI18n.get("menu.file"));
+        assertEquals("Simple", UiI18n.get("mode.simple"));
+    }
+
+    @Test
+    void missingKeyFallsBackToKeyString() {
+        UiI18n.setLocale(UiLocale.EN);
+        assertEquals("definitely.missing.key.xyz", UiI18n.get("definitely.missing.key.xyz"));
+    }
+
+    @Test
+    void formatArgs() {
+        UiI18n.setLocale(UiLocale.EN);
+        assertTrue(UiI18n.get("host.added", "8.8.8.8").contains("8.8.8.8"));
+    }
+
+    @Test
+    void fromCodeParsesSupportedLocales() {
+        assertEquals(UiLocale.PL, UiLocale.fromCode("pl").orElseThrow());
+        assertEquals(UiLocale.UK, UiLocale.fromCode("uk-UA").orElseThrow());
+        assertTrue(UiLocale.fromCode("de").isEmpty());
+        assertTrue(UiLocale.fromCode("fr").isEmpty());
+    }
+
+    @Test
+    void polishBundleIsNotUkrainianForModeSimple() {
+        UiI18n.setLocale(UiLocale.PL);
+        String simple = UiI18n.get("mode.simple");
+        assertFalse(simple.contains("Простий"));
+        assertFalse(simple.isBlank());
+    }
+}

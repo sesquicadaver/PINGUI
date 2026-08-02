@@ -9,7 +9,7 @@
 1. `./pingui.sh --deploy` у venv — усі gates зелені.
 2. Оновлено [LIVING_SPEC.md](LIVING_SPEC.md) при зміні поведінки або модулів.
 3. Додано/оновлено тести для нової логіки.
-4. Документація: README або відповідний файл у `docs/` та `docs/en/` (див. [README.md](README.md)). При зміні поведінки оновлюй **обидві** мовні версії.
+4. Документація: **UK-канон** у `docs/` + обов’язковий EN у `docs/en/` (див. [ADR_I18N.md](ADR_I18N.md)). Інші мови — **лише user-facing** (`USER_GUIDE`, `HOWTO`, stub `README.<lang>.md`); ADR/CHECKLIST/CONTRIBUTING тощо **не** перекладаємо. Gate: `scripts/check_doc_parity.py`. UI-рядки — ключі в `messages_uk.properties` (+ EN і відповідний bundle).
 
 ## Гілки
 

@@ -1,5 +1,6 @@
 package io.pingui.ui;
 
+import io.pingui.i18n.UiI18n;
 import io.pingui.monitor.HostPollCounters;
 import io.pingui.monitor.HostProblemSummary;
 import io.pingui.monitor.HostTargetStats;
@@ -184,20 +185,26 @@ public final class HostItem {
         if (counters == null || counters.attempts() <= 0) {
             return "";
         }
-        return String.format(
-                "спроб %d  помилки %d  %.0f%%", counters.attempts(), counters.errors(), counters.errorPct());
+        return UiI18n.get(
+                "host.poll_counters",
+                counters.attempts(),
+                counters.errors(),
+                Math.round(counters.errorPct()));
     }
 
     static String formatRttMetrics(HostTargetStats stats) {
         if (stats == null) {
             return "";
         }
-        return String.format(
-                "loss %.0f%%  min %s  avg %s  max %s ms",
-                stats.lossPct(), formatMs(stats.minMs()), formatMs(stats.avgMs()), formatMs(stats.maxMs()));
+        return UiI18n.get(
+                "host.rtt_metrics",
+                Math.round(stats.lossPct()),
+                formatMs(stats.minMs()),
+                formatMs(stats.avgMs()),
+                formatMs(stats.maxMs()));
     }
 
     private static String formatMs(Double value) {
-        return value == null ? "—" : String.valueOf(value.intValue());
+        return value == null ? UiI18n.get("host.ms_na") : String.valueOf(value.intValue());
     }
 }

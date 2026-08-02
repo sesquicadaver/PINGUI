@@ -3,6 +3,7 @@ package io.pingui.ui;
 import io.pingui.CliTelemetryOverrides;
 import io.pingui.config.ConfigError;
 import io.pingui.config.TelemetryConfig;
+import io.pingui.i18n.UiI18n;
 import io.pingui.telemetry.GelfSink;
 import java.nio.file.Path;
 import java.util.Locale;
@@ -65,49 +66,48 @@ public final class TelemetrySettingsDialog {
 
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.initOwner(owner);
-        dialog.setTitle("Телеметрія");
-        dialog.setHeaderText("Sinks профілю + режим events_only / log_aggregates");
+        dialog.setTitle(UiI18n.get("telemetry.title"));
+        dialog.setHeaderText(UiI18n.get("telemetry.header"));
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
 
-        CheckBox eventsOnlyCheck = new CheckBox("Лише events у remote LOG (events_only)");
+        CheckBox eventsOnlyCheck = new CheckBox(UiI18n.get("telemetry.events_only"));
         eventsOnlyCheck.setSelected(current.eventsOnly());
-        eventsOnlyCheck.setTooltip(new Tooltip("Уникає high-freq RTT у syslog/GELF/Loki/OTLP logs"));
+        eventsOnlyCheck.setTooltip(new Tooltip(UiI18n.get("telemetry.events_only_tooltip")));
 
-        CheckBox logAggregatesCheck = new CheckBox("Зберігати log_aggregates у профілі (5m RTT → LOG)");
+        CheckBox logAggregatesCheck = new CheckBox(UiI18n.get("telemetry.log_aggregates"));
         logAggregatesCheck.setSelected(current.logAggregates());
-        logAggregatesCheck.setTooltip(
-                new Tooltip("Увімкнено → 5m avg/max RTT hop → event rtt_aggregate на sinks (log_aggregates)"));
+        logAggregatesCheck.setTooltip(new Tooltip(UiI18n.get("telemetry.log_aggregates_tooltip")));
 
         TextField sqliteField =
                 new TextField(current.sqlitePath().map(Path::toString).orElse(""));
-        sqliteField.setPromptText("вимкнено (порожньо)");
-        Button sqliteBrowse = browseFile(owner, sqliteField, "Файл telemetry SQLite");
+        sqliteField.setPromptText(UiI18n.get("telemetry.disabled_prompt"));
+        Button sqliteBrowse = browseFile(owner, sqliteField, UiI18n.get("telemetry.sqlite_chooser"));
 
         TextField jsonlField =
                 new TextField(current.jsonlDir().map(Path::toString).orElse(""));
-        jsonlField.setPromptText("вимкнено (порожньо)");
+        jsonlField.setPromptText(UiI18n.get("telemetry.disabled_prompt"));
         boolean jsonlLocked = locks.jsonlDir().isPresent();
         jsonlField.setDisable(jsonlLocked);
-        Button jsonlBrowse = browseDirectory(owner, jsonlField, "Каталог JSONL");
+        Button jsonlBrowse = browseDirectory(owner, jsonlField, UiI18n.get("telemetry.jsonl_chooser"));
         jsonlBrowse.setDisable(jsonlLocked);
         if (jsonlLocked) {
-            jsonlField.setTooltip(new Tooltip("Заблоковано CLI (--telemetry-jsonl)"));
+            jsonlField.setTooltip(new Tooltip(UiI18n.get("telemetry.jsonl_locked")));
         }
 
         TextField syslogField = new TextField(formatSyslog(current.syslog()));
-        syslogField.setPromptText("HOST:PORT або порожньо");
-        CheckBox syslogTlsCheck = new CheckBox("TLS");
+        syslogField.setPromptText(UiI18n.get("telemetry.host_port_prompt"));
+        CheckBox syslogTlsCheck = new CheckBox(UiI18n.get("telemetry.tls"));
         syslogTlsCheck.setSelected(
                 current.syslog().map(TelemetryConfig.SyslogSinkConfig::tls).orElse(false));
         boolean syslogLocked = locks.syslog().isPresent();
         syslogField.setDisable(syslogLocked);
         syslogTlsCheck.setDisable(syslogLocked);
         if (syslogLocked) {
-            syslogField.setTooltip(new Tooltip("Заблоковано CLI (--telemetry-syslog)"));
+            syslogField.setTooltip(new Tooltip(UiI18n.get("telemetry.syslog_locked")));
         }
 
         TextField gelfField = new TextField(formatGelfHostPort(current.gelf()));
-        gelfField.setPromptText("HOST:PORT або порожньо");
+        gelfField.setPromptText(UiI18n.get("telemetry.host_port_prompt"));
         ComboBox<String> gelfTransport = new ComboBox<>(FXCollections.observableArrayList("tcp", "udp"));
         gelfTransport.setValue(current.gelf()
                 .map(g -> g.transport().name().toLowerCase(Locale.ROOT))
@@ -115,21 +115,21 @@ public final class TelemetrySettingsDialog {
 
         TextField lokiUrlField = new TextField(
                 current.loki().map(TelemetryConfig.LokiSinkConfig::url).orElse(""));
-        lokiUrlField.setPromptText("http(s)://… або порожньо");
+        lokiUrlField.setPromptText(UiI18n.get("telemetry.url_prompt"));
         TextField lokiSiteField = new TextField(
                 current.loki().map(TelemetryConfig.LokiSinkConfig::site).orElse(""));
-        lokiSiteField.setPromptText("site label");
+        lokiSiteField.setPromptText(UiI18n.get("telemetry.site_prompt"));
 
         TextField otlpEndpointField = new TextField(
                 current.otlp().map(TelemetryConfig.OtlpSinkConfig::endpoint).orElse(""));
-        otlpEndpointField.setPromptText("http(s)://…:4318 або порожньо");
+        otlpEndpointField.setPromptText(UiI18n.get("telemetry.otlp_prompt"));
         TextField otlpServiceField = new TextField(
                 current.otlp().map(TelemetryConfig.OtlpSinkConfig::serviceName).orElse("pingui"));
         boolean otlpLocked = locks.otlp().isPresent();
         otlpEndpointField.setDisable(otlpLocked);
         otlpServiceField.setDisable(otlpLocked);
         if (otlpLocked) {
-            otlpEndpointField.setTooltip(new Tooltip("Заблоковано CLI (--telemetry-otlp)"));
+            otlpEndpointField.setTooltip(new Tooltip(UiI18n.get("telemetry.otlp_locked")));
         }
 
         TextArea statusArea = new TextArea(current.toRedactedString());
@@ -138,36 +138,34 @@ public final class TelemetrySettingsDialog {
         statusArea.setPrefRowCount(3);
         statusArea.setMaxWidth(Double.MAX_VALUE);
 
-        Label hint = new Label("Застосувати оновлює активний профіль і перепідключає sinks. "
-                + "«Зберегти» у головному вікні записує YAML. "
-                + "Статус — без секретів (toRedactedString).");
+        Label hint = new Label(UiI18n.get("telemetry.hint"));
         hint.setWrapText(true);
 
         GridPane grid = new GridPane();
         grid.setHgap(8);
         grid.setVgap(8);
         int row = 0;
-        grid.add(new Label("SQLite:"), 0, row);
+        grid.add(new Label(UiI18n.get("telemetry.sqlite")), 0, row);
         grid.add(rowWithBrowse(sqliteField, sqliteBrowse), 1, row++);
-        grid.add(new Label("JSONL dir:"), 0, row);
+        grid.add(new Label(UiI18n.get("telemetry.jsonl")), 0, row);
         grid.add(rowWithBrowse(jsonlField, jsonlBrowse), 1, row++);
-        grid.add(new Label("Syslog:"), 0, row);
+        grid.add(new Label(UiI18n.get("telemetry.syslog")), 0, row);
         HBox syslogRow = new HBox(8, syslogField, syslogTlsCheck);
         HBox.setHgrow(syslogField, Priority.ALWAYS);
         grid.add(syslogRow, 1, row++);
-        grid.add(new Label("GELF:"), 0, row);
+        grid.add(new Label(UiI18n.get("telemetry.gelf")), 0, row);
         HBox gelfRow = new HBox(8, gelfField, gelfTransport);
         HBox.setHgrow(gelfField, Priority.ALWAYS);
         grid.add(gelfRow, 1, row++);
-        grid.add(new Label("Loki URL:"), 0, row);
+        grid.add(new Label(UiI18n.get("telemetry.loki_url")), 0, row);
         grid.add(lokiUrlField, 1, row++);
-        grid.add(new Label("Loki site:"), 0, row);
+        grid.add(new Label(UiI18n.get("telemetry.loki_site")), 0, row);
         grid.add(lokiSiteField, 1, row++);
-        grid.add(new Label("OTLP endpoint:"), 0, row);
+        grid.add(new Label(UiI18n.get("telemetry.otlp_endpoint")), 0, row);
         grid.add(otlpEndpointField, 1, row++);
-        grid.add(new Label("OTLP service:"), 0, row);
+        grid.add(new Label(UiI18n.get("telemetry.otlp_service")), 0, row);
         grid.add(otlpServiceField, 1, row++);
-        grid.add(new Label("Статус:"), 0, row);
+        grid.add(new Label(UiI18n.get("dialog.status")), 0, row);
         grid.add(statusArea, 1, row);
 
         VBox content = new VBox(10, eventsOnlyCheck, logAggregatesCheck, grid, hint);
@@ -198,8 +196,8 @@ public final class TelemetrySettingsDialog {
         } catch (ConfigError | IllegalArgumentException ex) {
             Alert error = new Alert(Alert.AlertType.WARNING);
             error.initOwner(owner);
-            error.setTitle("Телеметрія");
-            error.setHeaderText("Некоректні налаштування");
+            error.setTitle(UiI18n.get("telemetry.title"));
+            error.setHeaderText(UiI18n.get("telemetry.invalid"));
             error.setContentText(ex.getMessage());
             error.showAndWait();
         }
@@ -238,7 +236,7 @@ public final class TelemetrySettingsDialog {
             TelemetryConfig.SyslogSinkConfig parsed = CliTelemetryOverrides.parseSyslogHostPort(raw.strip());
             return Optional.of(new TelemetryConfig.SyslogSinkConfig(parsed.host(), parsed.port(), tls));
         } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("Syslog: вкажіть HOST:PORT або [IPv6]:PORT", ex);
+            throw new IllegalArgumentException(UiI18n.get("telemetry.err.syslog"), ex);
         }
     }
 
@@ -251,7 +249,7 @@ public final class TelemetrySettingsDialog {
             GelfSink.Transport transport = TelemetryConfig.GelfSinkConfig.parseTransport(transportRaw);
             return Optional.of(new TelemetryConfig.GelfSinkConfig(hostPort.host(), hostPort.port(), transport));
         } catch (IllegalArgumentException | ConfigError ex) {
-            throw new IllegalArgumentException("GELF: HOST:PORT і transport tcp|udp", ex);
+            throw new IllegalArgumentException(UiI18n.get("telemetry.err.gelf"), ex);
         }
     }
 
@@ -262,12 +260,12 @@ public final class TelemetrySettingsDialog {
             return Optional.empty();
         }
         if (urlBlank || siteBlank) {
-            throw new IllegalArgumentException("Loki: потрібні і URL, і site (або обидва порожні)");
+            throw new IllegalArgumentException(UiI18n.get("telemetry.err.loki"));
         }
         try {
             return Optional.of(new TelemetryConfig.LokiSinkConfig(url.strip(), site.strip()));
         } catch (ConfigError ex) {
-            throw new IllegalArgumentException("Loki: " + ex.getMessage(), ex);
+            throw new IllegalArgumentException(UiI18n.get("telemetry.err.loki_detail", ex.getMessage()), ex);
         }
     }
 
@@ -279,7 +277,7 @@ public final class TelemetrySettingsDialog {
             String service = serviceName == null || serviceName.isBlank() ? "pingui" : serviceName.strip();
             return Optional.of(new TelemetryConfig.OtlpSinkConfig(endpoint.strip(), service));
         } catch (ConfigError ex) {
-            throw new IllegalArgumentException("OTLP: " + ex.getMessage(), ex);
+            throw new IllegalArgumentException(UiI18n.get("telemetry.err.otlp", ex.getMessage()), ex);
         }
     }
 
@@ -314,11 +312,11 @@ public final class TelemetrySettingsDialog {
     }
 
     private static Button browseFile(Window owner, TextField field, String title) {
-        Button browse = new Button("Обрати…");
+        Button browse = new Button(UiI18n.get("dialog.browse"));
         browse.setOnAction(e -> {
             FileChooser chooser = new FileChooser();
             chooser.setTitle(title);
-            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("SQLite (*.db)", "*.db"));
+            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(UiI18n.get("dialog.filter_sqlite"), "*.db"));
             java.io.File chosen = chooser.showSaveDialog(owner);
             if (chosen != null) {
                 field.setText(chosen.getPath());
@@ -328,7 +326,7 @@ public final class TelemetrySettingsDialog {
     }
 
     private static Button browseDirectory(Window owner, TextField field, String title) {
-        Button browse = new Button("Обрати…");
+        Button browse = new Button(UiI18n.get("dialog.browse"));
         browse.setOnAction(e -> {
             DirectoryChooser chooser = new DirectoryChooser();
             chooser.setTitle(title);

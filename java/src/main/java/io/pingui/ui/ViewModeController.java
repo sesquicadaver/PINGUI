@@ -84,7 +84,8 @@ final class ViewModeController {
         if (toggle == null) {
             return;
         }
-        viewMode = ((RadioButton) toggle).getText().equals("Розширений") ? UiViewMode.EXTENDED : UiViewMode.SIMPLE;
+        Object data = toggle.getUserData();
+        viewMode = data instanceof UiViewMode mode ? mode : UiViewMode.SIMPLE;
         apply();
     }
 

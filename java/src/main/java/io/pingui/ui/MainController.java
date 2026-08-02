@@ -23,6 +23,9 @@ import io.pingui.persistence.PersistencePolicy;
 import io.pingui.persistence.SessionDatabase;
 import io.pingui.persistence.timeseries.TimeSeriesBackends;
 import io.pingui.persistence.timeseries.TimeSeriesConfigException;
+import io.pingui.i18n.UiI18n;
+import io.pingui.i18n.UiLocale;
+import io.pingui.i18n.UiLocaleStore;
 import io.pingui.ui.view.MainView;
 import io.pingui.ui.view.MainViewActions;
 import java.io.IOException;
@@ -50,11 +53,27 @@ public final class MainController {
     private static final DateTimeFormatter TIME_FMT =
             DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
     private static final Duration EASTER_EGG_DURATION = Duration.seconds(30);
-    private static final String WINDOW_TITLE = "PINGUI — Сесійний монітор маршрутів (Java)";
-
     /** Window title without dirty suffix (shared with {@link io.pingui.PinguiApplication}). */
     public static String windowTitle() {
-        return WINDOW_TITLE;
+        return UiI18n.get("status.window_title");
+    }
+
+    /** Window title with dirty marker when YAML has unsaved edits. */
+    public static String windowTitleDirty() {
+        return UiI18n.get("status.window_title_dirty");
+    }
+
+    /**
+     * Resolve UI locale before Scene creation: CLI {@code --lang} &gt; prefs &gt; Ukrainian canon.
+     */
+    public static void bootstrapUiLocale(AppOptions options) {
+        UiLocale locale = UiLocale.UK;
+        if (options != null && options.uiLang().isPresent()) {
+            locale = UiLocale.fromCode(options.uiLang().get()).orElse(UiLocale.UK);
+        } else {
+            locale = UiLocaleStore.userDefault().load().orElse(UiLocale.UK);
+        }
+        UiI18n.setLocale(locale);
     }
 
     private final AppOptions options;
@@ -165,7 +184,7 @@ public final class MainController {
             }
             routeGraphPresenter.redrawIfExtended();
         });
-        mainView.statusLabel().setText("Завантаження…");
+        mainView.statusLabel().setText(UiI18n.get("status.loading"));
         setShellBusy(true);
         Scene scene = new Scene(mainView.root());
         UiPalette.applyTo(scene);
@@ -203,7 +222,7 @@ public final class MainController {
         viewModeController.apply();
         setShellBusy(false);
         if (EmptyStateHints.isReplaceableSimpleStatus(mainView.statusLabel().getText())
-                || "Завантаження…".equals(mainView.statusLabel().getText())) {
+                || UiI18n.get("status.loading").equals(mainView.statusLabel().getText())) {
             mainView.statusLabel().setText(EmptyStateHints.waitingForData());
         }
         redrawRouteGraph();
@@ -226,11 +245,11 @@ public final class MainController {
         mainView.graphPanel().setDisable(true);
         mainView.mainSplit().setDisable(true);
         String message = error.getMessage() != null ? error.getMessage() : error.toString();
-        mainView.statusLabel().setText("Помилка завантаження: " + message);
+        mainView.statusLabel().setText(UiI18n.get("status.load_error", message));
         if (viewModeController != null && viewModeController.isExtended()) {
             mainView.logArea()
-                    .appendText("[" + TIME_FMT.format(java.time.Instant.now()) + "] Не вдалося завантажити сесію: "
-                            + message + "\n");
+                    .appendText("[" + TIME_FMT.format(java.time.Instant.now()) + "] "
+                            + UiI18n.get("status.load_failed_log", message) + "\n");
         }
     }
 
@@ -335,7 +354,27 @@ public final class MainController {
             public void onExportNow() {
                 MainController.this.onExportNow();
             }
+
+            @Override
+            public void onLanguageSelected(UiLocale locale) {
+                MainController.this.applyUiLocale(locale);
+            }
         };
+    }
+
+    /** Persist locale, refresh chrome labels, update Stage title (P25). */
+    void applyUiLocale(UiLocale locale) {
+        if (locale == null || locale == UiI18n.locale()) {
+            return;
+        }
+        UiI18n.setLocale(locale);
+        UiLocaleStore.userDefault().save(locale);
+        mainView.retranslateChrome();
+        updateDirtyUi();
+        if (hostListPresenter != null) {
+            hostListPresenter.configure();
+        }
+        viewModeController.apply();
     }
 
     /**
@@ -614,7 +653,7 @@ public final class MainController {
                 () -> store,
                 () -> viewModeController.isExtended(),
                 () -> easterEggActive);
-        mainView.graphCanvas().setOnHopIpCopied(ip -> userFeedback.info("Скопійовано hop IP: " + ip));
+        mainView.graphCanvas().setOnHopIpCopied(ip -> userFeedback.info(UiI18n.get("status.hop_ip_copied", ip)));
         DnsResolver.addListener(() -> Platform.runLater(routeGraphPresenter::redrawIfExtended));
 
         routeHistoryPresenter = new RouteHistoryPresenter(
@@ -736,7 +775,7 @@ public final class MainController {
                     @Override
                     public void onProbeError(String host, String message) {
                         Platform.runLater(() -> {
-                            userFeedback.info("Probe [" + host + "]: " + message);
+                            userFeedback.info(UiI18n.get("status.probe", host, message));
                             HostItem item = hostListPresenter.findItem(host);
                             if (item != null) {
                                 hostListPresenter.syncMetrics(item);
@@ -815,9 +854,8 @@ public final class MainController {
         closeTelemetry();
         monitor = createMonitor(next, liveEntries);
         dirtyState.mark();
-        userFeedback.info(String.format(
-                java.util.Locale.ROOT,
-                "Параметри профілю: interval=%.3g с, max_hops=%d, timeout=%.3g с, probe=%s — «Зберегти» → YAML",
+        userFeedback.info(UiI18n.get(
+                "status.profile_params_applied",
                 next.intervalSeconds(),
                 next.maxHops(),
                 next.timeoutSeconds(),
@@ -853,7 +891,7 @@ public final class MainController {
             sessionPersistenceOverride = Optional.of(result.policy());
             monitor.setPendingPersistencePolicy(result.policy());
         }
-        userFeedback.info("Політика persistence оновлена (з наступного poll-циклу)");
+        userFeedback.info(UiI18n.get("status.persistence_updated"));
         if (result.sessionDbPath().isPresent()) {
             dirtyState.mark();
         }
@@ -875,7 +913,7 @@ public final class MainController {
                 monitor, effective, MonitorLifecycle.javaFxDesktopSink(this::dialogOwner));
         MonitorLifecycle.applyAlertRules(monitor, effective);
         dirtyState.mark();
-        userFeedback.info("Сповіщення оновлено: " + result.alerts().toRedactedString() + " — «Зберегти» → YAML");
+        userFeedback.info(UiI18n.get("status.alerts_updated", result.alerts().toRedactedString()));
     }
 
     private void onTelemetrySettings() {
@@ -892,19 +930,19 @@ public final class MainController {
         attachTelemetry(monitor);
         String sinks = telemetry != null && !telemetry.registeredIds().isEmpty()
                 ? String.join(", ", telemetry.registeredIds())
-                : "немає активних sinks";
+                : UiI18n.get("status.no_sinks");
         userFeedback.info(
-                "Телеметрія оновлена: " + sinks + " — " + result.telemetry().toRedactedString());
+                UiI18n.get("status.telemetry_updated", sinks, result.telemetry().toRedactedString()));
         if (viewModeController.isExtended()) {
-            mainView.statusLabel().setText("Телеметрія: " + sinks);
+            mainView.statusLabel().setText(UiI18n.get("status.telemetry", sinks));
         }
         dirtyState.mark();
     }
 
     private void notifyPersistenceConnected(Path dbPath) {
-        userFeedback.info("SQLite підключено: " + dbPath.toAbsolutePath());
+        userFeedback.info(UiI18n.get("status.sqlite_connected", dbPath.toAbsolutePath()));
         if (viewModeController.isExtended()) {
-            mainView.statusLabel().setText("SQLite: " + dbPath.toAbsolutePath());
+            mainView.statusLabel().setText(UiI18n.get("status.sqlite", dbPath.toAbsolutePath()));
         }
     }
 
@@ -1002,10 +1040,10 @@ public final class MainController {
             profileUi.syncActiveProfileFromSession();
             ProfilesConfig.save(options.configPath(), profileDocument);
             dirtyState.clear();
-            userFeedback.info("Конфіг збережено (усі профілі): " + options.configPath());
+            userFeedback.info(UiI18n.get("status.config_saved", options.configPath()));
             return true;
         } catch (IOException | ConfigError ex) {
-            userFeedback.error("Не вдалося зберегти конфіг: " + ex.getMessage());
+            userFeedback.error(UiI18n.get("status.config_save_failed", ex.getMessage()));
             return false;
         }
     }
@@ -1017,11 +1055,11 @@ public final class MainController {
 
     private void updateDirtyUi() {
         boolean dirty = dirtyState.isDirty();
-        mainView.saveButton().setText(dirty ? "Зберегти *" : "Зберегти");
+        mainView.saveButton().setText(dirty ? UiI18n.get("host.save_dirty") : UiI18n.get("host.save"));
         Window window =
                 mainView.root().getScene() != null ? mainView.root().getScene().getWindow() : null;
         if (window instanceof Stage stage) {
-            stage.setTitle(dirty ? WINDOW_TITLE + " *" : WINDOW_TITLE);
+            stage.setTitle(dirty ? windowTitleDirty() : windowTitle());
         }
     }
 
@@ -1044,7 +1082,8 @@ public final class MainController {
             String activeHost = viewHost();
             if (activeHost != null && host.equals(activeHost)) {
                 mainView.statusLabel()
-                        .setText("Останнє оновлення [" + host + "]: " + TIME_FMT.format(snapshot.timestamp()));
+                        .setText(UiI18n.get(
+                                "status.last_update", host, TIME_FMT.format(snapshot.timestamp())));
                 redrawRouteGraph();
             }
         }
@@ -1057,8 +1096,8 @@ public final class MainController {
         if (viewModeController.isExtended() && !easterEggActive) {
             if (!oldIps.isEmpty()) {
                 String oldStr = String.join(" -> ", oldIps);
-                userFeedback.info("⚠ ЗМІНА МАРШРУТУ до " + host + "\nБуло: " + oldStr + "\nСтало: "
-                        + String.join(" -> ", newIps));
+                userFeedback.info(UiI18n.get(
+                        "status.route_change", host, oldStr, String.join(" -> ", newIps)));
             }
             routeHistoryPresenter.onRouteChanged(host);
             String activeHost = viewHost();
@@ -1118,7 +1157,7 @@ public final class MainController {
     /** Modal error for Simple mode only (injected into {@link UiFeedbackRouter}). */
     private void showSimpleErrorAlert(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
-        alert.setTitle("Помилка");
+        alert.setTitle(UiI18n.get("error.title"));
         alert.setHeaderText(null);
         Window owner = dialogOwner();
         if (owner != null) {

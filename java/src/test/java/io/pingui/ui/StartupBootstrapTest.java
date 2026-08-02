@@ -218,6 +218,7 @@ class StartupBootstrapTest {
                 Optional.empty(),
                 defaults.telemetryRetentionDays(),
                 Optional.empty(),
+                Optional.empty(),
                 Optional.empty());
     }
 }

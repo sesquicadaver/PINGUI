@@ -8,12 +8,12 @@ import org.junit.jupiter.api.Test;
 class ExpertPingUiRulesTest {
     @Test
     void flowLabelAllowedForIpv6FamilyChoice() {
-        assertTrue(ExpertPingUiRules.flowLabelAllowed("8.8.8.8", ExpertPingUiRules.AF_IPV6));
+        assertTrue(ExpertPingUiRules.flowLabelAllowed("8.8.8.8", ExpertPingUiRules.afIpv6()));
     }
 
     @Test
     void flowLabelDisallowedForDefaultIpv4FamilyChoice() {
-        assertFalse(ExpertPingUiRules.flowLabelAllowed("example.com", ExpertPingUiRules.AF_IPV4));
+        assertFalse(ExpertPingUiRules.flowLabelAllowed("example.com", ExpertPingUiRules.afIpv4()));
     }
 
     @Test

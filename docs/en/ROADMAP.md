@@ -10,7 +10,7 @@ Post-MVP roadmap (2026-06-26) for **professional users** (NOC/SRE, network engin
 
 | Field | Value |
 |-------|-------|
-| **Branch** | `main` — stable snapshot after merge; `beta` — development (linear queue **P24**). Both: Java Pro (P9–P19) + Python after merge |
+| **Branch** | `main` — stable snapshot after merge; `beta` — development (**P25** queue closed). Both: Java Pro (P9–P19) + Python after merge |
 | **Priority** | P0 critical · P1 important · P2 nice-to-have |
 | **DoD** | Definition of Done — task closure condition |
 
@@ -23,7 +23,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | Field | Value |
 |------|----------|
 | **Current task** | **DONE** |
-| **Phase** | 24 — GUI architecture & paint (closed) |
+| **Phase** | 25 — i18n UI + docs (closed) |
 | **DoD (short)** | Linear queue empty; new ID only when explicit |
 | **Branch** | `beta` |
 
@@ -139,8 +139,15 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 93 | **P24-008** | [x] | CSS theme layer (light-first palette) |
 | 94 | **P24-009** | [x] | Startup: heavy init off FX thread |
 | 95 | **P24-010** | [x] | ADR_GUI_PAINT + perf smoke + phase close |
+| 96 | **P25-001** | [x] | ADR_I18N + ROADMAP phase 25 |
+| 97 | **P25-002** | [x] | UiI18n + messages_uk + migrate UI to keys |
+| 98 | **P25-003** | [x] | Layout harden (HostListCell/CRUD/text-branches) |
+| 99 | **P25-004** | [x] | Runtime Language menu + persist + `--lang` |
+| 100 | **P25-005** | [x] | messages_en + es/it/pl/cs/lv/lt/et UI bundles |
+| 101 | **P25-006** | [x] | user-facing locale matrix (USER_GUIDE / HOWTO / README.lang) |
+| 102 | **P25-007** | [x] | USER_GUIDE + HOWTO wave (no CHECKLIST/ADR) |
 
-**Queue status:** exhausted — **NEXT = DONE** (phase 24 GUI architecture & paint closed).
+**Queue status:** exhausted — **NEXT = DONE** (phase 25 i18n closed).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -831,6 +838,24 @@ flowchart TD
 | **P24-010** | [x] ADR + perf smoke | `ADR_GUI_PAINT.md`, CHECKLIST, `GraphCanvasPerfTest` | Phase closed; follow-ups below |
 
 **Follow-ups after P24 (not in the linear queue):** dark mode product; `MainController` ≤550 LOC; FXML / MonitorService split — see [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md).
+
+---
+
+## Phase 25 — i18n UI + docs (`beta`, P1)
+
+**Context:** GUI was UK-only; docs UK↔EN. Additional locales with UK canon, runtime switcher, and docs stub matrix (no DE/FR).
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **P25-001** | [x] ADR_I18N | `docs/ADR_I18N.md`, `docs/en/…` | UK canon; locales; stubs; DE/FR out |
+| **P25-002** | [x] UiI18n framework | `io.pingui.i18n.*`, `messages_uk.properties` | UTF-8 ResourceBundle; fallback UK→key |
+| **P25-003** | [x] Layout harden | `HostListCell`, `HostListPanel`, `AppMenuDialogs`, `ViewModeController` | No text-branch; USE_PREF_SIZE/FlowPane |
+| **P25-004** | [x] Runtime switch | `MainView`, `MainController`, `AppOptions`, `--lang` | Language menu; persist `ui-locale.properties` |
+| **P25-005** | [x] UI bundles | `messages_{en,es,it,pl,cs,lv,lt,et}.properties` | 313 keys each; `UiI18nTest` |
+| **P25-006** | [x] Docs stub matrix | `docs/{es,it,…}/`, `check_doc_parity.py` | USER_GUIDE+HOWTO+`README.<lang>` only |
+| **P25-007** | [x] USER_GUIDE / HOWTO wave | `docs/*/USER_GUIDE.md`, `HOWTO.md` | User docs; no CHECKLIST/ADR |
+
+**Follow-ups:** DE/FR; full `README.<lang>`; Python GUI i18n. Developer docs stay UK/EN.
 
 ---
 

@@ -1,7 +1,9 @@
 package io.pingui.ui;
 
+import io.pingui.i18n.UiI18n;
+
 /**
- * UK empty-state copy for Extended history and Simple mode (P20-007).
+ * Empty-state copy for Extended history and Simple mode (P20-007 / P25).
  * Unit-tested without JavaFX dialogs.
  */
 public final class EmptyStateHints {
@@ -9,27 +11,27 @@ public final class EmptyStateHints {
 
     /** Default idle status before first probe / feedback. */
     public static String waitingForData() {
-        return "Очікування даних…";
+        return UiI18n.get("empty.waiting");
     }
 
     /** Simple mode: event log is hidden — point operators to Extended. */
     public static String simpleNoLog() {
-        return "Журнал подій доступний у режимі «Розширений».";
+        return UiI18n.get("empty.simple_no_log");
     }
 
     /** Extended history without SQLite session. */
     public static String noSqlite() {
-        return "Історія змін потребує SQLite. Налаштування → База даних…";
+        return UiI18n.get("empty.no_sqlite");
     }
 
     /** SQLite connected but no host selected in the history filter. */
     public static String noHostSelected() {
-        return "Оберіть ціль у фільтрі історії.";
+        return UiI18n.get("empty.no_host");
     }
 
     /** SQLite + host selected, but no route_change rows in the lookback window. */
     public static String emptyHistory() {
-        return "Поки немає змін маршруту за обраний період.";
+        return UiI18n.get("empty.history");
     }
 
     /**

@@ -4,6 +4,7 @@ import io.pingui.config.ConfigError;
 import io.pingui.config.HostEntry;
 import io.pingui.config.ProfileDocument;
 import io.pingui.config.TracingProfile;
+import io.pingui.i18n.UiI18n;
 import io.pingui.monitor.SessionStore;
 import java.util.List;
 import java.util.Optional;
@@ -125,7 +126,7 @@ final class ProfileUiCoordinator {
             syncActiveProfileFromSession();
             document.setActiveProfile(selected);
             reloadActiveProfile.run();
-            userFeedback.info("Завантажено профіль: " + selected);
+            userFeedback.info(UiI18n.get("profile.loaded", selected));
         } catch (ConfigError ex) {
             userFeedback.error(ex.getMessage());
             refreshCombo();
@@ -134,9 +135,9 @@ final class ProfileUiCoordinator {
 
     void onNewProfile() {
         TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Новий профіль");
-        dialog.setHeaderText("Ім'я профілю трасування");
-        dialog.setContentText("Назва:");
+        dialog.setTitle(UiI18n.get("profile.new_title"));
+        dialog.setHeaderText(UiI18n.get("profile.new_header"));
+        dialog.setContentText(UiI18n.get("profile.new_prompt"));
         Optional<String> result = dialog.showAndWait();
         if (result.isEmpty() || result.get().isBlank()) {
             return;
@@ -144,7 +145,7 @@ final class ProfileUiCoordinator {
         String name = result.get().strip();
         ProfileDocument document = profileDocument.get();
         if (document.hasProfile(name)) {
-            userFeedback.error("Профіль уже існує: " + name);
+            userFeedback.error(UiI18n.get("profile.exists", name));
             return;
         }
         try {
@@ -154,7 +155,7 @@ final class ProfileUiCoordinator {
             reloadActiveProfile.run();
             refreshCombo();
             markDirty.run();
-            userFeedback.info("Створено профіль: " + name);
+            userFeedback.info(UiI18n.get("profile.created", name));
         } catch (ConfigError ex) {
             userFeedback.error(ex.getMessage());
         }
@@ -172,7 +173,7 @@ final class ProfileUiCoordinator {
             reloadActiveProfile.run();
             refreshCombo();
             markDirty.run();
-            userFeedback.info("Видалено профіль: " + active);
+            userFeedback.info(UiI18n.get("profile.deleted", active));
         } catch (ConfigError ex) {
             userFeedback.error(ex.getMessage());
         }
@@ -193,8 +194,8 @@ final class ProfileUiCoordinator {
         Window owner = profileCombo.getScene() != null ? profileCombo.getScene().getWindow() : null;
         return ConfirmDialogs.confirm(
                 owner,
-                "Видалити профіль",
-                "Видалити профіль «" + profileName + "»?",
-                "Профіль зникне з документа. Збережіть конфіг, щоб зміна потрапила у YAML.");
+                UiI18n.get("confirm.profile_delete.title"),
+                UiI18n.get("confirm.profile_delete.header", profileName),
+                UiI18n.get("confirm.profile_delete.content"));
     }
 }

@@ -1,5 +1,7 @@
 package io.pingui.ui.view;
 
+import io.pingui.i18n.UiI18n;
+import io.pingui.i18n.UiLocale;
 import io.pingui.ui.AppAccelerators;
 import io.pingui.ui.GraphCanvas;
 import io.pingui.ui.HostItem;
@@ -15,6 +17,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -39,6 +42,7 @@ public final class MainView {
     private final VBox graphPanel = new VBox(8);
     private final SplitPane mainSplit = new SplitPane();
     private final BorderPane root = new BorderPane();
+    private MainViewActions actions;
 
     public MainView() {
         root.getStyleClass().add("pingui-root");
@@ -60,6 +64,7 @@ public final class MainView {
      * @return root border pane (menu already set as top)
      */
     public BorderPane assemble(MainViewActions actions, Node tagFilterBar) {
+        this.actions = actions;
         profileToolbar.wire(actions);
         hostListPanel.wire(actions);
         historyPanel.wire(actions);
@@ -91,42 +96,66 @@ public final class MainView {
     }
 
     private MenuBar createMenuBar(MainViewActions actions) {
-        MenuItem saveItem = new MenuItem("Зберегти");
+        MenuItem saveItem = new MenuItem(UiI18n.get("menu.save"));
         saveItem.setAccelerator(KeyCombination.valueOf(AppAccelerators.SAVE));
         saveItem.setOnAction(e -> actions.onSaveConfig());
-        MenuItem addHostItem = new MenuItem("Додати ціль");
+        MenuItem addHostItem = new MenuItem(UiI18n.get("menu.add_host"));
         addHostItem.setAccelerator(KeyCombination.valueOf(AppAccelerators.ADD_HOST));
         addHostItem.setOnAction(e -> actions.onAddHost());
-        Menu fileMenu = new Menu("Файл");
+        Menu fileMenu = new Menu(UiI18n.get("menu.file"));
         fileMenu.getItems().addAll(saveItem, addHostItem);
 
-        MenuItem aboutItem = new MenuItem("Про PINGUI…");
+        MenuItem aboutItem = new MenuItem(UiI18n.get("menu.about_item"));
         aboutItem.setOnAction(e -> actions.onAbout());
-        Menu aboutMenu = new Menu("Про");
+        Menu aboutMenu = new Menu(UiI18n.get("menu.about"));
         aboutMenu.getItems().add(aboutItem);
 
-        MenuItem helpItem = new MenuItem("Довідка…");
+        MenuItem helpItem = new MenuItem(UiI18n.get("menu.help_item"));
         helpItem.setAccelerator(KeyCombination.valueOf(AppAccelerators.HELP));
         helpItem.setOnAction(e -> actions.onHelp());
-        Menu helpMenu = new Menu("Довідка");
+        Menu helpMenu = new Menu(UiI18n.get("menu.help"));
         helpMenu.getItems().add(helpItem);
 
-        MenuItem databaseItem = new MenuItem("База даних…");
+        MenuItem databaseItem = new MenuItem(UiI18n.get("menu.database"));
         databaseItem.setOnAction(e -> actions.onPersistenceSettings());
-        MenuItem profileParamsItem = new MenuItem("Профіль…");
+        MenuItem profileParamsItem = new MenuItem(UiI18n.get("menu.profile"));
         profileParamsItem.setOnAction(e -> actions.onProfileParamsSettings());
-        MenuItem alertsItem = new MenuItem("Сповіщення…");
+        MenuItem alertsItem = new MenuItem(UiI18n.get("menu.alerts"));
         alertsItem.setOnAction(e -> actions.onAlertsSettings());
-        MenuItem telemetryItem = new MenuItem("Телеметрія…");
+        MenuItem telemetryItem = new MenuItem(UiI18n.get("menu.telemetry"));
         telemetryItem.setOnAction(e -> actions.onTelemetrySettings());
-        MenuItem exportItem = new MenuItem("Експорт зараз…");
+        MenuItem exportItem = new MenuItem(UiI18n.get("menu.export_now"));
         exportItem.setOnAction(e -> actions.onExportNow());
-        Menu settingsMenu = new Menu("Налаштування");
+        Menu settingsMenu = new Menu(UiI18n.get("menu.settings"));
         settingsMenu.getItems().addAll(databaseItem, profileParamsItem, alertsItem, telemetryItem, exportItem);
 
-        MenuBar menuBar = new MenuBar(fileMenu, aboutMenu, settingsMenu, helpMenu);
+        Menu languageMenu = new Menu(UiI18n.get("menu.language"));
+        ToggleGroup langGroup = new ToggleGroup();
+        for (UiLocale locale : UiLocale.values()) {
+            RadioMenuItem item = new RadioMenuItem(locale.displayName());
+            item.setToggleGroup(langGroup);
+            item.setUserData(locale);
+            item.setSelected(locale == UiI18n.locale());
+            item.setOnAction(e -> actions.onLanguageSelected(locale));
+            languageMenu.getItems().add(item);
+        }
+
+        MenuBar menuBar = new MenuBar(fileMenu, aboutMenu, settingsMenu, languageMenu, helpMenu);
         menuBar.setUseSystemMenuBar(true);
         return menuBar;
+    }
+
+    /** Refresh chrome labels after {@link UiI18n#setLocale} (P25). */
+    public void retranslateChrome() {
+        profileToolbar.retranslate();
+        modeToolbar.retranslate();
+        hostListPanel.retranslate();
+        routeGraphPanel.retranslate();
+        historyPanel.retranslate();
+        if (actions != null) {
+            root.setTop(createMenuBar(actions));
+        }
+        hostList().refresh();
     }
 
     public BorderPane root() {

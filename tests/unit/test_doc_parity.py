@@ -1,4 +1,4 @@
-"""Contract test: UK/EN documentation parity gate."""
+"""Contract test: UK/EN full docs + user-facing locale matrix gate."""
 
 from __future__ import annotations
 

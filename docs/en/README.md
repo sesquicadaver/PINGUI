@@ -33,6 +33,8 @@ On **`main`** and **`beta`** — full package (Java Pro + Python) after merge; *
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contributor | PR, anti-stub |
 | [MVP_SPEC.md](MVP_SPEC.md) | All | MVP requirements |
 | [USER_GUIDE.md](USER_GUIDE.md) | User | End user guide |
+| [HOWTO.md](HOWTO.md) | User | Quick scenarios (start, targets, modes) |
+| [ADR_I18N.md](ADR_I18N.md) | Developer | i18n: UI + **user docs only** in other languages |
 | [../java/README.md](../java/README.md) | All | Java launcher, Gradle |
 | [../.github/workflows/java.yml](../.github/workflows/java.yml) | CI | Java `./gradlew check` |
 | [../.github/workflows/ci.yml](../.github/workflows/ci.yml) | CI | Python pytest |

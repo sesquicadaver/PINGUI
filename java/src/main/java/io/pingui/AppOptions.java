@@ -29,7 +29,9 @@ public record AppOptions(
         Optional<Integer> apiPort,
         OptionalInt telemetryRetentionDays,
         Optional<Path> telemetryJsonlDir,
-        Optional<Path> telemetryDumpPath) {
+        Optional<Path> telemetryDumpPath,
+        /** CLI {@code --lang} override (e.g. {@code en}); empty → prefs / UK default. */
+        Optional<String> uiLang) {
     public static AppOptions defaults() {
         return new AppOptions(
                 Path.of("config/hosts.example.yaml"),
@@ -53,6 +55,7 @@ public record AppOptions(
                 Optional.empty(),
                 Optional.empty(),
                 OptionalInt.empty(),
+                Optional.empty(),
                 Optional.empty(),
                 Optional.empty());
     }

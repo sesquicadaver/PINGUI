@@ -10,7 +10,7 @@
 
 | Поле | Значення |
 |------|----------|
-| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (лінійна черга **P24**). Обидві: Java Pro (P9–P19) + Python після merge |
+| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (черга **P25** закрита). Обидві: Java Pro (P9–P19) + Python після merge |
 | **Пріоритет** | P0 критично · P1 важливо · P2 бажано |
 | **DoD** | Definition of Done — умова закриття задачі |
 
@@ -23,7 +23,7 @@
 | Поле | Значення |
 |------|----------|
 | **Поточна задача** | **DONE** |
-| **Фаза** | 24 — GUI architecture & paint (закрита) |
+| **Фаза** | 25 — i18n UI + docs (закрита) |
 | **DoD (коротко)** | Лінійна черга вичерпана; новий ID — лише явно |
 | **Гілка** | `beta` |
 
@@ -139,8 +139,15 @@
 | 93 | **P24-008** | [x] | CSS theme layer (light-first palette) |
 | 94 | **P24-009** | [x] | Startup: важкий init поза FX thread |
 | 95 | **P24-010** | [x] | ADR_GUI_PAINT + perf smoke + закриття фази |
+| 96 | **P25-001** | [x] | ADR_I18N + ROADMAP фаза 25 |
+| 97 | **P25-002** | [x] | UiI18n + messages_uk + міграція UI на ключі |
+| 98 | **P25-003** | [x] | Layout harden (HostListCell/CRUD/text-branches) |
+| 99 | **P25-004** | [x] | Runtime Language menu + persist + `--lang` |
+| 100 | **P25-005** | [x] | messages_en + es/it/pl/cs/lv/lt/et UI bundles |
+| 101 | **P25-006** | [x] | user-facing locale matrix (USER_GUIDE / HOWTO / README.lang) |
+| 102 | **P25-007** | [x] | USER_GUIDE + HOWTO wave (без CHECKLIST/ADR) |
 
-**Стан черги:** вичерпана — **NEXT = DONE** (фаза 24 GUI architecture & paint закрита).
+**Стан черги:** вичерпана — **NEXT = DONE** (фаза 25 i18n закрита).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -831,6 +838,24 @@ flowchart TD
 | **P24-010** | [x] ADR + perf smoke | `ADR_GUI_PAINT.md`, CHECKLIST, `GraphCanvasPerfTest` | Фаза закрита; follow-ups нижче |
 
 **Follow-ups після P24 (не в лінійній черзі):** dark mode product; `MainController` ≤550 LOC; FXML / MonitorService split — див. [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md).
+
+---
+
+## Фаза 25 — i18n UI + docs (`beta`, P1)
+
+**Контекст:** GUI була UK-only; docs — UK↔EN. Потрібні додаткові мови з UK-каноном, runtime-перемикачем і stub-матрицею docs (без DE/FR).
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P25-001** | [x] ADR_I18N | `docs/ADR_I18N.md`, `docs/en/…` | UK-канон; локалі; stubs; DE/FR out |
+| **P25-002** | [x] UiI18n framework | `io.pingui.i18n.*`, `messages_uk.properties` | ResourceBundle UTF-8; fallback UK→key |
+| **P25-003** | [x] Layout harden | `HostListCell`, `HostListPanel`, `AppMenuDialogs`, `ViewModeController` | Немає text-branch; USE_PREF_SIZE/FlowPane |
+| **P25-004** | [x] Runtime switch | `MainView`, `MainController`, `AppOptions`, `--lang` | Меню Мова; persist `ui-locale.properties` |
+| **P25-005** | [x] UI bundles | `messages_{en,es,it,pl,cs,lv,lt,et}.properties` | 313 keys each; `UiI18nTest` |
+| **P25-006** | [x] Docs stub matrix | `docs/{es,it,…}/`, `check_doc_parity.py` | Лише USER_GUIDE+HOWTO+`README.<lang>` |
+| **P25-007** | [x] USER_GUIDE / HOWTO wave | `docs/*/USER_GUIDE.md`, `HOWTO.md` | User docs; без CHECKLIST/ADR |
+
+**Follow-ups:** DE/FR; повний `README.<lang>`; Python GUI i18n. Developer docs лишаються UK/EN.
 
 ---
 

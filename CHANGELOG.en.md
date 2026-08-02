@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **P25 — UI/docs i18n:** `UiI18n` + `messages_{uk,en,es,it,pl,cs,lv,lt,et}`; Language menu + `--lang` + persist; ADR_I18N; user-facing docs only (`USER_GUIDE`/`HOWTO`/`README.<lang>`), no CHECKLIST/ADR in stub locales; DE/FR deferred.
 - **Host poll liveness counters:** separate row `спроб N  помилки E  P%` above RTT metrics (reset on Ping only / mode change); dark text on colored host rows.
 - **P24-010 — ADR_GUI_PAINT + perf smoke:** Canvas coalesce/cache, no forced resize, geometry persist, deferred startup policy; `GraphCanvasPerfTest` (100 drag ≤1 paint); CHECKLIST Extended+pan+route (+JFR); phase 24 → **DONE**.
 - **GUI launcher detach:** `pingui-java.sh` / `.bat` start the GUI in the background (Linux/macOS `nohup`, Windows `javaw`); the terminal is freed. `--foreground` for debug; daemon/export/help stay attached. Log: `~/.cache/pingui/gui.log` / `%LOCALAPPDATA%\pingui\gui.log` (`PINGUI_GUI_LOG`). Entry point `PinguiLauncher` (does not extend `Application`) so `installDist`/jpackage see JavaFX on the classpath.

@@ -3,6 +3,7 @@ package io.pingui.ui;
 import io.pingui.CliPersistenceOverrides;
 import io.pingui.config.SessionDbAutoName;
 import io.pingui.config.SessionDbResolver;
+import io.pingui.i18n.UiI18n;
 import io.pingui.persistence.PersistenceEventType;
 import io.pingui.persistence.PersistencePolicy;
 import io.pingui.persistence.PersistencePolicySupport;
@@ -28,9 +29,6 @@ import javafx.stage.Window;
 
 /** GUI for SQLite path and persistence event policy (P11-014, P11-016, P22-005). */
 public final class PersistenceSettingsDialog {
-    private static final ButtonType KEEP_HISTORY = new ButtonType("Залишити історію", ButtonBar.ButtonData.NO);
-    private static final ButtonType DELETE_HISTORY = new ButtonType("Видалити", ButtonBar.ButtonData.YES);
-
     private PersistenceSettingsDialog() {}
 
     /** Result from the database settings dialog. */
@@ -56,8 +54,11 @@ public final class PersistenceSettingsDialog {
 
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.initOwner(owner);
-        dialog.setTitle("База даних");
-        dialog.setHeaderText(database == null ? "Підключення SQLite" : "Політика запису подій у SQLite");
+        dialog.setTitle(UiI18n.get("persistence.title"));
+        dialog.setHeaderText(
+                database == null
+                        ? UiI18n.get("persistence.header_connect")
+                        : UiI18n.get("persistence.header_policy"));
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
 
         TextField pathField = new TextField();
@@ -65,17 +66,19 @@ public final class PersistenceSettingsDialog {
         if (effectiveDbPath.isPresent()) {
             pathField.setText(effectiveDbPath.get().toString());
         } else if (canPickPath) {
-            pathField.setPromptText("наприклад, data/ping.db");
+            pathField.setPromptText(UiI18n.get("persistence.path_prompt"));
         }
         pathField.setEditable(canPickPath);
 
-        Button browseButton = new Button("Обрати…");
+        Button browseButton = new Button(UiI18n.get("dialog.browse"));
         browseButton.setDisable(!canPickPath);
         browseButton.setOnAction(e -> {
             FileChooser chooser = new FileChooser();
-            chooser.setTitle("Файл SQLite");
-            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("SQLite (*.db)", "*.db"));
-            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Усі файли", "*.*"));
+            chooser.setTitle(UiI18n.get("persistence.sqlite_chooser"));
+            chooser.getExtensionFilters()
+                    .add(new FileChooser.ExtensionFilter(UiI18n.get("dialog.filter_sqlite"), "*.db"));
+            chooser.getExtensionFilters()
+                    .add(new FileChooser.ExtensionFilter(UiI18n.get("dialog.filter_all_files"), "*.*"));
             if (!pathField.getText().isBlank()) {
                 Path current = Path.of(pathField.getText().strip());
                 if (current.getParent() != null) {
@@ -89,42 +92,43 @@ public final class PersistenceSettingsDialog {
             }
         });
 
-        Button autoButton = new Button("Створити…");
+        Button autoButton = new Button(UiI18n.get("dialog.create"));
         autoButton.setDisable(!canPickPath);
-        autoButton.setTooltip(new Tooltip("data/YYYY-MM-DD_HH-mm-ss_<локальний-IP>.db"));
+        autoButton.setTooltip(new Tooltip(UiI18n.get("persistence.auto_tooltip")));
         autoButton.setOnAction(
                 e -> pathField.setText(SessionDbAutoName.generate().toString()));
 
         if (pathLockedByCli) {
-            pathField.setTooltip(new Tooltip("Шлях задано CLI (--session-db)"));
+            pathField.setTooltip(new Tooltip(UiI18n.get("persistence.path_cli")));
         } else if (!canPickPath) {
-            pathField.setTooltip(new Tooltip("Шлях задано YAML (persistence.session_db)"));
+            pathField.setTooltip(new Tooltip(UiI18n.get("persistence.path_yaml")));
         }
 
         HBox pathRow = new HBox(8, pathField, browseButton, autoButton);
         HBox.setHgrow(pathField, Priority.ALWAYS);
 
-        CheckBox routeChangeCheck = new CheckBox("Зміни маршруту (route_change)");
+        CheckBox routeChangeCheck = new CheckBox(UiI18n.get("persistence.route_change"));
         routeChangeCheck.setSelected(pendingPolicy.routeChange());
         cliLocks.routeChange().ifPresent(ignored -> {
             routeChangeCheck.setDisable(true);
-            routeChangeCheck.setTooltip(new Tooltip("Заблоковано CLI"));
+            routeChangeCheck.setTooltip(new Tooltip(UiI18n.get("dialog.locked_cli")));
         });
 
-        CheckBox probeErrorCheck = new CheckBox("Помилки probe (probe_error)");
+        CheckBox probeErrorCheck = new CheckBox(UiI18n.get("persistence.probe_error"));
         probeErrorCheck.setSelected(pendingPolicy.probeError());
         cliLocks.probeError().ifPresent(ignored -> {
             probeErrorCheck.setDisable(true);
-            probeErrorCheck.setTooltip(new Tooltip("Заблоковано CLI"));
+            probeErrorCheck.setTooltip(new Tooltip(UiI18n.get("dialog.locked_cli")));
         });
 
         Label hint = new Label(
                 database == null
-                        ? "Оберіть файл, «Створити…» (автоімʼя) або вкажіть шлях, потім «Застосувати»."
-                        : "Зміни політики набувають чинності після завершення поточного poll-циклу.");
+                        ? UiI18n.get("persistence.hint_connect")
+                        : UiI18n.get("persistence.hint_policy"));
         hint.setWrapText(true);
 
-        VBox content = new VBox(10, new Label("Файл бази:"), pathRow, routeChangeCheck, probeErrorCheck, hint);
+        VBox content = new VBox(
+                10, new Label(UiI18n.get("persistence.path_label")), pathRow, routeChangeCheck, probeErrorCheck, hint);
         content.setPrefWidth(520);
         dialog.getDialogPane().setContent(content);
 
@@ -137,9 +141,9 @@ public final class PersistenceSettingsDialog {
         if (pathText.isBlank()) {
             Alert error = new Alert(Alert.AlertType.WARNING);
             error.initOwner(owner);
-            error.setTitle("База даних");
-            error.setHeaderText("Не вказано файл бази");
-            error.setContentText("Вкажіть шлях до SQLite або скасуйте.");
+            error.setTitle(UiI18n.get("persistence.title"));
+            error.setHeaderText(UiI18n.get("persistence.path_missing_header"));
+            error.setContentText(UiI18n.get("persistence.path_missing_content"));
             error.showAndWait();
             return;
         }
@@ -161,22 +165,35 @@ public final class PersistenceSettingsDialog {
 
     private static boolean confirmDisables(
             Window owner, PersistencePolicy active, PersistencePolicy next, SessionDatabase database) {
+        ButtonType keepHistory =
+                new ButtonType(UiI18n.get("persistence.keep_history"), ButtonBar.ButtonData.NO);
+        ButtonType deleteHistory =
+                new ButtonType(UiI18n.get("persistence.delete_history"), ButtonBar.ButtonData.YES);
         List<PersistenceEventType> disabled = PersistencePolicySupport.typesBeingDisabled(active, next);
         for (PersistenceEventType type : disabled) {
             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
             confirm.initOwner(owner);
-            confirm.setTitle("Вимкнути запис подій");
-            confirm.setHeaderText("Вимкнути запис: " + PersistencePolicySupport.labelUk(type) + "?");
-            confirm.setContentText("Видалити з бази всі збережені події цього типу?");
-            confirm.getButtonTypes().setAll(KEEP_HISTORY, DELETE_HISTORY, ButtonType.CANCEL);
+            confirm.setTitle(UiI18n.get("persistence.disable_title"));
+            confirm.setHeaderText(UiI18n.get("persistence.disable_header", eventLabel(type)));
+            confirm.setContentText(UiI18n.get("persistence.disable_content"));
+            confirm.getButtonTypes().setAll(keepHistory, deleteHistory, ButtonType.CANCEL);
             Optional<ButtonType> answer = confirm.showAndWait();
             if (answer.isEmpty() || answer.get() == ButtonType.CANCEL) {
                 return false;
             }
-            if (answer.get() == DELETE_HISTORY) {
+            if (answer.get() == deleteHistory) {
                 database.deleteEventsByType(type);
             }
         }
         return true;
+    }
+
+    private static String eventLabel(PersistenceEventType type) {
+        return switch (type) {
+            case ROUTE_CHANGE -> UiI18n.get("persistence.label.route_change");
+            case PROBE_ERROR -> UiI18n.get("persistence.label.probe_error");
+            case ENDPOINT_DOWN -> UiI18n.get("persistence.label.endpoint_down");
+            case LATENCY_HIGH -> UiI18n.get("persistence.label.latency_high");
+        };
     }
 }

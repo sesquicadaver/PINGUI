@@ -5,6 +5,7 @@ import io.pingui.config.HostEntry;
 import io.pingui.config.HostTags;
 import io.pingui.config.HostsConfig;
 import io.pingui.config.PingExpertEntry;
+import io.pingui.i18n.UiI18n;
 import io.pingui.monitor.HostPollCounters;
 import io.pingui.monitor.HostProbeMode;
 import io.pingui.monitor.HostProblemSummary;
@@ -38,7 +39,9 @@ import javafx.stage.Window;
 final class HostListPresenter {
     private static final double HOST_ROW_HEIGHT = 56.0;
     private static final double HOST_LIST_INSET = 4.0;
-    static final String TAG_FILTER_ALL = "Усі";
+    static String tagFilterAllLabel() {
+        return UiI18n.get("host.tag_filter_all");
+    }
 
     private final ObservableList<HostItem> hostItems;
     private final FilteredList<HostItem> filteredHosts;
@@ -92,7 +95,7 @@ final class HostListPresenter {
         this.onHostRenamed = onHostRenamed;
         this.startEasterEgg = startEasterEgg;
         this.runWithoutHistoryFilterSync = runWithoutHistoryFilterSync;
-        Label tagLabel = new Label("Тег:");
+        Label tagLabel = new Label(UiI18n.get("host.tag_label"));
         tagChipPane.setPadding(new Insets(2, 0, 2, 0));
         HBox.setHgrow(tagChipPane, Priority.ALWAYS);
         tagFilterBar.getChildren().addAll(tagLabel, tagChipPane);
@@ -155,7 +158,7 @@ final class HostListPresenter {
             toggle.setToggleGroup(null);
         }
         tagChipPane.getChildren().clear();
-        ToggleButton all = chipButton(TAG_FILTER_ALL, null);
+        ToggleButton all = chipButton(tagFilterAllLabel(), null);
         tagChipPane.getChildren().add(all);
         ToggleButton selected = all;
         for (String tag : tags) {
@@ -226,7 +229,7 @@ final class HostListPresenter {
     void editSelectedHostTags() {
         HostItem selected = hostList.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            userFeedback.error("Оберіть ціль, щоб змінити теги");
+            userFeedback.error(UiI18n.get("host.tags_select_error"));
             return;
         }
         Optional<List<String>> updated = tagsEditor.apply(selected.getHost(), selected.getTags());
@@ -247,8 +250,9 @@ final class HostListPresenter {
             }
             hostList.refresh();
             markDirty.run();
-            userFeedback.info(
-                    "Теги [" + host + "]: " + (updated.get().isEmpty() ? "(немає)" : String.join(", ", updated.get())));
+            String tagsDisplay =
+                    updated.get().isEmpty() ? UiI18n.get("host.tags_none") : String.join(", ", updated.get());
+            userFeedback.info(UiI18n.get("host.tags_updated", host, tagsDisplay));
         } catch (ConfigError ex) {
             userFeedback.error(ex.getMessage());
         }
@@ -309,11 +313,11 @@ final class HostListPresenter {
             selectHostWithoutHistoryFilterSync(item);
             hostInput.clear();
             markDirty.run();
-            userFeedback.info("Додано ціль: " + host);
+            userFeedback.info(UiI18n.get("host.added", host));
             syncControls.run();
             redrawRoute.run();
         } catch (ConfigError ex) {
-            userFeedback.error("Не вдалося додати ціль: " + ex.getMessage());
+            userFeedback.error(UiI18n.get("host.add_failed", ex.getMessage()));
         }
     }
 
@@ -342,11 +346,11 @@ final class HostListPresenter {
             hostInput.setText(renamed);
             onHostRenamed.accept(oldHost, renamed);
             markDirty.run();
-            userFeedback.info("Змінено ціль: " + oldHost + " → " + renamed);
+            userFeedback.info(UiI18n.get("host.renamed", oldHost, renamed));
             clearHistoryReplay.run();
             redrawRoute.run();
         } catch (ConfigError ex) {
-            userFeedback.error("Не вдалося змінити ціль: " + ex.getMessage());
+            userFeedback.error(UiI18n.get("host.rename_failed", ex.getMessage()));
         }
     }
 
@@ -365,7 +369,7 @@ final class HostListPresenter {
             hostItems.remove(selected);
             hostInput.clear();
             markDirty.run();
-            userFeedback.info("Видалено ціль: " + host);
+            userFeedback.info(UiI18n.get("host.removed", host));
             syncControls.run();
             redrawRoute.run();
         } catch (ConfigError ex) {
@@ -377,18 +381,18 @@ final class HostListPresenter {
         Window owner = hostList.getScene() != null ? hostList.getScene().getWindow() : null;
         return ConfirmDialogs.confirm(
                 owner,
-                "Видалити ціль",
-                "Видалити «" + host + "» зі списку?",
-                "Ціль зникне з поточної сесії. Збережіть конфіг, щоб зміна потрапила у YAML.");
+                UiI18n.get("confirm.host_delete.title"),
+                UiI18n.get("confirm.host_delete.header", host),
+                UiI18n.get("confirm.host_delete.content"));
     }
 
     void syncInputLimits() {
         boolean canAdd = store.get().canAddHost();
         hostInput.setDisable(!canAdd);
         if (!canAdd) {
-            hostInput.setPromptText("Досягнуто ліміт 10 цілей у списку");
+            hostInput.setPromptText(UiI18n.get("host.prompt_limit"));
         } else {
-            hostInput.setPromptText("IPv4, IPv6 literal або hostname…");
+            hostInput.setPromptText(UiI18n.get("host.prompt_full"));
         }
     }
 
@@ -484,7 +488,10 @@ final class HostListPresenter {
             clearHistoryReplay.run();
             redrawRoute.run();
             markDirty.run();
-            userFeedback.info("Ping only [" + item.getHost() + "]: " + (pingOnly ? "увімкнено" : "вимкнено"));
+            userFeedback.info(UiI18n.get(
+                    "host.ping_only_toggled",
+                    item.getHost(),
+                    pingOnly ? UiI18n.get("host.enabled_on") : UiI18n.get("host.enabled_off")));
         } catch (ConfigError ex) {
             userFeedback.error(ex.getMessage());
             updatingList = true;
@@ -505,8 +512,10 @@ final class HostListPresenter {
             session.setPingExpert(item.getHost(), updated.get());
             item.setExpertConfigured(updated.get().isConfigured());
             markDirty.run();
-            userFeedback.info("Expert ping [" + item.getHost() + "]: "
-                    + (updated.get().isConfigured() ? updated.get().args() : "скинуто"));
+            String detail = updated.get().isConfigured()
+                    ? String.join(" ", updated.get().args())
+                    : UiI18n.get("host.expert_cleared");
+            userFeedback.info(UiI18n.get("host.expert_updated", item.getHost(), detail));
         } catch (ConfigError ex) {
             userFeedback.error(ex.getMessage());
         }
@@ -528,7 +537,8 @@ final class HostListPresenter {
                         ? Integer.toString(result.discovery().recommendedMtu().getAsInt())
                         : "?";
                 markDirty.run();
-                userFeedback.info("MTU wizard [" + item.getHost() + "]: MTU≈" + mtu + " → " + next.args());
+                userFeedback.info(
+                        UiI18n.get("host.mtu_applied", item.getHost(), mtu, String.join(" ", next.args())));
             } catch (ConfigError ex) {
                 userFeedback.error(ex.getMessage());
             }

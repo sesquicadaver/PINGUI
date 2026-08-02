@@ -1,5 +1,6 @@
 package io.pingui.ui;
 
+import io.pingui.i18n.UiI18n;
 import java.util.function.BiConsumer;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.value.ChangeListener;
@@ -15,16 +16,17 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
 /** Host list row: enable, Ping only, optional Exten./MTU, problem badge, name, metrics. */
 final class HostListCell extends ListCell<HostItem> {
     private final CheckBox checkBox = new CheckBox();
-    private final CheckBox pingOnlyCheck = new CheckBox("Ping only");
-    private final Button extenButton = new Button("Exten.");
-    private final Button mtuButton = new Button("MTU");
-    private final Button problemButton = new Button("!");
+    private final CheckBox pingOnlyCheck = new CheckBox(UiI18n.get("host.ping_only"));
+    private final Button extenButton = new Button(UiI18n.get("host.exten"));
+    private final Button mtuButton = new Button(UiI18n.get("host.mtu"));
+    private final Button problemButton = new Button(UiI18n.get("host.problem_badge"));
     private final Label hostLabel = new Label();
     private final Label tagsLabel = new Label();
     private final Label pollCountersLabel = new Label();
@@ -58,14 +60,14 @@ final class HostListCell extends ListCell<HostItem> {
         this.onExpertOpen = onExpertOpen;
         this.onMtuWizardOpen = onMtuWizardOpen;
         this.onProblemOpen = onProblemOpen;
-        extenButton.setMinWidth(56);
-        mtuButton.setMinWidth(48);
-        mtuButton.setTooltip(new Tooltip("MTU discovery wizard (−s sweep + −M do)"));
-        problemButton.setMinWidth(28);
+        extenButton.setMinWidth(Region.USE_PREF_SIZE);
+        mtuButton.setMinWidth(Region.USE_PREF_SIZE);
+        mtuButton.setTooltip(new Tooltip(UiI18n.get("host.mtu_tooltip")));
+        problemButton.setMinWidth(Region.USE_PREF_SIZE);
         problemButton.getStyleClass().add("pingui-danger");
-        problemButton.setTooltip(new Tooltip("Проблема якості (endpoint_down / latency_high)"));
+        problemButton.setTooltip(new Tooltip(UiI18n.get("host.problem_tooltip")));
         pingOnlyCheck.getStyleClass().add("pingui-muted");
-        pingOnlyCheck.setMinWidth(72);
+        pingOnlyCheck.setMinWidth(Region.USE_PREF_SIZE);
         extenButton.setOnAction(e -> {
             HostItem item = getItem();
             if (item != null) {

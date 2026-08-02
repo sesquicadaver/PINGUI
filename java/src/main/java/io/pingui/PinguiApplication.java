@@ -50,6 +50,7 @@ public final class PinguiApplication extends Application {
             AppOptions options = parseOptions(getParameters().getNamed());
             LoggingSetup.configure(options.verbose());
             AppMenuDialogs.bindHostServices(getHostServices());
+            MainController.bootstrapUiLocale(options);
             // P24-009: show shell UI first; heavy I/O (YAML/SQLite/GeoIP) on a background thread.
             controller = new MainController(options);
             Scene scene = controller.createScene();
@@ -224,6 +225,19 @@ public final class PinguiApplication extends Application {
                 && (telemetryRetention.isPresent() || exportReport.isPresent() || exportSchedule.isPresent())) {
             throw new IllegalArgumentException("Use either --telemetry-dump or retention/export flags, not both");
         }
+        Optional<String> uiLang = Optional.empty();
+        if (params.containsKey("lang")) {
+            String value = params.get("lang");
+            if (value == null || value.isBlank()) {
+                throw new IllegalArgumentException("Missing value for --lang");
+            }
+            String code = value.strip();
+            if (io.pingui.i18n.UiLocale.fromCode(code).isEmpty()) {
+                throw new IllegalArgumentException(
+                        "--lang must be one of: uk, en, es, it, pl, cs, lv, lt, et");
+            }
+            uiLang = Optional.of(code);
+        }
         CliRunMode runMode = CliRunMode.GUI;
         if (params.containsKey("daemon")) {
             runMode = CliRunMode.DAEMON;
@@ -269,7 +283,8 @@ public final class PinguiApplication extends Application {
                 apiPort,
                 telemetryRetention,
                 telemetryJsonlDir,
-                telemetryDump);
+                telemetryDump,
+                uiLang);
     }
 
     private static CliTelemetryOverrides parseTelemetryOverrides(Map<String, String> params) {
@@ -649,6 +664,7 @@ public final class PinguiApplication extends Application {
                   --asn-hints PATH    CIDR→ASN YAML (default: config/asn_hints.yaml)
                   --no-asn          Disable ASN hints in hop labels
                   --asn-timeout-ms N Reserved for future whois fallback (default: 2000)
+                  --lang CODE       UI language: uk|en|es|it|pl|cs|lv|lt|et (default: prefs or uk)
                   --verbose         Debug logging
                 """);
     }

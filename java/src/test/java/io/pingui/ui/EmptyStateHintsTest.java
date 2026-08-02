@@ -3,9 +3,17 @@ package io.pingui.ui;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.pingui.i18n.UiI18n;
+import io.pingui.i18n.UiLocale;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class EmptyStateHintsTest {
+    @BeforeEach
+    void ukLocale() {
+        UiI18n.setLocale(UiLocale.UK);
+    }
+
     @Test
     void noSqliteHintPointsToDatabaseMenu() {
         String hint = EmptyStateHints.noSqlite();

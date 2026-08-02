@@ -1,5 +1,6 @@
 package io.pingui.ui;
 
+import io.pingui.i18n.UiI18n;
 import java.util.Optional;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonBar;
@@ -42,13 +43,13 @@ final class ConfirmDialogs {
      * @param owner optional owner window (may be null)
      */
     static UnsavedDecision confirmUnsaved(Window owner) {
-        ButtonType save = new ButtonType("Зберегти", ButtonBar.ButtonData.YES);
-        ButtonType discard = new ButtonType("Не зберігати", ButtonBar.ButtonData.NO);
-        ButtonType cancel = new ButtonType("Скасувати", ButtonBar.ButtonData.CANCEL_CLOSE);
+        ButtonType save = new ButtonType(UiI18n.get("confirm.unsaved.save"), ButtonBar.ButtonData.YES);
+        ButtonType discard = new ButtonType(UiI18n.get("confirm.unsaved.discard"), ButtonBar.ButtonData.NO);
+        ButtonType cancel = new ButtonType(UiI18n.get("confirm.unsaved.cancel"), ButtonBar.ButtonData.CANCEL_CLOSE);
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Незбережені зміни");
-        alert.setHeaderText("Конфіг змінено, але не збережено у YAML.");
-        alert.setContentText("Зберегти перед перемиканням профілю?");
+        alert.setTitle(UiI18n.get("confirm.unsaved.title"));
+        alert.setHeaderText(UiI18n.get("confirm.unsaved.header"));
+        alert.setContentText(UiI18n.get("confirm.unsaved.content"));
         alert.getButtonTypes().setAll(save, discard, cancel);
         if (owner != null) {
             alert.initOwner(owner);

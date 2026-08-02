@@ -4,6 +4,7 @@ import io.pingui.CliAlertOverrides;
 import io.pingui.config.AlertConfig;
 import io.pingui.config.EndpointDownRuleConfig;
 import io.pingui.config.LatencyHighRuleConfig;
+import io.pingui.i18n.UiI18n;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -30,10 +31,21 @@ import javafx.stage.Window;
  * {@code notify_resolved} (P20-011 / P21-003 / P23). Not a full NMS.
  */
 public final class AlertsSettingsDialog {
-    private static final String PRESET_CALM = "Спокійно";
-    private static final String PRESET_BALANCED = "Збалансовано";
-    private static final String PRESET_SENSITIVE = "Чутливо";
-    private static final String PRESET_CUSTOM = "Власні значення";
+    private static String presetCalm() {
+        return UiI18n.get("alerts.preset.calm");
+    }
+
+    private static String presetBalanced() {
+        return UiI18n.get("alerts.preset.balanced");
+    }
+
+    private static String presetSensitive() {
+        return UiI18n.get("alerts.preset.sensitive");
+    }
+
+    private static String presetCustom() {
+        return UiI18n.get("alerts.preset.custom");
+    }
 
     private AlertsSettingsDialog() {}
 
@@ -69,41 +81,41 @@ public final class AlertsSettingsDialog {
 
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.initOwner(owner);
-        dialog.setTitle("Сповіщення");
-        dialog.setHeaderText("Канали + endpoint_down / latency_high (без NMS)");
+        dialog.setTitle(UiI18n.get("alerts.title"));
+        dialog.setHeaderText(UiI18n.get("alerts.header"));
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
 
-        CheckBox desktopCheck = new CheckBox("Desktop alerts (спливаюче вікно)");
+        CheckBox desktopCheck = new CheckBox(UiI18n.get("alerts.desktop"));
         desktopCheck.setSelected(current.desktopAlerts());
         if (locks.desktopAlerts().isPresent()) {
             desktopCheck.setDisable(true);
-            desktopCheck.setTooltip(new Tooltip("Заблоковано CLI (--desktop-alerts)"));
+            desktopCheck.setTooltip(new Tooltip(UiI18n.get("alerts.desktop_locked")));
         } else {
-            desktopCheck.setTooltip(new Tooltip("In-app JavaFX popup — без notify-send / D-Bus / tray"));
+            desktopCheck.setTooltip(new Tooltip(UiI18n.get("alerts.desktop_tooltip")));
         }
 
         TextField webhookField = new TextField(current.normalizedWebhook() != null ? current.normalizedWebhook() : "");
-        webhookField.setPromptText("https://… або порожньо");
+        webhookField.setPromptText(UiI18n.get("alerts.webhook_prompt"));
         if (locks.webhookUrl().isPresent()) {
             webhookField.setDisable(true);
-            webhookField.setTooltip(new Tooltip("Заблоковано CLI (--alert-webhook)"));
+            webhookField.setTooltip(new Tooltip(UiI18n.get("alerts.webhook_locked")));
         }
 
         TextField rateField = new TextField(Integer.toString(current.maxAlertsPerHour()));
         if (locks.rateLimitPerHour().isPresent()) {
             rateField.setDisable(true);
-            rateField.setTooltip(new Tooltip("Заблоковано CLI (--alert-rate-limit)"));
+            rateField.setTooltip(new Tooltip(UiI18n.get("alerts.rate_locked")));
         }
 
-        CheckBox notifyResolvedCheck = new CheckBox("Сповіщати про RESOLVED (quality rules)");
+        CheckBox notifyResolvedCheck = new CheckBox(UiI18n.get("alerts.notify_resolved"));
         notifyResolvedCheck.setSelected(current.notifyResolved());
-        notifyResolvedCheck.setTooltip(new Tooltip("alerts.notify_resolved — окремий emit після clear_after"));
+        notifyResolvedCheck.setTooltip(new Tooltip(UiI18n.get("alerts.notify_resolved_tooltip")));
 
-        CheckBox endpointDownCheck = new CheckBox("Правило endpoint_down (недоступність цілі)");
+        CheckBox endpointDownCheck = new CheckBox(UiI18n.get("alerts.endpoint_down"));
         endpointDownCheck.setSelected(current.endpointDown().enabled());
 
         ComboBox<String> presetCombo = new ComboBox<>(
-                FXCollections.observableArrayList(PRESET_CALM, PRESET_BALANCED, PRESET_SENSITIVE, PRESET_CUSTOM));
+                FXCollections.observableArrayList(presetCalm(), presetBalanced(), presetSensitive(), presetCustom()));
         TextField failField =
                 new TextField(Integer.toString(current.endpointDown().failAfter()));
         TextField clearField =
@@ -113,14 +125,14 @@ public final class AlertsSettingsDialog {
         String matched = current.endpointDown().matchingPreset();
         presetCombo.setValue(
                 switch (matched) {
-                    case "calm" -> PRESET_CALM;
-                    case "sensitive" -> PRESET_SENSITIVE;
-                    case "balanced" -> PRESET_BALANCED;
-                    default -> PRESET_CUSTOM;
+                    case "calm" -> presetCalm();
+                    case "sensitive" -> presetSensitive();
+                    case "balanced" -> presetBalanced();
+                    default -> presetCustom();
                 });
         Runnable applyPreset = () -> {
             String selected = presetCombo.getValue();
-            if (PRESET_CUSTOM.equals(selected) || selected == null) {
+            if (presetCustom().equals(selected) || selected == null) {
                 return;
             }
             EndpointDownRuleConfig preset = EndpointDownRuleConfig.fromPreset(presetKey(selected), true);
@@ -130,9 +142,9 @@ public final class AlertsSettingsDialog {
         };
         presetCombo.valueProperty().addListener((obs, oldV, newV) -> applyPreset.run());
 
-        CheckBox latencyHighCheck = new CheckBox("Правило latency_high (rtt ≥ multiplier × AVG)");
+        CheckBox latencyHighCheck = new CheckBox(UiI18n.get("alerts.latency_high"));
         latencyHighCheck.setSelected(current.latencyHigh().enabled());
-        latencyHighCheck.setTooltip(new Tooltip("Default: 2×AVG, fail_after=3 поспіль (без вікна часу)"));
+        latencyHighCheck.setTooltip(new Tooltip(UiI18n.get("alerts.latency_tooltip")));
         TextField latencyMultiplierField =
                 new TextField(Double.toString(current.latencyHigh().multiplier()));
         TextField latencyFailField =
@@ -148,8 +160,7 @@ public final class AlertsSettingsDialog {
         statusArea.setPrefRowCount(3);
         statusArea.setMaxWidth(Double.MAX_VALUE);
 
-        Label hint = new Label("Застосувати оновлює профіль, dispatcher і quality engines. "
-                + "«Зберегти» → YAML. Default: правила вимкнено.");
+        Label hint = new Label(UiI18n.get("alerts.hint"));
         hint.setWrapText(true);
 
         GridPane grid = new GridPane();
@@ -158,30 +169,30 @@ public final class AlertsSettingsDialog {
         applyLabelFieldColumns(grid);
         int row = 0;
         grid.add(desktopCheck, 0, row++, 2, 1);
-        grid.add(formLabel("webhook URL:"), 0, row);
+        grid.add(formLabel(UiI18n.get("alerts.webhook")), 0, row);
         grid.add(webhookField, 1, row++);
-        grid.add(formLabel("rate_limit / год:"), 0, row);
+        grid.add(formLabel(UiI18n.get("alerts.rate_limit")), 0, row);
         grid.add(rateField, 1, row++);
         grid.add(notifyResolvedCheck, 0, row++, 2, 1);
         grid.add(endpointDownCheck, 0, row++, 2, 1);
-        grid.add(formLabel("пресет down:"), 0, row);
+        grid.add(formLabel(UiI18n.get("alerts.preset_down")), 0, row);
         grid.add(presetCombo, 1, row++);
-        grid.add(formLabel("fail_after:"), 0, row);
+        grid.add(formLabel(UiI18n.get("alerts.fail_after")), 0, row);
         grid.add(failField, 1, row++);
-        grid.add(formLabel("clear_after:"), 0, row);
+        grid.add(formLabel(UiI18n.get("alerts.clear_after")), 0, row);
         grid.add(clearField, 1, row++);
-        grid.add(formLabel("cooldown (хв):"), 0, row);
+        grid.add(formLabel(UiI18n.get("alerts.cooldown")), 0, row);
         grid.add(cooldownField, 1, row++);
         grid.add(latencyHighCheck, 0, row++, 2, 1);
-        grid.add(formLabel("multiplier:"), 0, row);
+        grid.add(formLabel(UiI18n.get("alerts.multiplier")), 0, row);
         grid.add(latencyMultiplierField, 1, row++);
-        grid.add(formLabel("lat fail_after:"), 0, row);
+        grid.add(formLabel(UiI18n.get("alerts.lat_fail_after")), 0, row);
         grid.add(latencyFailField, 1, row++);
-        grid.add(formLabel("lat clear_after:"), 0, row);
+        grid.add(formLabel(UiI18n.get("alerts.lat_clear_after")), 0, row);
         grid.add(latencyClearField, 1, row++);
-        grid.add(formLabel("lat cooldown:"), 0, row);
+        grid.add(formLabel(UiI18n.get("alerts.lat_cooldown")), 0, row);
         grid.add(latencyCooldownField, 1, row++);
-        grid.add(formLabel("Статус:"), 0, row);
+        grid.add(formLabel(UiI18n.get("dialog.status")), 0, row);
         grid.add(statusArea, 1, row);
         GridPane.setHgrow(webhookField, Priority.ALWAYS);
         GridPane.setHgrow(statusArea, Priority.ALWAYS);
@@ -216,8 +227,8 @@ public final class AlertsSettingsDialog {
             if (owner != null) {
                 alert.initOwner(owner);
             }
-            alert.setTitle("Сповіщення");
-            alert.setHeaderText("Некоректні значення");
+            alert.setTitle(UiI18n.get("alerts.title"));
+            alert.setHeaderText(UiI18n.get("alerts.invalid"));
             alert.setContentText(ex.getMessage());
             alert.showAndWait();
         }
@@ -257,10 +268,10 @@ public final class AlertsSettingsDialog {
     }
 
     static String presetKey(String uiLabel) {
-        if (PRESET_CALM.equals(uiLabel)) {
+        if (presetCalm().equals(uiLabel)) {
             return "calm";
         }
-        if (PRESET_SENSITIVE.equals(uiLabel)) {
+        if (presetSensitive().equals(uiLabel)) {
             return "sensitive";
         }
         return "balanced";

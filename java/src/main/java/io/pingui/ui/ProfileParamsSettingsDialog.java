@@ -2,6 +2,7 @@ package io.pingui.ui;
 
 import io.pingui.CliProfileOverrides;
 import io.pingui.config.TracingProfile;
+import io.pingui.i18n.UiI18n;
 import io.pingui.probe.ProbeMode;
 import java.util.Locale;
 import java.util.Objects;
@@ -46,8 +47,8 @@ public final class ProfileParamsSettingsDialog {
 
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.initOwner(owner);
-        dialog.setTitle("Параметри профілю");
-        dialog.setHeaderText("interval / max_hops / timeout / probe активного профілю");
+        dialog.setTitle(UiI18n.get("profile.params_title"));
+        dialog.setHeaderText(UiI18n.get("profile.params_header"));
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
 
         TextField intervalField = new TextField(formatDouble(baseline.intervalSeconds()));
@@ -61,24 +62,23 @@ public final class ProfileParamsSettingsDialog {
         lockField(timeoutField, locks.timeoutSeconds().isPresent(), "--timeout");
         if (locks.probeMode().isPresent()) {
             probeCombo.setDisable(true);
-            probeCombo.setTooltip(new Tooltip("Заблоковано CLI (--probe)"));
+            probeCombo.setTooltip(new Tooltip(UiI18n.get("profile.probe_locked")));
         }
 
-        Label hint = new Label("Застосувати оновлює активний профіль і перезапускає монітор. "
-                + "«Зберегти» у головному вікні записує YAML.");
+        Label hint = new Label(UiI18n.get("profile.params_hint"));
         hint.setWrapText(true);
 
         GridPane grid = new GridPane();
         grid.setHgap(8);
         grid.setVgap(8);
         int row = 0;
-        grid.add(new Label("interval (с):"), 0, row);
+        grid.add(new Label(UiI18n.get("profile.interval")), 0, row);
         grid.add(intervalField, 1, row++);
-        grid.add(new Label("max_hops:"), 0, row);
+        grid.add(new Label(UiI18n.get("profile.max_hops")), 0, row);
         grid.add(maxHopsField, 1, row++);
-        grid.add(new Label("timeout (с):"), 0, row);
+        grid.add(new Label(UiI18n.get("profile.timeout")), 0, row);
         grid.add(timeoutField, 1, row++);
-        grid.add(new Label("probe:"), 0, row);
+        grid.add(new Label(UiI18n.get("profile.probe")), 0, row);
         grid.add(probeCombo, 1, row++);
 
         VBox content = new VBox(10, grid, hint);
@@ -99,8 +99,8 @@ public final class ProfileParamsSettingsDialog {
             if (owner != null) {
                 alert.initOwner(owner);
             }
-            alert.setTitle("Параметри профілю");
-            alert.setHeaderText("Некоректні значення");
+            alert.setTitle(UiI18n.get("profile.params_title"));
+            alert.setHeaderText(UiI18n.get("profile.params_invalid"));
             alert.setContentText(ex.getMessage());
             alert.showAndWait();
         }
@@ -139,7 +139,7 @@ public final class ProfileParamsSettingsDialog {
             return;
         }
         field.setDisable(true);
-        field.setTooltip(new Tooltip("Заблоковано CLI (" + cliFlag + ")"));
+        field.setTooltip(new Tooltip(UiI18n.get("dialog.locked_cli_flag", cliFlag)));
     }
 
     private static String formatDouble(double value) {

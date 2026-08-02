@@ -3,6 +3,7 @@ package io.pingui.ui;
 import io.pingui.probe.PresetSelfCheck;
 import io.pingui.probe.PresetSelfCheckConfig;
 import io.pingui.probe.PresetSelfCheckResult;
+import io.pingui.i18n.UiI18n;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Objects;
@@ -34,7 +35,7 @@ public final class PresetSelfCheckUi {
 
         /** Status line for Expert dialog. */
         public String statusLine() {
-            return "Self-check: " + presetId + " (" + completed + "/" + total + ")";
+            return UiI18n.get("expert.self_check_progress", presetId, completed, total);
         }
     }
 
@@ -83,8 +84,8 @@ public final class PresetSelfCheckUi {
                     if (owner != null) {
                         alert.initOwner(owner);
                     }
-                    alert.setTitle("Self-check");
-                    alert.setHeaderText("Self-check не вдався");
+                    alert.setTitle(UiI18n.get("expert.self_check_title"));
+                    alert.setHeaderText(UiI18n.get("expert.self_check_failed"));
                     alert.setContentText(ex.getMessage());
                     alert.showAndWait();
                 });
@@ -98,8 +99,8 @@ public final class PresetSelfCheckUi {
         if (owner != null) {
             alert.initOwner(owner);
         }
-        alert.setTitle("Self-check — " + host);
-        alert.setHeaderText(result.anyWarn() ? "Є попередження (loss ≥ порогу)" : "OK — DF / DSCP / Burst");
+        alert.setTitle(UiI18n.get("expert.self_check_title_host", host));
+        alert.setHeaderText(result.anyWarn() ? UiI18n.get("expert.self_check_warn") : UiI18n.get("expert.self_check_ok"));
         alert.setContentText(formatAlertBody(result));
         alert.showAndWait();
     }
@@ -107,7 +108,7 @@ public final class PresetSelfCheckUi {
     /** Human-readable Alert body (unit-tested). */
     public static String formatAlertBody(PresetSelfCheckResult result) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Короткий batch (інформаційно; не змінює форму Expert).\n\n");
+        sb.append(UiI18n.get("expert.self_check_body_intro"));
         for (PresetSelfCheckResult.PresetCheck check : result.checks()) {
             sb.append(check.warn() ? "⚠ " : "✓ ");
             sb.append(check.label())

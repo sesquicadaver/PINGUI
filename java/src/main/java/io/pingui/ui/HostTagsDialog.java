@@ -2,6 +2,7 @@ package io.pingui.ui;
 
 import io.pingui.config.ConfigError;
 import io.pingui.config.HostTags;
+import io.pingui.i18n.UiI18n;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -19,17 +20,17 @@ public final class HostTagsDialog {
 
     public static Optional<List<String>> show(String host, List<String> current) {
         Dialog<ButtonType> dialog = new Dialog<>();
-        dialog.setTitle("Теги — " + host);
-        dialog.setHeaderText("Теги через кому (a-z, 0-9, '.', '_', '-'; макс. " + HostTags.MAX_TAGS_PER_HOST + ")");
+        dialog.setTitle(UiI18n.get("host.tags_title", host));
+        dialog.setHeaderText(UiI18n.get("host.tags_header", HostTags.MAX_TAGS_PER_HOST));
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
         TextField field = new TextField(current == null || current.isEmpty() ? "" : String.join(", ", current));
-        field.setPromptText("dc, vpn, customer-x");
+        field.setPromptText(UiI18n.get("host.tags_prompt"));
         Label error = new Label();
         error.setStyle("-fx-text-fill: #c0392b;");
         error.setWrapText(true);
 
-        VBox box = new VBox(8, new Label("Теги:"), field, error);
+        VBox box = new VBox(8, new Label(UiI18n.get("host.tags_label")), field, error);
         box.setPadding(new Insets(8, 0, 0, 0));
         dialog.getDialogPane().setContent(box);
         dialog.getDialogPane().setPrefWidth(420);

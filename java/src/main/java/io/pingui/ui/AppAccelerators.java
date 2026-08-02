@@ -1,5 +1,7 @@
 package io.pingui.ui;
 
+import io.pingui.i18n.UiI18n;
+
 /**
  * Shared MenuItem accelerator strings ({@link javafx.scene.input.KeyCombination#valueOf}).
  * {@code Shortcut} maps to Ctrl (Linux/Windows) or Meta (macOS) — does not steal bare TextField typing.
@@ -16,13 +18,8 @@ public final class AppAccelerators {
 
     private AppAccelerators() {}
 
-    /** Help section body (unit-tested; P20-006). */
+    /** Help section body (unit-tested; P20-006 / P25). */
     static String helpSection() {
-        return """
-                Гарячі клавіші
-                • F1 — Довідка
-                • Ctrl/Cmd+S — Зберегти (YAML)
-                • Ctrl/Cmd+N — Додати ціль (з поля вводу)
-                """;
+        return UiI18n.get("help.accelerators");
     }
 }
