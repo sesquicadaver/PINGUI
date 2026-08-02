@@ -290,6 +290,7 @@ Run on **Linux** (regression for “black frame” after profile CRUD):
 - [ ] **P22-004 Problem badge:** enable endpoint_down → after FIRING see `!` on row; click → dialog; close hides badge
 - [ ] **P21-003 Alerts rules:** Settings → Alerts… → endpoint_down + preset/params + notify_resolved; Apply + Save → YAML `alerts.rules`
 - [ ] **P20-012 Graph UX:** Extended → graph: zoom (wheel), pan (drag), hop tooltip, double-click → copy IP; empty double-click → reset
+- [ ] **P24-001 Graph paint (native Windows):** on a **native** Windows desktop (not CI/Monocle): Extended → graph paints; pan/zoom without a frozen frame after removing the `width+1` hack. Windows CI is Monocle Headless and **does not** replace this item.
 - [ ] **P20-011 Alerts:** Settings → Alerts… → desktop/webhook/rate_limit; left labels fully visible (not clipped); redacted URL status; Apply + Save
 - [ ] **P20-010 Profile params:** Settings → Profile… → interval/max_hops/timeout/probe → Apply → Save YAML
 - [ ] **P20-009 log_aggregates:** Telemetry → enable log_aggregates → rtt_aggregate after poll/close (no «backlog» tooltip)

@@ -290,6 +290,7 @@ chmod +x pingui-java.sh gradlew
 - [ ] **P22-004 Problem badge:** увімкнути endpoint_down → після FIRING зʼявляється `!` на рядку; клік → діалог; закриття ховає значок
 - [ ] **P21-003 Alerts rules:** Налаштування → Сповіщення… → endpoint_down + пресет/параметри + notify_resolved; Apply + Зберегти → YAML `alerts.rules`
 - [ ] **P20-012 Graph UX:** Extended → граф: zoom (колесо), pan (drag), tooltip на hop, double-click → copy IP; empty double-click → reset
+- [ ] **P24-001 Graph paint (native Windows):** на **нативному** Windows desktop (не CI/Monocle): Extended → граф малюється; pan/zoom без «замороженого» кадру після зняття `width+1` hack. CI Windows = Monocle Headless і **не** замінює цей пункт.
 - [ ] **P20-011 Alerts:** Налаштування → Сповіщення… → desktop/webhook/rate_limit; підписи зліва повністю видимі (не обрізані); статус з redacted URL; Apply + Зберегти
 - [ ] **P20-010 Profile params:** Налаштування → Профіль… → interval/max_hops/timeout/probe → Apply → Зберегти YAML
 - [ ] **P20-009 log_aggregates:** Телеметрія → увімкнути log_aggregates → після poll/закриття з’являються rtt_aggregate (не «backlog»)

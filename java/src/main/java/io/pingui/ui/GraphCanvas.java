@@ -34,11 +34,18 @@ import javafx.stage.Window;
  * registers a listener that redraws via {@link RouteGraphPresenter} when PTR resolves.
  *
  * <p>P20-012 UX: wheel zoom, drag pan, hover tooltip, double-click hop → copy IP.
+ *
+ * <p>P24-001: canvas buffer resizes only when the region size changes (no artificial buffer-size
+ * toggle). Invalidate strategy: <strong>step 1</strong> — {@code clearRect} + paint without buffer
+ * churn. Coalesced pulse paint is P24-002.
  */
 public final class GraphCanvas extends Region {
     private static final double TEXT_PAD = 6.0;
     private static final double DRAG_THRESHOLD_PX = 4.0;
     private static final Font LABEL_FONT = Font.font("Monospace", 10);
+
+    /** Documented invalidate ladder step used by this build (P24-001). */
+    static final String INVALIDATE_STRATEGY = "step1-clearRect-no-buffer-churn";
 
     private final Canvas canvas = new Canvas();
     private final Tooltip hoverTip = new Tooltip();
@@ -58,6 +65,7 @@ public final class GraphCanvas extends Region {
     private double pressPanY;
     private boolean dragging;
     private boolean pressMoved;
+    private int canvasResizeCount;
 
     public GraphCanvas() {
         getChildren().add(canvas);
@@ -119,6 +127,31 @@ public final class GraphCanvas extends Region {
         return nodeAt(viewX, viewY).map(GraphNode::hopIp).filter(ip -> ip != null && !ip.isBlank());
     }
 
+    /** Package-visible for tests — canvas buffer width after last sync resize. */
+    double canvasBufferWidth() {
+        return canvas.getWidth();
+    }
+
+    /** Package-visible for tests — canvas buffer height after last sync resize. */
+    double canvasBufferHeight() {
+        return canvas.getHeight();
+    }
+
+    /** Package-visible for tests — how many times the canvas buffer was resized. */
+    int canvasResizeCount() {
+        return canvasResizeCount;
+    }
+
+    /** Package-visible for tests. */
+    void resetCanvasResizeCount() {
+        canvasResizeCount = 0;
+    }
+
+    /** Package-visible for tests — paint without going through event handlers. */
+    void paintForTest() {
+        redraw();
+    }
+
     private void scheduleRedraw() {
         if (Platform.isFxApplicationThread()) {
             redraw();
@@ -133,6 +166,8 @@ public final class GraphCanvas extends Region {
         double width = getWidth();
         double height = getHeight();
         if (width > 0 && height > 0) {
+            // Sync buffer resize on real layout size changes (P24-001); paint may still be immediate until P24-002.
+            resizeCanvasIfNeeded(width, height);
             redraw();
         }
     }
@@ -145,7 +180,7 @@ public final class GraphCanvas extends Region {
         }
         contentWidth = width;
         contentHeight = height;
-        resizeCanvasBuffer(width, height);
+        resizeCanvasIfNeeded(width, height);
         GraphicsContext gc = canvas.getGraphicsContext2D();
         gc.clearRect(0, 0, width, height);
         gc.setFill(Color.web("#fafafa"));
@@ -178,13 +213,18 @@ public final class GraphCanvas extends Region {
         gc.restore();
     }
 
-    /** JavaFX Canvas may skip repainting when width/height are unchanged (common on Windows SW pipeline). */
-    private void resizeCanvasBuffer(double width, double height) {
+    /**
+     * Resize the Canvas buffer only when dimensions actually change. Does not bump buffer size to
+     * force a Prism realloc (removed in P24-001). Paint invalidation is via {@code clearRect} in
+     * {@link #redraw()}.
+     */
+    private void resizeCanvasIfNeeded(double width, double height) {
         if (canvas.getWidth() == width && canvas.getHeight() == height) {
-            canvas.setWidth(width + 1.0);
+            return;
         }
         canvas.setWidth(width);
         canvas.setHeight(height);
+        canvasResizeCount++;
     }
 
     private void onScroll(ScrollEvent event) {
