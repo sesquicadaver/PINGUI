@@ -138,6 +138,8 @@ Store/history/change detection — `SessionStore`, `RouteHistory`, `RouteChangeD
 
 Chrome assembly (P24-007): package `io.pingui.ui.view` — `MainView` + `ProfileToolbar`, `MonitorModeToolbar`, `HostListPanel`, `StatusPanel`, `RouteGraphPanel`, `HistoryPanel`; callbacks via `MainViewActions`. `createScene()` delegates to `MainView.assemble(...)`. Expected `MainController` LOC after G7 ≈ 850–900 (≤550 target — follow-up presenter moves).
 
+Theme (P24-008): `UiPalette` + `classpath:io/pingui/ui/pingui.css` (light-first); `UiPalette.applyTo(scene)`; GraphCanvas paint from the same hex constants; dark is only a reserved `.theme-dark` stub.
+
 - **About** / **Help** (F1) menu — `AppMenuDialogs`
 - **Trace profile** selection (ComboBox + new/delete); all profiles in one YAML
 - **“Expert”** checkbox → **Exten.** / **MTU** on host row → `PingExpertDialog` (catalog from `pingMan.txt`, without `-c/-w/-W/-i` etc.); 4 quick presets from `ping_presets.yaml` (MTU probe, DF, DSCP, Burst); **MTU wizard…** (`MtuDiscoveryDialog`); **Self-check** (`PresetSelfCheckUi`)

@@ -44,12 +44,13 @@ public final class GraphCanvas extends Region {
     private static final double TEXT_PAD = 6.0;
     private static final double DRAG_THRESHOLD_PX = 4.0;
     private static final Font LABEL_FONT = Font.font("Monospace", 10);
-    private static final Color COLOR_BG = Color.web("#fafafa");
-    private static final Color COLOR_NODE_STROKE = Color.web("#555555");
-    private static final Color COLOR_LABEL = Color.web("#222222");
-    private static final Color COLOR_MESSAGE = Color.web("#333333");
-    private static final Color COLOR_EDGE_ACTIVE = Color.web("#666666");
-    private static final Color COLOR_EDGE_INACTIVE = Color.web("#c8c8c8");
+    // Paint colors from UiPalette (sync with pingui.css — Canvas cannot read CSS vars).
+    private static final Color COLOR_BG = UiPalette.BG;
+    private static final Color COLOR_NODE_STROKE = UiPalette.STROKE;
+    private static final Color COLOR_LABEL = UiPalette.TEXT;
+    private static final Color COLOR_MESSAGE = UiPalette.MESSAGE;
+    private static final Color COLOR_EDGE_ACTIVE = UiPalette.EDGE_ACTIVE;
+    private static final Color COLOR_EDGE_INACTIVE = UiPalette.EDGE_INACTIVE;
 
     /** Documented invalidate ladder: G1–G3 + G4 paint/hover caches. */
     static final String INVALIDATE_STRATEGY =

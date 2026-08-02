@@ -418,7 +418,7 @@ final class HostListPresenter {
         button.setUserData(tag);
         button.setToggleGroup(tagFilterGroup);
         button.setFocusTraversable(false);
-        button.setStyle("-fx-font-size: 11px;");
+        button.getStyleClass().add("pingui-chip");
         return button;
     }
 

@@ -4,6 +4,7 @@ import io.pingui.ui.AppAccelerators;
 import io.pingui.ui.GraphCanvas;
 import io.pingui.ui.HostItem;
 import io.pingui.ui.RouteHistoryItem;
+import io.pingui.ui.UiPalette;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -40,9 +41,14 @@ public final class MainView {
     private final BorderPane root = new BorderPane();
 
     public MainView() {
-        leftPanel.setPadding(new Insets(8));
+        root.getStyleClass().add("pingui-root");
+        leftPanel.getStyleClass().add("pingui-panel");
+        graphPanel.getStyleClass().add("pingui-panel");
+        mainSplit.getStyleClass().add("pingui-split");
         leftPanel.setMinWidth(HostListPanel.PANEL_MIN_WIDTH);
-        graphPanel.setPadding(new Insets(8));
+        // Padding/spacing come from .pingui-panel CSS (UiPalette.SPACE_SM); keep min width in code.
+        leftPanel.setPadding(new Insets(UiPalette.SPACE_SM));
+        graphPanel.setPadding(new Insets(UiPalette.SPACE_SM));
     }
 
     /**
@@ -58,6 +64,15 @@ public final class MainView {
         profileToolbar.wire(actions);
         hostListPanel.wire(actions);
         historyPanel.wire(actions);
+
+        profileToolbar.bar().getStyleClass().add("pingui-toolbar");
+        modeToolbar.bar().getStyleClass().add("pingui-toolbar");
+        hostListPanel.hostList().getStyleClass().add("pingui-host-list");
+        statusPanel.statusLabel().getStyleClass().add("pingui-status");
+        statusPanel.logArea().getStyleClass().add("pingui-log");
+        if (tagFilterBar != null) {
+            tagFilterBar.getStyleClass().add("pingui-toolbar");
+        }
 
         java.util.ArrayList<Node> leftChildren = new java.util.ArrayList<>();
         leftChildren.add(profileToolbar.bar());

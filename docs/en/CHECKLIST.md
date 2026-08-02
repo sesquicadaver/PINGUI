@@ -287,6 +287,7 @@ Run on **Linux** (regression for “black frame” after profile CRUD):
 - [ ] **Delete profile** (return to default) → Simple mode; panels compact (graph/log hidden); window size is **not** forced (P24-005)
 - [ ] **Extended** → graph + log; **Simple** → panels compact again; window size does not jump on toggle (P24-005)
 - [ ] **P24-006 Window geometry:** resize/move window → restart → bounds ±1px; Extended → drag SplitPane divider → restart → divider; restart restores last `UiViewMode`
+- [ ] **P24-008 CSS light theme:** start GUI → `#fafafa` background / light panels; host-list danger `!` and muted tags readable; no raw unstyled chrome (screenshot smoke, light)
 - [ ] **P22-005 Auto session DB:** Settings → Database… → Create… → path `data/YYYY-MM-DD_HH-mm-ss_<ip>.db`; Apply
 - [ ] **P22-004 Problem badge:** enable endpoint_down → after FIRING see `!` on row; click → dialog; close hides badge
 - [ ] **P21-003 Alerts rules:** Settings → Alerts… → endpoint_down + preset/params + notify_resolved; Apply + Save → YAML `alerts.rules`

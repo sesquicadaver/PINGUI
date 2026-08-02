@@ -102,7 +102,8 @@ Module → unit test matrix. Update when adding features.
 | No forced window resize (P24-005) | `ViewModeController`, `PinguiApplication`, `HostListPresenter` | `ViewModeControllerTest.applyDoesNotChangeStageSizeAcrossModeToggle` + source guard |
 | Window geometry persist (P24-006) | `WindowGeometry`, `WindowGeometryStore`, `ViewModeController`, `MainController`, `PinguiApplication` | `WindowGeometryStoreTest`; `ViewModeControllerTest` SplitPane/divider |
 | GUI view components (P24-007) | `io.pingui.ui.view.*`, `MainController` | Presenter tests unchanged; `createScene` → `MainView.assemble` |
-| CSS theme / deferred startup (P24-008…009) | `pingui.css`, `MainController` | Structure/CSS + seam tests |
+| CSS light theme (P24-008) | `UiPalette`, `pingui.css`, `MainView`, `GraphCanvas` | `UiPaletteTest` |
+| Deferred startup I/O (P24-009) | `MainController`, `PinguiApplication` | seam test (no heavy I/O on FX before show) |
 | ADR GUI paint (P24-010) | `docs/ADR_GUI_PAINT.md` | Doc parity + CHECKLIST perf smoke |
 | YAML/GUI alerts.rules (P21-003) | `AlertConfig`, `EndpointDownRuleConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `ProfilesConfigTest`, `AlertsSettingsDialogTest`, `AppMenuDialogsTest` |
 | Host problem indicator ADR (P22-001) | `docs/ADR_HOST_PROBLEM_INDICATOR.md` | docs review / ROADMAP P22 |

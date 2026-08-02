@@ -40,7 +40,6 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
-import javafx.scene.paint.Color;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -140,7 +139,9 @@ public final class MainController {
         }
         hostListPresenter.syncInputLimits();
         updateHistoryPanelVisibility();
-        return new Scene(mainView.root(), Color.web("#fafafa"));
+        Scene scene = new Scene(mainView.root());
+        UiPalette.applyTo(scene);
+        return scene;
     }
 
     private MainViewActions buildViewActions() {

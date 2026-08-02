@@ -61,9 +61,9 @@ final class HostListCell extends ListCell<HostItem> {
         mtuButton.setMinWidth(48);
         mtuButton.setTooltip(new Tooltip("MTU discovery wizard (−s sweep + −M do)"));
         problemButton.setMinWidth(28);
-        problemButton.setStyle("-fx-font-weight: bold; -fx-text-fill: #b71c1c;");
+        problemButton.getStyleClass().add("pingui-danger");
         problemButton.setTooltip(new Tooltip("Проблема якості (endpoint_down / latency_high)"));
-        pingOnlyCheck.setStyle("-fx-font-size: 10px;");
+        pingOnlyCheck.getStyleClass().add("pingui-muted");
         pingOnlyCheck.setMinWidth(72);
         extenButton.setOnAction(e -> {
             HostItem item = getItem();
@@ -83,8 +83,8 @@ final class HostListCell extends ListCell<HostItem> {
                 onProblemOpen.accept(item, null);
             }
         });
-        metricsLabel.setStyle("-fx-font-family: monospace; -fx-font-size: 10px;");
-        tagsLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #666666;");
+        metricsLabel.getStyleClass().add("pingui-metrics");
+        tagsLabel.getStyleClass().add("pingui-muted");
         HBox.setHgrow(textBox, Priority.ALWAYS);
         HBox.setHgrow(hostLabel, Priority.ALWAYS);
         root.setAlignment(Pos.CENTER_LEFT);
