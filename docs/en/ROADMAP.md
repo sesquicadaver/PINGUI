@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P24-002** |
+| **Current task** | **P24-003** |
 | **Phase** | 24 — GUI architecture & paint |
-| **DoD (short)** | GraphCanvas: coalesced `requestRedraw` (≤1 paint / pulse) |
+| **DoD (short)** | GraphCanvas: cache `GraphScene` on pan/zoom |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -130,7 +130,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 84 | **P23-005** | [x] | Badge/dialog + SQLite `latency_high` |
 | 85 | **P24-000** | [x] | ROADMAP/LIVING_SPEC: phase P24 G0–G10 IDs + baseline |
 | 86 | **P24-001** | [x] | GraphCanvas: invalidate without `width+1` (call-count test) |
-| 87 | **P24-002** | [ ] | GraphCanvas: coalesced `requestRedraw` (1× pulse) |
+| 87 | **P24-002** | [x] | GraphCanvas: coalesced `requestRedraw` (1× pulse) |
 | 88 | **P24-003** | [ ] | GraphCanvas: cache `GraphScene` on pan/zoom |
 | 89 | **P24-004** | [ ] | GraphCanvas: color/hover cache |
 | 90 | **P24-005** | [ ] | ViewMode: remove forced window resize / applyCss |
@@ -140,7 +140,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 94 | **P24-009** | [ ] | Startup: heavy init off FX thread |
 | 95 | **P24-010** | [ ] | ADR_GUI_PAINT + perf smoke + phase close |
 
-**Queue status:** open — **NEXT = P24-002** (phase 24 GUI architecture & paint).
+**Queue status:** open — **NEXT = P24-003** (phase 24 GUI architecture & paint).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -820,7 +820,7 @@ flowchart TD
 |----|------|-------|-----|
 | **P24-000** | [x] Baseline IDs in ROADMAP/LIVING_SPEC | `docs/ROADMAP.md`, `docs/en/ROADMAP.md`, `docs/LIVING_SPEC.md`, `docs/en/LIVING_SPEC.md` | Queue P24-000…010; NEXT=P24-001 |
 | **P24-001** | [x] Canvas invalidate without `width+1` | `GraphCanvas.java`, `GraphCanvasTest.java`, CHECKLIST | Call-count==0 when size unchanged; native Windows smoke in CHECKLIST |
-| **P24-002** | [ ] Coalesced redraw | `GraphCanvas.java` | ≤1 paint / pulse; sync resize vs paintPixels; inherits G1 |
+| **P24-002** | [x] Coalesced redraw | `GraphCanvas.java` | ≤1 paint / pulse; sync resize vs paintPixels; inherits G1 |
 | **P24-003** | [ ] Cache GraphScene | `GraphCanvas.java`, `RouteGraphLayout` | Pan/zoom without `buildScene` |
 | **P24-004** | [ ] Color/hover cache | `GraphCanvas.java` | No `Color.web` in draw loop; hover dedupe |
 | **P24-005** | [ ] No forced window resize | `ViewModeController.java` | Toggle without setWidth/Height / applyCss layout |

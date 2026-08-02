@@ -35,17 +35,17 @@ import javafx.stage.Window;
  *
  * <p>P20-012 UX: wheel zoom, drag pan, hover tooltip, double-click hop → copy IP.
  *
- * <p>P24-001: canvas buffer resizes only when the region size changes (no artificial buffer-size
- * toggle). Invalidate strategy: <strong>step 1</strong> — {@code clearRect} + paint without buffer
- * churn. Coalesced pulse paint is P24-002.
+ * <p>P24-001/002: canvas buffer resizes only on real size change ({@link #resizeCanvasIfNeeded});
+ * pixel paints coalesce to one {@link Platform#runLater} pulse via {@link #requestRedraw()}.
+ * Invalidate strategy inherits G1 step1 ({@code clearRect}, no buffer-size toggle).
  */
 public final class GraphCanvas extends Region {
     private static final double TEXT_PAD = 6.0;
     private static final double DRAG_THRESHOLD_PX = 4.0;
     private static final Font LABEL_FONT = Font.font("Monospace", 10);
 
-    /** Documented invalidate ladder step used by this build (P24-001). */
-    static final String INVALIDATE_STRATEGY = "step1-clearRect-no-buffer-churn";
+    /** Documented invalidate ladder: G1 step1 + G2 coalesced pulse (inherits step1). */
+    static final String INVALIDATE_STRATEGY = "step1-clearRect-no-buffer-churn+coalesced-pulse";
 
     private final Canvas canvas = new Canvas();
     private final Tooltip hoverTip = new Tooltip();
@@ -66,6 +66,11 @@ public final class GraphCanvas extends Region {
     private boolean dragging;
     private boolean pressMoved;
     private int canvasResizeCount;
+    private int paintCount;
+    /** Visible across threads if {@code renderRoute} is ever called off the FX thread. */
+    private volatile boolean paintDirty;
+
+    private volatile boolean paintScheduled;
 
     public GraphCanvas() {
         getChildren().add(canvas);
@@ -73,7 +78,7 @@ public final class GraphCanvas extends Region {
         hoverTip.setMaxWidth(320);
         sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
-                Platform.runLater(this::redraw);
+                requestRedraw();
             }
         });
         setOnScroll(this::onScroll);
@@ -100,7 +105,7 @@ public final class GraphCanvas extends Region {
         this.previousRoute = previousRoute != null ? List.copyOf(previousRoute) : List.of();
         this.avgPingFn = avgPingFn != null ? avgPingFn : ip -> null;
         this.hopStatsFn = hopStatsFn != null ? hopStatsFn : hop -> null;
-        scheduleRedraw();
+        requestRedraw();
     }
 
     public void renderRoute(List<HopNode> route, Function<String, Double> avgPingFn, List<HopNode> previousRoute) {
@@ -114,7 +119,7 @@ public final class GraphCanvas extends Region {
         this.lastScene = new GraphScene(List.of(), List.of());
         this.transform = ViewTransform.identity();
         hoverTip.hide();
-        scheduleRedraw();
+        requestRedraw();
     }
 
     /** Package-visible for tests. */
@@ -147,17 +152,46 @@ public final class GraphCanvas extends Region {
         canvasResizeCount = 0;
     }
 
-    /** Package-visible for tests — paint without going through event handlers. */
-    void paintForTest() {
-        redraw();
+    /** Package-visible for tests — completed {@link #paintPixels()} invocations. */
+    int paintCount() {
+        return paintCount;
     }
 
-    private void scheduleRedraw() {
-        if (Platform.isFxApplicationThread()) {
-            redraw();
-        } else {
-            Platform.runLater(this::redraw);
+    /** Package-visible for tests. */
+    void resetPaintCount() {
+        paintCount = 0;
+    }
+
+    /** Package-visible for tests — immediate paint (bypasses coalesce). */
+    void paintForTest() {
+        paintPixels();
+    }
+
+    /** Package-visible for tests — schedule coalesced paint like production paths. */
+    void requestRedrawForTest() {
+        requestRedraw();
+    }
+
+    /**
+     * Coalesced paint request (P24-002). Multiple calls before the next FX pulse produce one {@link
+     * #paintPixels()}.
+     */
+    private void requestRedraw() {
+        paintDirty = true;
+        if (paintScheduled) {
+            return;
         }
+        paintScheduled = true;
+        Platform.runLater(this::runScheduledPaint);
+    }
+
+    private void runScheduledPaint() {
+        paintScheduled = false;
+        if (!paintDirty) {
+            return;
+        }
+        paintDirty = false;
+        paintPixels();
     }
 
     @Override
@@ -166,13 +200,13 @@ public final class GraphCanvas extends Region {
         double width = getWidth();
         double height = getHeight();
         if (width > 0 && height > 0) {
-            // Sync buffer resize on real layout size changes (P24-001); paint may still be immediate until P24-002.
+            // Sync buffer resize on real layout size changes; paint coalesces to the next pulse.
             resizeCanvasIfNeeded(width, height);
-            redraw();
+            requestRedraw();
         }
     }
 
-    private void redraw() {
+    private void paintPixels() {
         double width = getWidth();
         double height = getHeight();
         if (width <= 0 || height <= 0) {
@@ -180,7 +214,9 @@ public final class GraphCanvas extends Region {
         }
         contentWidth = width;
         contentHeight = height;
+        // Defensive sync if paint runs before layout (still no-op when sizes match — G1 primitive).
         resizeCanvasIfNeeded(width, height);
+        paintCount++;
         GraphicsContext gc = canvas.getGraphicsContext2D();
         gc.clearRect(0, 0, width, height);
         gc.setFill(Color.web("#fafafa"));
@@ -216,7 +252,7 @@ public final class GraphCanvas extends Region {
     /**
      * Resize the Canvas buffer only when dimensions actually change. Does not bump buffer size to
      * force a Prism realloc (removed in P24-001). Paint invalidation is via {@code clearRect} in
-     * {@link #redraw()}.
+     * {@link #paintPixels()}.
      */
     private void resizeCanvasIfNeeded(double width, double height) {
         if (canvas.getWidth() == width && canvas.getHeight() == height) {
@@ -234,7 +270,7 @@ public final class GraphCanvas extends Region {
         event.consume();
         double factor = event.getDeltaY() > 0 ? RouteGraphInteraction.ZOOM_STEP : 1.0 / RouteGraphInteraction.ZOOM_STEP;
         transform = transform.zoomAt(event.getX(), event.getY(), factor);
-        redraw();
+        requestRedraw();
     }
 
     private void onMousePressed(MouseEvent event) {
@@ -259,7 +295,7 @@ public final class GraphCanvas extends Region {
             pressMoved = true;
         }
         transform = new ViewTransform(transform.zoom(), pressPanX + dx, pressPanY + dy);
-        redraw();
+        requestRedraw();
     }
 
     private void onMouseReleased(MouseEvent event) {
@@ -298,7 +334,7 @@ public final class GraphCanvas extends Region {
             return;
         }
         transform = ViewTransform.identity();
-        redraw();
+        requestRedraw();
     }
 
     private Optional<GraphNode> nodeAt(double viewX, double viewY) {
