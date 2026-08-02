@@ -134,7 +134,9 @@ Store/history/change detection — `SessionStore`, `RouteHistory`, `RouteChangeD
 
 ## UI-шар
 
-`MainController` (JavaFX):
+`MainController` (JavaFX) — orchestration + coordinators/presenters.
+
+Chrome збірка (P24-007): пакет `io.pingui.ui.view` — `MainView` + `ProfileToolbar`, `MonitorModeToolbar`, `HostListPanel`, `StatusPanel`, `RouteGraphPanel`, `HistoryPanel`; callbacks через `MainViewActions`. `createScene()` делегує `MainView.assemble(...)`. Очікуваний LOC `MainController` після G7 ≈ 850–900 (ціль ≤550 — follow-up presenter moves).
 
 - Меню **Про** / **Довідка** (F1) — `AppMenuDialogs`
 - Вибір **профілю трасування** (ComboBox + новий/видалити); усі профілі в одному YAML

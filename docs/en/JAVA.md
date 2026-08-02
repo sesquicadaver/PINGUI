@@ -134,7 +134,9 @@ Store/history/change detection — `SessionStore`, `RouteHistory`, `RouteChangeD
 
 ## UI layer
 
-`MainController` (JavaFX):
+`MainController` (JavaFX) — orchestration + coordinators/presenters.
+
+Chrome assembly (P24-007): package `io.pingui.ui.view` — `MainView` + `ProfileToolbar`, `MonitorModeToolbar`, `HostListPanel`, `StatusPanel`, `RouteGraphPanel`, `HistoryPanel`; callbacks via `MainViewActions`. `createScene()` delegates to `MainView.assemble(...)`. Expected `MainController` LOC after G7 ≈ 850–900 (≤550 target — follow-up presenter moves).
 
 - **About** / **Help** (F1) menu — `AppMenuDialogs`
 - **Trace profile** selection (ComboBox + new/delete); all profiles in one YAML

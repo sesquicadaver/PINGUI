@@ -23,7 +23,8 @@ import io.pingui.persistence.PersistencePolicy;
 import io.pingui.persistence.SessionDatabase;
 import io.pingui.persistence.timeseries.TimeSeriesBackends;
 import io.pingui.persistence.timeseries.TimeSeriesConfigException;
-import io.pingui.platform.PlatformCapabilities;
+import io.pingui.ui.view.MainView;
+import io.pingui.ui.view.MainViewActions;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.ZoneId;
@@ -35,30 +36,10 @@ import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Insets;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.SplitPane;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.Tooltip;
-import javafx.scene.input.KeyCombination;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -69,7 +50,6 @@ import javafx.util.Duration;
 public final class MainController {
     private static final DateTimeFormatter TIME_FMT =
             DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
-    private static final double SIMPLE_PANEL_MIN_WIDTH = 580.0;
     private static final Duration EASTER_EGG_DURATION = Duration.seconds(30);
     private static final String WINDOW_TITLE = "PINGUI — Сесійний монітор маршрутів (Java)";
 
@@ -84,28 +64,9 @@ public final class MainController {
     private MonitorService monitor;
     private TelemetryAttachment telemetry;
     private final ObservableList<HostItem> hostItems = FXCollections.observableArrayList();
-    private final ListView<HostItem> hostList = new ListView<>();
-    private final TextField hostInput = new TextField();
-    private final TextArea logArea = new TextArea();
-    private final GraphCanvas graphCanvas = new GraphCanvas();
-    private final ListView<RouteHistoryItem> historyList = new ListView<>();
-    private final RadioButton historyRange24h = new RadioButton("24 год");
-    private final RadioButton historyRange7d = new RadioButton("7 днів");
-    private final Label historyLabel = new Label("Історія змін");
-    private final ComboBox<String> historyHostFilter = new ComboBox<>();
-    private final HBox historyFilterBar = new HBox(8);
-    private final HBox historyRangeBar = new HBox(8);
-    private final Label statusLabel = new Label(EmptyStateHints.waitingForData());
-    private final VBox graphPanel = new VBox(8);
-    private final VBox leftPanel = new VBox(8);
-    private final SplitPane mainSplit = new SplitPane();
-    private final BorderPane root = new BorderPane();
-    private final ComboBox<String> profileCombo = new ComboBox<>();
+    private final MainView mainView = new MainView();
     private final SimpleBooleanProperty expertMode = new SimpleBooleanProperty(false);
-    private final Button saveButton = new Button("Зберегти");
     private final ConfigDirtyState dirtyState = new ConfigDirtyState(this::updateDirtyUi);
-    private RadioButton simpleModeButton;
-    private RadioButton extendedModeButton;
     private UiViewMode viewModeBeforeEasterEgg = UiViewMode.SIMPLE;
     private boolean easterEggActive;
     private PauseTransition easterEggTimer;
@@ -143,107 +104,127 @@ public final class MainController {
 
     public Scene createScene() {
         hostListPresenter.configure();
-        hostInput.setPromptText("IP або hostname…");
-        logArea.setEditable(false);
-        logArea.setWrapText(true);
-        statusLabel.setWrapText(true);
-        statusLabel.setMaxWidth(SIMPLE_PANEL_MIN_WIDTH - 16);
+        mainView.monitorModeToolbar().bindExpertMode(expertMode);
+        if (!mainView.monitorModeToolbar().expertCheck().isDisable()) {
+            expertMode.addListener((obs, was, on) -> mainView.hostList().refresh());
+        }
 
-        Button addButton = new Button("Додати");
-        Button editButton = new Button("Змінити");
-        Button tagsButton = new Button("Теги");
-        Button removeButton = new Button("Видалити");
-        addButton.setOnAction(e -> hostListPresenter.addHost());
-        editButton.setOnAction(e -> hostListPresenter.editHost());
-        tagsButton.setOnAction(e -> hostListPresenter.editSelectedHostTags());
-        removeButton.setOnAction(e -> hostListPresenter.removeHost());
-        saveButton.setOnAction(e -> onSaveConfig());
-        hostInput.setOnAction(e -> hostListPresenter.addHost());
+        MainViewActions actions = buildViewActions();
+        mainView.assemble(actions, hostListPresenter.tagFilterBar(), routeDiffPresenter.panel());
         updateDirtyUi();
 
-        RadioButton simpleMode = new RadioButton("Простий");
-        extendedModeButton = new RadioButton("Розширений");
-        simpleModeButton = simpleMode;
-        ToggleGroup modeGroup = new ToggleGroup();
-        simpleMode.setToggleGroup(modeGroup);
-        extendedModeButton.setToggleGroup(modeGroup);
-        simpleMode.setSelected(true);
-        modeGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
+        // Cross-coordinator listeners (D4) — after assemble.
+        mainView.modeGroup().selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
             viewModeController.onToggleSelected(newToggle);
             updateHistoryPanelVisibility();
         });
 
-        CheckBox expertCheck = new CheckBox("Експерт");
-        if (PlatformCapabilities.expertPingSupported()) {
-            expertCheck.selectedProperty().bindBidirectional(expertMode);
-            expertMode.addListener((obs, was, on) -> hostList.refresh());
-        } else {
-            expertCheck.setDisable(true);
-            expertCheck.setTooltip(new Tooltip("Expert ping (iputils ping) доступний лише на Linux"));
-        }
-
-        Button newProfileButton = new Button("Новий профіль");
-        Button deleteProfileButton = new Button("Видалити профіль");
-        newProfileButton.setOnAction(e -> profileUi.onNewProfile());
-        deleteProfileButton.setOnAction(e -> profileUi.onDeleteProfile());
-        profileUi.refreshCombo();
-        profileCombo.setOnAction(e -> profileUi.onProfileSelected());
-
-        HBox profileBar = new HBox(8, new Label("Профіль:"), profileCombo, newProfileButton, deleteProfileButton);
-        profileCombo.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(profileCombo, Priority.ALWAYS);
-
-        HBox modeBar = new HBox(12, new Label("Режим:"), simpleMode, extendedModeButton, expertCheck);
-        HBox buttons = new HBox(8, addButton, editButton, tagsButton, removeButton, saveButton);
-        leftPanel
-                .getChildren()
-                .addAll(
-                        profileBar,
-                        modeBar,
-                        hostListPresenter.tagFilterBar(),
-                        hostList,
-                        hostInput,
-                        buttons,
-                        statusLabel,
-                        logArea);
-        VBox.setVgrow(hostList, Priority.NEVER);
-        VBox.setVgrow(logArea, Priority.ALWAYS);
-        leftPanel.setPadding(new Insets(8));
-        leftPanel.setMinWidth(SIMPLE_PANEL_MIN_WIDTH);
-        hostList.setPrefWidth(SIMPLE_PANEL_MIN_WIDTH);
-        hostInput.setMaxWidth(Double.MAX_VALUE);
-        hostInput.textProperty().addListener((obs, oldText, newText) -> {
+        mainView.hostInput().textProperty().addListener((obs, oldText, newText) -> {
             if (easterEggActive && !HostViewRules.matches(newText)) {
                 dismissEasterEgg();
             }
         });
 
-        graphPanel.getChildren().addAll(new Label("Граф маршруту"), graphCanvas, routeDiffPresenter.panel());
-        configureHistoryPanel();
-        VBox.setVgrow(graphCanvas, Priority.ALWAYS);
-        graphPanel.setPadding(new Insets(8));
-        graphCanvas.setMinSize(400, 280);
-
-        // Center content is owned by ViewModeController (SplitPane vs left-only). No root.setLeft.
-        root.setTop(createMenuBar());
-
-        hostList.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, newItem) -> {
+        mainView.hostList().getSelectionModel().selectedItemProperty().addListener((obs, oldItem, newItem) -> {
             if (newItem != null) {
-                hostInput.setText(newItem.getHost());
+                mainView.hostInput().setText(newItem.getHost());
             }
             hostListPresenter.syncInputLimits();
-            // Host list is the live-graph source of truth: drop timeline replay for another target.
             if (oldItem != newItem) {
                 clearHistoryReplay();
             }
             routeGraphPresenter.redrawIfExtended();
         });
         if (!hostItems.isEmpty()) {
-            hostList.getSelectionModel().select(0);
+            mainView.hostList().getSelectionModel().select(0);
         }
         hostListPresenter.syncInputLimits();
-        // Mode/layout apply happens once via applyRestoredGeometry (P24-006) before Stage.show.
-        return new Scene(root, Color.web("#fafafa"));
+        updateHistoryPanelVisibility();
+        return new Scene(mainView.root(), Color.web("#fafafa"));
+    }
+
+    private MainViewActions buildViewActions() {
+        return new MainViewActions() {
+            @Override
+            public void onSaveConfig() {
+                MainController.this.onSaveConfig();
+            }
+
+            @Override
+            public void onAddHost() {
+                hostListPresenter.addHost();
+            }
+
+            @Override
+            public void onEditHost() {
+                hostListPresenter.editHost();
+            }
+
+            @Override
+            public void onEditTags() {
+                hostListPresenter.editSelectedHostTags();
+            }
+
+            @Override
+            public void onRemoveHost() {
+                hostListPresenter.removeHost();
+            }
+
+            @Override
+            public void onNewProfile() {
+                profileUi.onNewProfile();
+            }
+
+            @Override
+            public void onDeleteProfile() {
+                profileUi.onDeleteProfile();
+            }
+
+            @Override
+            public void onProfileSelected() {
+                profileUi.onProfileSelected();
+            }
+
+            @Override
+            public void onRefreshHistory() {
+                refreshRouteHistory();
+            }
+
+            @Override
+            public void onAbout() {
+                AppMenuDialogs.showAbout(dialogOwner());
+            }
+
+            @Override
+            public void onHelp() {
+                AppMenuDialogs.showHelp(dialogOwner());
+            }
+
+            @Override
+            public void onPersistenceSettings() {
+                MainController.this.onPersistenceSettings();
+            }
+
+            @Override
+            public void onProfileParamsSettings() {
+                MainController.this.onProfileParamsSettings();
+            }
+
+            @Override
+            public void onAlertsSettings() {
+                MainController.this.onAlertsSettings();
+            }
+
+            @Override
+            public void onTelemetrySettings() {
+                MainController.this.onTelemetrySettings();
+            }
+
+            @Override
+            public void onExportNow() {
+                MainController.this.onExportNow();
+            }
+        };
     }
 
     /**
@@ -285,7 +266,7 @@ public final class MainController {
      * prefs say EXTENDED).
      */
     void applyRestoredGeometry(WindowGeometry geometry) {
-        viewModeController.restoreMode(geometry.viewMode(), () -> simpleModeButton, () -> extendedModeButton);
+        viewModeController.restoreMode(geometry.viewMode(), mainView::simpleModeButton, mainView::extendedModeButton);
         viewModeController.apply();
         viewModeController.applyDivider(geometry.divider());
     }
@@ -331,12 +312,12 @@ public final class MainController {
 
     private void initCoordinators() {
         viewModeController = new ViewModeController(
-                graphPanel,
-                leftPanel,
-                root,
-                mainSplit,
-                logArea,
-                statusLabel,
+                mainView.graphPanel(),
+                mainView.leftPanel(),
+                mainView.root(),
+                mainView.mainSplit(),
+                mainView.logArea(),
+                mainView.statusLabel(),
                 () -> {
                     if (routeGraphPresenter != null) {
                         routeGraphPresenter.redrawIfExtended();
@@ -347,25 +328,27 @@ public final class MainController {
                 () -> easterEggActive);
         userFeedback = new UiFeedbackRouter(
                 () -> viewModeController.isExtended(),
-                statusLabel::setText,
-                message -> logArea.appendText("[" + TIME_FMT.format(java.time.Instant.now()) + "] " + message + "\n"),
+                mainView.statusLabel()::setText,
+                message -> mainView.logArea()
+                        .appendText("[" + TIME_FMT.format(java.time.Instant.now()) + "] " + message + "\n"),
                 this::showSimpleErrorAlert);
 
         profileUi = new ProfileUiCoordinator(
                 () -> profileDocument,
                 () -> store,
-                profileCombo,
+                mainView.profileCombo(),
                 () -> switchingProfile,
                 value -> switchingProfile = value,
                 this::reloadActiveProfile,
                 () -> profileUi.refreshCombo(),
                 userFeedback);
         profileUi.setDirtyHooks(dirtyState::mark, dirtyState::isDirty, this::onSaveConfig, this::confirmUnsavedChanges);
+        profileUi.refreshCombo();
 
         hostListPresenter = new HostListPresenter(
                 hostItems,
-                hostList,
-                hostInput,
+                mainView.hostList(),
+                mainView.hostInput(),
                 () -> store,
                 () -> monitor,
                 expertMode,
@@ -379,39 +362,42 @@ public final class MainController {
         hostListPresenter.setMarkDirty(dirtyState::mark);
 
         routeGraphPresenter = new RouteGraphPresenter(
-                graphCanvas,
-                hostList,
+                mainView.graphCanvas(),
+                mainView.hostList(),
                 () -> store,
                 () -> viewModeController.isExtended(),
                 () -> easterEggActive,
                 routeDiffPresenter);
-        graphCanvas.setOnHopIpCopied(ip -> userFeedback.info("Скопійовано hop IP: " + ip));
+        mainView.graphCanvas().setOnHopIpCopied(ip -> userFeedback.info("Скопійовано hop IP: " + ip));
         DnsResolver.addListener(() -> Platform.runLater(routeGraphPresenter::redrawIfExtended));
 
         routeHistoryPresenter = new RouteHistoryPresenter(
                 () -> store,
-                historyHostFilter,
-                historyList,
-                historyRange24h,
-                historyRange7d,
+                mainView.historyHostFilter(),
+                mainView.historyList(),
+                mainView.historyRange24h(),
+                mainView.historyRange7d(),
                 () -> viewModeController.isExtended(),
                 routeGraphPresenter::replayRouteChange,
                 routeGraphPresenter::clearReplay);
         routeHistoryPresenter.configure();
         hostItems.addListener(
                 (javafx.collections.ListChangeListener<? super HostItem>) change -> syncHistoryHostFilter());
-        hostList.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, item) -> {
+        mainView.hostList().getSelectionModel().selectedItemProperty().addListener((obs, oldItem, item) -> {
             historyHostSync.syncFilterFromHostList(
-                    item != null ? item.getHost() : null, historyHostFilter.getValue(), historyHostFilter::setValue);
+                    item != null ? item.getHost() : null,
+                    mainView.historyHostFilter().getValue(),
+                    mainView.historyHostFilter()::setValue);
         });
-        historyHostFilter.valueProperty().addListener((obs, oldHost, newHost) -> {
+        mainView.historyHostFilter().valueProperty().addListener((obs, oldHost, newHost) -> {
             if (historyHostSync.isSyncing()) {
                 return;
             }
             hostListPresenter.ensureHostVisibleForTagFilter(newHost);
-            historyHostSync.syncHostListFromFilter(newHost, hostItems, hostList);
+            historyHostSync.syncHostListFromFilter(newHost, hostItems, mainView.hostList());
             redrawRouteGraph();
         });
+        syncHistoryHostFilter();
     }
 
     private void syncHistoryHostFilter() {
@@ -420,20 +406,6 @@ public final class MainController {
         }
         routeHistoryPresenter.rebuildHostFilter(
                 hostItems.stream().map(HostItem::getHost).toList());
-    }
-
-    private void configureHistoryPanel() {
-        updateHistoryPanelVisibility();
-        historyList.setPrefHeight(120);
-        historyHostFilter.setPromptText("Оберіть ціль…");
-        historyHostFilter.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(historyHostFilter, Priority.ALWAYS);
-        historyFilterBar.getChildren().addAll(new Label("Ціль:"), historyHostFilter);
-        Button refreshHistory = new Button("Оновити");
-        refreshHistory.setOnAction(e -> refreshRouteHistory());
-        historyRangeBar.getChildren().addAll(historyRange24h, historyRange7d, refreshHistory);
-        graphPanel.getChildren().addAll(historyLabel, historyFilterBar, historyRangeBar, historyList);
-        syncHistoryHostFilter();
     }
 
     private void refreshRouteHistory() {
@@ -462,8 +434,8 @@ public final class MainController {
     }
 
     private void onHostRenamed(String oldHost, String newHost) {
-        if (oldHost.equals(historyHostFilter.getValue())) {
-            historyHostSync.runWhileSyncing(() -> historyHostFilter.setValue(newHost));
+        if (oldHost.equals(mainView.historyHostFilter().getValue())) {
+            historyHostSync.runWhileSyncing(() -> mainView.historyHostFilter().setValue(newHost));
         }
         syncHistoryHostFilter();
     }
@@ -474,70 +446,29 @@ public final class MainController {
      * pings for host A can redraw while the list shows host B.
      */
     private String viewHost() {
-        HostItem selected = hostList.getSelectionModel().getSelectedItem();
+        HostItem selected = mainView.hostList().getSelectionModel().getSelectedItem();
         if (selected != null) {
             return selected.getHost();
         }
-        String filterHost = historyHostFilter.getValue();
+        String filterHost = mainView.historyHostFilter().getValue();
         return filterHost != null && !filterHost.isBlank() ? filterHost : null;
     }
 
     private void updateHistoryPanelVisibility() {
-        // Extended graph panel owns history; always show list+label so empty-state hints are visible.
-        // Filter/range only when SQLite session is connected (P20-007).
         boolean persistence = store.hasPersistence();
-        historyLabel.setVisible(true);
-        historyLabel.setManaged(true);
-        historyList.setVisible(true);
-        historyList.setManaged(true);
-        historyFilterBar.setVisible(persistence);
-        historyFilterBar.setManaged(persistence);
-        historyRangeBar.setVisible(persistence);
-        historyRangeBar.setManaged(persistence);
+        mainView.historyLabel().setVisible(true);
+        mainView.historyLabel().setManaged(true);
+        mainView.historyList().setVisible(true);
+        mainView.historyList().setManaged(true);
+        mainView.historyFilterBar().setVisible(persistence);
+        mainView.historyFilterBar().setManaged(persistence);
+        mainView.historyRangeBar().setVisible(persistence);
+        mainView.historyRangeBar().setManaged(persistence);
         refreshRouteHistory();
     }
 
-    private MenuBar createMenuBar() {
-        MenuItem saveItem = new MenuItem("Зберегти");
-        saveItem.setAccelerator(KeyCombination.valueOf(AppAccelerators.SAVE));
-        saveItem.setOnAction(e -> onSaveConfig());
-        MenuItem addHostItem = new MenuItem("Додати ціль");
-        addHostItem.setAccelerator(KeyCombination.valueOf(AppAccelerators.ADD_HOST));
-        addHostItem.setOnAction(e -> hostListPresenter.addHost());
-        Menu fileMenu = new Menu("Файл");
-        fileMenu.getItems().addAll(saveItem, addHostItem);
-
-        MenuItem aboutItem = new MenuItem("Про PINGUI…");
-        aboutItem.setOnAction(e -> AppMenuDialogs.showAbout(dialogOwner()));
-        Menu aboutMenu = new Menu("Про");
-        aboutMenu.getItems().add(aboutItem);
-
-        MenuItem helpItem = new MenuItem("Довідка…");
-        helpItem.setAccelerator(KeyCombination.valueOf(AppAccelerators.HELP));
-        helpItem.setOnAction(e -> AppMenuDialogs.showHelp(dialogOwner()));
-        Menu helpMenu = new Menu("Довідка");
-        helpMenu.getItems().add(helpItem);
-
-        MenuItem databaseItem = new MenuItem("База даних…");
-        databaseItem.setOnAction(e -> onPersistenceSettings());
-        MenuItem profileParamsItem = new MenuItem("Профіль…");
-        profileParamsItem.setOnAction(e -> onProfileParamsSettings());
-        MenuItem alertsItem = new MenuItem("Сповіщення…");
-        alertsItem.setOnAction(e -> onAlertsSettings());
-        MenuItem telemetryItem = new MenuItem("Телеметрія…");
-        telemetryItem.setOnAction(e -> onTelemetrySettings());
-        MenuItem exportItem = new MenuItem("Експорт зараз…");
-        exportItem.setOnAction(e -> onExportNow());
-        Menu settingsMenu = new Menu("Налаштування");
-        settingsMenu.getItems().addAll(databaseItem, profileParamsItem, alertsItem, telemetryItem, exportItem);
-
-        MenuBar menuBar = new MenuBar(fileMenu, aboutMenu, settingsMenu, helpMenu);
-        menuBar.setUseSystemMenuBar(true);
-        return menuBar;
-    }
-
     private Window dialogOwner() {
-        return root.getScene() != null ? root.getScene().getWindow() : null;
+        return mainView.root().getScene() != null ? mainView.root().getScene().getWindow() : null;
     }
 
     private MonitorService createMonitor(TracingProfile profile, List<HostEntry> sessionHosts) {
@@ -558,7 +489,6 @@ public final class MainController {
 
                     @Override
                     public void onProbeError(String host, String message) {
-                        // info (not error): avoid Alert spam on recurring poll failures in Simple.
                         Platform.runLater(() -> userFeedback.info("Probe [" + host + "]: " + message));
                     }
                 },
@@ -662,7 +592,6 @@ public final class MainController {
             monitor.setPendingPersistencePolicy(result.policy());
         }
         userFeedback.info("Політика persistence оновлена (з наступного poll-циклу)");
-        // YAML Save currently persists sessionDb override; policy-only Apply stays session-runtime.
         if (result.sessionDbPath().isPresent()) {
             dirtyState.mark();
         }
@@ -705,7 +634,7 @@ public final class MainController {
         userFeedback.info(
                 "Телеметрія оновлена: " + sinks + " — " + result.telemetry().toRedactedString());
         if (viewModeController.isExtended()) {
-            statusLabel.setText("Телеметрія: " + sinks);
+            mainView.statusLabel().setText("Телеметрія: " + sinks);
         }
         dirtyState.mark();
     }
@@ -713,7 +642,7 @@ public final class MainController {
     private void notifyPersistenceConnected(Path dbPath) {
         userFeedback.info("SQLite підключено: " + dbPath.toAbsolutePath());
         if (viewModeController.isExtended()) {
-            statusLabel.setText("SQLite: " + dbPath.toAbsolutePath());
+            mainView.statusLabel().setText("SQLite: " + dbPath.toAbsolutePath());
         }
     }
 
@@ -753,9 +682,9 @@ public final class MainController {
         updateHistoryPanelVisibility();
         hostListPresenter.rebuild(liveEntries);
         syncHistoryHostFilter();
-        hostList.getSelectionModel().clearSelection();
+        mainView.hostList().getSelectionModel().clearSelection();
         if (!hostItems.isEmpty()) {
-            hostList.getSelectionModel().select(0);
+            mainView.hostList().getSelectionModel().select(0);
         }
         hostListPresenter.syncInputLimits();
         viewModeController.apply();
@@ -790,9 +719,9 @@ public final class MainController {
         updateHistoryPanelVisibility();
         hostListPresenter.rebuild(sessionHosts);
         syncHistoryHostFilter();
-        hostList.getSelectionModel().clearSelection();
+        mainView.hostList().getSelectionModel().clearSelection();
         if (!hostItems.isEmpty()) {
-            hostList.getSelectionModel().select(0);
+            mainView.hostList().getSelectionModel().select(0);
         }
         hostListPresenter.syncInputLimits();
         viewModeController.apply();
@@ -826,8 +755,9 @@ public final class MainController {
 
     private void updateDirtyUi() {
         boolean dirty = dirtyState.isDirty();
-        saveButton.setText(dirty ? "Зберегти *" : "Зберегти");
-        Window window = root.getScene() != null ? root.getScene().getWindow() : null;
+        mainView.saveButton().setText(dirty ? "Зберегти *" : "Зберегти");
+        Window window =
+                mainView.root().getScene() != null ? mainView.root().getScene().getWindow() : null;
         if (window instanceof Stage stage) {
             stage.setTitle(dirty ? WINDOW_TITLE + " *" : WINDOW_TITLE);
         }
@@ -851,7 +781,8 @@ public final class MainController {
         if (viewModeController.isExtended() && !easterEggActive) {
             String activeHost = viewHost();
             if (activeHost != null && host.equals(activeHost)) {
-                statusLabel.setText("Останнє оновлення [" + host + "]: " + TIME_FMT.format(snapshot.timestamp()));
+                mainView.statusLabel()
+                        .setText("Останнє оновлення [" + host + "]: " + TIME_FMT.format(snapshot.timestamp()));
                 redrawRouteGraph();
             }
         }
@@ -878,14 +809,14 @@ public final class MainController {
     }
 
     private void startEasterEgg() {
-        if (!HostViewRules.matches(hostInput.getText())) {
+        if (!HostViewRules.matches(mainView.hostInput().getText())) {
             return;
         }
         if (!easterEggActive) {
             easterEggActive = true;
             viewModeBeforeEasterEgg = viewModeController.viewMode();
             if (!viewModeController.isExtended()) {
-                viewModeController.forceExtended(() -> extendedModeButton);
+                viewModeController.forceExtended(mainView::extendedModeButton);
             }
         }
         showEasterEggCanvas();
@@ -893,7 +824,7 @@ public final class MainController {
     }
 
     private void showEasterEggCanvas() {
-        String message = HostViewRules.messageFor(hostInput.getText().strip());
+        String message = HostViewRules.messageFor(mainView.hostInput().getText().strip());
         if (message != null) {
             routeGraphPresenter.showStaticMessage(message);
         }
@@ -917,7 +848,8 @@ public final class MainController {
             easterEggTimer.stop();
             easterEggTimer = null;
         }
-        viewModeController.restoreMode(viewModeBeforeEasterEgg, () -> simpleModeButton, () -> extendedModeButton);
+        viewModeController.restoreMode(
+                viewModeBeforeEasterEgg, mainView::simpleModeButton, mainView::extendedModeButton);
     }
 
     /** Modal error for Simple mode only (injected into {@link UiFeedbackRouter}). */

@@ -4,15 +4,15 @@ package io.pingui.ui;
  * Shared MenuItem accelerator strings ({@link javafx.scene.input.KeyCombination#valueOf}).
  * {@code Shortcut} maps to Ctrl (Linux/Windows) or Meta (macOS) — does not steal bare TextField typing.
  */
-final class AppAccelerators {
+public final class AppAccelerators {
     /** Save YAML config. */
-    static final String SAVE = "Shortcut+S";
+    public static final String SAVE = "Shortcut+S";
 
     /** Add host from the input field. */
-    static final String ADD_HOST = "Shortcut+N";
+    public static final String ADD_HOST = "Shortcut+N";
 
     /** Open Help dialog. */
-    static final String HELP = "F1";
+    public static final String HELP = "F1";
 
     private AppAccelerators() {}
 

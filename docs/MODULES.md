@@ -307,6 +307,20 @@ POST JSON `RouteChangeEvent`; URL у логах без секретів.
 
 ---
 
+## Java (`io.pingui.ui.view`) — P24-007
+
+Chrome-збірка JavaFX окремо від orchestration:
+
+| Клас | Роль |
+|------|------|
+| `MainView` | BorderPane/SplitPane assemble; accessors для coordinators |
+| `ProfileToolbar` / `MonitorModeToolbar` | профіль + Simple/Extended/Expert |
+| `HostListPanel` / `StatusPanel` | list/CRUD/save + status/log |
+| `RouteGraphPanel` / `HistoryPanel` | canvas + history chrome |
+| `MainViewActions` | callbacks у `MainController` |
+
+`MainController.createScene()` — тонкий assembler. LOC controller після G7 ≈ 850–900; ціль ≤550 — follow-up.
+
 ## pingui.ui
 
 ### `app.run_app(hosts, config_path, interval_seconds, max_hops, timeout, *, quiet=True) -> int`

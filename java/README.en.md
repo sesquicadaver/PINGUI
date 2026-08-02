@@ -142,8 +142,8 @@ io.pingui
 ├── observability/   PrometheusExporter, PrometheusTelemetrySink (P16-051), MetricsHttpServer (P15-010)
 ├── api/             ReadOnlyApiServer (P15-040)
 ├── export/          SessionReportExporter (P11-030), ScheduledExport (P15-030)
-└── ui/              MainController, HostListPresenter, PingExpertDialog,
-                       MtuDiscoveryDialog, PresetSelfCheckUi, TelemetrySettingsDialog, GraphCanvas
+└── ui/              MainController, HostListPresenter, dialogs, GraphCanvas
+    └── view/        MainView + toolbars/panels (P24-007); MainViewActions
 ```
 
 Details: [docs/JAVA.md](../docs/en/JAVA.md).

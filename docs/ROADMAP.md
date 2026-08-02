@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P24-007** |
+| **Поточна задача** | **P24-008** |
 | **Фаза** | 24 — GUI architecture & paint |
-| **DoD (коротко)** | View components з `MainController.createScene` |
+| **DoD (коротко)** | CSS theme layer (light-first palette) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -135,12 +135,12 @@
 | 89 | **P24-004** | [x] | GraphCanvas: color/hover cache |
 | 90 | **P24-005** | [x] | ViewMode: прибрати forced window resize / applyCss |
 | 91 | **P24-006** | [x] | SplitPane + persist window/divider geometry |
-| 92 | **P24-007** | [ ] | View components з `MainController.createScene` |
+| 92 | **P24-007** | [x] | View components з `MainController.createScene` |
 | 93 | **P24-008** | [ ] | CSS theme layer (light-first palette) |
 | 94 | **P24-009** | [ ] | Startup: важкий init поза FX thread |
 | 95 | **P24-010** | [ ] | ADR_GUI_PAINT + perf smoke + закриття фази |
 
-**Стан черги:** відкрита — **NEXT = P24-007** (фаза 24 GUI architecture & paint).
+**Стан черги:** відкрита — **NEXT = P24-008** (фаза 24 GUI architecture & paint).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -825,7 +825,7 @@ flowchart TD
 | **P24-004** | [x] Color/hover cache | `GraphCanvas.java`, `GraphCanvasTest.java` | Немає `Color.web` у draw loop; hover dedupe + switch-node тест |
 | **P24-005** | [x] No forced window resize | `ViewModeController.java`, `PinguiApplication.java`, CHECKLIST | Toggle без setWidth/Height / applyCss; default stage once |
 | **P24-006** | [x] SplitPane + persist geometry | `WindowGeometryStore`, `ViewModeController`, CHECKLIST | Restore bounds+divider+mode; clamp visualBounds |
-| **P24-007** | [ ] View components | `io.pingui.ui.view.*`, `MainController` | `createScene` тонкий assembler |
+| **P24-007** | [x] View components | `io.pingui.ui.view.*`, MODULES/JAVA | `createScene` → `MainView.assemble`; LOC residual documented |
 | **P24-008** | [ ] CSS palette | `pingui.css`, `UiPalette` | Stylesheet на Scene; light-first |
 | **P24-009** | [ ] Deferred startup I/O | `MainController`, `PinguiApplication` | Немає SQLite/GeoIP на FX до show |
 | **P24-010** | [ ] ADR + perf smoke | `ADR_GUI_PAINT.md`, CHECKLIST | Фаза закрита або явні follow-ups |

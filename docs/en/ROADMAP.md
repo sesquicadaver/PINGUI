@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P24-007** |
+| **Current task** | **P24-008** |
 | **Phase** | 24 — GUI architecture & paint |
-| **DoD (short)** | View components from `MainController.createScene` |
+| **DoD (short)** | CSS theme layer (light-first palette) |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -135,12 +135,12 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 89 | **P24-004** | [x] | GraphCanvas: color/hover cache |
 | 90 | **P24-005** | [x] | ViewMode: remove forced window resize / applyCss |
 | 91 | **P24-006** | [x] | SplitPane + persist window/divider geometry |
-| 92 | **P24-007** | [ ] | View components from `MainController.createScene` |
+| 92 | **P24-007** | [x] | View components from `MainController.createScene` |
 | 93 | **P24-008** | [ ] | CSS theme layer (light-first palette) |
 | 94 | **P24-009** | [ ] | Startup: heavy init off FX thread |
 | 95 | **P24-010** | [ ] | ADR_GUI_PAINT + perf smoke + phase close |
 
-**Queue status:** open — **NEXT = P24-007** (phase 24 GUI architecture & paint).
+**Queue status:** open — **NEXT = P24-008** (phase 24 GUI architecture & paint).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -825,7 +825,7 @@ flowchart TD
 | **P24-004** | [x] Color/hover cache | `GraphCanvas.java`, `GraphCanvasTest.java` | No `Color.web` in draw loop; hover dedupe + switch-node test |
 | **P24-005** | [x] No forced window resize | `ViewModeController.java`, `PinguiApplication.java`, CHECKLIST | Toggle without setWidth/Height / applyCss; default stage once |
 | **P24-006** | [x] SplitPane + persist geometry | `WindowGeometryStore`, `ViewModeController`, CHECKLIST | Restore bounds+divider+mode; clamp visualBounds |
-| **P24-007** | [ ] View components | `io.pingui.ui.view.*`, `MainController` | Thin `createScene` assembler |
+| **P24-007** | [x] View components | `io.pingui.ui.view.*`, MODULES/JAVA | `createScene` → `MainView.assemble`; LOC residual documented |
 | **P24-008** | [ ] CSS palette | `pingui.css`, `UiPalette` | Stylesheet on Scene; light-first |
 | **P24-009** | [ ] Deferred startup I/O | `MainController`, `PinguiApplication` | No SQLite/GeoIP on FX before show |
 | **P24-010** | [ ] ADR + perf smoke | `ADR_GUI_PAINT.md`, CHECKLIST | Phase closed or explicit follow-ups |
