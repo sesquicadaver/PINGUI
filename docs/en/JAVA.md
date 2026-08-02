@@ -142,6 +142,8 @@ Theme (P24-008): `UiPalette` + `classpath:io/pingui/ui/pingui.css` (light-first)
 
 Startup (P24-009): `PinguiApplication.start` shows a shell Scene → `StartupBootstrap.load` in background (YAML/GeoIP/SQLite/`SessionStore`) → FX `attachBootstrap` creates `MonitorService` (polling). Until attach, UI is disabled with status «Завантаження…».
 
+Paint/geometry policy (P24-010): [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md) — coalesced redraw, layout cache, no forced resize, Canvas invalidate, SplitPane persist, deferred startup. Perf smoke: `GraphCanvasPerfTest` + CHECKLIST Extended+pan+route (optional JFR).
+
 - **About** / **Help** (F1) menu — `AppMenuDialogs`
 - **Trace profile** selection (ComboBox + new/delete); all profiles in one YAML
 - **“Expert”** checkbox → **Exten.** / **MTU** on host row → `PingExpertDialog` (catalog from `pingMan.txt`, without `-c/-w/-W/-i` etc.); 4 quick presets from `ping_presets.yaml` (MTU probe, DF, DSCP, Burst); **MTU wizard…** (`MtuDiscoveryDialog`); **Self-check** (`PresetSelfCheckUi`)

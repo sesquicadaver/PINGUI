@@ -289,6 +289,7 @@ Run on **Linux** (regression for “black frame” after profile CRUD):
 - [ ] **P24-006 Window geometry:** resize/move window → restart → bounds ±1px; Extended → drag SplitPane divider → restart → divider; restart restores last `UiViewMode`
 - [ ] **P24-008 CSS light theme:** start GUI → `#fafafa` background / light panels; host-list danger `!` and muted tags readable; no raw unstyled chrome (screenshot smoke, light)
 - [ ] **P24-009 Deferred startup:** window appears with «Завантаження…» before ready; then host list fills; bad YAML → error feedback without hang
+- [ ] **P24-010 Perf smoke (desktop):** Extended → pan the graph ~5 s (drag) → route update (poll/replay) without visible freeze; optional JFR: `jcmd <pid> JFR.start name=pingui settings=profile` during pan+route, then `JFR.stop filename=pingui-gui.jfr` — look for long FX pulses / `paintPixels`. CI: `GraphCanvasPerfTest` (100 drag ≤1 paint).
 - [ ] **P22-005 Auto session DB:** Settings → Database… → Create… → path `data/YYYY-MM-DD_HH-mm-ss_<ip>.db`; Apply
 - [ ] **P22-004 Problem badge:** enable endpoint_down → after FIRING see `!` on row; click → dialog; close hides badge
 - [ ] **P21-003 Alerts rules:** Settings → Alerts… → endpoint_down + preset/params + notify_resolved; Apply + Save → YAML `alerts.rules`

@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P24-010** |
-| **Phase** | 24 — GUI architecture & paint |
-| **DoD (short)** | ADR_GUI_PAINT + perf smoke + phase close |
+| **Current task** | **DONE** |
+| **Phase** | 24 — GUI architecture & paint (closed) |
+| **DoD (short)** | Linear queue empty; new ID only when explicit |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -138,9 +138,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 92 | **P24-007** | [x] | View components from `MainController.createScene` |
 | 93 | **P24-008** | [x] | CSS theme layer (light-first palette) |
 | 94 | **P24-009** | [x] | Startup: heavy init off FX thread |
-| 95 | **P24-010** | [ ] | ADR_GUI_PAINT + perf smoke + phase close |
+| 95 | **P24-010** | [x] | ADR_GUI_PAINT + perf smoke + phase close |
 
-**Queue status:** open — **NEXT = P24-010** (phase 24 GUI architecture & paint).
+**Queue status:** exhausted — **NEXT = DONE** (phase 24 GUI architecture & paint closed).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -828,7 +828,9 @@ flowchart TD
 | **P24-007** | [x] View components | `io.pingui.ui.view.*`, MODULES/JAVA | `createScene` → `MainView.assemble`; LOC residual documented |
 | **P24-008** | [x] CSS palette | `pingui.css`, `UiPalette`, CHECKLIST | Stylesheet on Scene; GraphCanvas sync; light smoke |
 | **P24-009** | [x] Deferred startup I/O | `StartupBootstrap`, `PinguiApplication`, CHECKLIST | Shell show → background load → attach; Monitor after show |
-| **P24-010** | [ ] ADR + perf smoke | `ADR_GUI_PAINT.md`, CHECKLIST | Phase closed or explicit follow-ups |
+| **P24-010** | [x] ADR + perf smoke | `ADR_GUI_PAINT.md`, CHECKLIST, `GraphCanvasPerfTest` | Phase closed; follow-ups below |
+
+**Follow-ups after P24 (not in the linear queue):** dark mode product; `MainController` ≤550 LOC; FXML / MonitorService split — see [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md).
 
 ---
 
