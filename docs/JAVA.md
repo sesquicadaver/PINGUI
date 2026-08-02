@@ -140,6 +140,8 @@ Chrome збірка (P24-007): пакет `io.pingui.ui.view` — `MainView` + `
 
 Тема (P24-008): `UiPalette` + `classpath:io/pingui/ui/pingui.css` (light-first); `UiPalette.applyTo(scene)`; GraphCanvas paint з тих самих hex-констант; dark — лише reserved `.theme-dark` stub.
 
+Старт (P24-009): `PinguiApplication.start` показує shell Scene → `StartupBootstrap.load` у фоні (YAML/GeoIP/SQLite/`SessionStore`) → FX `attachBootstrap` створює `MonitorService` (polling). До attach UI disabled + статус «Завантаження…».
+
 - Меню **Про** / **Довідка** (F1) — `AppMenuDialogs`
 - Вибір **профілю трасування** (ComboBox + новий/видалити); усі профілі в одному YAML
 - Чекбокс **«Експерт»** → **Exten.** / **MTU** на рядку хоста → `PingExpertDialog` (каталог з `pingMan.txt`, без `-c/-w/-W/-i` тощо); 4 quick presets з `ping_presets.yaml` (MTU probe, DF, DSCP, Burst); **MTU wizard…** (`MtuDiscoveryDialog`); **Self-check** (`PresetSelfCheckUi`)

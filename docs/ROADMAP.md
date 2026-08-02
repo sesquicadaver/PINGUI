@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P24-009** |
+| **Поточна задача** | **P24-010** |
 | **Фаза** | 24 — GUI architecture & paint |
-| **DoD (коротко)** | Startup: важкий init поза FX thread |
+| **DoD (коротко)** | ADR_GUI_PAINT + perf smoke + закриття фази |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -137,10 +137,10 @@
 | 91 | **P24-006** | [x] | SplitPane + persist window/divider geometry |
 | 92 | **P24-007** | [x] | View components з `MainController.createScene` |
 | 93 | **P24-008** | [x] | CSS theme layer (light-first palette) |
-| 94 | **P24-009** | [ ] | Startup: важкий init поза FX thread |
+| 94 | **P24-009** | [x] | Startup: важкий init поза FX thread |
 | 95 | **P24-010** | [ ] | ADR_GUI_PAINT + perf smoke + закриття фази |
 
-**Стан черги:** відкрита — **NEXT = P24-009** (фаза 24 GUI architecture & paint).
+**Стан черги:** відкрита — **NEXT = P24-010** (фаза 24 GUI architecture & paint).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -827,12 +827,12 @@ flowchart TD
 | **P24-006** | [x] SplitPane + persist geometry | `WindowGeometryStore`, `ViewModeController`, CHECKLIST | Restore bounds+divider+mode; clamp visualBounds |
 | **P24-007** | [x] View components | `io.pingui.ui.view.*`, MODULES/JAVA | `createScene` → `MainView.assemble`; LOC residual documented |
 | **P24-008** | [x] CSS palette | `pingui.css`, `UiPalette`, CHECKLIST | Stylesheet на Scene; GraphCanvas sync; light smoke |
-| **P24-009** | [ ] Deferred startup I/O | `MainController`, `PinguiApplication` | Немає SQLite/GeoIP на FX до show |
+| **P24-009** | [x] Deferred startup I/O | `StartupBootstrap`, `PinguiApplication`, CHECKLIST | Shell show → background load → attach; Monitor після show |
 | **P24-010** | [ ] ADR + perf smoke | `ADR_GUI_PAINT.md`, CHECKLIST | Фаза закрита або явні follow-ups |
 
 ---
 
-## Поза scope (не плануємо)
+## Поза scope (опційно, в перспективі)
 
 | ID | Ідея | Чому ні |
 |----|------|---------|

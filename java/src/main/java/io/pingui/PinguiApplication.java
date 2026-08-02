@@ -1,8 +1,6 @@
 package io.pingui;
 
 import io.pingui.config.ConfigError;
-import io.pingui.config.ProfileDocument;
-import io.pingui.config.ProfilesConfig;
 import io.pingui.daemon.DaemonPidFile;
 import io.pingui.daemon.DaemonRunner;
 import io.pingui.export.ExportSchedulePeriod;
@@ -14,6 +12,7 @@ import io.pingui.probe.ProbeMode;
 import io.pingui.telemetry.TelemetryRetentionJob;
 import io.pingui.ui.AppMenuDialogs;
 import io.pingui.ui.MainController;
+import io.pingui.ui.StartupBootstrap;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -23,7 +22,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
@@ -35,15 +38,16 @@ public final class PinguiApplication extends Application {
     static final double DEFAULT_STAGE_HEIGHT = 700.0;
 
     private MainController controller;
+    private ExecutorService startupExecutor;
 
     @Override
     public void start(Stage stage) {
         try {
             AppOptions options = parseOptions(getParameters().getNamed());
             LoggingSetup.configure(options.verbose());
-            ProfileDocument document = ProfilesConfig.load(options.configPath());
-            controller = new MainController(options, document);
             AppMenuDialogs.bindHostServices(getHostServices());
+            // P24-009: show shell UI first; heavy I/O (YAML/SQLite/GeoIP) on a background thread.
+            controller = new MainController(options);
             Scene scene = controller.createScene();
             stage.setTitle(MainController.windowTitle());
             stage.setScene(scene);
@@ -52,15 +56,42 @@ public final class PinguiApplication extends Application {
             stage.show();
             controller.onStageShown();
             controller.refreshDirtyUi();
-        } catch (ConfigError | IllegalArgumentException ex) {
-            failCli(ex.getMessage());
-        } catch (IOException ex) {
+            startupExecutor = Executors.newSingleThreadExecutor(r -> {
+                Thread t = new Thread(r, "pingui-startup");
+                t.setDaemon(true);
+                return t;
+            });
+            CompletableFuture.supplyAsync(
+                            () -> {
+                                try {
+                                    return StartupBootstrap.load(options);
+                                } catch (IOException | RuntimeException ex) {
+                                    throw new java.util.concurrent.CompletionException(ex);
+                                }
+                            },
+                            startupExecutor)
+                    .whenComplete((result, error) -> Platform.runLater(() -> {
+                        if (error != null) {
+                            Throwable cause = error.getCause() != null ? error.getCause() : error;
+                            controller.onBootstrapFailed(cause);
+                            return;
+                        }
+                        try {
+                            controller.attachBootstrap(result);
+                        } catch (RuntimeException ex) {
+                            controller.onBootstrapFailed(ex);
+                        }
+                    }));
+        } catch (IllegalArgumentException ex) {
             failCli(ex.getMessage());
         }
     }
 
     @Override
     public void stop() {
+        if (startupExecutor != null) {
+            startupExecutor.shutdownNow();
+        }
         if (controller != null) {
             controller.shutdown();
         }

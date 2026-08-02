@@ -156,7 +156,7 @@ final class RouteHistoryPresenter {
     void refresh() {
         ObservableList<RouteHistoryItem> items = FXCollections.observableArrayList();
         SessionStore session = store.get();
-        if (!session.hasPersistence() || !extendedView.getAsBoolean()) {
+        if (session == null || !session.hasPersistence() || !extendedView.getAsBoolean()) {
             historyList.setItems(items);
             updatePlaceholder();
             return;
@@ -195,7 +195,7 @@ final class RouteHistoryPresenter {
 
     private void updatePlaceholder() {
         SessionStore session = store.get();
-        if (!session.hasPersistence()) {
+        if (session == null || !session.hasPersistence()) {
             placeholderLabel.setText(EmptyStateHints.noSqlite());
             return;
         }

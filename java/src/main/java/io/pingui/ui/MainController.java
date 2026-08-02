@@ -62,6 +62,8 @@ public final class MainController {
     private SessionStore store;
     private MonitorService monitor;
     private TelemetryAttachment telemetry;
+    private volatile boolean servicesReady;
+    private volatile boolean shutdownRequested;
     private final ObservableList<HostItem> hostItems = FXCollections.observableArrayList();
     private final MainView mainView = new MainView();
     private final SimpleBooleanProperty expertMode = new SimpleBooleanProperty(false);
@@ -83,6 +85,19 @@ public final class MainController {
     private final HistoryHostSync historyHostSync = new HistoryHostSync();
     private WindowGeometry pendingDividerRestore;
 
+    /**
+     * Shell constructor (P24-009): FX chrome only — no profile YAML, SQLite, or GeoIP I/O. Heavy load
+     * runs via {@link StartupBootstrap#load(AppOptions)} then {@link #attachBootstrap}.
+     */
+    public MainController(AppOptions options) {
+        this.options = options;
+    }
+
+    /**
+     * @deprecated Use {@link #MainController(AppOptions)} + {@link StartupBootstrap} (P24-009). Kept
+     *     for tests that need a fully wired controller on the calling thread.
+     */
+    @Deprecated
     public MainController(AppOptions options, ProfileDocument document) {
         this.options = options;
         this.profileDocument = document;
@@ -97,11 +112,17 @@ public final class MainController {
                 sessionHosts, openSessionDatabase(), profileDocument.active().hostProbeMode());
         attachTimeSeries(store);
         this.monitor = createMonitor(active, sessionHosts);
+        this.servicesReady = true;
         initCoordinators();
         hostListPresenter.rebuild(sessionHosts);
     }
 
+    /**
+     * Builds the shell Scene without waiting for {@link StartupBootstrap}. Controls stay disabled
+     * until {@link #attachBootstrap}.
+     */
     public Scene createScene() {
+        initCoordinators();
         hostListPresenter.configure();
         mainView.monitorModeToolbar().bindExpertMode(expertMode);
         if (!mainView.monitorModeToolbar().expertCheck().isDisable()) {
@@ -134,14 +155,93 @@ public final class MainController {
             }
             routeGraphPresenter.redrawIfExtended();
         });
+        mainView.statusLabel().setText("Завантаження…");
+        setShellBusy(true);
+        Scene scene = new Scene(mainView.root());
+        UiPalette.applyTo(scene);
+        return scene;
+    }
+
+    /**
+     * Attaches background-loaded services on the FX thread and starts polling ({@link
+     * MonitorService} ctor).
+     */
+    public void attachBootstrap(StartupBootstrap.Result result) {
+        if (shutdownRequested) {
+            // Window closed while bootstrap was in flight — do not start polling.
+            try {
+                result.store().close();
+            } catch (RuntimeException ignored) {
+                // best-effort
+            }
+            return;
+        }
+        this.profileDocument = result.document();
+        this.store = result.store();
+        TracingProfile active = profileDocument.active();
+        this.monitor = createMonitor(active, result.sessionHosts());
+        this.servicesReady = true;
+        profileUi.refreshCombo();
+        updateHistoryPanelVisibility();
+        hostListPresenter.rebuild(result.sessionHosts());
+        syncHistoryHostFilter();
+        mainView.hostList().getSelectionModel().clearSelection();
         if (!hostItems.isEmpty()) {
             mainView.hostList().getSelectionModel().select(0);
         }
         hostListPresenter.syncInputLimits();
-        updateHistoryPanelVisibility();
-        Scene scene = new Scene(mainView.root());
-        UiPalette.applyTo(scene);
-        return scene;
+        viewModeController.apply();
+        setShellBusy(false);
+        if (EmptyStateHints.isReplaceableSimpleStatus(mainView.statusLabel().getText())
+                || "Завантаження…".equals(mainView.statusLabel().getText())) {
+            mainView.statusLabel().setText(EmptyStateHints.waitingForData());
+        }
+        redrawRouteGraph();
+    }
+
+    /** Surfaces bootstrap failure after the Stage is already shown (status only — no modal Alert). */
+    public void onBootstrapFailed(Throwable error) {
+        if (shutdownRequested) {
+            return;
+        }
+        // Re-enable only the status label path: keep menus/panels disabled to avoid NPE on null store.
+        if (mainView.root().getTop() != null) {
+            mainView.root().getTop().setDisable(true);
+        }
+        mainView.leftPanel().setDisable(false);
+        mainView.hostInput().setDisable(true);
+        mainView.hostList().setDisable(true);
+        mainView.profileCombo().setDisable(true);
+        mainView.saveButton().setDisable(true);
+        mainView.graphPanel().setDisable(true);
+        mainView.mainSplit().setDisable(true);
+        String message = error.getMessage() != null ? error.getMessage() : error.toString();
+        mainView.statusLabel().setText("Помилка завантаження: " + message);
+        if (viewModeController != null && viewModeController.isExtended()) {
+            mainView.logArea()
+                    .appendText("[" + TIME_FMT.format(java.time.Instant.now()) + "] Не вдалося завантажити сесію: "
+                            + message + "\n");
+        }
+    }
+
+    /** True after {@link #attachBootstrap} succeeded (test / guard seam). */
+    boolean servicesReady() {
+        return servicesReady;
+    }
+
+    /** Package-visible for startup tests. */
+    String statusTextForTest() {
+        return mainView.statusLabel().getText();
+    }
+
+    private void setShellBusy(boolean busy) {
+        // Disable all interactive chrome (including menu) while bootstrap runs — avoids NPE on null store.
+        if (mainView.root().getTop() != null) {
+            mainView.root().getTop().setDisable(busy);
+        }
+        mainView.leftPanel().setDisable(busy);
+        mainView.graphPanel().setDisable(busy);
+        mainView.mainSplit().setDisable(busy);
     }
 
     private MainViewActions buildViewActions() {
@@ -305,10 +405,15 @@ public final class MainController {
     }
 
     public void shutdown() {
+        shutdownRequested = true;
         dismissEasterEgg();
-        monitor.close();
+        if (monitor != null) {
+            monitor.close();
+        }
         closeTelemetry();
-        store.close();
+        if (store != null) {
+            store.close();
+        }
     }
 
     private void initCoordinators() {
@@ -344,7 +449,9 @@ public final class MainController {
                 () -> profileUi.refreshCombo(),
                 userFeedback);
         profileUi.setDirtyHooks(dirtyState::mark, dirtyState::isDirty, this::onSaveConfig, this::confirmUnsavedChanges);
-        profileUi.refreshCombo();
+        if (profileDocument != null) {
+            profileUi.refreshCombo();
+        }
 
         hostListPresenter = new HostListPresenter(
                 hostItems,
@@ -456,7 +563,7 @@ public final class MainController {
     }
 
     private void updateHistoryPanelVisibility() {
-        boolean persistence = store.hasPersistence();
+        boolean persistence = store != null && store.hasPersistence();
         mainView.historyLabel().setVisible(true);
         mainView.historyLabel().setManaged(true);
         mainView.historyList().setVisible(true);
