@@ -35,17 +35,18 @@ import javafx.stage.Window;
  *
  * <p>P20-012 UX: wheel zoom, drag pan, hover tooltip, double-click hop → copy IP.
  *
- * <p>P24-001/002: canvas buffer resizes only on real size change ({@link #resizeCanvasIfNeeded});
- * pixel paints coalesce to one {@link Platform#runLater} pulse via {@link #requestRedraw()}.
- * Invalidate strategy inherits G1 step1 ({@code clearRect}, no buffer-size toggle).
+ * <p>P24-001…003: canvas buffer resizes only on real size change ({@link #resizeCanvasIfNeeded});
+ * pixel paints coalesce to one {@link Platform#runLater} pulse via {@link #requestRedraw()}; route
+ * layout ({@link RouteGraphLayout#buildScene}) is cached across pan/zoom until the route/stats
+ * change. Invalidate strategy inherits G1 step1 ({@code clearRect}, no buffer-size toggle).
  */
 public final class GraphCanvas extends Region {
     private static final double TEXT_PAD = 6.0;
     private static final double DRAG_THRESHOLD_PX = 4.0;
     private static final Font LABEL_FONT = Font.font("Monospace", 10);
 
-    /** Documented invalidate ladder: G1 step1 + G2 coalesced pulse (inherits step1). */
-    static final String INVALIDATE_STRATEGY = "step1-clearRect-no-buffer-churn+coalesced-pulse";
+    /** Documented invalidate ladder: G1 step1 + G2 coalesce + G3 layout cache. */
+    static final String INVALIDATE_STRATEGY = "step1-clearRect-no-buffer-churn+coalesced-pulse+cached-graph-scene";
 
     private final Canvas canvas = new Canvas();
     private final Tooltip hoverTip = new Tooltip();
@@ -55,6 +56,9 @@ public final class GraphCanvas extends Region {
     private Function<Integer, HopStatsSummary> hopStatsFn = hop -> null;
     private String staticViewMessage;
     private GraphScene lastScene = new GraphScene(List.of(), List.of());
+    private Map<String, GraphNode> nodesById = Map.of();
+    private boolean layoutDirty = true;
+    private int layoutBuildCount;
     private double contentWidth;
     private double contentHeight;
     private ViewTransform transform = ViewTransform.identity();
@@ -105,6 +109,7 @@ public final class GraphCanvas extends Region {
         this.previousRoute = previousRoute != null ? List.copyOf(previousRoute) : List.of();
         this.avgPingFn = avgPingFn != null ? avgPingFn : ip -> null;
         this.hopStatsFn = hopStatsFn != null ? hopStatsFn : hop -> null;
+        layoutDirty = true;
         requestRedraw();
     }
 
@@ -117,6 +122,8 @@ public final class GraphCanvas extends Region {
         this.currentRoute = List.of();
         this.previousRoute = List.of();
         this.lastScene = new GraphScene(List.of(), List.of());
+        this.nodesById = Map.of();
+        this.layoutDirty = false;
         this.transform = ViewTransform.identity();
         hoverTip.hide();
         requestRedraw();
@@ -172,6 +179,21 @@ public final class GraphCanvas extends Region {
         requestRedraw();
     }
 
+    /** Package-visible for tests — how many times {@link RouteGraphLayout#buildScene} ran. */
+    int layoutBuildCount() {
+        return layoutBuildCount;
+    }
+
+    /** Package-visible for tests. */
+    void resetLayoutBuildCount() {
+        layoutBuildCount = 0;
+    }
+
+    /** Package-visible for tests — set pan/zoom without invalidating route layout. */
+    void setViewTransformForTest(ViewTransform next) {
+        this.transform = next != null ? next : ViewTransform.identity();
+    }
+
     /**
      * Coalesced paint request (P24-002). Multiple calls before the next FX pulse produce one {@link
      * #paintPixels()}.
@@ -225,20 +247,18 @@ public final class GraphCanvas extends Region {
         if (staticViewMessage != null) {
             drawCenteredMessage(gc, staticViewMessage, width, height);
             lastScene = new GraphScene(List.of(), List.of());
+            nodesById = Map.of();
+            layoutDirty = false;
             return;
         }
 
-        lastScene = RouteGraphLayout.buildScene(currentRoute, previousRoute, avgPingFn, hopStatsFn);
+        rebuildSceneLayoutIfNeeded();
         gc.save();
         gc.translate(transform.panX(), transform.panY());
         gc.scale(transform.zoom(), transform.zoom());
-        Map<String, GraphNode> byId = new HashMap<>();
-        for (GraphNode node : lastScene.nodes()) {
-            byId.put(node.id(), node);
-        }
         for (GraphScene.Edge edge : lastScene.edges()) {
-            GraphNode src = byId.get(edge.fromId());
-            GraphNode dst = byId.get(edge.toId());
+            GraphNode src = nodesById.get(edge.fromId());
+            GraphNode dst = nodesById.get(edge.toId());
             if (src != null && dst != null) {
                 drawEdge(gc, src, dst, edge.inactive(), width, height);
             }
@@ -247,6 +267,24 @@ public final class GraphCanvas extends Region {
             drawNode(gc, node, width, height);
         }
         gc.restore();
+    }
+
+    /**
+     * Rebuilds {@link #lastScene} / {@link #nodesById} only when the route model changed (P24-003).
+     * Pan/zoom/size paints reuse the cached layout.
+     */
+    private void rebuildSceneLayoutIfNeeded() {
+        if (!layoutDirty) {
+            return;
+        }
+        layoutDirty = false;
+        layoutBuildCount++;
+        lastScene = RouteGraphLayout.buildScene(currentRoute, previousRoute, avgPingFn, hopStatsFn);
+        Map<String, GraphNode> byId = new HashMap<>();
+        for (GraphNode node : lastScene.nodes()) {
+            byId.put(node.id(), node);
+        }
+        nodesById = Map.copyOf(byId);
     }
 
     /**

@@ -23,6 +23,7 @@ class GraphCanvasTest {
     void invalidateStrategyDocumentsStep1AndCoalesce() {
         assertTrue(GraphCanvas.INVALIDATE_STRATEGY.contains("step1-clearRect-no-buffer-churn"));
         assertTrue(GraphCanvas.INVALIDATE_STRATEGY.contains("coalesced-pulse"));
+        assertTrue(GraphCanvas.INVALIDATE_STRATEGY.contains("cached-graph-scene"));
     }
 
     @Test
@@ -104,6 +105,45 @@ class GraphCanvasTest {
                 java.nio.file.Files.readString(java.nio.file.Path.of("src/main/java/io/pingui/ui/GraphCanvas.java"));
         assertFalse(src.contains("setWidth(width + 1"), "buffer toggle setWidth(width + 1…) must stay removed");
         assertFalse(src.contains("setWidth(width + 1.0)"));
+    }
+
+    @Test
+    void panZoomPaintDoesNotRebuildSceneLayout() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            GraphCanvas graph = new GraphCanvas();
+            new Scene(new StackPane(graph), 400, 300);
+            graph.resize(400, 300);
+            graph.layout();
+            graph.renderRoute(sampleRoute(), ip -> 1.0, List.of());
+            graph.paintForTest();
+            assertTrue(graph.layoutBuildCount() >= 1);
+            graph.resetLayoutBuildCount();
+
+            graph.setViewTransformForTest(new RouteGraphInteraction.ViewTransform(1.2, 15, -8));
+            graph.paintForTest();
+            graph.setViewTransformForTest(graph.viewTransform().zoomAt(100, 100, RouteGraphInteraction.ZOOM_STEP));
+            graph.paintForTest();
+
+            assertEquals(0, graph.layoutBuildCount(), "pan/zoom must reuse cached GraphScene");
+        });
+    }
+
+    @Test
+    void renderRouteRebuildsSceneLayout() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            GraphCanvas graph = new GraphCanvas();
+            new Scene(new StackPane(graph), 400, 300);
+            graph.resize(400, 300);
+            graph.layout();
+            graph.renderRoute(sampleRoute(), ip -> 1.0, List.of());
+            graph.paintForTest();
+            graph.resetLayoutBuildCount();
+
+            graph.renderRoute(List.of(new HopNode(1, "1.1.1.1", 5.0, false)), ip -> 5.0, List.of());
+            graph.paintForTest();
+
+            assertEquals(1, graph.layoutBuildCount(), "route change must rebuild GraphScene");
+        });
     }
 
     // --- G2 hostile scenarios: drag burst, layout+drag same pulse, off-thread renderRoute ---
@@ -222,10 +262,7 @@ class GraphCanvasTest {
 
     /**
      * Stress scenario: several background threads hammer {@link GraphCanvas#renderRoute} off the
-     * FX thread while the FX thread itself is agitated with coalesced-redraw requests. {@code
-     * paintDirty}/{@code paintScheduled} are plain (non-volatile) fields, so this exercises the
-     * memory-visibility hazard of that design under real thread contention, not just single-thread
-     * bursts.
+     * FX thread while the FX thread itself is agitated with coalesced-redraw requests.
      */
     @Test
     void offThreadRenderRouteBurstRacingFxRedrawsStaysThreadSafe() throws Exception {
