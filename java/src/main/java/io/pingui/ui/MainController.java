@@ -36,6 +36,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -48,6 +49,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
@@ -58,6 +60,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
@@ -95,6 +98,7 @@ public final class MainController {
     private final Label statusLabel = new Label(EmptyStateHints.waitingForData());
     private final VBox graphPanel = new VBox(8);
     private final VBox leftPanel = new VBox(8);
+    private final SplitPane mainSplit = new SplitPane();
     private final BorderPane root = new BorderPane();
     private final ComboBox<String> profileCombo = new ComboBox<>();
     private final SimpleBooleanProperty expertMode = new SimpleBooleanProperty(false);
@@ -117,6 +121,7 @@ public final class MainController {
     private RouteHistoryPresenter routeHistoryPresenter;
     private final RouteDiffPresenter routeDiffPresenter = new RouteDiffPresenter();
     private final HistoryHostSync historyHostSync = new HistoryHostSync();
+    private WindowGeometry pendingDividerRestore;
 
     public MainController(AppOptions options, ProfileDocument document) {
         this.options = options;
@@ -219,7 +224,7 @@ public final class MainController {
         graphPanel.setPadding(new Insets(8));
         graphCanvas.setMinSize(400, 280);
 
-        root.setLeft(leftPanel);
+        // Center content is owned by ViewModeController (SplitPane vs left-only). No root.setLeft.
         root.setTop(createMenuBar());
 
         hostList.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, newItem) -> {
@@ -237,8 +242,76 @@ public final class MainController {
             hostList.getSelectionModel().select(0);
         }
         hostListPresenter.syncInputLimits();
-        viewModeController.apply();
+        // Mode/layout apply happens once via applyRestoredGeometry (P24-006) before Stage.show.
         return new Scene(root, Color.web("#fafafa"));
+    }
+
+    /**
+     * Loads prefs, clamps to the visual screen, applies mode/layout once, sets stage bounds, and
+     * registers close-only save (P24-006). Call after {@link #createScene()} and before {@code
+     * stage.show()}.
+     */
+    public void prepareStageGeometry(Stage stage, double defaultWidth, double defaultHeight) {
+        WindowGeometryStore store = WindowGeometryStore.userDefault();
+        WindowGeometry loaded = store.load(defaultWidth, defaultHeight);
+        Rectangle2D visual = visualBoundsFor(loaded);
+        WindowGeometry geometry = loaded.clamp(
+                visual.getMinX(), visual.getMinY(), visual.getWidth(), visual.getHeight(), defaultWidth, defaultHeight);
+        applyRestoredGeometry(geometry);
+        if (!Double.isNaN(geometry.x())) {
+            stage.setX(geometry.x());
+        }
+        if (!Double.isNaN(geometry.y())) {
+            stage.setY(geometry.y());
+        }
+        stage.setWidth(geometry.width());
+        stage.setHeight(geometry.height());
+        pendingDividerRestore = geometry;
+        stage.setOnCloseRequest(event -> store.save(captureGeometry(stage)));
+    }
+
+    /** Post-show: divider pulse + existing scene-shown redraw. */
+    public void onStageShown() {
+        if (pendingDividerRestore != null) {
+            WindowGeometry geometry = pendingDividerRestore;
+            pendingDividerRestore = null;
+            Platform.runLater(() -> viewModeController.applyDivider(geometry.divider()));
+        }
+        onSceneShown();
+    }
+
+    /**
+     * Restores view mode and builds layout once before the Stage is shown (no Simple flash when
+     * prefs say EXTENDED).
+     */
+    void applyRestoredGeometry(WindowGeometry geometry) {
+        viewModeController.restoreMode(geometry.viewMode(), () -> simpleModeButton, () -> extendedModeButton);
+        viewModeController.apply();
+        viewModeController.applyDivider(geometry.divider());
+    }
+
+    WindowGeometry captureGeometry(Stage stage) {
+        return new WindowGeometry(
+                stage.getX(),
+                stage.getY(),
+                stage.getWidth(),
+                stage.getHeight(),
+                viewModeController.dividerForSave(),
+                viewModeController.viewMode());
+    }
+
+    static Rectangle2D visualBoundsFor(WindowGeometry geometry) {
+        double cx = Double.isNaN(geometry.x()) ? Double.NaN : geometry.x() + geometry.width() / 2.0;
+        double cy = Double.isNaN(geometry.y()) ? Double.NaN : geometry.y() + geometry.height() / 2.0;
+        if (!Double.isNaN(cx) && !Double.isNaN(cy)) {
+            for (Screen screen : Screen.getScreens()) {
+                Rectangle2D bounds = screen.getVisualBounds();
+                if (bounds.contains(cx, cy)) {
+                    return bounds;
+                }
+            }
+        }
+        return Screen.getPrimary().getVisualBounds();
     }
 
     public void onSceneShown() {
@@ -261,6 +334,7 @@ public final class MainController {
                 graphPanel,
                 leftPanel,
                 root,
+                mainSplit,
                 logArea,
                 statusLabel,
                 () -> {

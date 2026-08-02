@@ -29,9 +29,9 @@ import javafx.stage.Stage;
 
 /** Cross-platform JavaFX entry point for PINGUI. */
 public final class PinguiApplication extends Application {
-    /** Default stage size until G6 window-geometry prefs restore a saved size. */
+    /** Fallback stage size when window-geometry prefs are missing or invalid. */
     static final double DEFAULT_STAGE_WIDTH = 1100.0;
-    /** Default stage size until G6 window-geometry prefs restore a saved size. */
+    /** Fallback stage size when window-geometry prefs are missing or invalid. */
     static final double DEFAULT_STAGE_HEIGHT = 700.0;
 
     private MainController controller;
@@ -47,11 +47,10 @@ public final class PinguiApplication extends Application {
             Scene scene = controller.createScene();
             stage.setTitle(MainController.windowTitle());
             stage.setScene(scene);
-            // One-time default geometry (P24-005); mode toggle must not resize the window.
-            stage.setWidth(DEFAULT_STAGE_WIDTH);
-            stage.setHeight(DEFAULT_STAGE_HEIGHT);
+            // P24-006: restore clamped bounds + mode; close-only save registered inside.
+            controller.prepareStageGeometry(stage, DEFAULT_STAGE_WIDTH, DEFAULT_STAGE_HEIGHT);
             stage.show();
-            controller.onSceneShown();
+            controller.onStageShown();
             controller.refreshDirtyUi();
         } catch (ConfigError | IllegalArgumentException ex) {
             failCli(ex.getMessage());

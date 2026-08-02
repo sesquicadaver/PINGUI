@@ -286,6 +286,7 @@ chmod +x pingui-java.sh gradlew
 - [ ] **Новий профіль** → ім'я `test` → список хостів порожній, вікно без чорних смуг
 - [ ] **Видалити профіль** (повернення до default) → Simple mode; панелі compact (граф/лог hidden); розмір вікна **не** форсується (P24-005)
 - [ ] **Розширений** → граф + лог; **Простий** → панелі compact знову; розмір вікна без стрибка на toggle (P24-005)
+- [ ] **P24-006 Window geometry:** resize/move вікна → restart → bounds ±1px; Extended → drag SplitPane divider → restart → divider; restart відновлює last `UiViewMode`
 - [ ] **P22-005 Auto session DB:** Налаштування → База даних… → «Створити…» → шлях `data/YYYY-MM-DD_HH-mm-ss_<ip>.db`; Apply
 - [ ] **P22-004 Problem badge:** увімкнути endpoint_down → після FIRING зʼявляється `!` на рядку; клік → діалог; закриття ховає значок
 - [ ] **P21-003 Alerts rules:** Налаштування → Сповіщення… → endpoint_down + пресет/параметри + notify_resolved; Apply + Зберегти → YAML `alerts.rules`
