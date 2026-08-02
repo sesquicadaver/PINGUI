@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P24-003** |
+| **Поточна задача** | **P24-004** |
 | **Фаза** | 24 — GUI architecture & paint |
-| **DoD (коротко)** | GraphCanvas: кеш `GraphScene` на pan/zoom |
+| **DoD (коротко)** | GraphCanvas: color/hover cache |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -131,7 +131,7 @@
 | 85 | **P24-000** | [x] | ROADMAP/LIVING_SPEC: фаза P24 G0–G10 IDs + baseline |
 | 86 | **P24-001** | [x] | GraphCanvas: invalidate без `width+1` (call-count тест) |
 | 87 | **P24-002** | [x] | GraphCanvas: coalesced `requestRedraw` (1× pulse) |
-| 88 | **P24-003** | [ ] | GraphCanvas: кеш `GraphScene` на pan/zoom |
+| 88 | **P24-003** | [x] | GraphCanvas: кеш `GraphScene` на pan/zoom |
 | 89 | **P24-004** | [ ] | GraphCanvas: color/hover cache |
 | 90 | **P24-005** | [ ] | ViewMode: прибрати forced window resize / applyCss |
 | 91 | **P24-006** | [ ] | SplitPane + persist window/divider geometry |
@@ -140,7 +140,7 @@
 | 94 | **P24-009** | [ ] | Startup: важкий init поза FX thread |
 | 95 | **P24-010** | [ ] | ADR_GUI_PAINT + perf smoke + закриття фази |
 
-**Стан черги:** відкрита — **NEXT = P24-003** (фаза 24 GUI architecture & paint).
+**Стан черги:** відкрита — **NEXT = P24-004** (фаза 24 GUI architecture & paint).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -821,7 +821,7 @@ flowchart TD
 | **P24-000** | [x] Baseline IDs у ROADMAP/LIVING_SPEC | `docs/ROADMAP.md`, `docs/en/ROADMAP.md`, `docs/LIVING_SPEC.md`, `docs/en/LIVING_SPEC.md` | Черга P24-000…010; NEXT=P24-001 |
 | **P24-001** | [x] Canvas invalidate без `width+1` | `GraphCanvas.java`, `GraphCanvasTest.java`, CHECKLIST | Call-count==0 при same size; native Windows smoke у CHECKLIST |
 | **P24-002** | [x] Coalesced redraw | `GraphCanvas.java` | ≤1 paint / pulse; sync resize vs paintPixels; успадковує G1 |
-| **P24-003** | [ ] Cache GraphScene | `GraphCanvas.java`, `RouteGraphLayout` | Pan/zoom без `buildScene` |
+| **P24-003** | [x] Cache GraphScene | `GraphCanvas.java`, `RouteGraphLayout` | Pan/zoom без `buildScene` |
 | **P24-004** | [ ] Color/hover cache | `GraphCanvas.java` | Немає `Color.web` у draw loop; hover dedupe |
 | **P24-005** | [ ] No forced window resize | `ViewModeController.java` | Toggle без setWidth/Height / applyCss layout |
 | **P24-006** | [ ] SplitPane + persist geometry | `WindowGeometryStore` / prefs, `MainController` | Restore bounds+divider; clamp visualBounds |
