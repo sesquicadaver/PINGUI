@@ -2,9 +2,7 @@ package io.pingui.ui;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
-import javafx.application.Platform;
 import javafx.geometry.Insets;
-import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextArea;
@@ -13,12 +11,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
-/** Simple vs extended layout and window sizing. */
+/** Simple vs extended layout (visibility/managed only; window size is owned by the Stage). */
 final class ViewModeController {
-    private static final double SIMPLE_PANEL_MIN_WIDTH = 580.0;
-    private static final double EXTENDED_WIDTH = 1100.0;
-    private static final double EXTENDED_HEIGHT = 700.0;
-
     private UiViewMode viewMode = UiViewMode.SIMPLE;
     private final VBox graphPanel;
     private final VBox leftPanel;
@@ -91,29 +85,6 @@ final class ViewModeController {
                 statusLabel.setText(EmptyStateHints.simpleNoLog());
             }
         }
-        fitWindowToContent();
-    }
-
-    void fitWindowToContent() {
-        Platform.runLater(() -> {
-            Scene scene = root.getScene();
-            if (scene == null || scene.getWindow() == null) {
-                return;
-            }
-            if (viewMode == UiViewMode.SIMPLE) {
-                leftPanel.applyCss();
-                leftPanel.layout();
-                root.applyCss();
-                root.layout();
-                double prefW = Math.max(SIMPLE_PANEL_MIN_WIDTH, root.prefWidth(-1));
-                double prefH = Math.max(root.minHeight(-1), root.prefHeight(-1));
-                scene.getWindow().setWidth(prefW);
-                scene.getWindow().setHeight(prefH);
-            } else {
-                scene.getWindow().setWidth(EXTENDED_WIDTH);
-                scene.getWindow().setHeight(EXTENDED_HEIGHT);
-            }
-        });
     }
 
     void restoreMode(UiViewMode mode, Supplier<RadioButton> simpleButton, Supplier<RadioButton> extendedButton) {

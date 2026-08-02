@@ -29,6 +29,11 @@ import javafx.stage.Stage;
 
 /** Cross-platform JavaFX entry point for PINGUI. */
 public final class PinguiApplication extends Application {
+    /** Default stage size until G6 window-geometry prefs restore a saved size. */
+    static final double DEFAULT_STAGE_WIDTH = 1100.0;
+    /** Default stage size until G6 window-geometry prefs restore a saved size. */
+    static final double DEFAULT_STAGE_HEIGHT = 700.0;
+
     private MainController controller;
 
     @Override
@@ -42,6 +47,9 @@ public final class PinguiApplication extends Application {
             Scene scene = controller.createScene();
             stage.setTitle(MainController.windowTitle());
             stage.setScene(scene);
+            // One-time default geometry (P24-005); mode toggle must not resize the window.
+            stage.setWidth(DEFAULT_STAGE_WIDTH);
+            stage.setHeight(DEFAULT_STAGE_HEIGHT);
             stage.show();
             controller.onSceneShown();
             controller.refreshDirtyUi();

@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P24-005** |
+| **Поточна задача** | **P24-006** |
 | **Фаза** | 24 — GUI architecture & paint |
-| **DoD (коротко)** | ViewMode: прибрати forced window resize / applyCss |
+| **DoD (коротко)** | SplitPane + persist window/divider geometry |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -133,14 +133,14 @@
 | 87 | **P24-002** | [x] | GraphCanvas: coalesced `requestRedraw` (1× pulse) |
 | 88 | **P24-003** | [x] | GraphCanvas: кеш `GraphScene` на pan/zoom |
 | 89 | **P24-004** | [x] | GraphCanvas: color/hover cache |
-| 90 | **P24-005** | [ ] | ViewMode: прибрати forced window resize / applyCss |
+| 90 | **P24-005** | [x] | ViewMode: прибрати forced window resize / applyCss |
 | 91 | **P24-006** | [ ] | SplitPane + persist window/divider geometry |
 | 92 | **P24-007** | [ ] | View components з `MainController.createScene` |
 | 93 | **P24-008** | [ ] | CSS theme layer (light-first palette) |
 | 94 | **P24-009** | [ ] | Startup: важкий init поза FX thread |
 | 95 | **P24-010** | [ ] | ADR_GUI_PAINT + perf smoke + закриття фази |
 
-**Стан черги:** відкрита — **NEXT = P24-005** (фаза 24 GUI architecture & paint).
+**Стан черги:** відкрита — **NEXT = P24-006** (фаза 24 GUI architecture & paint).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -823,7 +823,7 @@ flowchart TD
 | **P24-002** | [x] Coalesced redraw | `GraphCanvas.java` | ≤1 paint / pulse; sync resize vs paintPixels; успадковує G1 |
 | **P24-003** | [x] Cache GraphScene | `GraphCanvas.java`, `RouteGraphLayout` | Pan/zoom без `buildScene` |
 | **P24-004** | [x] Color/hover cache | `GraphCanvas.java`, `GraphCanvasTest.java` | Немає `Color.web` у draw loop; hover dedupe + switch-node тест |
-| **P24-005** | [ ] No forced window resize | `ViewModeController.java` | Toggle без setWidth/Height / applyCss layout |
+| **P24-005** | [x] No forced window resize | `ViewModeController.java`, `PinguiApplication.java`, CHECKLIST | Toggle без setWidth/Height / applyCss; default stage once |
 | **P24-006** | [ ] SplitPane + persist geometry | `WindowGeometryStore` / prefs, `MainController` | Restore bounds+divider; clamp visualBounds |
 | **P24-007** | [ ] View components | `io.pingui.ui.view.*`, `MainController` | `createScene` тонкий assembler |
 | **P24-008** | [ ] CSS palette | `pingui.css`, `UiPalette` | Stylesheet на Scene; light-first |

@@ -99,7 +99,8 @@ Module → unit test matrix. Update when adding features.
 | GraphCanvas coalesce (P24-002) | `GraphCanvas` | `GraphCanvasTest` paint≤1 / pulse |
 | GraphScene cache (P24-003) | `GraphCanvas`, `RouteGraphLayout` | `GraphCanvasTest` pan/zoom without rebuild |
 | Graph paint cache (P24-004) | `GraphCanvas` | `GraphCanvasTest` hover/color |
-| Window geometry (P24-005…006) | `ViewModeController`, prefs store | `ViewModeControllerTest`; geometry unit |
+| No forced window resize (P24-005) | `ViewModeController`, `PinguiApplication`, `HostListPresenter` | `ViewModeControllerTest.applyDoesNotChangeStageSizeAcrossModeToggle` + source guard |
+| Window geometry persist (P24-006) | prefs store, `MainController` | geometry unit (SplitPane + bounds) |
 | GUI view split / CSS / startup (P24-007…009) | `MainController`, `ui.view.*`, `pingui.css` | Presenter/structure tests; seam test |
 | ADR GUI paint (P24-010) | `docs/ADR_GUI_PAINT.md` | Doc parity + CHECKLIST perf smoke |
 | YAML/GUI alerts.rules (P21-003) | `AlertConfig`, `EndpointDownRuleConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `ProfilesConfigTest`, `AlertsSettingsDialogTest`, `AppMenuDialogsTest` |

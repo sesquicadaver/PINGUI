@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P24-005** |
+| **Current task** | **P24-006** |
 | **Phase** | 24 — GUI architecture & paint |
-| **DoD (short)** | ViewMode: remove forced window resize / applyCss |
+| **DoD (short)** | SplitPane + persist window/divider geometry |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -133,14 +133,14 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 87 | **P24-002** | [x] | GraphCanvas: coalesced `requestRedraw` (1× pulse) |
 | 88 | **P24-003** | [x] | GraphCanvas: cache `GraphScene` on pan/zoom |
 | 89 | **P24-004** | [x] | GraphCanvas: color/hover cache |
-| 90 | **P24-005** | [ ] | ViewMode: remove forced window resize / applyCss |
+| 90 | **P24-005** | [x] | ViewMode: remove forced window resize / applyCss |
 | 91 | **P24-006** | [ ] | SplitPane + persist window/divider geometry |
 | 92 | **P24-007** | [ ] | View components from `MainController.createScene` |
 | 93 | **P24-008** | [ ] | CSS theme layer (light-first palette) |
 | 94 | **P24-009** | [ ] | Startup: heavy init off FX thread |
 | 95 | **P24-010** | [ ] | ADR_GUI_PAINT + perf smoke + phase close |
 
-**Queue status:** open — **NEXT = P24-005** (phase 24 GUI architecture & paint).
+**Queue status:** open — **NEXT = P24-006** (phase 24 GUI architecture & paint).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -823,7 +823,7 @@ flowchart TD
 | **P24-002** | [x] Coalesced redraw | `GraphCanvas.java` | ≤1 paint / pulse; sync resize vs paintPixels; inherits G1 |
 | **P24-003** | [x] Cache GraphScene | `GraphCanvas.java`, `RouteGraphLayout` | Pan/zoom without `buildScene` |
 | **P24-004** | [x] Color/hover cache | `GraphCanvas.java`, `GraphCanvasTest.java` | No `Color.web` in draw loop; hover dedupe + switch-node test |
-| **P24-005** | [ ] No forced window resize | `ViewModeController.java` | Toggle without setWidth/Height / applyCss layout |
+| **P24-005** | [x] No forced window resize | `ViewModeController.java`, `PinguiApplication.java`, CHECKLIST | Toggle without setWidth/Height / applyCss; default stage once |
 | **P24-006** | [ ] SplitPane + persist geometry | `WindowGeometryStore` / prefs, `MainController` | Restore bounds+divider; clamp visualBounds |
 | **P24-007** | [ ] View components | `io.pingui.ui.view.*`, `MainController` | Thin `createScene` assembler |
 | **P24-008** | [ ] CSS palette | `pingui.css`, `UiPalette` | Stylesheet on Scene; light-first |

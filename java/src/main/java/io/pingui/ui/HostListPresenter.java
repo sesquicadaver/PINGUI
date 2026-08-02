@@ -52,7 +52,6 @@ final class HostListPresenter {
     private final Runnable clearHistoryReplay;
     private final java.util.function.BiConsumer<String, String> onHostRenamed;
     private final Runnable startEasterEgg;
-    private final Runnable fitWindow;
     private final Consumer<Runnable> runWithoutHistoryFilterSync;
     private final FlowPane tagChipPane = new FlowPane(6, 6);
     private final ToggleGroup tagFilterGroup = new ToggleGroup();
@@ -77,7 +76,6 @@ final class HostListPresenter {
             Runnable clearHistoryReplay,
             java.util.function.BiConsumer<String, String> onHostRenamed,
             Runnable startEasterEgg,
-            Runnable fitWindow,
             Consumer<Runnable> runWithoutHistoryFilterSync) {
         this.hostItems = hostItems;
         this.filteredHosts = new FilteredList<>(hostItems, item -> true);
@@ -92,7 +90,6 @@ final class HostListPresenter {
         this.clearHistoryReplay = clearHistoryReplay;
         this.onHostRenamed = onHostRenamed;
         this.startEasterEgg = startEasterEgg;
-        this.fitWindow = fitWindow;
         this.runWithoutHistoryFilterSync = runWithoutHistoryFilterSync;
         Label tagLabel = new Label("Тег:");
         tagChipPane.setPadding(new Insets(2, 0, 2, 0));
@@ -428,7 +425,6 @@ final class HostListPresenter {
     private void syncListHeight() {
         int rows = Math.max(1, hostItems.size());
         hostList.setPrefHeight(listHeightForRows(Math.min(rows, HostsConfig.MAX_HOSTS)));
-        fitWindow.run();
     }
 
     private static double listHeightForRows(int rows) {

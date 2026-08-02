@@ -216,7 +216,6 @@ class HostListPresenterTest {
                     () -> {},
                     (oldHost, newHost) -> {},
                     () -> {},
-                    () -> {},
                     Runnable::run);
             this.presenter.setMarkDirty(dirtyMarks::incrementAndGet);
         }

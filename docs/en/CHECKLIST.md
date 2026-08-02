@@ -284,8 +284,8 @@ Run on **Linux** (regression for “black frame” after profile CRUD):
 - [ ] **About** (menu) — version dialog opens without hanging
 - [ ] **F1 / Help** — help dialog opens
 - [ ] **New profile** → name `test` → host list empty, window without black bars
-- [ ] **Delete profile** (return to default) → Simple mode, window shrinks correctly (no oversized frame left)
-- [ ] **Extended** → graph + log; **Simple** → compact layout again
+- [ ] **Delete profile** (return to default) → Simple mode; panels compact (graph/log hidden); window size is **not** forced (P24-005)
+- [ ] **Extended** → graph + log; **Simple** → panels compact again; window size does not jump on toggle (P24-005)
 - [ ] **P22-005 Auto session DB:** Settings → Database… → Create… → path `data/YYYY-MM-DD_HH-mm-ss_<ip>.db`; Apply
 - [ ] **P22-004 Problem badge:** enable endpoint_down → after FIRING see `!` on row; click → dialog; close hides badge
 - [ ] **P21-003 Alerts rules:** Settings → Alerts… → endpoint_down + preset/params + notify_resolved; Apply + Save → YAML `alerts.rules`

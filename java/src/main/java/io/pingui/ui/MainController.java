@@ -246,7 +246,6 @@ public final class MainController {
             if (!easterEggActive) {
                 routeGraphPresenter.redrawIfExtended();
             }
-            viewModeController.fitWindowToContent();
         });
     }
 
@@ -302,7 +301,6 @@ public final class MainController {
                 this::clearHistoryReplay,
                 this::onHostRenamed,
                 this::startEasterEgg,
-                () -> viewModeController.fitWindowToContent(),
                 historyHostSync::runWhileSyncing);
         hostListPresenter.setMarkDirty(dirtyState::mark);
 
