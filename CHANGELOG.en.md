@@ -20,7 +20,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
-- **Simple window width:** cold-start / leftover Extended width no longer leaves a wide empty frame in Simple — Stage width fits the host-column pref (height unchanged).
+- **Simple window geometry:** startup always Simple; leftover Extended / ≈visualBounds (maximize) reset; demaximize before fit; close while maximized saves floating bounds; Extended→Simple shrinks Stage to chrome pref.
 - **Extended geometry:** Simple→Extended expands width+height (~1400×820) when needed; SplitPane divider ≈ left column 600 px.
 
 ### Changed

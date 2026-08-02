@@ -286,8 +286,8 @@ Run on **Linux** (regression for “black frame” after profile CRUD):
 - [ ] **New profile** → name `test` → host list empty, window without black bars
 - [ ] **Delete profile** (return to default) → Simple mode; panels compact (graph/log hidden); window size is **not** forced (P24-005)
 - [ ] **Extended** → graph + log; **Simple** → panels compact again; window size does not jump on toggle (P24-005)
-- [ ] **P24-006 Window geometry:** resize/move window → restart → bounds ±1px; Extended → drag SplitPane divider → restart → divider; restart restores last `UiViewMode`
-- [ ] **Simple/Extended geometry:** start in Simple → Stage width ≈ host column (~580), height not force-shrunk; → Extended expands width+height (~1400×820) when needed; divider ≈ left column 600 px; back to Simple does not shrink
+- [ ] **P24-006 Window geometry:** resize/move window → restart → position ±1px; Extended → drag SplitPane divider → restart → divider remembered; **restart always Simple** (even if closed in Extended)
+- [ ] **Simple/Extended geometry:** startup always Simple (~580×700 + fit); maximized leftover (≈screen) does not stay fullscreen; → Extended expands (~1400×820); divider ≈ 600 px; **back to Simple shrinks**; close while maximized does not persist screen size
 - [ ] **P24-008 CSS light theme:** start GUI → `#fafafa` background / light panels; host-list danger `!` and muted tags readable; no raw unstyled chrome (screenshot smoke, light)
 - [ ] **P24-009 Deferred startup:** window appears with «Завантаження…» before ready; then host list fills; bad YAML → error feedback without hang
 - [ ] **P24-010 Perf smoke (desktop):** Extended → pan the graph ~5 s (drag) → route update (poll/replay) without visible freeze; optional JFR: `jcmd <pid> JFR.start name=pingui settings=profile` during pan+route, then `JFR.stop filename=pingui-gui.jfr` — look for long FX pulses / `paintPixels`. CI: `GraphCanvasPerfTest` (100 drag ≤1 paint).

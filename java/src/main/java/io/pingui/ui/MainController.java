@@ -86,6 +86,8 @@ public final class MainController {
     private Stage mainStage;
     private double extendedDefaultWidth = WindowGeometry.DEFAULT_EXTENDED_WIDTH;
     private double extendedDefaultHeight = WindowGeometry.DEFAULT_EXTENDED_HEIGHT;
+    /** Last non-maximized bounds — used when close would otherwise persist screen-sized maximized geometry. */
+    private WindowGeometry lastFloatingGeometry;
 
     /**
      * Shell constructor (P24-009): FX chrome only — no profile YAML, SQLite, or GeoIP I/O. Heavy load
@@ -138,7 +140,12 @@ public final class MainController {
         // Cross-coordinator listeners (D4) — after assemble.
         mainView.modeGroup().selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
             viewModeController.onToggleSelected(newToggle);
-            ensureExtendedStageGeometry();
+            if (viewModeController.isExtended()) {
+                ensureExtendedStageGeometry();
+            } else {
+                // Pref sizes settle after Simple re-parent; shrink Stage to host-column chrome.
+                Platform.runLater(this::fitSimpleStageGeometryIfNeeded);
+            }
             updateHistoryPanelVisibility();
         });
 
@@ -332,14 +339,16 @@ public final class MainController {
     }
 
     /**
-     * Loads prefs, clamps to the visual screen, applies mode/layout once, sets stage bounds, and
+     * Loads prefs, clamps to the visual screen, applies Simple layout once, sets stage bounds, and
      * registers close-only save (P24-006). Call after {@link #createScene()} and before {@code
-     * stage.show()}.
+     * stage.show()}. Startup always opens in Simple (saved {@code viewMode} is ignored; divider is
+     * kept for the next Extended session). Near-fullscreen / Extended leftover bounds reset to Simple
+     * defaults; maximize is cleared before Simple fit after show.
      *
-     * @param defaultWidthSimple fallback width when prefs missing and mode is Simple
-     * @param defaultWidthExtended fallback width when Extended omits width; also expand target on toggle
+     * @param defaultWidthSimple fallback width when prefs missing
+     * @param defaultWidthExtended expand target when toggling to Extended
      * @param defaultHeightSimple fallback height for Simple / missing prefs
-     * @param defaultHeightExtended fallback height when Extended omits height; also expand target on toggle
+     * @param defaultHeightExtended expand target when toggling to Extended
      */
     public void prepareStageGeometry(
             Stage stage,
@@ -354,22 +363,25 @@ public final class MainController {
         WindowGeometry loaded =
                 store.load(defaultWidthSimple, defaultWidthExtended, defaultHeightSimple, defaultHeightExtended);
         Rectangle2D visual = visualBoundsFor(loaded);
-        double clampDefaultWidth = loaded.viewMode() == UiViewMode.EXTENDED ? defaultWidthExtended : defaultWidthSimple;
-        double clampDefaultHeight =
-                loaded.viewMode() == UiViewMode.EXTENDED ? defaultHeightExtended : defaultHeightSimple;
-        WindowGeometry geometry = loaded.clamp(
+        // Startup is always Simple: clamp with Simple defaults; ignore saved viewMode for layout.
+        WindowGeometry clamped = loaded.clamp(
                 visual.getMinX(),
                 visual.getMinY(),
                 visual.getWidth(),
                 visual.getHeight(),
-                clampDefaultWidth,
-                clampDefaultHeight);
-        if (geometry.viewMode() == UiViewMode.EXTENDED) {
-            double rational = WindowGeometry.dividerForLeftWidth(geometry.width(), WindowGeometry.EXTENDED_LEFT_WIDTH);
-            geometry = new WindowGeometry(
-                    geometry.x(), geometry.y(), geometry.width(), geometry.height(), rational, geometry.viewMode());
-        }
+                defaultWidthSimple,
+                defaultHeightSimple);
+        // Extended leftovers or maximized-as-bounds (≈ visualBounds) → Simple defaults.
+        boolean resetSize = loaded.viewMode() == UiViewMode.EXTENDED
+                || WindowGeometry.fillsVisualBounds(
+                        clamped.width(), clamped.height(), visual.getWidth(), visual.getHeight());
+        double startW = resetSize ? defaultWidthSimple : clamped.width();
+        double startH = resetSize ? defaultHeightSimple : clamped.height();
+        WindowGeometry geometry =
+                new WindowGeometry(clamped.x(), clamped.y(), startW, startH, clamped.divider(), UiViewMode.SIMPLE);
+        lastFloatingGeometry = geometry;
         applyRestoredGeometry(geometry);
+        clearStageMaximize(stage);
         if (!Double.isNaN(geometry.x())) {
             stage.setX(geometry.x());
         }
@@ -382,32 +394,42 @@ public final class MainController {
         stage.setOnCloseRequest(event -> store.save(captureGeometry(stage)));
     }
 
-    /** Post-show: divider pulse, Simple width fit (height untouched), scene-shown redraw. */
+    /** Post-show: remember divider for Extended, fit Simple Stage to chrome, scene-shown redraw. */
     public void onStageShown() {
         if (pendingDividerRestore != null) {
             WindowGeometry geometry = pendingDividerRestore;
             pendingDividerRestore = null;
             Platform.runLater(() -> viewModeController.applyDivider(geometry.divider()));
         }
-        Platform.runLater(this::fitSimpleStageWidthIfNeeded);
+        // Two pulses: some WMs maximize after show when prior bounds filled the screen.
+        Platform.runLater(() -> {
+            fitSimpleStageGeometryIfNeeded();
+            Platform.runLater(this::fitSimpleStageGeometryIfNeeded);
+        });
         onSceneShown();
     }
 
     /**
-     * After layout: if Simple chrome is narrower than the Stage, shrink width only (leftover Extended
-     * width / oversized prefs). Does not change height or Extended layout.
+     * After layout in Simple: clear maximize/fullscreen, then shrink Stage to content pref when the
+     * frame is larger than chrome. Never expands; no-op in Extended.
      */
-    void fitSimpleStageWidthIfNeeded() {
+    void fitSimpleStageGeometryIfNeeded() {
         if (mainStage == null || viewModeController == null || viewModeController.isExtended()) {
             return;
         }
+        clearStageMaximize(mainStage);
         javafx.scene.layout.Region root = mainView.root();
         root.applyCss();
         root.layout();
-        double next = WindowGeometry.fitSimpleWidth(mainStage.getWidth(), root.prefWidth(-1));
-        if (next + 0.5 < mainStage.getWidth()) {
-            mainStage.setWidth(next);
+        double nextW = WindowGeometry.fitSimpleWidth(mainStage.getWidth(), root.prefWidth(-1));
+        double nextH = WindowGeometry.fitSimpleHeight(mainStage.getHeight(), root.prefHeight(-1));
+        if (nextW + 0.5 < mainStage.getWidth()) {
+            mainStage.setWidth(nextW);
         }
+        if (nextH + 0.5 < mainStage.getHeight()) {
+            mainStage.setHeight(nextH);
+        }
+        rememberFloatingGeometry(mainStage);
     }
 
     /**
@@ -418,6 +440,7 @@ public final class MainController {
         if (mainStage == null || viewModeController == null || !viewModeController.isExtended()) {
             return;
         }
+        clearStageMaximize(mainStage);
         double nextW = WindowGeometry.ensureExtendedWidth(mainStage.getWidth(), extendedDefaultWidth);
         double nextH = WindowGeometry.ensureExtendedHeight(mainStage.getHeight(), extendedDefaultHeight);
         if (nextW > mainStage.getWidth() + 0.5) {
@@ -428,6 +451,33 @@ public final class MainController {
         }
         viewModeController.applyDivider(
                 WindowGeometry.dividerForLeftWidth(mainStage.getWidth(), WindowGeometry.EXTENDED_LEFT_WIDTH));
+        rememberFloatingGeometry(mainStage);
+    }
+
+    /** Maximized/fullscreen Stages ignore setWidth/setHeight — clear chrome state first. */
+    static void clearStageMaximize(Stage stage) {
+        if (stage == null) {
+            return;
+        }
+        if (stage.isFullScreen()) {
+            stage.setFullScreen(false);
+        }
+        if (stage.isMaximized()) {
+            stage.setMaximized(false);
+        }
+    }
+
+    void rememberFloatingGeometry(Stage stage) {
+        if (stage == null || stage.isMaximized() || stage.isFullScreen()) {
+            return;
+        }
+        lastFloatingGeometry = new WindowGeometry(
+                stage.getX(),
+                stage.getY(),
+                stage.getWidth(),
+                stage.getHeight(),
+                viewModeController != null ? viewModeController.dividerForSave() : WindowGeometry.DEFAULT_DIVIDER,
+                viewModeController != null ? viewModeController.viewMode() : UiViewMode.SIMPLE);
     }
 
     /**
@@ -440,14 +490,35 @@ public final class MainController {
         viewModeController.applyDivider(geometry.divider());
     }
 
+    /**
+     * Persists floating bounds. When the Stage is maximized/fullscreen, writes {@link
+     * #lastFloatingGeometry} (or Simple defaults) so the next start is not trapped at screen size.
+     */
     WindowGeometry captureGeometry(Stage stage) {
-        return new WindowGeometry(
-                stage.getX(),
-                stage.getY(),
-                stage.getWidth(),
-                stage.getHeight(),
-                viewModeController.dividerForSave(),
-                viewModeController.viewMode());
+        double divider = viewModeController.dividerForSave();
+        UiViewMode mode = viewModeController.viewMode();
+        if (stage.isMaximized() || stage.isFullScreen()) {
+            if (lastFloatingGeometry != null) {
+                return new WindowGeometry(
+                        lastFloatingGeometry.x(),
+                        lastFloatingGeometry.y(),
+                        lastFloatingGeometry.width(),
+                        lastFloatingGeometry.height(),
+                        divider,
+                        mode);
+            }
+            return new WindowGeometry(
+                    Double.NaN,
+                    Double.NaN,
+                    WindowGeometry.DEFAULT_SIMPLE_WIDTH,
+                    WindowGeometry.DEFAULT_SIMPLE_HEIGHT,
+                    divider,
+                    mode);
+        }
+        WindowGeometry current =
+                new WindowGeometry(stage.getX(), stage.getY(), stage.getWidth(), stage.getHeight(), divider, mode);
+        lastFloatingGeometry = current;
+        return current;
     }
 
     static Rectangle2D visualBoundsFor(WindowGeometry geometry) {

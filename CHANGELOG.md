@@ -20,7 +20,7 @@
 
 ### Fixed
 
-- **Simple window width:** cold-start / leftover Extended width no longer leaves a wide empty frame in Simple — Stage width fits host-column pref (height unchanged).
+- **Simple window geometry:** старт завжди Простий; leftover Extended / ≈visualBounds (maximize) скидаються; перед fit — demaximize; close у maximized пише floating bounds; Extended→Simple стискає Stage до chrome pref.
 - **Extended geometry:** toggle Simple→Extended розширює width+height (~1400×820) за потреби; SplitPane divider ≈ ліва колонка 600 px.
 
 ### Changed

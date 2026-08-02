@@ -48,19 +48,19 @@ Native Windows Glass може skip-paint після зняття hack — обо
 
 ### 5. Геометрія при перемиканні режиму
 
-Toggle **назад у Simple** не стискає Stage (без jank). Toggle **у Extended** може одноразово розширити width+height до Extended defaults, якщо вікно ще Simple-розмірне; divider виставляється як `leftPref / stageWidth` (~600 px ліва колонка). Default stage size — cold-start / missing prefs.
+**Старт завжди Simple** (збережений `viewMode` ігнорується). Bounds скидаються до Simple defaults, якщо остання сесія була Extended **або** збережений розмір ≈ `visualBounds` (слід maximize). Перед Simple fit / Extended expand — `setMaximized(false)` / `setFullScreen(false)`. На close у maximized зберігаються останні floating bounds (не розмір екрана). Toggle **у Extended** розширює width+height; divider = `leftPref / stageWidth` (~600 px). Toggle **назад у Simple** стискає Stage до pref chrome.
 
 ### 6. SplitPane + geometry persist
 
 | Поле | Збереження |
 |------|------------|
 | Bounds (x,y,w,h) | `WindowGeometryStore` (XDG / `%APPDATA%`) |
-| Split divider | Extended mode (раціональний від лівої колонки) |
-| `UiViewMode` | Останній режим |
+| Split divider | для наступного Extended |
+| `UiViewMode` | пишеться на close; **на старті завжди Simple** |
 
 Clamp до `Screen.getVisualBounds()`; invalid → defaults.
 
-**Геометрія vs режим:** cold-start Simple → ~580×700 (колонка). Після `show` у Simple — одноразове підрізання **лише width** до `root.prefWidth`. Extended defaults ~1400×820; toggle Simple→Extended розширює width **і** height за потреби (ніколи не зменшує).
+**Геометрія vs режим:** cold-start / restart → Simple ~580×700 (+ fit після `show`). Extended defaults ~1400×820 на toggle.
 
 ### 7. View assembly + CSS
 

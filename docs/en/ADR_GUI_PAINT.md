@@ -48,19 +48,19 @@ All redraw requests go through `requestRedraw()` → one `Platform.runLater` pul
 
 ### 5. Mode toggle geometry
 
-Toggle **back to Simple** does not shrink the Stage (no jank). Toggle **to Extended** may once expand width+height to Extended defaults when the window is still Simple-sized; divider is set as `leftPref / stageWidth` (~600 px left column). Default stage size — cold-start / missing prefs.
+**Startup is always Simple** (saved `viewMode` ignored). Bounds reset to Simple defaults when the last session was Extended **or** saved size ≈ `visualBounds` (maximized leftover). Before Simple fit / Extended expand — `setMaximized(false)` / `setFullScreen(false)`. On close while maximized, persist last floating bounds (not screen size). Toggle **to Extended** expands width+height; divider = `leftPref / stageWidth` (~600 px). Toggle **back to Simple** shrinks the Stage to chrome pref.
 
 ### 6. SplitPane + geometry persist
 
 | Field | Persistence |
 |-------|-------------|
 | Bounds (x,y,w,h) | `WindowGeometryStore` (XDG / `%APPDATA%`) |
-| Split divider | Extended mode (derived from left-column target) |
-| `UiViewMode` | Last mode |
+| Split divider | for next Extended |
+| `UiViewMode` | written on close; **startup always Simple** |
 
 Clamp to `Screen.getVisualBounds()`; invalid → defaults.
 
-**Geometry vs mode:** cold-start Simple → ~580×700 (host column). After `show` in Simple — one-shot **width-only** fit to `root.prefWidth`. Extended defaults ~1400×820; Simple→Extended expands width **and** height when needed (never shrinks).
+**Geometry vs mode:** cold-start / restart → Simple ~580×700 (+ fit after `show`). Extended defaults ~1400×820 on toggle.
 
 ### 7. View assembly + CSS
 

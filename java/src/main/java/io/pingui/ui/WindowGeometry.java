@@ -106,8 +106,8 @@ record WindowGeometry(double x, double y, double width, double height, double di
     }
 
     /**
-     * Simple-mode stage width: shrink to laid-out content pref when the stage is wider. Height is
-     * never adjusted here (P24 geometry: width-only fit for compact Simple chrome).
+     * Simple-mode stage width: shrink to laid-out content pref when the stage is wider (never
+     * expands).
      */
     static double fitSimpleWidth(double stageWidth, double contentPrefWidth) {
         if (!finite(stageWidth) || !finite(contentPrefWidth) || contentPrefWidth <= 0) {
@@ -117,6 +117,20 @@ record WindowGeometry(double x, double y, double width, double height, double di
             return stageWidth;
         }
         return Math.max(MIN_WIDTH, contentPrefWidth);
+    }
+
+    /**
+     * Simple-mode stage height: shrink to laid-out content pref when the stage is taller (never
+     * expands).
+     */
+    static double fitSimpleHeight(double stageHeight, double contentPrefHeight) {
+        if (!finite(stageHeight) || !finite(contentPrefHeight) || contentPrefHeight <= 0) {
+            return stageHeight;
+        }
+        if (stageHeight <= contentPrefHeight + 0.5) {
+            return stageHeight;
+        }
+        return Math.max(MIN_HEIGHT, contentPrefHeight);
     }
 
     /**
@@ -142,6 +156,28 @@ record WindowGeometry(double x, double y, double width, double height, double di
             return stageHeight;
         }
         return extendedDefaultHeight;
+    }
+
+    /**
+     * True when saved/current size fills (or nearly fills) the visual screen — typical leftover of a
+     * maximized session written as ordinary width/height.
+     */
+    static boolean fillsVisualBounds(double width, double height, double visualWidth, double visualHeight) {
+        return fillsVisualBounds(width, height, visualWidth, visualHeight, 2.0);
+    }
+
+    static boolean fillsVisualBounds(
+            double width, double height, double visualWidth, double visualHeight, double slackPx) {
+        if (!finite(width)
+                || !finite(height)
+                || !finite(visualWidth)
+                || !finite(visualHeight)
+                || visualWidth <= 0
+                || visualHeight <= 0
+                || slackPx < 0) {
+            return false;
+        }
+        return width >= visualWidth - slackPx && height >= visualHeight - slackPx;
     }
 
     private static boolean finite(double value) {

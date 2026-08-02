@@ -100,7 +100,7 @@
 | GraphScene cache (P24-003) | `GraphCanvas`, `RouteGraphLayout` | `GraphCanvasTest` pan/zoom без rebuild |
 | Graph paint cache (P24-004) | `GraphCanvas` | `GraphCanvasTest` hover/color |
 | No forced window resize (P24-005) | `ViewModeController`, `PinguiApplication`, `HostListPresenter` | `ViewModeControllerTest.applyDoesNotChangeStageSizeAcrossModeToggle` + source guard |
-| Window geometry persist (P24-006) | `WindowGeometry`, `WindowGeometryStore`, `ViewModeController`, `MainController`, `PinguiApplication` | `WindowGeometryTest` (fit/ensure/divider); `WindowGeometryStoreTest`; `ViewModeControllerTest` SplitPane/divider |
+| Window geometry persist (P24-006) | `WindowGeometry`, `WindowGeometryStore`, `ViewModeController`, `MainController`, `PinguiApplication` | `WindowGeometryTest` (fit W/H, ensure, divider, fillsVisualBounds); `WindowGeometryStoreTest`; старт Simple + demaximize/fit + floating save |
 | GUI view components (P24-007) | `io.pingui.ui.view.*`, `MainController` | Presenter tests unchanged; `createScene` → `MainView.assemble` |
 | CSS light theme (P24-008) | `UiPalette`, `pingui.css`, `MainView`, `GraphCanvas` | `UiPaletteTest` |
 | Deferred startup I/O (P24-009) | `StartupBootstrap`, `MainController`, `PinguiApplication` | `StartupBootstrapTest` |
