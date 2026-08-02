@@ -35,21 +35,29 @@ import javafx.stage.Window;
  *
  * <p>P20-012 UX: wheel zoom, drag pan, hover tooltip, double-click hop → copy IP.
  *
- * <p>P24-001…003: canvas buffer resizes only on real size change ({@link #resizeCanvasIfNeeded});
+ * <p>P24-001…004: canvas buffer resizes only on real size change ({@link #resizeCanvasIfNeeded});
  * pixel paints coalesce to one {@link Platform#runLater} pulse via {@link #requestRedraw()}; route
  * layout ({@link RouteGraphLayout#buildScene}) is cached across pan/zoom until the route/stats
- * change. Invalidate strategy inherits G1 step1 ({@code clearRect}, no buffer-size toggle).
+ * change; draw colors and hover tooltip text are cached (P24-004).
  */
 public final class GraphCanvas extends Region {
     private static final double TEXT_PAD = 6.0;
     private static final double DRAG_THRESHOLD_PX = 4.0;
     private static final Font LABEL_FONT = Font.font("Monospace", 10);
+    private static final Color COLOR_BG = Color.web("#fafafa");
+    private static final Color COLOR_NODE_STROKE = Color.web("#555555");
+    private static final Color COLOR_LABEL = Color.web("#222222");
+    private static final Color COLOR_MESSAGE = Color.web("#333333");
+    private static final Color COLOR_EDGE_ACTIVE = Color.web("#666666");
+    private static final Color COLOR_EDGE_INACTIVE = Color.web("#c8c8c8");
 
-    /** Documented invalidate ladder: G1 step1 + G2 coalesce + G3 layout cache. */
-    static final String INVALIDATE_STRATEGY = "step1-clearRect-no-buffer-churn+coalesced-pulse+cached-graph-scene";
+    /** Documented invalidate ladder: G1–G3 + G4 paint/hover caches. */
+    static final String INVALIDATE_STRATEGY =
+            "step1-clearRect-no-buffer-churn+coalesced-pulse+cached-graph-scene+paint-hover-cache";
 
     private final Canvas canvas = new Canvas();
     private final Tooltip hoverTip = new Tooltip();
+    private final Map<String, Color> nodeFillCache = new HashMap<>();
     private List<HopNode> currentRoute = List.of();
     private List<HopNode> previousRoute = List.of();
     private Function<String, Double> avgPingFn = ip -> null;
@@ -59,6 +67,8 @@ public final class GraphCanvas extends Region {
     private Map<String, GraphNode> nodesById = Map.of();
     private boolean layoutDirty = true;
     private int layoutBuildCount;
+    private String hoveredNodeId;
+    private int hoverTipTextUpdates;
     private double contentWidth;
     private double contentHeight;
     private ViewTransform transform = ViewTransform.identity();
@@ -90,7 +100,7 @@ public final class GraphCanvas extends Region {
         setOnMouseDragged(this::onMouseDragged);
         setOnMouseReleased(this::onMouseReleased);
         setOnMouseMoved(this::onMouseMoved);
-        setOnMouseExited(e -> hoverTip.hide());
+        setOnMouseExited(e -> clearHover());
         setOnMouseClicked(this::onMouseClicked);
     }
 
@@ -194,6 +204,21 @@ public final class GraphCanvas extends Region {
         this.transform = next != null ? next : ViewTransform.identity();
     }
 
+    /** Package-visible for tests — times tooltip text was rewritten (hover dedupe). */
+    int hoverTipTextUpdates() {
+        return hoverTipTextUpdates;
+    }
+
+    /** Package-visible for tests. */
+    void resetHoverTipTextUpdates() {
+        hoverTipTextUpdates = 0;
+    }
+
+    /** Package-visible for tests — cached fill for a node color hex (same instance on repeat). */
+    Color cachedNodeFillForTest(String hex) {
+        return nodeFill(hex);
+    }
+
     /**
      * Coalesced paint request (P24-002). Multiple calls before the next FX pulse produce one {@link
      * #paintPixels()}.
@@ -241,7 +266,7 @@ public final class GraphCanvas extends Region {
         paintCount++;
         GraphicsContext gc = canvas.getGraphicsContext2D();
         gc.clearRect(0, 0, width, height);
-        gc.setFill(Color.web("#fafafa"));
+        gc.setFill(COLOR_BG);
         gc.fillRect(0, 0, width, height);
 
         if (staticViewMessage != null) {
@@ -342,21 +367,32 @@ public final class GraphCanvas extends Region {
 
     private void onMouseMoved(MouseEvent event) {
         if (staticViewMessage != null) {
-            hoverTip.hide();
+            clearHover();
             return;
         }
         Optional<GraphNode> hit = nodeAt(event.getX(), event.getY());
         if (hit.isEmpty()) {
-            hoverTip.hide();
+            clearHover();
             return;
         }
-        hoverTip.setText(RouteGraphInteraction.tooltipFor(hit.get()));
+        GraphNode node = hit.get();
+        String nodeId = node.id();
+        if (!nodeId.equals(hoveredNodeId)) {
+            hoveredNodeId = nodeId;
+            hoverTip.setText(RouteGraphInteraction.tooltipFor(node));
+            hoverTipTextUpdates++;
+        }
         Window window = getScene() != null ? getScene().getWindow() : null;
         Point2D screen = localToScreen(event.getX(), event.getY());
         if (window == null || screen == null) {
             return;
         }
         hoverTip.show(this, screen.getX() + 14, screen.getY() + 10);
+    }
+
+    private void clearHover() {
+        hoveredNodeId = null;
+        hoverTip.hide();
     }
 
     private void onMouseClicked(MouseEvent event) {
@@ -388,17 +424,17 @@ public final class GraphCanvas extends Region {
         onHopIpCopied.accept(ip);
     }
 
-    private static void drawNode(GraphicsContext gc, GraphNode node, double width, double height) {
+    private void drawNode(GraphicsContext gc, GraphNode node, double width, double height) {
         double boxW = node.width() * width;
         double boxH = node.height() * height;
         double left = (node.x() - node.width() / 2) * width;
         double top = (node.y() - node.height() / 2) * height;
-        gc.setFill(Color.web(node.color()));
-        gc.setStroke(Color.web("#555555"));
+        gc.setFill(nodeFill(node.color()));
+        gc.setStroke(COLOR_NODE_STROKE);
         gc.setLineWidth(1.0);
         gc.fillRoundRect(left, top, boxW, boxH, 4, 4);
         gc.strokeRoundRect(left, top, boxW, boxH, 4, 4);
-        gc.setFill(Color.web("#222222"));
+        gc.setFill(COLOR_LABEL);
         gc.setFont(LABEL_FONT);
         String[] lines = node.label().split("\n", -1);
         double lineHeight = LABEL_FONT.getSize() + 2;
@@ -410,13 +446,18 @@ public final class GraphCanvas extends Region {
         }
     }
 
+    private Color nodeFill(String hex) {
+        String key = hex != null ? hex : "";
+        return nodeFillCache.computeIfAbsent(key, Color::web);
+    }
+
     private static void drawEdge(
             GraphicsContext gc, GraphNode src, GraphNode dst, boolean inactive, double width, double height) {
         double x1 = src.x() * width;
         double y1 = (src.y() - src.height() / 2) * height;
         double x2 = dst.x() * width;
         double y2 = (dst.y() + dst.height() / 2) * height;
-        gc.setStroke(Color.web(inactive ? "#c8c8c8" : "#666666"));
+        gc.setStroke(inactive ? COLOR_EDGE_INACTIVE : COLOR_EDGE_ACTIVE);
         gc.setLineWidth(inactive ? 1.0 : 1.2);
         if (inactive) {
             gc.setLineDashes(6, 6);
@@ -429,7 +470,7 @@ public final class GraphCanvas extends Region {
 
     private static void drawCenteredMessage(GraphicsContext gc, String message, double width, double height) {
         Font font = Font.font("Monospace", 18);
-        gc.setFill(Color.web("#333333"));
+        gc.setFill(COLOR_MESSAGE);
         gc.setFont(font);
         double textWidth = gc.getFont().getSize() * message.length() * 0.55;
         gc.fillText(message, Math.max(TEXT_PAD, (width - textWidth) / 2), height / 2);

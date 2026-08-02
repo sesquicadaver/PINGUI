@@ -16,6 +16,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.PickResult;
 import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
 import org.junit.jupiter.api.Test;
 
 class GraphCanvasTest {
@@ -24,6 +25,7 @@ class GraphCanvasTest {
         assertTrue(GraphCanvas.INVALIDATE_STRATEGY.contains("step1-clearRect-no-buffer-churn"));
         assertTrue(GraphCanvas.INVALIDATE_STRATEGY.contains("coalesced-pulse"));
         assertTrue(GraphCanvas.INVALIDATE_STRATEGY.contains("cached-graph-scene"));
+        assertTrue(GraphCanvas.INVALIDATE_STRATEGY.contains("paint-hover-cache"));
     }
 
     @Test
@@ -144,6 +146,92 @@ class GraphCanvasTest {
 
             assertEquals(1, graph.layoutBuildCount(), "route change must rebuild GraphScene");
         });
+    }
+
+    @Test
+    void nodeFillColorIsCachedByHex() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            GraphCanvas graph = new GraphCanvas();
+            Color first = graph.cachedNodeFillForTest("#add8e6");
+            Color second = graph.cachedNodeFillForTest("#add8e6");
+            assertTrue(first == second, "same hex must return identical Color instance");
+        });
+    }
+
+    @Test
+    void hoverOverSameNodeDoesNotRewriteTooltipText() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            GraphCanvas graph = new GraphCanvas();
+            new Scene(new StackPane(graph), 400, 300);
+            graph.resize(400, 300);
+            graph.layout();
+            List<HopNode> route = sampleRoute();
+            graph.renderRoute(route, ip -> 1.0, List.of());
+            graph.paintForTest();
+
+            var scene = RouteGraphLayout.buildScene(route, List.of(), ip -> 1.0);
+            var hop = scene.nodes().stream()
+                    .filter(n -> n.hopIp() != null && !n.hopIp().isBlank())
+                    .findFirst()
+                    .orElseThrow();
+            double x = hop.x() * 400;
+            double y = hop.y() * 300;
+
+            graph.resetHoverTipTextUpdates();
+            graph.getOnMouseMoved().handle(mouseEvent(MouseEvent.MOUSE_MOVED, graph, x, y));
+            graph.getOnMouseMoved().handle(mouseEvent(MouseEvent.MOUSE_MOVED, graph, x + 1, y + 1));
+            graph.getOnMouseMoved().handle(mouseEvent(MouseEvent.MOUSE_MOVED, graph, x + 2, y));
+
+            assertEquals(1, graph.hoverTipTextUpdates(), "tooltip text must update only when hovered node changes");
+        });
+    }
+
+    @Test
+    void hoverSwitchBetweenNodesUpdatesTooltipOnceEach() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            GraphCanvas graph = new GraphCanvas();
+            new Scene(new StackPane(graph), 400, 300);
+            graph.resize(400, 300);
+            graph.layout();
+            List<HopNode> route =
+                    List.of(new HopNode(1, "8.8.8.8", 12.0, false), new HopNode(2, "1.1.1.1", 20.0, false));
+            graph.renderRoute(route, ip -> 1.0, List.of());
+            graph.paintForTest();
+
+            var built = RouteGraphLayout.buildScene(route, List.of(), ip -> 1.0);
+            var hops = built.nodes().stream()
+                    .filter(n -> n.hopIp() != null && !n.hopIp().isBlank())
+                    .toList();
+            assertTrue(hops.size() >= 2);
+            double ax = hops.get(0).x() * 400;
+            double ay = hops.get(0).y() * 300;
+            double bx = hops.get(1).x() * 400;
+            double by = hops.get(1).y() * 300;
+
+            graph.resetHoverTipTextUpdates();
+            graph.getOnMouseMoved().handle(mouseEvent(MouseEvent.MOUSE_MOVED, graph, ax, ay));
+            graph.getOnMouseMoved().handle(mouseEvent(MouseEvent.MOUSE_MOVED, graph, ax + 1, ay));
+            graph.getOnMouseMoved().handle(mouseEvent(MouseEvent.MOUSE_MOVED, graph, bx, by));
+            graph.getOnMouseMoved().handle(mouseEvent(MouseEvent.MOUSE_MOVED, graph, bx + 1, by));
+            graph.getOnMouseMoved().handle(mouseEvent(MouseEvent.MOUSE_MOVED, graph, ax, ay));
+
+            assertEquals(3, graph.hoverTipTextUpdates(), "A→B→A must rewrite tooltip text exactly three times");
+        });
+    }
+
+    @Test
+    void drawLoopDoesNotCallColorWebInline() throws Exception {
+        String src =
+                java.nio.file.Files.readString(java.nio.file.Path.of("src/main/java/io/pingui/ui/GraphCanvas.java"));
+        // Static COLOR_* / nodeFill may use Color.web; drawNode/drawEdge/drawCenteredMessage must not.
+        int drawNode = src.indexOf("private void drawNode");
+        int drawEdge = src.indexOf("private static void drawEdge");
+        int drawMsg = src.indexOf("private static void drawCenteredMessage");
+        assertTrue(drawNode > 0 && drawEdge > drawNode && drawMsg > drawEdge);
+        String drawSection = src.substring(drawNode);
+        assertFalse(
+                drawSection.contains("Color.web("),
+                "draw helpers must use cached/static Color, not Color.web in the draw loop");
     }
 
     // --- G2 hostile scenarios: drag burst, layout+drag same pulse, off-thread renderRoute ---
