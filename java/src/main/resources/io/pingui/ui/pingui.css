@@ -69,13 +69,49 @@
     -fx-font-size: 11px;
 }
 
+.pingui-host-name {
+    /* Override ListCell:selected white text — rows use RTT pastel backgrounds. */
+    -fx-text-fill: -pingui-text;
+}
+
+.pingui-poll-counters {
+    -fx-font-family: monospace;
+    -fx-font-size: 11px;
+    -fx-text-fill: -pingui-text;
+}
+
 .pingui-metrics {
     -fx-font-family: monospace;
     -fx-font-size: 10px;
+    -fx-text-fill: -pingui-text;
 }
 
 .pingui-host-list {
     -fx-background-color: -pingui-panel;
+}
+
+.pingui-host-list .list-cell {
+    -fx-text-fill: -pingui-text;
+}
+
+.pingui-host-list .list-cell:filled:selected,
+.pingui-host-list .list-cell:filled:selected:focused {
+    -fx-text-fill: -pingui-text;
+}
+
+.pingui-host-list .list-cell:filled:selected .label,
+.pingui-host-list .list-cell:filled:selected:focused .label {
+    -fx-text-fill: -pingui-text;
+}
+
+.pingui-host-list .list-cell:filled:selected .pingui-muted,
+.pingui-host-list .list-cell:filled:selected:focused .pingui-muted {
+    -fx-text-fill: -pingui-muted;
+}
+
+.pingui-host-list .list-cell:filled:selected .pingui-danger,
+.pingui-host-list .list-cell:filled:selected:focused .pingui-danger {
+    -fx-text-fill: -pingui-danger;
 }
 
 .pingui-split {

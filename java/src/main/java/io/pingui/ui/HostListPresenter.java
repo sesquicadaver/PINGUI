@@ -5,6 +5,7 @@ import io.pingui.config.HostEntry;
 import io.pingui.config.HostTags;
 import io.pingui.config.HostsConfig;
 import io.pingui.config.PingExpertEntry;
+import io.pingui.monitor.HostPollCounters;
 import io.pingui.monitor.HostProbeMode;
 import io.pingui.monitor.HostProblemSummary;
 import io.pingui.monitor.HostTargetStats;
@@ -259,11 +260,12 @@ final class HostListPresenter {
             return;
         }
         HostTargetStats stats = store.get().targetStats(item.getHost());
-        if (stats == null) {
-            item.clearMetrics();
-            return;
+        HostPollCounters counters = HostPollCounters.ZERO;
+        MonitorService service = monitor.get();
+        if (service != null) {
+            counters = service.pollCounters(item.getHost());
         }
-        item.applyMetrics(stats);
+        item.applyMetrics(stats, counters);
     }
 
     /** Syncs unread endpoint_down badge from {@link MonitorService} (P22-004). */

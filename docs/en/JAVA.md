@@ -148,7 +148,7 @@ Paint/geometry policy (P24-010): [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md) — coales
 - **Trace profile** selection (ComboBox + new/delete); all profiles in one YAML
 - **“Expert”** checkbox → **Exten.** / **MTU** on host row → `PingExpertDialog` (catalog from `pingMan.txt`, without `-c/-w/-W/-i` etc.); 4 quick presets from `ping_presets.yaml` (MTU probe, DF, DSCP, Burst); **MTU wizard…** (`MtuDiscoveryDialog`); **Self-check** (`PresetSelfCheckUi`)
 - **Settings → Telemetry…** — `TelemetrySettingsDialog` + bus via `TelemetryAttachment`
-- `ListView<HostItem>` + CheckBox in cell
+- `ListView<HostItem>` + CheckBox in cell; separate liveness row `спроб N  помилки E  P%` (reset on Ping only / probe_mode) and RTT row `loss/min/avg/max`; host-row text always dark (contrast on pastel RTT backgrounds)
 - **GraphCanvas** — vertical graph, inactive/active columns
 - Log `TextArea`
 

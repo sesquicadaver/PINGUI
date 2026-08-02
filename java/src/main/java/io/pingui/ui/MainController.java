@@ -642,7 +642,23 @@ public final class MainController {
 
                     @Override
                     public void onProbeError(String host, String message) {
-                        Platform.runLater(() -> userFeedback.info("Probe [" + host + "]: " + message));
+                        Platform.runLater(() -> {
+                            userFeedback.info("Probe [" + host + "]: " + message);
+                            HostItem item = hostListPresenter.findItem(host);
+                            if (item != null) {
+                                hostListPresenter.syncMetrics(item);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onPollFinished(String host) {
+                        Platform.runLater(() -> {
+                            HostItem item = hostListPresenter.findItem(host);
+                            if (item != null) {
+                                hostListPresenter.syncMetrics(item);
+                            }
+                        });
                     }
                 },
                 options.alertOverrides().applyTo(profile.alerts()),

@@ -23,6 +23,9 @@ final class HostRegistry {
     private final Map<String, HostProbeMode> probeModes = new HashMap<>();
     private final Map<String, List<String>> lastRoutes = new HashMap<>();
     private final Map<String, Instant> lastPollAt = new HashMap<>();
+    /** Per-host [attempts, errors] for the current probe mode; reset on {@link #setProbeMode}. */
+    private final Map<String, long[]> pollCounters = new HashMap<>();
+
     private final Map<String, AtomicBoolean> pollsInFlight = new ConcurrentHashMap<>();
 
     List<String> hosts() {
@@ -61,6 +64,7 @@ final class HostRegistry {
             probeModes.put(host, probeMode != null ? probeMode : HostProbeMode.TRACE);
             lastRoutes.put(host, List.of());
             lastPollAt.remove(host);
+            pollCounters.put(host, new long[2]);
         }
     }
 
@@ -73,6 +77,7 @@ final class HostRegistry {
             probeModes.remove(host);
             lastRoutes.remove(host);
             lastPollAt.remove(host);
+            pollCounters.remove(host);
         }
         pollsInFlight.remove(host);
     }
@@ -97,6 +102,10 @@ final class HostRegistry {
             if (wasLastPoll != null) {
                 lastPollAt.put(newHost, wasLastPoll);
             }
+            long[] counters = pollCounters.remove(oldHost);
+            if (counters != null) {
+                pollCounters.put(newHost, counters);
+            }
         }
         AtomicBoolean inFlight = pollsInFlight.remove(oldHost);
         if (inFlight != null) {
@@ -111,7 +120,7 @@ final class HostRegistry {
         }
     }
 
-    /** Sets probe mode and clears route/poll bookmarks for a fresh schedule. */
+    /** Sets probe mode and clears route/poll bookmarks + liveness counters for a fresh schedule. */
     void setProbeMode(String host, HostProbeMode probeMode) {
         synchronized (lock) {
             requireKnown(host);
@@ -119,6 +128,37 @@ final class HostRegistry {
             probeModes.put(host, mode);
             lastRoutes.put(host, List.of());
             lastPollAt.remove(host);
+            pollCounters.put(host, new long[2]);
+        }
+    }
+
+    /**
+     * Records one completed poll for {@code host}. Mid-flight discards must not call this.
+     *
+     * @param error {@code true} when the poll ended with {@code probe_error}
+     * @return updated counters snapshot
+     */
+    HostPollCounters recordPoll(String host, boolean error) {
+        synchronized (lock) {
+            if (!hosts.contains(host)) {
+                return HostPollCounters.ZERO;
+            }
+            long[] counters = pollCounters.computeIfAbsent(host, ignored -> new long[2]);
+            counters[0]++;
+            if (error) {
+                counters[1]++;
+            }
+            return new HostPollCounters(counters[0], counters[1]);
+        }
+    }
+
+    HostPollCounters pollCounters(String host) {
+        synchronized (lock) {
+            long[] counters = pollCounters.get(host);
+            if (counters == null) {
+                return HostPollCounters.ZERO;
+            }
+            return new HostPollCounters(counters[0], counters[1]);
         }
     }
 

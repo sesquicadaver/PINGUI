@@ -7,15 +7,16 @@
 
 ## [Unreleased]
 
-### Fixed
-
-- **Simple window width:** cold-start / leftover Extended width no longer leaves a wide empty frame in Simple — Stage width fits host-column pref (height unchanged); Extended may expand width on toggle.
-
 ### Added
 
+- **Host poll liveness counters:** separate row `спроб N  помилки E  P%` above RTT metrics (reset on Ping only / mode change); dark text on colored host rows.
 - **P24-010 — ADR_GUI_PAINT + perf smoke:** політика Canvas coalesce/cache, no forced resize, geometry persist, deferred startup; `GraphCanvasPerfTest` (100 drag ≤1 paint); CHECKLIST Extended+pan+route (+JFR); фаза 24 → **DONE**.
 - **GUI launcher detach:** `pingui-java.sh` / `.bat` запускають GUI у фоні (Linux/macOS `nohup`, Windows `javaw`); термінал звільняється. `--foreground` для дебагу; daemon/export/help лишаються attached. Лог: `~/.cache/pingui/gui.log` / `%LOCALAPPDATA%\pingui\gui.log` (`PINGUI_GUI_LOG`). Entry point `PinguiLauncher` (без `extends Application`) — щоб `installDist`/jpackage бачили JavaFX на classpath.
 - **P23 — `latency_high`:** правило `rtt ≥ 2×AVG`, FIRING після 3 поганих пінгів поспіль (без вікна часу); YAML/GUI; badge/SQLite; AVG не отруюється spike-семплами; фаза 23 → **DONE**.
+
+### Fixed
+
+- **Simple window width:** cold-start / leftover Extended width no longer leaves a wide empty frame in Simple — Stage width fits host-column pref (height unchanged); Extended may expand width on toggle.
 
 ### Changed
 

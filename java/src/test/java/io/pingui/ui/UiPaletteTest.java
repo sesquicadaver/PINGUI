@@ -40,6 +40,10 @@ class UiPaletteTest {
         assertTrue(css.contains(UiPalette.DANGER_HEX));
         assertTrue(css.contains("-pingui-bg: " + UiPalette.BG_HEX));
         assertTrue(css.contains(".theme-dark"), "dark stub structure must remain for later");
+        assertTrue(
+                css.contains(".pingui-metrics") && css.contains("-fx-text-fill: -pingui-text"),
+                "metrics/poll counters must force readable text on RTT row backgrounds");
+        assertTrue(css.contains(".pingui-poll-counters"));
     }
 
     @Test

@@ -27,9 +27,10 @@ final class HostListCell extends ListCell<HostItem> {
     private final Button problemButton = new Button("!");
     private final Label hostLabel = new Label();
     private final Label tagsLabel = new Label();
+    private final Label pollCountersLabel = new Label();
     private final Label metricsLabel = new Label();
     private final HBox hostRow = new HBox(6, extenButton, mtuButton, problemButton, hostLabel);
-    private final VBox textBox = new VBox(2, hostRow, tagsLabel, metricsLabel);
+    private final VBox textBox = new VBox(2, hostRow, tagsLabel, pollCountersLabel, metricsLabel);
     private final HBox root = new HBox(8, checkBox, textBox, pingOnlyCheck);
     private final BiConsumer<HostItem, Boolean> onEnabledChanged;
     private final BiConsumer<HostItem, Boolean> onPingOnlyChanged;
@@ -83,10 +84,13 @@ final class HostListCell extends ListCell<HostItem> {
                 onProblemOpen.accept(item, null);
             }
         });
+        hostLabel.getStyleClass().add("pingui-host-name");
+        pollCountersLabel.getStyleClass().add("pingui-poll-counters");
         metricsLabel.getStyleClass().add("pingui-metrics");
         tagsLabel.getStyleClass().add("pingui-muted");
         HBox.setHgrow(textBox, Priority.ALWAYS);
         HBox.setHgrow(hostLabel, Priority.ALWAYS);
+        root.getStyleClass().add("pingui-host-row");
         root.setAlignment(Pos.CENTER_LEFT);
         root.setPadding(new Insets(4, 6, 4, 2));
         checkBox.selectedProperty().addListener((obs, was, isNow) -> {
@@ -123,6 +127,9 @@ final class HostListCell extends ListCell<HostItem> {
         tagsLabel.textProperty().bind(item.tagsTextProperty());
         tagsLabel.visibleProperty().bind(item.tagsTextProperty().isNotEmpty());
         tagsLabel.managedProperty().bind(item.tagsTextProperty().isNotEmpty());
+        pollCountersLabel.textProperty().bind(item.pollCountersTextProperty());
+        pollCountersLabel.visibleProperty().bind(item.showPollCountersProperty());
+        pollCountersLabel.managedProperty().bind(item.showPollCountersProperty());
         metricsLabel.textProperty().bind(item.metricsTextProperty());
         metricsLabel.visibleProperty().bind(item.showMetricsProperty());
         metricsLabel.managedProperty().bind(item.showMetricsProperty());
@@ -169,6 +176,9 @@ final class HostListCell extends ListCell<HostItem> {
         tagsLabel.textProperty().unbind();
         tagsLabel.visibleProperty().unbind();
         tagsLabel.managedProperty().unbind();
+        pollCountersLabel.textProperty().unbind();
+        pollCountersLabel.visibleProperty().unbind();
+        pollCountersLabel.managedProperty().unbind();
         metricsLabel.textProperty().unbind();
         metricsLabel.visibleProperty().unbind();
         metricsLabel.managedProperty().unbind();

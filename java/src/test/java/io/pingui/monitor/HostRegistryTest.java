@@ -87,6 +87,26 @@ class HostRegistryTest {
     }
 
     @Test
+    void pollCountersAccumulateAndResetOnProbeModeChange() {
+        HostRegistry registry = new HostRegistry();
+        registry.add("h", true, HostProbeMode.TRACE);
+        assertEquals(HostPollCounters.ZERO, registry.pollCounters("h"));
+
+        assertEquals(new HostPollCounters(1, 0), registry.recordPoll("h", false));
+        assertEquals(new HostPollCounters(2, 1), registry.recordPoll("h", true));
+        assertEquals(new HostPollCounters(2, 1), registry.pollCounters("h"));
+        assertEquals(50.0, registry.pollCounters("h").errorPct(), 0.001);
+
+        registry.setProbeMode("h", HostProbeMode.PING_ONLY);
+        assertEquals(HostPollCounters.ZERO, registry.pollCounters("h"));
+
+        registry.recordPoll("h", false);
+        registry.rename("h", "renamed");
+        assertEquals(new HostPollCounters(1, 0), registry.pollCounters("renamed"));
+        assertEquals(HostPollCounters.ZERO, registry.pollCounters("h"));
+    }
+
+    @Test
     void beginPollReturnsNullForUnknownHost() {
         HostRegistry registry = new HostRegistry();
         assertNull(registry.beginPoll("missing", HostProbeMode.TRACE, Instant.now()));

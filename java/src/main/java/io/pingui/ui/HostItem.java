@@ -1,5 +1,6 @@
 package io.pingui.ui;
 
+import io.pingui.monitor.HostPollCounters;
 import io.pingui.monitor.HostProblemSummary;
 import io.pingui.monitor.HostTargetStats;
 import java.util.List;
@@ -16,9 +17,11 @@ public final class HostItem {
     private final StringProperty host = new SimpleStringProperty();
     private final BooleanProperty enabled = new SimpleBooleanProperty(false);
     private final BooleanProperty pingOnly = new SimpleBooleanProperty(false);
+    private final BooleanProperty showPollCounters = new SimpleBooleanProperty(false);
     private final BooleanProperty showMetrics = new SimpleBooleanProperty(false);
     private final BooleanProperty expertConfigured = new SimpleBooleanProperty(false);
     private final BooleanProperty problemUnread = new SimpleBooleanProperty(false);
+    private final StringProperty pollCountersText = new SimpleStringProperty("");
     private final StringProperty metricsText = new SimpleStringProperty("");
     private final StringProperty tagsText = new SimpleStringProperty("");
     private final StringProperty rowColor = new SimpleStringProperty(DISABLED_ROW);
@@ -57,6 +60,10 @@ public final class HostItem {
         return pingOnly;
     }
 
+    public BooleanProperty showPollCountersProperty() {
+        return showPollCounters;
+    }
+
     public BooleanProperty showMetricsProperty() {
         return showMetrics;
     }
@@ -68,6 +75,10 @@ public final class HostItem {
     /** True when the endpoint_down badge should be shown (P22-004). */
     public BooleanProperty problemUnreadProperty() {
         return problemUnread;
+    }
+
+    public StringProperty pollCountersTextProperty() {
+        return pollCountersText;
     }
 
     public StringProperty metricsTextProperty() {
@@ -124,15 +135,39 @@ public final class HostItem {
     }
 
     public void clearMetrics() {
+        showPollCounters.set(false);
         showMetrics.set(false);
+        pollCountersText.set("");
         metricsText.set("");
         rowColor.set(isEnabled() ? WAITING_ROW : DISABLED_ROW);
     }
 
-    public void applyMetrics(HostTargetStats stats) {
-        showMetrics.set(true);
-        metricsText.set(formatMetrics(stats));
-        rowColor.set(PingColor.pingColor(stats.avgMs(), stats.timeout() && stats.avgMs() == null));
+    /**
+     * Applies mode-scoped poll liveness (own row) and RTT aggregates (separate row).
+     *
+     * <p>Poll line uses role labels {@code спроб}/{@code помилки} — not ping/trace (mode is the
+     * checkbox). RTT line stays {@code loss/min/avg/max}.
+     */
+    public void applyMetrics(HostTargetStats stats, HostPollCounters counters) {
+        HostPollCounters safeCounters = counters != null ? counters : HostPollCounters.ZERO;
+        String pollText = formatPollCounters(safeCounters);
+        String rttText = formatRttMetrics(stats);
+        if (pollText.isEmpty() && rttText.isEmpty()) {
+            clearMetrics();
+            if (isEnabled()) {
+                rowColor.set(WAITING_ROW);
+            }
+            return;
+        }
+        showPollCounters.set(!pollText.isEmpty());
+        pollCountersText.set(pollText);
+        showMetrics.set(!rttText.isEmpty());
+        metricsText.set(rttText);
+        if (stats != null) {
+            rowColor.set(PingColor.pingColor(stats.avgMs(), stats.timeout() && stats.avgMs() == null));
+        } else if (isEnabled()) {
+            rowColor.set(WAITING_ROW);
+        }
     }
 
     /** Updates the unread badge from engine summary (null clears). */
@@ -145,7 +180,18 @@ public final class HostItem {
         applyProblem(null);
     }
 
-    static String formatMetrics(HostTargetStats stats) {
+    static String formatPollCounters(HostPollCounters counters) {
+        if (counters == null || counters.attempts() <= 0) {
+            return "";
+        }
+        return String.format(
+                "спроб %d  помилки %d  %.0f%%", counters.attempts(), counters.errors(), counters.errorPct());
+    }
+
+    static String formatRttMetrics(HostTargetStats stats) {
+        if (stats == null) {
+            return "";
+        }
         return String.format(
                 "loss %.0f%%  min %s  avg %s  max %s ms",
                 stats.lossPct(), formatMs(stats.minMs()), formatMs(stats.avgMs()), formatMs(stats.maxMs()));

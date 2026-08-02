@@ -130,6 +130,7 @@
 | SQLite disk/retention (P11-050) | `docs/DEPLOYMENT.md` | Manual smoke; purge via GUI; no auto-TTL on `host_session` |
 | Raw ICMP packet | `IcmpPacket`, `IcmpV6Packet` | `IcmpPacketTest`, `IcmpV6PacketTest` |
 | Expert ping flags | `PingExpertValidator`, `ProcessExpertPing`, `ExpertPingArgs`, `HostAddressResolver` | `PingExpertValidatorTest`, `ExpertPingArgsTest`, `ProcessExpertPingTest`, `ExpertPingUiRulesTest`, `HostAddressResolverTest`, `PingTargetResolverTest` |
+| Host poll liveness counters | `HostPollCounters`, `HostRegistry`, `MonitorService`, `HostItem`, `HostListPresenter` | `HostPollCountersTest`, `HostRegistryTest.pollCounters*`, `HostItemMetricsTest`, `MonitorServiceTest.pollCounters*` |
 | GUI / MonitorService | `MainController`, `MonitorService` | *(manual / TestFX — backlog)* |
 | UI coordinators | `ProfileUiCoordinator`, `HostListPresenter`, `MonitorLifecycle`, `ViewModeController`, `RouteGraphPresenter` | `./gradlew check`; B-035 manual smoke |
 | CI gate | `.github/workflows/java.yml` | `./gradlew check` (ubuntu + windows jobs block merge; Monocle headless for FX UI tests) |
