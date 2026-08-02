@@ -46,21 +46,21 @@ Native Windows Glass може skip-paint після зняття hack — обо
 | `nodeFillCache` | Fill за RTT/timeout |
 | Hover tip text | Dedupe за `hoveredNodeId` |
 
-### 5. No forced window resize
+### 5. Геометрія при перемиканні режиму
 
-Toggle Simple ↔ Extended **не** викликає `Stage.setWidth/Height` / `applyCss` для «підгонки» розміру. Default stage size — один раз при першому показі (якщо немає persisted geometry).
+Toggle **назад у Simple** не стискає Stage (без jank). Toggle **у Extended** може одноразово розширити width+height до Extended defaults, якщо вікно ще Simple-розмірне; divider виставляється як `leftPref / stageWidth` (~600 px ліва колонка). Default stage size — cold-start / missing prefs.
 
 ### 6. SplitPane + geometry persist
 
 | Поле | Збереження |
 |------|------------|
 | Bounds (x,y,w,h) | `WindowGeometryStore` (XDG / `%APPDATA%`) |
-| Split divider | Extended mode |
+| Split divider | Extended mode (раціональний від лівої колонки) |
 | `UiViewMode` | Останній режим |
 
 Clamp до `Screen.getVisualBounds()`; invalid → defaults.
 
-**Ширина vs режим:** cold-start Simple → default width = колонка (~580), не 1100. Після `show` у Simple — одноразове підрізання Stage width до `root.prefWidth` (висота без змін; прибирає «широку рамку» від залишку Extended). Toggle → Extended може **розширити** width до Extended default; назад у Simple **не** стискає (без jank на toggle).
+**Геометрія vs режим:** cold-start Simple → ~580×700 (колонка). Після `show` у Simple — одноразове підрізання **лише width** до `root.prefWidth`. Extended defaults ~1400×820; toggle Simple→Extended розширює width **і** height за потреби (ніколи не зменшує).
 
 ### 7. View assembly + CSS
 

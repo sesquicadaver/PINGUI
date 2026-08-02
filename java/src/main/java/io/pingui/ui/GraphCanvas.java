@@ -27,8 +27,8 @@ import javafx.scene.text.Font;
 import javafx.stage.Window;
 
 /**
- * JavaFX route graph: vertical layout, inactive column left, active right (pairs with {@link
- * RouteDiffPresenter}).
+ * JavaFX route graph: vertical layout, inactive column left, active right (previous-route
+ * inactive column).
  *
  * <p>Hop labels may include async rDNS from {@link io.pingui.dns.DnsResolver}; {@link MainController}
  * registers a listener that redraws via {@link RouteGraphPresenter} when PTR resolves.

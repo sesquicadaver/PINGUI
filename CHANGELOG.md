@@ -14,9 +14,14 @@
 - **GUI launcher detach:** `pingui-java.sh` / `.bat` запускають GUI у фоні (Linux/macOS `nohup`, Windows `javaw`); термінал звільняється. `--foreground` для дебагу; daemon/export/help лишаються attached. Лог: `~/.cache/pingui/gui.log` / `%LOCALAPPDATA%\pingui\gui.log` (`PINGUI_GUI_LOG`). Entry point `PinguiLauncher` (без `extends Application`) — щоб `installDist`/jpackage бачили JavaFX на classpath.
 - **P23 — `latency_high`:** правило `rtt ≥ 2×AVG`, FIRING після 3 поганих пінгів поспіль (без вікна часу); YAML/GUI; badge/SQLite; AVG не отруюється spike-семплами; фаза 23 → **DONE**.
 
+### Removed
+
+- **Route Diff panel:** повністю прибрано `RouteDiff` / `RouteDiffPresenter` / `RouteDiffStyle` (Extended лишає граф + історію).
+
 ### Fixed
 
-- **Simple window width:** cold-start / leftover Extended width no longer leaves a wide empty frame in Simple — Stage width fits host-column pref (height unchanged); Extended may expand width on toggle.
+- **Simple window width:** cold-start / leftover Extended width no longer leaves a wide empty frame in Simple — Stage width fits host-column pref (height unchanged).
+- **Extended geometry:** toggle Simple→Extended розширює width+height (~1400×820) за потреби; SplitPane divider ≈ ліва колонка 600 px.
 
 ### Changed
 

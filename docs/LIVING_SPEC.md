@@ -24,7 +24,7 @@
 | Trace concurrency cap (P13-030) | `TraceConcurrencyLimiter`, `TracingProfile`, `MonitorService` | `TraceConcurrencyLimiterTest` (default = `MAX_HOSTS`), `ProfilesConfigTest.loadMaxConcurrentTraces`, `MonitorServiceTest.limitsConcurrentTracePolls`, `MonitorServiceTest.defaultConcurrencyAllowsFullSessionOfTraces`, `MonitorServiceTest.pingOnlyPollsWhileTraceSlotExhausted` |
 | Windows preset YAML (P13-040 / P16-043) | `config/hosts.windows.example.yaml`, `ProfilesConfig` | `ProfilesConfigTest.loadWindowsExamplePreset` |
 | MTR vs trace docs (P13-050) | `docs/JAVA.md`, `docs/ADR_PROBE_MODES.md` | Docs parity (`check_doc_parity.py`); § probe_mode + MTR limitations in JAVA.md |
-| Route diff panel (P14-010) | `RouteDiff`, `RouteDiffPresenter`, `RouteGraphPresenter`, `GraphCanvas` | `RouteDiffTest`, `RouteDiffPresenterTest`, `RouteGraphPresenterTest.liveRedrawShowsDiffAgainstPreviousRoute` |
+| Route graph (ex-P14-010 Diff removed) | `RouteGraphPresenter`, `GraphCanvas`, `RouteGraphPanel` | `RouteGraphPresenterTest` (live/replay без Diff panel) |
 | Host tags YAML (P14-020) | `HostTags`, `HostEntry`, `ProfilesConfig`, `HostItem`, `MainController` | `HostTagsTest`, `HostEntryTest.withTagsPreservesOtherFields`, `ProfilesConfigTest.loadHostTagsRoundTrip` |
 | Tag filter chips + edit (P14-021) | `HostListPresenter`, `HostTagsDialog`, `SessionStore.setTags` | `HostTagsDialogTest`, `HostListPresenterTest`, `SessionStoreTest.setTagsUpdatesSessionAndToHostEntries` |
 | ASN hop labels (P14-030) | `AsnLookup`, `AsnInfo`, `IpLiterals`, `PingColor`, `AppOptions` | `AsnLookupTest`, `IpLiteralsTest`, `PingColorTest.nodeLabelUsesAvgPing`, `PinguiApplicationTest` ASN flags |
@@ -83,7 +83,7 @@
 | Simple-mode feedback (P20-001) | `UserFeedback`, `UiFeedbackRouter`, `ViewModeController`, `MainController`, `HostListPresenter`, `ProfileUiCoordinator` | `UiFeedbackRouterTest`, `ViewModeControllerTest`, `HostListPresenterTest.addHostValidationFailureCallsErrorFeedback` |
 | Confirm delete host/profile (P20-002) | `ConfirmDialogs`, `HostListPresenter`, `ProfileUiCoordinator` | `HostListPresenterTest.removeHostCancelDoesNotMutate`, `removeHostOkDeletesSelectedHost`, `ProfileUiCoordinatorTest` |
 | Dirty / unsaved (P20-003) | `ConfigDirtyState`, `ConfirmDialogs.confirmUnsaved`, `MainController`, `HostListPresenter`, `ProfileUiCoordinator` | `ConfigDirtyStateTest`, `ProfileUiCoordinatorTest` (Cancel/Save/Discard), `HostListPresenterTest.addHostMarksDirtyOnSuccess` |
-| Route diff visual (P20-004) | `RouteDiffStyle`, `RouteDiffPresenter` | `RouteDiffStyleTest`, `RouteDiffPresenterTest.showChangedRowExposesKindForStyledCell` |
+| Route Diff removed (ex-P20-004) | — (UI/код видалено) | `RouteGraphPresenterTest.liveRedrawRendersWithoutDiffPanel` |
 | Export from menu (P20-005) | `SessionExportUi`, `SessionReportExporter`, `MainController` | `SessionExportUiTest`, `SessionReportExporterTest.isHtmlReportMatchesHtmlExtensionsOnly`, `exportChoosesFormatByExtension`, `AppMenuDialogsTest` |
 | Keyboard accelerators (P20-006) | `AppAccelerators`, `MainController`, `AppMenuDialogs` | `AppAcceleratorsTest`, `AppMenuDialogsTest` |
 | Empty states (P20-007) | `EmptyStateHints`, `RouteHistoryPresenter`, `ViewModeController`, `MainController` | `EmptyStateHintsTest`, `RouteHistoryPresenterTest` (placeholders), `ViewModeControllerTest` |
@@ -100,7 +100,7 @@
 | GraphScene cache (P24-003) | `GraphCanvas`, `RouteGraphLayout` | `GraphCanvasTest` pan/zoom без rebuild |
 | Graph paint cache (P24-004) | `GraphCanvas` | `GraphCanvasTest` hover/color |
 | No forced window resize (P24-005) | `ViewModeController`, `PinguiApplication`, `HostListPresenter` | `ViewModeControllerTest.applyDoesNotChangeStageSizeAcrossModeToggle` + source guard |
-| Window geometry persist (P24-006) | `WindowGeometry`, `WindowGeometryStore`, `ViewModeController`, `MainController`, `PinguiApplication` | `WindowGeometryStoreTest`; `ViewModeControllerTest` SplitPane/divider |
+| Window geometry persist (P24-006) | `WindowGeometry`, `WindowGeometryStore`, `ViewModeController`, `MainController`, `PinguiApplication` | `WindowGeometryTest` (fit/ensure/divider); `WindowGeometryStoreTest`; `ViewModeControllerTest` SplitPane/divider |
 | GUI view components (P24-007) | `io.pingui.ui.view.*`, `MainController` | Presenter tests unchanged; `createScene` → `MainView.assemble` |
 | CSS light theme (P24-008) | `UiPalette`, `pingui.css`, `MainView`, `GraphCanvas` | `UiPaletteTest` |
 | Deferred startup I/O (P24-009) | `StartupBootstrap`, `MainController`, `PinguiApplication` | `StartupBootstrapTest` |

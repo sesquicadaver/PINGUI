@@ -14,7 +14,6 @@ final class RouteGraphPresenter {
     private final Supplier<SessionStore> store;
     private final BooleanSupplier extendedView;
     private final BooleanSupplier easterEggActive;
-    private final RouteDiffPresenter routeDiffPresenter;
     private RouteChangeEvent replayEvent;
 
     RouteGraphPresenter(
@@ -22,14 +21,12 @@ final class RouteGraphPresenter {
             ListView<HostItem> hostList,
             Supplier<SessionStore> store,
             BooleanSupplier extendedView,
-            BooleanSupplier easterEggActive,
-            RouteDiffPresenter routeDiffPresenter) {
+            BooleanSupplier easterEggActive) {
         this.graphCanvas = graphCanvas;
         this.hostList = hostList;
         this.store = store;
         this.extendedView = extendedView;
         this.easterEggActive = easterEggActive;
-        this.routeDiffPresenter = routeDiffPresenter;
     }
 
     void redrawIfExtended() {
@@ -45,14 +42,12 @@ final class RouteGraphPresenter {
                 List<io.pingui.model.Models.HopNode> newRoute = RouteHistoryPresenter.ipsToRoute(replayEvent.newIps());
                 List<io.pingui.model.Models.HopNode> oldRoute = RouteHistoryPresenter.ipsToRoute(replayEvent.oldIps());
                 graphCanvas.renderRoute(newRoute, ip -> null, oldRoute, hop -> null);
-                routeDiffPresenter.show(oldRoute, newRoute);
                 return;
             }
             replayEvent = null;
         }
         if (selected == null) {
             graphCanvas.renderRoute(java.util.List.of(), ip -> null, java.util.List.of());
-            routeDiffPresenter.clear();
             return;
         }
         String host = selected.getHost();
@@ -61,12 +56,10 @@ final class RouteGraphPresenter {
         var previous = session.inactiveRoute(host);
         graphCanvas.renderRoute(
                 current, ip -> session.avgPing(host, ip), previous, hop -> session.hopStatsSummary(host, hop));
-        routeDiffPresenter.show(previous, current);
     }
 
     void showStaticMessage(String message) {
         replayEvent = null;
-        routeDiffPresenter.clear();
         graphCanvas.renderStaticView(message);
     }
 

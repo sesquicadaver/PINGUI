@@ -52,10 +52,15 @@ final class WindowGeometryStore {
      *
      * @param defaultWidthSimple fallback width for Simple / missing file
      * @param defaultWidthExtended fallback width when saved mode is Extended and width is missing
-     * @param defaultHeight fallback height
+     * @param defaultHeightSimple fallback height for Simple / missing file
+     * @param defaultHeightExtended fallback height when saved mode is Extended and height is missing
      */
-    WindowGeometry load(double defaultWidthSimple, double defaultWidthExtended, double defaultHeight) {
-        WindowGeometry defaults = WindowGeometry.defaults(defaultWidthSimple, defaultHeight);
+    WindowGeometry load(
+            double defaultWidthSimple,
+            double defaultWidthExtended,
+            double defaultHeightSimple,
+            double defaultHeightExtended) {
+        WindowGeometry defaults = WindowGeometry.defaults(defaultWidthSimple, defaultHeightSimple);
         if (!Files.isRegularFile(file)) {
             return defaults;
         }
@@ -68,10 +73,11 @@ final class WindowGeometryStore {
         }
         UiViewMode mode = parseMode(props.getProperty("viewMode"));
         double fallbackWidth = mode == UiViewMode.EXTENDED ? defaultWidthExtended : defaultWidthSimple;
+        double fallbackHeight = mode == UiViewMode.EXTENDED ? defaultHeightExtended : defaultHeightSimple;
         double x = parseDouble(props.getProperty("x"), Double.NaN);
         double y = parseDouble(props.getProperty("y"), Double.NaN);
         double width = parseDouble(props.getProperty("width"), fallbackWidth);
-        double height = parseDouble(props.getProperty("height"), defaults.height());
+        double height = parseDouble(props.getProperty("height"), fallbackHeight);
         double divider = parseDouble(props.getProperty("divider"), WindowGeometry.DEFAULT_DIVIDER);
         return new WindowGeometry(x, y, width, height, divider, mode);
     }

@@ -1,12 +1,11 @@
 package io.pingui.ui.view;
 
 import io.pingui.ui.GraphCanvas;
-import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
-/** Route graph canvas + injected route-diff chrome. */
+/** Route graph canvas chrome for the Extended right column. */
 public final class RouteGraphPanel {
     private final GraphCanvas graphCanvas = new GraphCanvas();
     private final Label title = new Label("Граф маршруту");
@@ -16,8 +15,8 @@ public final class RouteGraphPanel {
         VBox.setVgrow(graphCanvas, Priority.ALWAYS);
     }
 
-    void installInto(VBox graphPanel, Node routeDiffPanel) {
-        graphPanel.getChildren().setAll(title, graphCanvas, routeDiffPanel);
+    void installInto(VBox graphPanel) {
+        graphPanel.getChildren().setAll(title, graphCanvas);
     }
 
     GraphCanvas graphCanvas() {

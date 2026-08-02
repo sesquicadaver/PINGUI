@@ -81,11 +81,11 @@ public final class MainController {
     private UserFeedback userFeedback;
     private RouteGraphPresenter routeGraphPresenter;
     private RouteHistoryPresenter routeHistoryPresenter;
-    private final RouteDiffPresenter routeDiffPresenter = new RouteDiffPresenter();
     private final HistoryHostSync historyHostSync = new HistoryHostSync();
     private WindowGeometry pendingDividerRestore;
     private Stage mainStage;
     private double extendedDefaultWidth = WindowGeometry.DEFAULT_EXTENDED_WIDTH;
+    private double extendedDefaultHeight = WindowGeometry.DEFAULT_EXTENDED_HEIGHT;
 
     /**
      * Shell constructor (P24-009): FX chrome only — no profile YAML, SQLite, or GeoIP I/O. Heavy load
@@ -132,13 +132,13 @@ public final class MainController {
         }
 
         MainViewActions actions = buildViewActions();
-        mainView.assemble(actions, hostListPresenter.tagFilterBar(), routeDiffPresenter.panel());
+        mainView.assemble(actions, hostListPresenter.tagFilterBar());
         updateDirtyUi();
 
         // Cross-coordinator listeners (D4) — after assemble.
         mainView.modeGroup().selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
             viewModeController.onToggleSelected(newToggle);
-            ensureExtendedStageWidth();
+            ensureExtendedStageGeometry();
             updateHistoryPanelVisibility();
         });
 
@@ -338,23 +338,37 @@ public final class MainController {
      *
      * @param defaultWidthSimple fallback width when prefs missing and mode is Simple
      * @param defaultWidthExtended fallback width when Extended omits width; also expand target on toggle
-     * @param defaultHeight fallback height (Simple and Extended)
+     * @param defaultHeightSimple fallback height for Simple / missing prefs
+     * @param defaultHeightExtended fallback height when Extended omits height; also expand target on toggle
      */
     public void prepareStageGeometry(
-            Stage stage, double defaultWidthSimple, double defaultWidthExtended, double defaultHeight) {
+            Stage stage,
+            double defaultWidthSimple,
+            double defaultWidthExtended,
+            double defaultHeightSimple,
+            double defaultHeightExtended) {
         this.mainStage = stage;
         this.extendedDefaultWidth = defaultWidthExtended;
+        this.extendedDefaultHeight = defaultHeightExtended;
         WindowGeometryStore store = WindowGeometryStore.userDefault();
-        WindowGeometry loaded = store.load(defaultWidthSimple, defaultWidthExtended, defaultHeight);
+        WindowGeometry loaded =
+                store.load(defaultWidthSimple, defaultWidthExtended, defaultHeightSimple, defaultHeightExtended);
         Rectangle2D visual = visualBoundsFor(loaded);
         double clampDefaultWidth = loaded.viewMode() == UiViewMode.EXTENDED ? defaultWidthExtended : defaultWidthSimple;
+        double clampDefaultHeight =
+                loaded.viewMode() == UiViewMode.EXTENDED ? defaultHeightExtended : defaultHeightSimple;
         WindowGeometry geometry = loaded.clamp(
                 visual.getMinX(),
                 visual.getMinY(),
                 visual.getWidth(),
                 visual.getHeight(),
                 clampDefaultWidth,
-                defaultHeight);
+                clampDefaultHeight);
+        if (geometry.viewMode() == UiViewMode.EXTENDED) {
+            double rational = WindowGeometry.dividerForLeftWidth(geometry.width(), WindowGeometry.EXTENDED_LEFT_WIDTH);
+            geometry = new WindowGeometry(
+                    geometry.x(), geometry.y(), geometry.width(), geometry.height(), rational, geometry.viewMode());
+        }
         applyRestoredGeometry(geometry);
         if (!Double.isNaN(geometry.x())) {
             stage.setX(geometry.x());
@@ -396,15 +410,24 @@ public final class MainController {
         }
     }
 
-    /** When switching to Extended from a Simple-narrow Stage, expand width once (never shrink). */
-    void ensureExtendedStageWidth() {
+    /**
+     * When switching to Extended: expand Stage to Extended defaults if still Simple-sized, then set
+     * SplitPane divider from host-column target width (never shrinks Stage).
+     */
+    void ensureExtendedStageGeometry() {
         if (mainStage == null || viewModeController == null || !viewModeController.isExtended()) {
             return;
         }
-        double next = WindowGeometry.ensureExtendedWidth(mainStage.getWidth(), extendedDefaultWidth);
-        if (next > mainStage.getWidth() + 0.5) {
-            mainStage.setWidth(next);
+        double nextW = WindowGeometry.ensureExtendedWidth(mainStage.getWidth(), extendedDefaultWidth);
+        double nextH = WindowGeometry.ensureExtendedHeight(mainStage.getHeight(), extendedDefaultHeight);
+        if (nextW > mainStage.getWidth() + 0.5) {
+            mainStage.setWidth(nextW);
         }
+        if (nextH > mainStage.getHeight() + 0.5) {
+            mainStage.setHeight(nextH);
+        }
+        viewModeController.applyDivider(
+                WindowGeometry.dividerForLeftWidth(mainStage.getWidth(), WindowGeometry.EXTENDED_LEFT_WIDTH));
     }
 
     /**
@@ -519,8 +542,7 @@ public final class MainController {
                 mainView.hostList(),
                 () -> store,
                 () -> viewModeController.isExtended(),
-                () -> easterEggActive,
-                routeDiffPresenter);
+                () -> easterEggActive);
         mainView.graphCanvas().setOnHopIpCopied(ip -> userFeedback.info("Скопійовано hop IP: " + ip));
         DnsResolver.addListener(() -> Platform.runLater(routeGraphPresenter::redrawIfExtended));
 
@@ -986,7 +1008,7 @@ public final class MainController {
             viewModeBeforeEasterEgg = viewModeController.viewMode();
             if (!viewModeController.isExtended()) {
                 viewModeController.forceExtended(mainView::extendedModeButton);
-                ensureExtendedStageWidth();
+                ensureExtendedStageGeometry();
             }
         }
         showEasterEggCanvas();

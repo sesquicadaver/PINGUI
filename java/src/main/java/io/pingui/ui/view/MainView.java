@@ -57,10 +57,9 @@ public final class MainView {
      *
      * @param actions orchestration callbacks
      * @param tagFilterBar host tag filter bar from {@code HostListPresenter}
-     * @param routeDiffPanel route-diff chrome from {@code RouteDiffPresenter}
      * @return root border pane (menu already set as top)
      */
-    public BorderPane assemble(MainViewActions actions, Node tagFilterBar, Node routeDiffPanel) {
+    public BorderPane assemble(MainViewActions actions, Node tagFilterBar) {
         profileToolbar.wire(actions);
         hostListPanel.wire(actions);
         historyPanel.wire(actions);
@@ -84,7 +83,7 @@ public final class MainView {
         leftChildren.add(statusPanel.logArea());
         leftPanel.getChildren().setAll(leftChildren);
 
-        routeGraphPanel.installInto(graphPanel, routeDiffPanel);
+        routeGraphPanel.installInto(graphPanel);
         historyPanel.installInto(graphPanel);
 
         root.setTop(createMenuBar(actions));

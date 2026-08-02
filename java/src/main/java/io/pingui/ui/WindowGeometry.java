@@ -9,10 +9,16 @@ record WindowGeometry(double x, double y, double width, double height, double di
     static final double DEFAULT_DIVIDER = 0.35;
     /** Matches Simple host-column min width ({@code HostListPanel.PANEL_MIN_WIDTH}). */
     static final double MIN_WIDTH = 580.0;
+    /** Target left SplitPane width in Extended (host list; graph gets the remainder). */
+    static final double EXTENDED_LEFT_WIDTH = 600.0;
     /** Cold-start / missing-prefs width for Simple (content-sized; height stays independent). */
     static final double DEFAULT_SIMPLE_WIDTH = MIN_WIDTH;
     /** Cold-start / missing-prefs width for Extended (graph + history). */
-    static final double DEFAULT_EXTENDED_WIDTH = 1100.0;
+    static final double DEFAULT_EXTENDED_WIDTH = 1400.0;
+    /** Cold-start / missing-prefs height for Simple. */
+    static final double DEFAULT_SIMPLE_HEIGHT = 700.0;
+    /** Cold-start / expand-on-toggle height for Extended. */
+    static final double DEFAULT_EXTENDED_HEIGHT = 820.0;
 
     static final double MIN_HEIGHT = 400.0;
     static final double MIN_DIVIDER = 0.05;
@@ -30,6 +36,17 @@ record WindowGeometry(double x, double y, double width, double height, double di
             return DEFAULT_DIVIDER;
         }
         return Math.max(MIN_DIVIDER, Math.min(MAX_DIVIDER, divider));
+    }
+
+    /**
+     * SplitPane divider so the left pane targets {@code leftWidth} pixels at {@code stageWidth}.
+     * Avoids the ~50/50 look when min-width constraints fight a too-small left fraction.
+     */
+    static double dividerForLeftWidth(double stageWidth, double leftWidth) {
+        if (!finite(stageWidth) || stageWidth < MIN_WIDTH || !finite(leftWidth) || leftWidth <= 0) {
+            return DEFAULT_DIVIDER;
+        }
+        return clampDivider(Math.min(leftWidth, stageWidth) / stageWidth);
     }
 
     /**
@@ -114,6 +131,17 @@ record WindowGeometry(double x, double y, double width, double height, double di
             return stageWidth;
         }
         return extendedDefaultWidth;
+    }
+
+    /** Extended-mode stage height: expand up to the Extended default (never shrinks). */
+    static double ensureExtendedHeight(double stageHeight, double extendedDefaultHeight) {
+        if (!finite(stageHeight) || !finite(extendedDefaultHeight) || extendedDefaultHeight < MIN_HEIGHT) {
+            return stageHeight;
+        }
+        if (stageHeight + 0.5 >= extendedDefaultHeight) {
+            return stageHeight;
+        }
+        return extendedDefaultHeight;
     }
 
     private static boolean finite(double value) {

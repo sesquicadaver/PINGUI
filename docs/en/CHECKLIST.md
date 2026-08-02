@@ -287,7 +287,7 @@ Run on **Linux** (regression for “black frame” after profile CRUD):
 - [ ] **Delete profile** (return to default) → Simple mode; panels compact (graph/log hidden); window size is **not** forced (P24-005)
 - [ ] **Extended** → graph + log; **Simple** → panels compact again; window size does not jump on toggle (P24-005)
 - [ ] **P24-006 Window geometry:** resize/move window → restart → bounds ±1px; Extended → drag SplitPane divider → restart → divider; restart restores last `UiViewMode`
-- [ ] **Simple width fit:** start in Simple → Stage width ≈ host column (no empty wide frame); height not force-shrunk; switching to Extended expands width when needed
+- [ ] **Simple/Extended geometry:** start in Simple → Stage width ≈ host column (~580), height not force-shrunk; → Extended expands width+height (~1400×820) when needed; divider ≈ left column 600 px; back to Simple does not shrink
 - [ ] **P24-008 CSS light theme:** start GUI → `#fafafa` background / light panels; host-list danger `!` and muted tags readable; no raw unstyled chrome (screenshot smoke, light)
 - [ ] **P24-009 Deferred startup:** window appears with «Завантаження…» before ready; then host list fills; bad YAML → error feedback without hang
 - [ ] **P24-010 Perf smoke (desktop):** Extended → pan the graph ~5 s (drag) → route update (poll/replay) without visible freeze; optional JFR: `jcmd <pid> JFR.start name=pingui settings=profile` during pan+route, then `JFR.stop filename=pingui-gui.jfr` — look for long FX pulses / `paintPixels`. CI: `GraphCanvasPerfTest` (100 drag ≤1 paint).
@@ -303,7 +303,6 @@ Run on **Linux** (regression for “black frame” after profile CRUD):
 - [ ] **P20-007 Empty states:** Extended without SQLite → Database hint; empty history → placeholder; Simple → status points to Extended
 - [ ] **P20-006 Hotkeys:** Ctrl/Cmd+S Save, Ctrl/Cmd+N Add, F1 Help; typing in host field still works
 - [ ] **P20-005 Export:** Settings → Export now… → CSV/HTML; without SQLite → clear error
-- [ ] **P20-004 Route diff:** Extended — route change → rows with `~`/`+`/`−` and color
 - [ ] **P20-003 Dirty/unsaved:** mutate host → «Save *»; profile switch → Confirm; Save clears *
 - [ ] **P20-002 Confirm delete:** Delete host / profile → Confirm; Cancel is a no-op
 - [ ] **P20-001 Simple feedback:** failed add host (duplicate) → status + Alert; Extended fail → log only (no Alert); live «Last update…» in Extended is not overwritten by feedback info

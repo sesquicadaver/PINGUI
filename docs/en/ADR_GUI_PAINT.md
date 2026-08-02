@@ -46,21 +46,21 @@ All redraw requests go through `requestRedraw()` → one `Platform.runLater` pul
 | `nodeFillCache` | Fill by RTT/timeout |
 | Hover tip text | Dedupe by `hoveredNodeId` |
 
-### 5. No forced window resize
+### 5. Mode toggle geometry
 
-Simple ↔ Extended toggle **must not** call `Stage.setWidth/Height` / `applyCss` to “fit” size. Default stage size — once on first show (if no persisted geometry).
+Toggle **back to Simple** does not shrink the Stage (no jank). Toggle **to Extended** may once expand width+height to Extended defaults when the window is still Simple-sized; divider is set as `leftPref / stageWidth` (~600 px left column). Default stage size — cold-start / missing prefs.
 
 ### 6. SplitPane + geometry persist
 
 | Field | Persistence |
 |-------|-------------|
 | Bounds (x,y,w,h) | `WindowGeometryStore` (XDG / `%APPDATA%`) |
-| Split divider | Extended mode |
+| Split divider | Extended mode (derived from left-column target) |
 | `UiViewMode` | Last mode |
 
 Clamp to `Screen.getVisualBounds()`; invalid → defaults.
 
-**Width vs mode:** cold-start Simple → default width = host column (~580), not 1100. After `show` in Simple — one-shot Stage width fit to `root.prefWidth` (height unchanged; clears leftover Extended “wide frame”). Toggle → Extended may **expand** width to the Extended default; back to Simple does **not** shrink (no toggle jank).
+**Geometry vs mode:** cold-start Simple → ~580×700 (host column). After `show` in Simple — one-shot **width-only** fit to `root.prefWidth`. Extended defaults ~1400×820; Simple→Extended expands width **and** height when needed (never shrinks).
 
 ### 7. View assembly + CSS
 

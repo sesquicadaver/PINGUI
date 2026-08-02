@@ -35,9 +35,11 @@ public final class PinguiApplication extends Application {
     /** Fallback Stage width for Simple when window-geometry prefs are missing (host column). */
     static final double DEFAULT_STAGE_WIDTH_SIMPLE = 580.0;
     /** Fallback Stage width for Extended when prefs omit width (graph chrome). */
-    static final double DEFAULT_STAGE_WIDTH_EXTENDED = 1100.0;
-    /** Fallback Stage height when window-geometry prefs are missing or invalid. */
-    static final double DEFAULT_STAGE_HEIGHT = 700.0;
+    static final double DEFAULT_STAGE_WIDTH_EXTENDED = 1400.0;
+    /** Fallback Stage height for Simple when prefs are missing. */
+    static final double DEFAULT_STAGE_HEIGHT_SIMPLE = 700.0;
+    /** Fallback Stage height for Extended (graph + history). */
+    static final double DEFAULT_STAGE_HEIGHT_EXTENDED = 820.0;
 
     private MainController controller;
     private ExecutorService startupExecutor;
@@ -55,7 +57,11 @@ public final class PinguiApplication extends Application {
             stage.setScene(scene);
             // P24-006: restore clamped bounds + mode; close-only save registered inside.
             controller.prepareStageGeometry(
-                    stage, DEFAULT_STAGE_WIDTH_SIMPLE, DEFAULT_STAGE_WIDTH_EXTENDED, DEFAULT_STAGE_HEIGHT);
+                    stage,
+                    DEFAULT_STAGE_WIDTH_SIMPLE,
+                    DEFAULT_STAGE_WIDTH_EXTENDED,
+                    DEFAULT_STAGE_HEIGHT_SIMPLE,
+                    DEFAULT_STAGE_HEIGHT_EXTENDED);
             stage.show();
             controller.onStageShown();
             controller.refreshDirtyUi();
