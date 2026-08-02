@@ -94,6 +94,14 @@
 | ADR якісних алертів (P21-001) | `docs/ADR_ALERT_RULES.md`, `docs/en/ADR_ALERT_RULES.md`; related `ADR_ALERTS` | Doc parity; контракт lifecycle `endpoint_down` |
 | AlertRuleEngine endpoint_down (P21-002) | `AlertRuleEngine`, `QualityAlertEvent`, `EndpointDownRuleConfig`, `MonitorService` | `AlertRuleEngineTest`, `MonitorServiceTest.dispatchesEndpointDownAfterConsecutiveUnreachablePolls` |
 | latency_high (P23) | `LatencyHighRuleConfig`, `AlertRuleEngine`, `MonitorService`, `AlertsSettingsDialog`, `PersistenceEventType.LATENCY_HIGH` | `AlertRuleEngineTest.latencyHigh*`, `ProfilesConfigTest.saveAndReloadLatencyHighRules`, `AlertsSettingsDialogTest.buildConfigEnablesLatencyHighCriticalDefaults` |
+| GUI paint baseline (P24-000) | `docs/ROADMAP.md` фаза 24; `.omx/plans/gui-architecture-perf-plan.md` | Doc parity; NEXT=`P24-001`; немає `GraphCanvasTest` до P24-001 |
+| GraphCanvas invalidate (P24-001) | `GraphCanvas` | `GraphCanvasTest` (call-count resize); CHECKLIST native Windows smoke |
+| GraphCanvas coalesce (P24-002) | `GraphCanvas` | `GraphCanvasTest` paint≤1 / pulse |
+| GraphScene cache (P24-003) | `GraphCanvas`, `RouteGraphLayout` | `GraphCanvasTest` pan/zoom без rebuild |
+| Graph paint cache (P24-004) | `GraphCanvas` | `GraphCanvasTest` hover/color |
+| Window geometry (P24-005…006) | `ViewModeController`, prefs store | `ViewModeControllerTest`; geometry unit |
+| GUI view split / CSS / startup (P24-007…009) | `MainController`, `ui.view.*`, `pingui.css` | Presenter/structure tests; seam test |
+| ADR GUI paint (P24-010) | `docs/ADR_GUI_PAINT.md` | Doc parity + CHECKLIST perf smoke |
 | YAML/GUI alerts.rules (P21-003) | `AlertConfig`, `EndpointDownRuleConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `ProfilesConfigTest`, `AlertsSettingsDialogTest`, `AppMenuDialogsTest` |
 | Host problem indicator ADR (P22-001) | `docs/ADR_HOST_PROBLEM_INDICATOR.md` | docs review / ROADMAP P22 |
 | HostProblemSummary (P22-002) | `AlertRuleEngine`, `HostProblemSummary`, `MonitorService` | `AlertRuleEngineTest`, `MonitorServiceTest` |

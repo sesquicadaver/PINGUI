@@ -10,7 +10,7 @@ Post-MVP roadmap (2026-06-26) for **professional users** (NOC/SRE, network engin
 
 | Field | Value |
 |-------|-------|
-| **Branch** | `main` — stable snapshot after merge; `beta` — development (linear queue **P23**). Both: Java Pro (P9–P19) + Python after merge |
+| **Branch** | `main` — stable snapshot after merge; `beta` — development (linear queue **P24**). Both: Java Pro (P9–P19) + Python after merge |
 | **Priority** | P0 critical · P1 important · P2 nice-to-have |
 | **DoD** | Definition of Done — task closure condition |
 
@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **DONE** |
-| **Phase** | 23 — `latency_high` (closed) |
-| **DoD (short)** | linear queue exhausted |
+| **Current task** | **P24-001** |
+| **Phase** | 24 — GUI architecture & paint |
+| **DoD (short)** | GraphCanvas: remove `width+1`, sync resize, call-count test |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -128,8 +128,19 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 82 | **P23-003** | [x] | `MonitorService` wire terminal RTT → latency rule |
 | 83 | **P23-004** | [x] | YAML/GUI `alerts.rules.latency_high` |
 | 84 | **P23-005** | [x] | Badge/dialog + SQLite `latency_high` |
+| 85 | **P24-000** | [x] | ROADMAP/LIVING_SPEC: phase P24 G0–G10 IDs + baseline |
+| 86 | **P24-001** | [ ] | GraphCanvas: invalidate without `width+1` (call-count test) |
+| 87 | **P24-002** | [ ] | GraphCanvas: coalesced `requestRedraw` (1× pulse) |
+| 88 | **P24-003** | [ ] | GraphCanvas: cache `GraphScene` on pan/zoom |
+| 89 | **P24-004** | [ ] | GraphCanvas: color/hover cache |
+| 90 | **P24-005** | [ ] | ViewMode: remove forced window resize / applyCss |
+| 91 | **P24-006** | [ ] | SplitPane + persist window/divider geometry |
+| 92 | **P24-007** | [ ] | View components from `MainController.createScene` |
+| 93 | **P24-008** | [ ] | CSS theme layer (light-first palette) |
+| 94 | **P24-009** | [ ] | Startup: heavy init off FX thread |
+| 95 | **P24-010** | [ ] | ADR_GUI_PAINT + perf smoke + phase close |
 
-**Queue status:** closed — **NEXT = DONE** (phase 23 `latency_high` complete).
+**Queue status:** open — **NEXT = P24-001** (phase 24 GUI architecture & paint).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -798,6 +809,26 @@ flowchart TD
 | **P23-003** | [x] Monitor wire | `MonitorService` | Terminal RTT vs rule; skip when unreachable; `./gradlew check` |
 | **P23-004** | [x] YAML/GUI | `AlertConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `rules.latency_high`; Apply/Save |
 | **P23-005** | [x] Badge + SQLite | `HostProblemSummary`, `PersistenceEventType`, writer, UI | Unread badge; persist FIRING/RESOLVED |
+
+---
+
+## Phase 24 — GUI architecture & paint (`beta`, P1)
+
+**Context:** monitor core is mature; GUI lags — paint jank (`GraphCanvas`), forced window resize, god-assembly `MainController.createScene`. Plan: `.omx/plans/gui-architecture-perf-plan.md`. Baseline (G0): `MainController` ≈862 LOC; `GraphCanvas` ≈323; no `GraphCanvasTest`; Windows CI = Monocle Headless (not native Glass).
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **P24-000** | [x] Baseline IDs in ROADMAP/LIVING_SPEC | `docs/ROADMAP.md`, `docs/en/ROADMAP.md`, `docs/LIVING_SPEC.md`, `docs/en/LIVING_SPEC.md` | Queue P24-000…010; NEXT=P24-001 |
+| **P24-001** | [ ] Canvas invalidate without `width+1` | `GraphCanvas.java`, `GraphCanvasTest.java`, CHECKLIST | Call-count==0 when size unchanged; native Windows smoke in CHECKLIST |
+| **P24-002** | [ ] Coalesced redraw | `GraphCanvas.java` | ≤1 paint / pulse; sync resize vs paintPixels; inherits G1 |
+| **P24-003** | [ ] Cache GraphScene | `GraphCanvas.java`, `RouteGraphLayout` | Pan/zoom without `buildScene` |
+| **P24-004** | [ ] Color/hover cache | `GraphCanvas.java` | No `Color.web` in draw loop; hover dedupe |
+| **P24-005** | [ ] No forced window resize | `ViewModeController.java` | Toggle without setWidth/Height / applyCss layout |
+| **P24-006** | [ ] SplitPane + persist geometry | `WindowGeometryStore` / prefs, `MainController` | Restore bounds+divider; clamp visualBounds |
+| **P24-007** | [ ] View components | `io.pingui.ui.view.*`, `MainController` | Thin `createScene` assembler |
+| **P24-008** | [ ] CSS palette | `pingui.css`, `UiPalette` | Stylesheet on Scene; light-first |
+| **P24-009** | [ ] Deferred startup I/O | `MainController`, `PinguiApplication` | No SQLite/GeoIP on FX before show |
+| **P24-010** | [ ] ADR + perf smoke | `ADR_GUI_PAINT.md`, CHECKLIST | Phase closed or explicit follow-ups |
 
 ---
 

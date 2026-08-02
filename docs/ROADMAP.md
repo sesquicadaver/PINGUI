@@ -10,7 +10,7 @@
 
 | Поле | Значення |
 |------|----------|
-| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (лінійна черга **P23**). Обидві: Java Pro (P9–P19) + Python після merge |
+| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (лінійна черга **P24**). Обидві: Java Pro (P9–P19) + Python після merge |
 | **Пріоритет** | P0 критично · P1 важливо · P2 бажано |
 | **DoD** | Definition of Done — умова закриття задачі |
 
@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **DONE** |
-| **Фаза** | 23 — `latency_high` (закрита) |
-| **DoD (коротко)** | лінійна черга вичерпана |
+| **Поточна задача** | **P24-001** |
+| **Фаза** | 24 — GUI architecture & paint |
+| **DoD (коротко)** | GraphCanvas: прибрати `width+1`, sync resize, call-count тест |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -128,8 +128,19 @@
 | 82 | **P23-003** | [x] | `MonitorService` wire terminal RTT → latency rule |
 | 83 | **P23-004** | [x] | YAML/GUI `alerts.rules.latency_high` |
 | 84 | **P23-005** | [x] | Badge/dialog + SQLite `latency_high` |
+| 85 | **P24-000** | [x] | ROADMAP/LIVING_SPEC: фаза P24 G0–G10 IDs + baseline |
+| 86 | **P24-001** | [ ] | GraphCanvas: invalidate без `width+1` (call-count тест) |
+| 87 | **P24-002** | [ ] | GraphCanvas: coalesced `requestRedraw` (1× pulse) |
+| 88 | **P24-003** | [ ] | GraphCanvas: кеш `GraphScene` на pan/zoom |
+| 89 | **P24-004** | [ ] | GraphCanvas: color/hover cache |
+| 90 | **P24-005** | [ ] | ViewMode: прибрати forced window resize / applyCss |
+| 91 | **P24-006** | [ ] | SplitPane + persist window/divider geometry |
+| 92 | **P24-007** | [ ] | View components з `MainController.createScene` |
+| 93 | **P24-008** | [ ] | CSS theme layer (light-first palette) |
+| 94 | **P24-009** | [ ] | Startup: важкий init поза FX thread |
+| 95 | **P24-010** | [ ] | ADR_GUI_PAINT + perf smoke + закриття фази |
 
-**Стан черги:** закрита — **NEXT = DONE** (фаза 23 `latency_high` завершена).
+**Стан черги:** відкрита — **NEXT = P24-001** (фаза 24 GUI architecture & paint).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -798,6 +809,26 @@ flowchart TD
 | **P23-003** | [x] Monitor wire | `MonitorService` | Terminal RTT vs rule; skip when unreachable; `./gradlew check` |
 | **P23-004** | [x] YAML/GUI | `AlertConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `rules.latency_high`; Apply/Save |
 | **P23-005** | [x] Badge + SQLite | `HostProblemSummary`, `PersistenceEventType`, writer, UI | Unread badge; persist FIRING/RESOLVED |
+
+---
+
+## Фаза 24 — GUI architecture & paint (`beta`, P1)
+
+**Контекст:** monitor core зрілий; GUI відстає — paint jank (`GraphCanvas`), forced window resize, god-assembly `MainController.createScene`. План: `.omx/plans/gui-architecture-perf-plan.md`. Baseline (G0): `MainController` ≈862 LOC; `GraphCanvas` ≈323; немає `GraphCanvasTest`; CI Windows = Monocle Headless (не native Glass).
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P24-000** | [x] Baseline IDs у ROADMAP/LIVING_SPEC | `docs/ROADMAP.md`, `docs/en/ROADMAP.md`, `docs/LIVING_SPEC.md`, `docs/en/LIVING_SPEC.md` | Черга P24-000…010; NEXT=P24-001 |
+| **P24-001** | [ ] Canvas invalidate без `width+1` | `GraphCanvas.java`, `GraphCanvasTest.java`, CHECKLIST | Call-count==0 при same size; native Windows smoke у CHECKLIST |
+| **P24-002** | [ ] Coalesced redraw | `GraphCanvas.java` | ≤1 paint / pulse; sync resize vs paintPixels; успадковує G1 |
+| **P24-003** | [ ] Cache GraphScene | `GraphCanvas.java`, `RouteGraphLayout` | Pan/zoom без `buildScene` |
+| **P24-004** | [ ] Color/hover cache | `GraphCanvas.java` | Немає `Color.web` у draw loop; hover dedupe |
+| **P24-005** | [ ] No forced window resize | `ViewModeController.java` | Toggle без setWidth/Height / applyCss layout |
+| **P24-006** | [ ] SplitPane + persist geometry | `WindowGeometryStore` / prefs, `MainController` | Restore bounds+divider; clamp visualBounds |
+| **P24-007** | [ ] View components | `io.pingui.ui.view.*`, `MainController` | `createScene` тонкий assembler |
+| **P24-008** | [ ] CSS palette | `pingui.css`, `UiPalette` | Stylesheet на Scene; light-first |
+| **P24-009** | [ ] Deferred startup I/O | `MainController`, `PinguiApplication` | Немає SQLite/GeoIP на FX до show |
+| **P24-010** | [ ] ADR + perf smoke | `ADR_GUI_PAINT.md`, CHECKLIST | Фаза закрита або явні follow-ups |
 
 ---
 
