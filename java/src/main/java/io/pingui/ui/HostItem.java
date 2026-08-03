@@ -186,10 +186,7 @@ public final class HostItem {
             return "";
         }
         return UiI18n.get(
-                "host.poll_counters",
-                counters.attempts(),
-                counters.errors(),
-                Math.round(counters.errorPct()));
+                "host.poll_counters", counters.attempts(), counters.errors(), Math.round(counters.errorPct()));
     }
 
     static String formatRttMetrics(HostTargetStats stats) {

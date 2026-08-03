@@ -1,10 +1,10 @@
 package io.pingui.ui;
 
 import io.pingui.config.ConfigError;
-import io.pingui.i18n.UiI18n;
 import io.pingui.config.PingExpertEntry;
 import io.pingui.config.PingPreset;
 import io.pingui.config.PingPresets;
+import io.pingui.i18n.UiI18n;
 import io.pingui.probe.PingExpertCompatibility;
 import io.pingui.probe.PingExpertValidator;
 import io.pingui.probe.PingOptionCatalog;
@@ -57,6 +57,7 @@ public final class PingExpertDialog {
     private static String afIpv6() {
         return ExpertPingUiRules.afIpv6();
     }
+
     private static final String FIELD_OK = "";
     private static final String FIELD_ERROR = "-fx-border-color: #c0392b; -fx-border-width: 1.5px;";
 
@@ -70,8 +71,7 @@ public final class PingExpertDialog {
     public static Optional<PingExpertEntry> show(String host, PingExpertEntry current, boolean pingOnly) {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle(UiI18n.get("expert.title", host));
-        dialog.setHeaderText(
-                pingOnly ? UiI18n.get("expert.header_ping_only") : UiI18n.get("expert.header"));
+        dialog.setHeaderText(pingOnly ? UiI18n.get("expert.header_ping_only") : UiI18n.get("expert.header"));
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
         dialog.getDialogPane().setPrefWidth(580);
 
@@ -133,7 +133,8 @@ public final class PingExpertDialog {
                     items.addAll(spec.choices());
                     ComboBox<String> choice = new ComboBox<>(FXCollections.observableArrayList(items));
                     choice.setMaxWidth(Double.MAX_VALUE);
-                    choice.setTooltip(new Tooltip(UiI18n.get("expert.choices_allowed", String.join(", ", spec.choices()))));
+                    choice.setTooltip(
+                            new Tooltip(UiI18n.get("expert.choices_allowed", String.join(", ", spec.choices()))));
                     applyChoiceSelection(option, currentArgs, choice, spec.choices());
                     choiceValues.put(option.flag(), choice);
                     grid.add(choice, 2, row);

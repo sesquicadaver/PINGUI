@@ -41,8 +41,7 @@ final class SessionExportUi {
     static Optional<Path> chooseAndExport(Window owner, SessionDatabase database) throws IOException {
         FileChooser chooser = new FileChooser();
         chooser.setTitle(UiI18n.get("persistence.export_title"));
-        chooser.getExtensionFilters()
-                .add(new FileChooser.ExtensionFilter(UiI18n.get("dialog.filter_csv"), "*.csv"));
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(UiI18n.get("dialog.filter_csv"), "*.csv"));
         chooser.getExtensionFilters()
                 .add(new FileChooser.ExtensionFilter(UiI18n.get("dialog.filter_html"), "*.html", "*.htm"));
         chooser.getExtensionFilters()

@@ -39,6 +39,7 @@ import javafx.stage.Window;
 final class HostListPresenter {
     private static final double HOST_ROW_HEIGHT = 56.0;
     private static final double HOST_LIST_INSET = 4.0;
+
     static String tagFilterAllLabel() {
         return UiI18n.get("host.tag_filter_all");
     }
@@ -537,8 +538,7 @@ final class HostListPresenter {
                         ? Integer.toString(result.discovery().recommendedMtu().getAsInt())
                         : "?";
                 markDirty.run();
-                userFeedback.info(
-                        UiI18n.get("host.mtu_applied", item.getHost(), mtu, String.join(" ", next.args())));
+                userFeedback.info(UiI18n.get("host.mtu_applied", item.getHost(), mtu, String.join(" ", next.args())));
             } catch (ConfigError ex) {
                 userFeedback.error(ex.getMessage());
             }

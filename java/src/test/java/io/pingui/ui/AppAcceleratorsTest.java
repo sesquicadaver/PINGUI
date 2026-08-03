@@ -14,6 +14,7 @@ class AppAcceleratorsTest {
     void ukLocale() {
         UiI18n.setLocale(UiLocale.UK);
     }
+
     @Test
     void bindingsUseShortcutOrFunctionKeyNotBareLetters() {
         assertEquals("Shortcut+S", AppAccelerators.SAVE);

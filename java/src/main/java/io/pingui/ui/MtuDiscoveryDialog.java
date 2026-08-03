@@ -103,8 +103,7 @@ public final class MtuDiscoveryDialog {
             startButton.setDisable(true);
             stopButton.setDisable(false);
             bar.setProgress(0);
-            progressLabel.setText(
-                    UiI18n.get("mtu.starting", ipv6 ? "IPv6" : "IPv4", config.lossThresholdPct()));
+            progressLabel.setText(UiI18n.get("mtu.starting", ipv6 ? "IPv6" : "IPv4", config.lossThresholdPct()));
 
             Thread.ofVirtual().name("mtu-discovery").start(() -> {
                 try {
@@ -246,8 +245,7 @@ public final class MtuDiscoveryDialog {
     static String formatStep(MtuDiscoveryResult.MtuProbeStep step) {
         String loss = String.format(Locale.ROOT, "%.1f", step.lossPct());
         String suffix = step.stoppedHere() ? UiI18n.get("mtu.step_stop") : "";
-        return UiI18n.get(
-                "mtu.step", step.payloadBytes(), step.sent(), step.lost(), loss, suffix);
+        return UiI18n.get("mtu.step", step.payloadBytes(), step.sent(), step.lost(), loss, suffix);
     }
 
     static String formatStopping(String current) {
@@ -270,9 +268,7 @@ public final class MtuDiscoveryDialog {
         }
         int payload = result.maxGoodPayload().getAsInt();
         int mtu = result.recommendedMtu().orElse(config.mtuForPayload(payload));
-        String stop = result.stoppedOnLoss()
-                ? UiI18n.get("mtu.stop_on_loss")
-                : UiI18n.get("mtu.all_passed");
+        String stop = result.stoppedOnLoss() ? UiI18n.get("mtu.stop_on_loss") : UiI18n.get("mtu.all_passed");
         String cancelNote = result.cancelled() ? UiI18n.get("mtu.interrupted") : "";
         return UiI18n.get("mtu.summary", mtu, payload, config.icmpOverhead(), stop, cancelNote);
     }

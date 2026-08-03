@@ -16,6 +16,9 @@ import io.pingui.config.TracingProfile;
 import io.pingui.dns.DnsResolver;
 import io.pingui.geoip.AsnLookup;
 import io.pingui.geoip.GeoCountry;
+import io.pingui.i18n.UiI18n;
+import io.pingui.i18n.UiLocale;
+import io.pingui.i18n.UiLocaleStore;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
@@ -23,9 +26,6 @@ import io.pingui.persistence.PersistencePolicy;
 import io.pingui.persistence.SessionDatabase;
 import io.pingui.persistence.timeseries.TimeSeriesBackends;
 import io.pingui.persistence.timeseries.TimeSeriesConfigException;
-import io.pingui.i18n.UiI18n;
-import io.pingui.i18n.UiLocale;
-import io.pingui.i18n.UiLocaleStore;
 import io.pingui.ui.view.MainView;
 import io.pingui.ui.view.MainViewActions;
 import java.io.IOException;
@@ -1082,8 +1082,7 @@ public final class MainController {
             String activeHost = viewHost();
             if (activeHost != null && host.equals(activeHost)) {
                 mainView.statusLabel()
-                        .setText(UiI18n.get(
-                                "status.last_update", host, TIME_FMT.format(snapshot.timestamp())));
+                        .setText(UiI18n.get("status.last_update", host, TIME_FMT.format(snapshot.timestamp())));
                 redrawRouteGraph();
             }
         }
@@ -1096,8 +1095,7 @@ public final class MainController {
         if (viewModeController.isExtended() && !easterEggActive) {
             if (!oldIps.isEmpty()) {
                 String oldStr = String.join(" -> ", oldIps);
-                userFeedback.info(UiI18n.get(
-                        "status.route_change", host, oldStr, String.join(" -> ", newIps)));
+                userFeedback.info(UiI18n.get("status.route_change", host, oldStr, String.join(" -> ", newIps)));
             }
             routeHistoryPresenter.onRouteChanged(host);
             String activeHost = viewHost();

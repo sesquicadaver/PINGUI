@@ -1,9 +1,9 @@
 package io.pingui.ui;
 
+import io.pingui.i18n.UiI18n;
 import io.pingui.probe.PresetSelfCheck;
 import io.pingui.probe.PresetSelfCheckConfig;
 import io.pingui.probe.PresetSelfCheckResult;
-import io.pingui.i18n.UiI18n;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Objects;
@@ -100,7 +100,8 @@ public final class PresetSelfCheckUi {
             alert.initOwner(owner);
         }
         alert.setTitle(UiI18n.get("expert.self_check_title_host", host));
-        alert.setHeaderText(result.anyWarn() ? UiI18n.get("expert.self_check_warn") : UiI18n.get("expert.self_check_ok"));
+        alert.setHeaderText(
+                result.anyWarn() ? UiI18n.get("expert.self_check_warn") : UiI18n.get("expert.self_check_ok"));
         alert.setContentText(formatAlertBody(result));
         alert.showAndWait();
     }

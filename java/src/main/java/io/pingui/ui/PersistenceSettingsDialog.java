@@ -56,9 +56,7 @@ public final class PersistenceSettingsDialog {
         dialog.initOwner(owner);
         dialog.setTitle(UiI18n.get("persistence.title"));
         dialog.setHeaderText(
-                database == null
-                        ? UiI18n.get("persistence.header_connect")
-                        : UiI18n.get("persistence.header_policy"));
+                database == null ? UiI18n.get("persistence.header_connect") : UiI18n.get("persistence.header_policy"));
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
 
         TextField pathField = new TextField();
@@ -122,9 +120,7 @@ public final class PersistenceSettingsDialog {
         });
 
         Label hint = new Label(
-                database == null
-                        ? UiI18n.get("persistence.hint_connect")
-                        : UiI18n.get("persistence.hint_policy"));
+                database == null ? UiI18n.get("persistence.hint_connect") : UiI18n.get("persistence.hint_policy"));
         hint.setWrapText(true);
 
         VBox content = new VBox(
@@ -165,10 +161,8 @@ public final class PersistenceSettingsDialog {
 
     private static boolean confirmDisables(
             Window owner, PersistencePolicy active, PersistencePolicy next, SessionDatabase database) {
-        ButtonType keepHistory =
-                new ButtonType(UiI18n.get("persistence.keep_history"), ButtonBar.ButtonData.NO);
-        ButtonType deleteHistory =
-                new ButtonType(UiI18n.get("persistence.delete_history"), ButtonBar.ButtonData.YES);
+        ButtonType keepHistory = new ButtonType(UiI18n.get("persistence.keep_history"), ButtonBar.ButtonData.NO);
+        ButtonType deleteHistory = new ButtonType(UiI18n.get("persistence.delete_history"), ButtonBar.ButtonData.YES);
         List<PersistenceEventType> disabled = PersistencePolicySupport.typesBeingDisabled(active, next);
         for (PersistenceEventType type : disabled) {
             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);

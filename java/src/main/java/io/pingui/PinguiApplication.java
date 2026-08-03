@@ -233,8 +233,7 @@ public final class PinguiApplication extends Application {
             }
             String code = value.strip();
             if (io.pingui.i18n.UiLocale.fromCode(code).isEmpty()) {
-                throw new IllegalArgumentException(
-                        "--lang must be one of: uk, en, es, it, pl, cs, lv, lt, et");
+                throw new IllegalArgumentException("--lang must be one of: uk, en, es, it, pl, cs, lv, lt, et");
             }
             uiLang = Optional.of(code);
         }

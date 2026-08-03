@@ -316,7 +316,8 @@ public final class TelemetrySettingsDialog {
         browse.setOnAction(e -> {
             FileChooser chooser = new FileChooser();
             chooser.setTitle(title);
-            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(UiI18n.get("dialog.filter_sqlite"), "*.db"));
+            chooser.getExtensionFilters()
+                    .add(new FileChooser.ExtensionFilter(UiI18n.get("dialog.filter_sqlite"), "*.db"));
             java.io.File chosen = chooser.showSaveDialog(owner);
             if (chosen != null) {
                 field.setText(chosen.getPath());
