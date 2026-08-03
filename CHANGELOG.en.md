@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **P26-001 — docs phase sync:** README/JAVA/docs index no longer say “phase 22 / NEXT=DONE”; NEXT→**P26-002**.
 - **P26 — hardening queue (post-audit):** ROADMAP NEXT=`P26-001`…`P26-009` — docs phase sync, telemetry failure isolation, SQLite reopen tests, launcher smoke, MainController/MonitorService split, package JaCoCo, latency EWMA/window.
 - **P25 — UI/docs i18n:** `UiI18n` + `messages_{uk,en,es,it,pl,cs,lv,lt,et}`; Language menu + `--lang` + persist; ADR_I18N; user-facing docs only (`USER_GUIDE`/`HOWTO`/`README.<lang>`), no CHECKLIST/ADR in stub locales; DE/FR deferred.
 - **Host poll liveness counters:** separate row `спроб N  помилки E  P%` above RTT metrics (reset on Ping only / mode change); dark text on colored host rows.

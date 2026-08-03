@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P26-001** |
+| **Current task** | **P26-002** |
 | **Phase** | 26 — hardening post-audit (telemetry / launchers / split / coverage) |
-| **DoD (short)** | README phase sync with ROADMAP NEXT; UK+EN |
+| **DoD (short)** | Telemetry sink fail/timeout must not block poll; tests |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -146,7 +146,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 100 | **P25-005** | [x] | messages_en + es/it/pl/cs/lv/lt/et UI bundles |
 | 101 | **P25-006** | [x] | user-facing locale matrix (USER_GUIDE / HOWTO / README.lang) |
 | 102 | **P25-007** | [x] | USER_GUIDE + HOWTO wave (no CHECKLIST/ADR) |
-| 103 | **P26-001** | [ ] | Docs: sync README/JAVA phase labels with ROADMAP (not “phase 22”) |
+| 103 | **P26-001** | [x] | Docs: sync README/JAVA phase labels with ROADMAP (not “phase 22”) |
 | 104 | **P26-002** | [ ] | Telemetry: failure isolation (timeout/backpressure/shutdown flush) |
 | 105 | **P26-003** | [ ] | SQLite: reopen/migration/corrupt failure tests |
 | 106 | **P26-004** | [ ] | Launcher: quoting + detached GUI smoke matrix |
@@ -156,7 +156,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 110 | **P26-008** | [ ] | latency_high: EWMA/window baseline + UI ETA note |
 | 111 | **P26-009** | [ ] | ADR_HARDENING + LIVING_SPEC/CHECKLIST + phase close |
 
-**Queue status:** active — **NEXT = P26-001** (phase 26 post-P25 hardening).
+**Queue status:** active — **NEXT = P26-002** (phase 26 post-P25 hardening).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -876,7 +876,7 @@ flowchart TD
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **P26-001** | [ ] Docs phase sync | `README.md`, `README.en.md`, `docs/JAVA.md`, `docs/en/…`, CHANGELOG | No “phase 22/23 DONE” if NEXT=P26; main/beta table = current phase |
+| **P26-001** | [x] Docs phase sync | `README.md`, `README.en.md`, `docs/JAVA.md`, `docs/en/…`, CHANGELOG | No “phase 22/23 DONE” if NEXT=P26; main/beta table = current phase |
 | **P26-002** | [ ] Telemetry failure isolation | `telemetry/*`, contract tests | Sink timeout/fail must not block poll; bounded queue or drop+metric; shutdown flush documented + tested |
 | **P26-003** | [ ] SQLite reopen failures | `persistence/*`, tests | append after reopen; corrupt/partial DB; migration; concurrent export smoke |
 | **P26-004** | [ ] Launcher smoke matrix | `pingui-java.sh`, `.bat`, `PinguiLauncher`, script/CI | space quoting; detached GUI; `--foreground`; Windows javaw path; fail → log |
@@ -972,7 +972,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Linear queue — **NEXT=DONE**.
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P26-002**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

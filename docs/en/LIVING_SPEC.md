@@ -108,7 +108,7 @@ Module → unit test matrix. Update when adding features.
 | UI i18n runtime (P25) | `UiI18n`, `UiLocale`, `UiLocaleStore`, `messages_*.properties`, `MainView` Language menu | `UiI18nTest`; UI tests with UK locale |
 | ADR i18n (P25) | `docs/ADR_I18N.md`, `docs/en/ADR_I18N.md` | User-facing locales only: USER_GUIDE + HOWTO + `README.<lang>` |
 | Doc parity multi-locale (P25) | `scripts/check_doc_parity.py` | `test_doc_parity.py`; UK/EN full; stub locales = user docs |
-| Hardening queue (P26) | ROADMAP phase 26: telemetry isolation, SQLite reopen, launchers, MainController/MonitorService split, JaCoCo packages, latency EWMA | NEXT=`P26-001`; DoD in `docs/en/ROADMAP.md` § Phase 26 |
+| Hardening queue (P26) | ROADMAP phase 26: telemetry isolation, SQLite reopen, launchers, MainController/MonitorService split, JaCoCo packages, latency EWMA | NEXT=`P26-002`; P26-001 docs phase sync [x] |
 | YAML/GUI alerts.rules (P21-003) | `AlertConfig`, `EndpointDownRuleConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `ProfilesConfigTest`, `AlertsSettingsDialogTest`, `AppMenuDialogsTest` |
 | Host problem indicator ADR (P22-001) | `docs/ADR_HOST_PROBLEM_INDICATOR.md` | docs review / ROADMAP P22 |
 | HostProblemSummary (P22-002) | `AlertRuleEngine`, `HostProblemSummary`, `MonitorService` | `AlertRuleEngineTest`, `MonitorServiceTest` |

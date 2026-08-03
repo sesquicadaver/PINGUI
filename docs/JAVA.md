@@ -224,4 +224,4 @@ pingui-java.bat --package    REM .msi
 
 ## Майбутнє
 
-Лінійна черга ROADMAP: **NEXT = DONE** (черга вичерпана). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT.
+Лінійна черга ROADMAP: **NEXT = P26-002** (фаза 26 — hardening). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT.

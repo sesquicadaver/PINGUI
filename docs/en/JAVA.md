@@ -224,4 +224,4 @@ Tests and CI — on **`main`** and **`beta`** (ROADMAP development on `beta`).
 
 ## Future
 
-The linear ROADMAP queue: **NEXT = DONE** (queue exhausted). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT.
+The linear ROADMAP queue: **NEXT = P26-002** (phase 26 — hardening). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT.
