@@ -2,7 +2,7 @@
 
 # Документація PINGUI
 
-На **`main`** і **`beta`** — повний пакет (Java Pro + Python) після merge; **`beta`** — гілка розробки, **`main`** — останній стабільний зріз. Лінійна черга ROADMAP: **NEXT = DONE** (фаза 24 — [ROADMAP.md § NEXT](ROADMAP.md#next--єдине-джерело-правди)). «Гілки» — [README.md](../README.md).
+На **`main`** і **`beta`** — повний пакет (Java Pro + Python) після merge; **`beta`** — гілка розробки, **`main`** — останній стабільний зріз. Лінійна черга ROADMAP: **NEXT = P26-001** (фаза 26 — [ROADMAP.md § NEXT](ROADMAP.md#next--єдине-джерело-правди)). «Гілки» — [README.md](../README.md).
 
 ## Навігація
 

@@ -10,7 +10,7 @@
 
 | Поле | Значення |
 |------|----------|
-| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (черга **P25** закрита). Обидві: Java Pro (P9–P19) + Python після merge |
+| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (лінійна черга **P26**). Обидві: Java Pro (P9–P19) + Python після merge |
 | **Пріоритет** | P0 критично · P1 важливо · P2 бажано |
 | **DoD** | Definition of Done — умова закриття задачі |
 
@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **DONE** |
-| **Фаза** | 25 — i18n UI + docs (закрита) |
-| **DoD (коротко)** | Лінійна черга вичерпана; новий ID — лише явно |
+| **Поточна задача** | **P26-001** |
+| **Фаза** | 26 — hardening post-audit (telemetry / launchers / split / coverage) |
+| **DoD (коротко)** | README phase sync з ROADMAP NEXT; UK+EN |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -146,8 +146,17 @@
 | 100 | **P25-005** | [x] | messages_en + es/it/pl/cs/lv/lt/et UI bundles |
 | 101 | **P25-006** | [x] | user-facing locale matrix (USER_GUIDE / HOWTO / README.lang) |
 | 102 | **P25-007** | [x] | USER_GUIDE + HOWTO wave (без CHECKLIST/ADR) |
+| 103 | **P26-001** | [ ] | Docs: sync README/JAVA phase labels з ROADMAP (не «фаза 22») |
+| 104 | **P26-002** | [ ] | Telemetry: failure isolation (timeout/backpressure/shutdown flush) |
+| 105 | **P26-003** | [ ] | SQLite: reopen/migration/corrupt failure tests |
+| 106 | **P26-004** | [ ] | Launcher: quoting + detached GUI smoke matrix |
+| 107 | **P26-005** | [ ] | MainController ≤550 LOC (dialogs/lifecycle extract) |
+| 108 | **P26-006** | [ ] | MonitorService split (poll vs alert/telemetry wiring) |
+| 109 | **P26-007** | [ ] | JaCoCo package-level thresholds (не один bundle) |
+| 110 | **P26-008** | [ ] | latency_high: EWMA/window baseline + UI ETA note |
+| 111 | **P26-009** | [ ] | ADR_HARDENING + LIVING_SPEC/CHECKLIST + phase close |
 
-**Стан черги:** вичерпана — **NEXT = DONE** (фаза 25 i18n закрита).
+**Стан черги:** активна — **NEXT = P26-001** (фаза 26 post-P25 hardening).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -837,7 +846,7 @@ flowchart TD
 | **P24-009** | [x] Deferred startup I/O | `StartupBootstrap`, `PinguiApplication`, CHECKLIST | Shell show → background load → attach; Monitor після show |
 | **P24-010** | [x] ADR + perf smoke | `ADR_GUI_PAINT.md`, CHECKLIST, `GraphCanvasPerfTest` | Фаза закрита; follow-ups нижче |
 
-**Follow-ups після P24 (не в лінійній черзі):** dark mode product; `MainController` ≤550 LOC; FXML / MonitorService split — див. [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md).
+**Follow-ups після P24 (не в лінійній черзі):** dark mode product; FXML — див. [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md). `MainController` ≤550 / MonitorService split → **фаза 26** (P26-005/006).
 
 ---
 
@@ -856,6 +865,28 @@ flowchart TD
 | **P25-007** | [x] USER_GUIDE / HOWTO wave | `docs/*/USER_GUIDE.md`, `HOWTO.md` | User docs; без CHECKLIST/ADR |
 
 **Follow-ups:** DE/FR; повний `README.<lang>`; Python GUI i18n. Developer docs лишаються UK/EN.
+
+---
+
+## Фаза 26 — Hardening post-audit (`beta`, P1)
+
+**Контекст:** Статичний аудит `main` @ `baff7cc` (PR #14) + залишки після P24/P25 на `beta`. GUI paint (buffer churn / coalesce / scene cache) уже закриті в P24 — **не** повторювати. Фокус: resilience, launchers, structural debt, coverage, latency baseline.
+
+**Джерело:** аудит production-readiness; follow-ups ADR_GUI_PAINT / ADR_I18N поза DE/FR.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P26-001** | [ ] Docs phase sync | `README.md`, `README.en.md`, `docs/JAVA.md`, `docs/en/…`, CHANGELOG | Немає «фаза 22/23 DONE» якщо NEXT=P26; таблиця main/beta = актуальна фаза |
+| **P26-002** | [ ] Telemetry failure isolation | `telemetry/*`, contract tests | Sink timeout/fail не блокує poll; bounded queue або drop+metric; shutdown flush documented + тест |
+| **P26-003** | [ ] SQLite reopen failures | `persistence/*`, tests | append після reopen; corrupt/partial DB; migration; concurrent export smoke |
+| **P26-004** | [ ] Launcher smoke matrix | `pingui-java.sh`, `.bat`, `PinguiLauncher`, script/CI | quoting пробілів; detached GUI; `--foreground`; Windows javaw path; fail → лог |
+| **P26-005** | [ ] MainController ≤550 LOC | `MainController`, `ui/view/*` або `*Coordinator` | LOC gate або documented residual; dialogs/lifecycle поза конструктором |
+| **P26-006** | [ ] MonitorService split | `monitor/*` | Poll orchestration ≠ alert/telemetry wiring; layerCheck green; unit tests |
+| **P26-007** | [ ] Package JaCoCo thresholds | `java/build.gradle.kts` | Окремі мінімуми для `config`/`probe`/`monitor`/`persistence`/`telemetry`; UI exclusion явний |
+| **P26-008** | [ ] Latency baseline evolution | `monitor/*`, ADR_ALERT_RULES, UI copy | EWMA або bounded window; контракт + тест; Help/Settings показує орієнтовний час FIRING |
+| **P26-009** | [ ] Phase close | `ADR_HARDENING.md`, LIVING_SPEC, CHECKLIST, ROADMAP | NEXT=DONE або явний follow-up ID |
+
+**Поза цією чергою (свідомо):** DE/FR i18n; dark mode product; FXML rewrite; >10 hosts; BGP/NMS.
 
 ---
 

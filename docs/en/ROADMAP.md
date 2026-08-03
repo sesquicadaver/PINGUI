@@ -10,7 +10,7 @@ Post-MVP roadmap (2026-06-26) for **professional users** (NOC/SRE, network engin
 
 | Field | Value |
 |-------|-------|
-| **Branch** | `main` — stable snapshot after merge; `beta` — development (**P25** queue closed). Both: Java Pro (P9–P19) + Python after merge |
+| **Branch** | `main` — stable snapshot after merge; `beta` — development (linear queue **P26**). Both: Java Pro (P9–P19) + Python after merge |
 | **Priority** | P0 critical · P1 important · P2 nice-to-have |
 | **DoD** | Definition of Done — task closure condition |
 
@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **DONE** |
-| **Phase** | 25 — i18n UI + docs (closed) |
-| **DoD (short)** | Linear queue empty; new ID only when explicit |
+| **Current task** | **P26-001** |
+| **Phase** | 26 — hardening post-audit (telemetry / launchers / split / coverage) |
+| **DoD (short)** | README phase sync with ROADMAP NEXT; UK+EN |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -146,8 +146,17 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 100 | **P25-005** | [x] | messages_en + es/it/pl/cs/lv/lt/et UI bundles |
 | 101 | **P25-006** | [x] | user-facing locale matrix (USER_GUIDE / HOWTO / README.lang) |
 | 102 | **P25-007** | [x] | USER_GUIDE + HOWTO wave (no CHECKLIST/ADR) |
+| 103 | **P26-001** | [ ] | Docs: sync README/JAVA phase labels with ROADMAP (not “phase 22”) |
+| 104 | **P26-002** | [ ] | Telemetry: failure isolation (timeout/backpressure/shutdown flush) |
+| 105 | **P26-003** | [ ] | SQLite: reopen/migration/corrupt failure tests |
+| 106 | **P26-004** | [ ] | Launcher: quoting + detached GUI smoke matrix |
+| 107 | **P26-005** | [ ] | MainController ≤550 LOC (dialogs/lifecycle extract) |
+| 108 | **P26-006** | [ ] | MonitorService split (poll vs alert/telemetry wiring) |
+| 109 | **P26-007** | [ ] | JaCoCo package-level thresholds (not one bundle) |
+| 110 | **P26-008** | [ ] | latency_high: EWMA/window baseline + UI ETA note |
+| 111 | **P26-009** | [ ] | ADR_HARDENING + LIVING_SPEC/CHECKLIST + phase close |
 
-**Queue status:** exhausted — **NEXT = DONE** (phase 25 i18n closed).
+**Queue status:** active — **NEXT = P26-001** (phase 26 post-P25 hardening).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -837,7 +846,7 @@ flowchart TD
 | **P24-009** | [x] Deferred startup I/O | `StartupBootstrap`, `PinguiApplication`, CHECKLIST | Shell show → background load → attach; Monitor after show |
 | **P24-010** | [x] ADR + perf smoke | `ADR_GUI_PAINT.md`, CHECKLIST, `GraphCanvasPerfTest` | Phase closed; follow-ups below |
 
-**Follow-ups after P24 (not in the linear queue):** dark mode product; `MainController` ≤550 LOC; FXML / MonitorService split — see [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md).
+**Follow-ups after P24 (not in the linear queue):** dark mode product; FXML — see [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md). `MainController` ≤550 / MonitorService split → **phase 26** (P26-005/006).
 
 ---
 
@@ -856,6 +865,28 @@ flowchart TD
 | **P25-007** | [x] USER_GUIDE / HOWTO wave | `docs/*/USER_GUIDE.md`, `HOWTO.md` | User docs; no CHECKLIST/ADR |
 
 **Follow-ups:** DE/FR; full `README.<lang>`; Python GUI i18n. Developer docs stay UK/EN.
+
+---
+
+## Phase 26 — Hardening post-audit (`beta`, P1)
+
+**Context:** Static audit of `main` @ `baff7cc` (PR #14) + leftovers after P24/P25 on `beta`. GUI paint (buffer churn / coalesce / scene cache) already closed in P24 — **do not** redo. Focus: resilience, launchers, structural debt, coverage, latency baseline.
+
+**Source:** production-readiness audit; ADR_GUI_PAINT / ADR_I18N follow-ups excluding DE/FR.
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **P26-001** | [ ] Docs phase sync | `README.md`, `README.en.md`, `docs/JAVA.md`, `docs/en/…`, CHANGELOG | No “phase 22/23 DONE” if NEXT=P26; main/beta table = current phase |
+| **P26-002** | [ ] Telemetry failure isolation | `telemetry/*`, contract tests | Sink timeout/fail must not block poll; bounded queue or drop+metric; shutdown flush documented + tested |
+| **P26-003** | [ ] SQLite reopen failures | `persistence/*`, tests | append after reopen; corrupt/partial DB; migration; concurrent export smoke |
+| **P26-004** | [ ] Launcher smoke matrix | `pingui-java.sh`, `.bat`, `PinguiLauncher`, script/CI | space quoting; detached GUI; `--foreground`; Windows javaw path; fail → log |
+| **P26-005** | [ ] MainController ≤550 LOC | `MainController`, `ui/view/*` or `*Coordinator` | LOC gate or documented residual; dialogs/lifecycle out of constructor |
+| **P26-006** | [ ] MonitorService split | `monitor/*` | Poll orchestration ≠ alert/telemetry wiring; layerCheck green; unit tests |
+| **P26-007** | [ ] Package JaCoCo thresholds | `java/build.gradle.kts` | Separate minima for `config`/`probe`/`monitor`/`persistence`/`telemetry`; UI exclusion explicit |
+| **P26-008** | [ ] Latency baseline evolution | `monitor/*`, ADR_ALERT_RULES, UI copy | EWMA or bounded window; contract + test; Help/Settings shows approximate FIRING time |
+| **P26-009** | [ ] Phase close | `ADR_HARDENING.md`, LIVING_SPEC, CHECKLIST, ROADMAP | NEXT=DONE or explicit follow-up ID |
+
+**Out of this queue (intentional):** DE/FR i18n; dark mode product; FXML rewrite; >10 hosts; BGP/NMS.
 
 ---
 

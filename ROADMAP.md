@@ -8,10 +8,10 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **[DONE](docs/ROADMAP.md#next--єдине-джерело-правди)** |
+| **Поточна задача** | **[P26-001](docs/ROADMAP.md#next--єдине-джерело-правди)** |
 | **Правило** | якщо не `DONE` — `/autopilot` = цей ID; якщо `DONE` — зупинитись / чекати явного нового ID. **Не питати** «який пункт?». |
 
-Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна) (фаза 22, #75–79).
+Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна) (фаза 26, #103–111).
 
 **Статус MVP:** ✅ реалізовано (2026-06-26)
 
@@ -44,6 +44,10 @@
 | **20** | GUI UX (Simple feedback, confirm, dirty, polish, settings depth) | ✅ **DONE** |
 | **21** | Якісні alert rules (`endpoint_down` → engine/GUI) | ✅ **DONE** |
 | **22** | Host problem UX (icon + dialog + auto session DB) | ✅ **DONE** |
+| **23** | `latency_high` alert rule | ✅ **DONE** |
+| **24** | GUI architecture & paint | ✅ **DONE** |
+| **25** | i18n UI + user-facing docs | ✅ **DONE** |
+| **26** | Hardening post-audit (telemetry / launchers / split) | 🔄 **P26-001** |
 
 ---
 
