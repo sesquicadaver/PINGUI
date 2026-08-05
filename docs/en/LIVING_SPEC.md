@@ -44,6 +44,7 @@ Module → unit test matrix. Update when adding features.
 | Telemetry models (P16-010) | `MetricSample`, `TelemetryEvent`; `models.py` | `MetricSampleTest`, `TelemetryEventTest`, `test_telemetry_models.py` |
 | Sink registry (P16-011) | `TelemetrySink`, `SinkRegistry`, `NoOpTelemetrySink` | `SinkRegistryTest` |
 | Telemetry bus (P16-012) | `TelemetryBus`, `DropPolicy` | `TelemetryBusTest` |
+| Telemetry failure isolation (P26-002) | `SinkRegistry.failureCount` + per-sink call timeout (default 5s); `TelemetryBus` non-blocking offer / close drain | `TelemetryBusTest` hang/timeout/peer/close; `SinkRegistryTest.sinkFailureDoesNotStopOthers` |
 | Monitor → bus (P16-013) | `MonitorService.setTelemetryBus`; `telemetry_emit.py` | `MonitorServiceTelemetryTest`, `test_monitor_telemetry.py` |
 | Metric names (P16-014) | `MetricNames.java`; `metric_names.py` | `MetricNamesTest`, `test_metric_names.py` |
 | Sqlite telemetry sink (P16-020) | `SqliteTelemetrySink`; schema v4 | `SqliteTelemetrySinkTest` |
@@ -108,7 +109,7 @@ Module → unit test matrix. Update when adding features.
 | UI i18n runtime (P25) | `UiI18n`, `UiLocale`, `UiLocaleStore`, `messages_*.properties`, `MainView` Language menu | `UiI18nTest`; UI tests with UK locale |
 | ADR i18n (P25) | `docs/ADR_I18N.md`, `docs/en/ADR_I18N.md` | User-facing locales only: USER_GUIDE + HOWTO + `README.<lang>` |
 | Doc parity multi-locale (P25) | `scripts/check_doc_parity.py` | `test_doc_parity.py`; UK/EN full; stub locales = user docs |
-| Hardening queue (P26) | ROADMAP phase 26: telemetry isolation, SQLite reopen, launchers, MainController/MonitorService split, JaCoCo packages, latency EWMA | NEXT=`P26-002`; P26-001 docs phase sync [x] |
+| Hardening queue (P26) | ROADMAP phase 26: telemetry isolation, SQLite reopen, launchers, MainController/MonitorService split, JaCoCo packages, latency EWMA | NEXT=`P26-003`; P26-002 telemetry isolation [x] (`SinkRegistry.failureCount`, bus non-blocking offer tests) |
 | YAML/GUI alerts.rules (P21-003) | `AlertConfig`, `EndpointDownRuleConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `ProfilesConfigTest`, `AlertsSettingsDialogTest`, `AppMenuDialogsTest` |
 | Host problem indicator ADR (P22-001) | `docs/ADR_HOST_PROBLEM_INDICATOR.md` | docs review / ROADMAP P22 |
 | HostProblemSummary (P22-002) | `AlertRuleEngine`, `HostProblemSummary`, `MonitorService` | `AlertRuleEngineTest`, `MonitorServiceTest` |

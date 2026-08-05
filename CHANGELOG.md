@@ -9,6 +9,7 @@
 
 ### Added
 
+- **P26-002 — telemetry failure isolation:** `SinkRegistry.failureCount` + per-sink call timeout (5s); non-blocking bus offers; shutdown flush; ADR_TELEMETRY §7; NEXT→**P26-003**.
 - **P26-001 — docs phase sync:** README/JAVA/docs index більше не кажуть «фаза 22 / NEXT=DONE»; NEXT→**P26-002**.
 - **P26 — hardening queue (post-audit):** ROADMAP NEXT=`P26-001`…`P26-009` — docs phase sync, telemetry failure isolation, SQLite reopen tests, launcher smoke, MainController/MonitorService split, package JaCoCo, latency EWMA/window.
 - **P25 — UI/docs i18n:** `UiI18n` + `messages_{uk,en,es,it,pl,cs,lv,lt,et}`; меню Мова + `--lang` + persist; ADR_I18N; user-facing docs лише (`USER_GUIDE`/`HOWTO`/`README.<lang>`), без CHECKLIST/ADR у stub-локалях; DE/FR відкладено.

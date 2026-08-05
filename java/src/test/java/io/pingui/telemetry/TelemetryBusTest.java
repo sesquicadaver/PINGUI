@@ -34,7 +34,7 @@ class TelemetryBusTest {
 
     @Test
     void dropOldestDiscardsHeadAndAcceptsNew() throws Exception {
-        SinkRegistry registry = new SinkRegistry();
+        SinkRegistry registry = new SinkRegistry(Duration.ZERO);
         BlockingSink sink = new BlockingSink();
         registry.register(sink);
         try (TelemetryBus bus = new TelemetryBus(registry, 2, DropPolicy.DROP_OLDEST, 1, Duration.ofMillis(5))) {
@@ -57,7 +57,7 @@ class TelemetryBusTest {
 
     @Test
     void dropNewestRejectsWhenFull() throws Exception {
-        SinkRegistry registry = new SinkRegistry();
+        SinkRegistry registry = new SinkRegistry(Duration.ZERO);
         BlockingSink sink = new BlockingSink();
         registry.register(sink);
         try (TelemetryBus bus = new TelemetryBus(registry, 1, DropPolicy.DROP_NEWEST, 1, Duration.ofMillis(5))) {
@@ -85,6 +85,108 @@ class TelemetryBusTest {
         bus.close();
         assertEquals(1, sink.samples.size());
         assertEquals(1, sink.events.size());
+    }
+
+    @Test
+    void offerStaysNonBlockingWhenSinkHangs() throws Exception {
+        SinkRegistry registry = new SinkRegistry(Duration.ZERO);
+        BlockingSink sink = new BlockingSink();
+        registry.register(sink);
+        try (TelemetryBus bus = new TelemetryBus(registry, 8, DropPolicy.DROP_OLDEST, 1, Duration.ofMillis(5))) {
+            assertTrue(bus.offerSample(sample(1)));
+            assertTrue(await(() -> sink.entered.get() >= 1, 2_000));
+            long started = System.nanoTime();
+            for (int i = 0; i < 20; i++) {
+                bus.offerSample(sample(i + 10));
+            }
+            long elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+            assertTrue(elapsedMs < 200, "offers must not wait on sink I/O, took " + elapsedMs + "ms");
+            assertTrue(bus.droppedCount() >= 1 || bus.queued() > 0);
+        } finally {
+            sink.release.countDown();
+        }
+    }
+
+    @Test
+    void offerAfterCloseIsDropped() {
+        SinkRegistry registry = new SinkRegistry();
+        TelemetryBus bus = new TelemetryBus(registry, 8, DropPolicy.DROP_OLDEST, 4, Duration.ofMillis(10));
+        bus.close();
+        assertFalse(bus.offerSample(sample(1)));
+        assertTrue(bus.droppedCount() >= 1);
+    }
+
+    @Test
+    void sinkThrowDuringFlushDoesNotStopBus() throws Exception {
+        SinkRegistry registry = new SinkRegistry();
+        AtomicInteger okEvents = new AtomicInteger();
+        registry.register(new TelemetrySink() {
+            @Override
+            public String id() {
+                return "boom";
+            }
+
+            @Override
+            public void onSample(MetricSample sample) {
+                throw new IllegalStateException("boom");
+            }
+
+            @Override
+            public void onEvent(TelemetryEvent event) {
+                throw new IllegalStateException("boom");
+            }
+        });
+        registry.register(new TelemetrySink() {
+            @Override
+            public String id() {
+                return "ok";
+            }
+
+            @Override
+            public void onSample(MetricSample sample) {}
+
+            @Override
+            public void onEvent(TelemetryEvent event) {
+                okEvents.incrementAndGet();
+            }
+        });
+        try (TelemetryBus bus = new TelemetryBus(registry, 16, DropPolicy.DROP_OLDEST, 8, Duration.ofMillis(10))) {
+            assertTrue(bus.offerSample(sample(1)));
+            assertTrue(bus.offerEvent(event("keep-going")));
+            assertTrue(await(() -> okEvents.get() >= 1 && registry.failureCount() >= 1, 2_000));
+        }
+        assertTrue(registry.failureCount() >= 1);
+        assertTrue(okEvents.get() >= 1);
+    }
+
+    @Test
+    void hangingSinkTimesOutSoPeerStillReceives() throws Exception {
+        SinkRegistry registry = new SinkRegistry(Duration.ofMillis(80));
+        BlockingSink hung = new BlockingSink();
+        AtomicInteger peerSamples = new AtomicInteger();
+        registry.register(hung);
+        registry.register(new TelemetrySink() {
+            @Override
+            public String id() {
+                return "peer";
+            }
+
+            @Override
+            public void onSample(MetricSample sample) {
+                peerSamples.incrementAndGet();
+            }
+
+            @Override
+            public void onEvent(TelemetryEvent event) {}
+        });
+        try (TelemetryBus bus = new TelemetryBus(registry, 16, DropPolicy.DROP_OLDEST, 4, Duration.ofMillis(10))) {
+            assertTrue(bus.offerSample(sample(1)));
+            assertTrue(await(() -> peerSamples.get() >= 1 && registry.failureCount() >= 1, 2_000));
+        } finally {
+            hung.release.countDown();
+        }
+        assertTrue(peerSamples.get() >= 1);
+        assertTrue(registry.failureCount() >= 1);
     }
 
     @Test

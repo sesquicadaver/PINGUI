@@ -118,9 +118,13 @@ Secrets (URL, token) must **not** be logged in plaintext (P16-042 ✅ `Telemetry
 
 | Situation | Behaviour |
 |-----------|-----------|
-| Sink write failure | `WARNING`; poll **does not** stop |
-| Bus overflow | drop oldest/newest per P16-012 policy; drop-count metric |
+| Sink write failure | `WARNING` + `SinkRegistry.failureCount++`; other sinks and poll **do not** stop (P26-002) |
+| Bus overflow | drop oldest/newest per P16-012; `TelemetryBus.droppedCount` |
+| Hang in a sink | per-call timeout (`SinkRegistry` default 5s) → `failureCount++`; other sinks in the same fan-out continue; `offer*` stays non-blocking |
+| Shutdown | `TelemetryBus.close()` drains the queue + `AggregateTelemetryJob.flushAll()` (shutdown flush) |
 | Sink misconfigured | fail-fast at daemon start **or** disable sink + WARN (chosen in the sink ticket) |
+
+**P26-002 contract:** monitoring must continue even if every telemetry sink fails or hangs behind the bus queue.
 
 ## Consequences
 
