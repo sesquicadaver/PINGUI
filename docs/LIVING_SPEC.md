@@ -47,6 +47,7 @@
 | Telemetry failure isolation (P26-002) | `SinkRegistry.failureCount` + per-sink call timeout (default 5s); `TelemetryBus` non-blocking offer / close drain | `TelemetryBusTest` hang/timeout/peer/close; `SinkRegistryTest.sinkFailureDoesNotStopOthers` |
 | SQLite reopen/migration/corrupt (P26-003) | `SessionDatabase` migrateSchema v1/v3→v4; corrupt/truncated open | `SessionDatabaseHardeningTest`; `SessionStorePersistenceTest.appendPingSamplesAfterDbReopen` |
 | Launcher smoke matrix (P26-004) | `pingui-java.sh`/`.bat`, `PINGUI_SKIP_INSTALL_DIST`, `PINGUI_JAVAW` | `scripts/smoke_launcher.sh`/`.cmd`; `PinguiLauncherTest`; CI java.yml |
+| MainController ≤550 LOC (P26-005) | `StageGeometryCoordinator`, `SettingsDialogsCoordinator`, `EasterEggController`, `PersistenceSessionCoordinator`, … | `MainControllerLocGateTest` (≤550) |
 | Monitor → bus (P16-013) | `MonitorService.setTelemetryBus`; `telemetry_emit.py` | `MonitorServiceTelemetryTest`, `test_monitor_telemetry.py` |
 | Metric names (P16-014) | `MetricNames.java`; `metric_names.py` | `MetricNamesTest`, `test_metric_names.py` |
 | Sqlite telemetry sink (P16-020) | `SqliteTelemetrySink`; schema v4 | `SqliteTelemetrySinkTest` |
@@ -111,7 +112,7 @@
 | UI i18n runtime (P25) | `UiI18n`, `UiLocale`, `UiLocaleStore`, `messages_*.properties`, `MainView` Language menu | `UiI18nTest`; UI tests з UK locale |
 | ADR i18n (P25) | `docs/ADR_I18N.md`, `docs/en/ADR_I18N.md` | User-facing locales only: USER_GUIDE + HOWTO + `README.<lang>` |
 | Doc parity multi-locale (P25) | `scripts/check_doc_parity.py` | `test_doc_parity.py`; UK/EN full; stub locales = user docs |
-| Hardening queue (P26) | ROADMAP фаза 26: telemetry isolation, SQLite reopen, launchers, MainController/MonitorService split, JaCoCo packages, latency EWMA | NEXT=`P26-005`; P26-004 launcher smoke [x] (`scripts/smoke_launcher.*`, quoting/detach/fail→log) |
+| Hardening queue (P26) | ROADMAP фаза 26: telemetry isolation, SQLite reopen, launchers, MainController/MonitorService split, JaCoCo packages, latency EWMA | NEXT=`P26-006`; P26-005 MainController ≤550 [x] (546 LOC + LocGate) |
 | YAML/GUI alerts.rules (P21-003) | `AlertConfig`, `EndpointDownRuleConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `ProfilesConfigTest`, `AlertsSettingsDialogTest`, `AppMenuDialogsTest` |
 | Host problem indicator ADR (P22-001) | `docs/ADR_HOST_PROBLEM_INDICATOR.md` | docs review / ROADMAP P22 |
 | HostProblemSummary (P22-002) | `AlertRuleEngine`, `HostProblemSummary`, `MonitorService` | `AlertRuleEngineTest`, `MonitorServiceTest` |

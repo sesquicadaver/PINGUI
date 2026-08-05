@@ -4,14 +4,12 @@ import io.pingui.AppOptions;
 import io.pingui.CliProfileOverrides;
 import io.pingui.CliTelemetryOverrides;
 import io.pingui.TelemetryAttachment;
-import io.pingui.config.AlertConfig;
 import io.pingui.config.ConfigError;
 import io.pingui.config.HostEntry;
 import io.pingui.config.PersistenceConfig;
 import io.pingui.config.PingPresets;
 import io.pingui.config.ProfileDocument;
 import io.pingui.config.ProfilesConfig;
-import io.pingui.config.SessionDbResolver;
 import io.pingui.config.TracingProfile;
 import io.pingui.dns.DnsResolver;
 import io.pingui.geoip.AsnLookup;
@@ -19,40 +17,30 @@ import io.pingui.geoip.GeoCountry;
 import io.pingui.i18n.UiI18n;
 import io.pingui.i18n.UiLocale;
 import io.pingui.i18n.UiLocaleStore;
-import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
-import io.pingui.persistence.PersistencePolicy;
-import io.pingui.persistence.SessionDatabase;
-import io.pingui.persistence.timeseries.TimeSeriesBackends;
-import io.pingui.persistence.timeseries.TimeSeriesConfigException;
 import io.pingui.ui.view.MainView;
-import io.pingui.ui.view.MainViewActions;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
-import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
-import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
-import javafx.util.Duration;
 
 /** Main JavaFX window: profiles, host list, optional route graph and event log. */
 public final class MainController {
     private static final DateTimeFormatter TIME_FMT =
             DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
-    private static final Duration EASTER_EGG_DURATION = Duration.seconds(30);
+
     /** Window title without dirty suffix (shared with {@link io.pingui.PinguiApplication}). */
     public static String windowTitle() {
         return UiI18n.get("status.window_title");
@@ -87,12 +75,7 @@ public final class MainController {
     private final MainView mainView = new MainView();
     private final SimpleBooleanProperty expertMode = new SimpleBooleanProperty(false);
     private final ConfigDirtyState dirtyState = new ConfigDirtyState(this::updateDirtyUi);
-    private UiViewMode viewModeBeforeEasterEgg = UiViewMode.SIMPLE;
-    private boolean easterEggActive;
-    private PauseTransition easterEggTimer;
     private boolean switchingProfile;
-    private Optional<PersistencePolicy> sessionPersistenceOverride = Optional.empty();
-    private Optional<Path> sessionGuiDbOverride = Optional.empty();
 
     private ProfileUiCoordinator profileUi;
     private HostListPresenter hostListPresenter;
@@ -100,13 +83,12 @@ public final class MainController {
     private UserFeedback userFeedback;
     private RouteGraphPresenter routeGraphPresenter;
     private RouteHistoryPresenter routeHistoryPresenter;
+    private StageGeometryCoordinator stageGeometry;
+    private SettingsDialogsCoordinator settingsDialogs;
+    private PersistenceSessionCoordinator persistenceSession;
+    private EasterEggController easterEgg;
+    private MonitorUiHandler monitorUi;
     private final HistoryHostSync historyHostSync = new HistoryHostSync();
-    private WindowGeometry pendingDividerRestore;
-    private Stage mainStage;
-    private double extendedDefaultWidth = WindowGeometry.DEFAULT_EXTENDED_WIDTH;
-    private double extendedDefaultHeight = WindowGeometry.DEFAULT_EXTENDED_HEIGHT;
-    /** Last non-maximized bounds — used when close would otherwise persist screen-sized maximized geometry. */
-    private WindowGeometry lastFloatingGeometry;
 
     /**
      * Shell constructor (P24-009): FX chrome only — no profile YAML, SQLite, or GeoIP I/O. Heavy load
@@ -131,12 +113,14 @@ public final class MainController {
         PingPresets.configure(PingPresets.resolvePath(options.configPath()));
         TracingProfile active = profileDocument.active();
         List<HostEntry> sessionHosts = HostViewRules.sessionEntries(active.hosts());
+        initCoordinators();
         this.store = SessionStore.fromEntries(
-                sessionHosts, openSessionDatabase(), profileDocument.active().hostProbeMode());
-        attachTimeSeries(store);
+                sessionHosts,
+                persistenceSession.openSessionDatabase(),
+                profileDocument.active().hostProbeMode());
+        persistenceSession.attachTimeSeries(store);
         this.monitor = createMonitor(active, sessionHosts);
         this.servicesReady = true;
-        initCoordinators();
         hostListPresenter.rebuild(sessionHosts);
     }
 
@@ -152,25 +136,30 @@ public final class MainController {
             expertMode.addListener((obs, was, on) -> mainView.hostList().refresh());
         }
 
-        MainViewActions actions = buildViewActions();
-        mainView.assemble(actions, hostListPresenter.tagFilterBar());
+        MainViewActionsBinder actionsBinder = new MainViewActionsBinder(
+                hostListPresenter,
+                profileUi,
+                this::refreshRouteHistory,
+                this::dialogOwner,
+                settingsDialogs,
+                this::onSaveConfig,
+                this::applyUiLocale);
+        mainView.assemble(actionsBinder.bind(), hostListPresenter.tagFilterBar());
         updateDirtyUi();
 
-        // Cross-coordinator listeners (D4) — after assemble.
         mainView.modeGroup().selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
             viewModeController.onToggleSelected(newToggle);
             if (viewModeController.isExtended()) {
-                ensureExtendedStageGeometry();
+                stageGeometry.ensureExtendedStageGeometry();
             } else {
-                // Pref sizes settle after Simple re-parent; shrink Stage to host-column chrome.
-                Platform.runLater(this::fitSimpleStageGeometryIfNeeded);
+                Platform.runLater(stageGeometry::fitSimpleStageGeometryIfNeeded);
             }
             updateHistoryPanelVisibility();
         });
 
         mainView.hostInput().textProperty().addListener((obs, oldText, newText) -> {
-            if (easterEggActive && !HostViewRules.matches(newText)) {
-                dismissEasterEgg();
+            if (easterEgg.isActive() && !HostViewRules.matches(newText)) {
+                easterEgg.dismiss();
             }
         });
 
@@ -191,13 +180,9 @@ public final class MainController {
         return scene;
     }
 
-    /**
-     * Attaches background-loaded services on the FX thread and starts polling ({@link
-     * MonitorService} ctor).
-     */
+    /** Attaches background-loaded services on the FX thread and starts polling. */
     public void attachBootstrap(StartupBootstrap.Result result) {
         if (shutdownRequested) {
-            // Window closed while bootstrap was in flight — do not start polling.
             try {
                 result.store().close();
             } catch (RuntimeException ignored) {
@@ -233,7 +218,6 @@ public final class MainController {
         if (shutdownRequested) {
             return;
         }
-        // Re-enable only the status label path: keep menus/panels disabled to avoid NPE on null store.
         if (mainView.root().getTop() != null) {
             mainView.root().getTop().setDisable(true);
         }
@@ -263,105 +247,6 @@ public final class MainController {
         return mainView.statusLabel().getText();
     }
 
-    private void setShellBusy(boolean busy) {
-        // Disable all interactive chrome (including menu) while bootstrap runs — avoids NPE on null store.
-        if (mainView.root().getTop() != null) {
-            mainView.root().getTop().setDisable(busy);
-        }
-        mainView.leftPanel().setDisable(busy);
-        mainView.graphPanel().setDisable(busy);
-        mainView.mainSplit().setDisable(busy);
-    }
-
-    private MainViewActions buildViewActions() {
-        return new MainViewActions() {
-            @Override
-            public void onSaveConfig() {
-                MainController.this.onSaveConfig();
-            }
-
-            @Override
-            public void onAddHost() {
-                hostListPresenter.addHost();
-            }
-
-            @Override
-            public void onEditHost() {
-                hostListPresenter.editHost();
-            }
-
-            @Override
-            public void onEditTags() {
-                hostListPresenter.editSelectedHostTags();
-            }
-
-            @Override
-            public void onRemoveHost() {
-                hostListPresenter.removeHost();
-            }
-
-            @Override
-            public void onNewProfile() {
-                profileUi.onNewProfile();
-            }
-
-            @Override
-            public void onDeleteProfile() {
-                profileUi.onDeleteProfile();
-            }
-
-            @Override
-            public void onProfileSelected() {
-                profileUi.onProfileSelected();
-            }
-
-            @Override
-            public void onRefreshHistory() {
-                refreshRouteHistory();
-            }
-
-            @Override
-            public void onAbout() {
-                AppMenuDialogs.showAbout(dialogOwner());
-            }
-
-            @Override
-            public void onHelp() {
-                AppMenuDialogs.showHelp(dialogOwner());
-            }
-
-            @Override
-            public void onPersistenceSettings() {
-                MainController.this.onPersistenceSettings();
-            }
-
-            @Override
-            public void onProfileParamsSettings() {
-                MainController.this.onProfileParamsSettings();
-            }
-
-            @Override
-            public void onAlertsSettings() {
-                MainController.this.onAlertsSettings();
-            }
-
-            @Override
-            public void onTelemetrySettings() {
-                MainController.this.onTelemetrySettings();
-            }
-
-            @Override
-            public void onExportNow() {
-                MainController.this.onExportNow();
-            }
-
-            @Override
-            public void onLanguageSelected(UiLocale locale) {
-                MainController.this.applyUiLocale(locale);
-            }
-        };
-    }
-
     /** Persist locale, refresh chrome labels, update Stage title (P25). */
     void applyUiLocale(UiLocale locale) {
         if (locale == null || locale == UiI18n.locale()) {
@@ -379,15 +264,7 @@ public final class MainController {
 
     /**
      * Loads prefs, clamps to the visual screen, applies Simple layout once, sets stage bounds, and
-     * registers close-only save (P24-006). Call after {@link #createScene()} and before {@code
-     * stage.show()}. Startup always opens in Simple (saved {@code viewMode} is ignored; divider is
-     * kept for the next Extended session). Near-fullscreen / Extended leftover bounds reset to Simple
-     * defaults; maximize is cleared before Simple fit after show.
-     *
-     * @param defaultWidthSimple fallback width when prefs missing
-     * @param defaultWidthExtended expand target when toggling to Extended
-     * @param defaultHeightSimple fallback height for Simple / missing prefs
-     * @param defaultHeightExtended expand target when toggling to Extended
+     * registers close-only save (P24-006).
      */
     public void prepareStageGeometry(
             Stage stage,
@@ -395,188 +272,18 @@ public final class MainController {
             double defaultWidthExtended,
             double defaultHeightSimple,
             double defaultHeightExtended) {
-        this.mainStage = stage;
-        this.extendedDefaultWidth = defaultWidthExtended;
-        this.extendedDefaultHeight = defaultHeightExtended;
-        WindowGeometryStore store = WindowGeometryStore.userDefault();
-        WindowGeometry loaded =
-                store.load(defaultWidthSimple, defaultWidthExtended, defaultHeightSimple, defaultHeightExtended);
-        Rectangle2D visual = visualBoundsFor(loaded);
-        // Startup is always Simple: clamp with Simple defaults; ignore saved viewMode for layout.
-        WindowGeometry clamped = loaded.clamp(
-                visual.getMinX(),
-                visual.getMinY(),
-                visual.getWidth(),
-                visual.getHeight(),
-                defaultWidthSimple,
-                defaultHeightSimple);
-        // Extended leftovers or maximized-as-bounds (≈ visualBounds) → Simple defaults.
-        boolean resetSize = loaded.viewMode() == UiViewMode.EXTENDED
-                || WindowGeometry.fillsVisualBounds(
-                        clamped.width(), clamped.height(), visual.getWidth(), visual.getHeight());
-        double startW = resetSize ? defaultWidthSimple : clamped.width();
-        double startH = resetSize ? defaultHeightSimple : clamped.height();
-        WindowGeometry geometry =
-                new WindowGeometry(clamped.x(), clamped.y(), startW, startH, clamped.divider(), UiViewMode.SIMPLE);
-        lastFloatingGeometry = geometry;
-        applyRestoredGeometry(geometry);
-        clearStageMaximize(stage);
-        if (!Double.isNaN(geometry.x())) {
-            stage.setX(geometry.x());
-        }
-        if (!Double.isNaN(geometry.y())) {
-            stage.setY(geometry.y());
-        }
-        stage.setWidth(geometry.width());
-        stage.setHeight(geometry.height());
-        pendingDividerRestore = geometry;
-        stage.setOnCloseRequest(event -> store.save(captureGeometry(stage)));
+        stageGeometry.prepareStageGeometry(
+                stage, defaultWidthSimple, defaultWidthExtended, defaultHeightSimple, defaultHeightExtended);
     }
 
     /** Post-show: remember divider for Extended, fit Simple Stage to chrome, scene-shown redraw. */
     public void onStageShown() {
-        if (pendingDividerRestore != null) {
-            WindowGeometry geometry = pendingDividerRestore;
-            pendingDividerRestore = null;
-            Platform.runLater(() -> viewModeController.applyDivider(geometry.divider()));
-        }
-        // Two pulses: some WMs maximize after show when prior bounds filled the screen.
-        Platform.runLater(() -> {
-            fitSimpleStageGeometryIfNeeded();
-            Platform.runLater(this::fitSimpleStageGeometryIfNeeded);
-        });
-        onSceneShown();
-    }
-
-    /**
-     * After layout in Simple: clear maximize/fullscreen, then shrink Stage to content pref when the
-     * frame is larger than chrome. Never expands; no-op in Extended.
-     */
-    void fitSimpleStageGeometryIfNeeded() {
-        if (mainStage == null || viewModeController == null || viewModeController.isExtended()) {
-            return;
-        }
-        clearStageMaximize(mainStage);
-        javafx.scene.layout.Region root = mainView.root();
-        root.applyCss();
-        root.layout();
-        double nextW = WindowGeometry.fitSimpleWidth(mainStage.getWidth(), root.prefWidth(-1));
-        double nextH = WindowGeometry.fitSimpleHeight(mainStage.getHeight(), root.prefHeight(-1));
-        if (nextW + 0.5 < mainStage.getWidth()) {
-            mainStage.setWidth(nextW);
-        }
-        if (nextH + 0.5 < mainStage.getHeight()) {
-            mainStage.setHeight(nextH);
-        }
-        rememberFloatingGeometry(mainStage);
-    }
-
-    /**
-     * When switching to Extended: expand Stage to Extended defaults if still Simple-sized, then set
-     * SplitPane divider from host-column target width (never shrinks Stage).
-     */
-    void ensureExtendedStageGeometry() {
-        if (mainStage == null || viewModeController == null || !viewModeController.isExtended()) {
-            return;
-        }
-        clearStageMaximize(mainStage);
-        double nextW = WindowGeometry.ensureExtendedWidth(mainStage.getWidth(), extendedDefaultWidth);
-        double nextH = WindowGeometry.ensureExtendedHeight(mainStage.getHeight(), extendedDefaultHeight);
-        if (nextW > mainStage.getWidth() + 0.5) {
-            mainStage.setWidth(nextW);
-        }
-        if (nextH > mainStage.getHeight() + 0.5) {
-            mainStage.setHeight(nextH);
-        }
-        viewModeController.applyDivider(
-                WindowGeometry.dividerForLeftWidth(mainStage.getWidth(), WindowGeometry.EXTENDED_LEFT_WIDTH));
-        rememberFloatingGeometry(mainStage);
-    }
-
-    /** Maximized/fullscreen Stages ignore setWidth/setHeight — clear chrome state first. */
-    static void clearStageMaximize(Stage stage) {
-        if (stage == null) {
-            return;
-        }
-        if (stage.isFullScreen()) {
-            stage.setFullScreen(false);
-        }
-        if (stage.isMaximized()) {
-            stage.setMaximized(false);
-        }
-    }
-
-    void rememberFloatingGeometry(Stage stage) {
-        if (stage == null || stage.isMaximized() || stage.isFullScreen()) {
-            return;
-        }
-        lastFloatingGeometry = new WindowGeometry(
-                stage.getX(),
-                stage.getY(),
-                stage.getWidth(),
-                stage.getHeight(),
-                viewModeController != null ? viewModeController.dividerForSave() : WindowGeometry.DEFAULT_DIVIDER,
-                viewModeController != null ? viewModeController.viewMode() : UiViewMode.SIMPLE);
-    }
-
-    /**
-     * Restores view mode and builds layout once before the Stage is shown (no Simple flash when
-     * prefs say EXTENDED).
-     */
-    void applyRestoredGeometry(WindowGeometry geometry) {
-        viewModeController.restoreMode(geometry.viewMode(), mainView::simpleModeButton, mainView::extendedModeButton);
-        viewModeController.apply();
-        viewModeController.applyDivider(geometry.divider());
-    }
-
-    /**
-     * Persists floating bounds. When the Stage is maximized/fullscreen, writes {@link
-     * #lastFloatingGeometry} (or Simple defaults) so the next start is not trapped at screen size.
-     */
-    WindowGeometry captureGeometry(Stage stage) {
-        double divider = viewModeController.dividerForSave();
-        UiViewMode mode = viewModeController.viewMode();
-        if (stage.isMaximized() || stage.isFullScreen()) {
-            if (lastFloatingGeometry != null) {
-                return new WindowGeometry(
-                        lastFloatingGeometry.x(),
-                        lastFloatingGeometry.y(),
-                        lastFloatingGeometry.width(),
-                        lastFloatingGeometry.height(),
-                        divider,
-                        mode);
-            }
-            return new WindowGeometry(
-                    Double.NaN,
-                    Double.NaN,
-                    WindowGeometry.DEFAULT_SIMPLE_WIDTH,
-                    WindowGeometry.DEFAULT_SIMPLE_HEIGHT,
-                    divider,
-                    mode);
-        }
-        WindowGeometry current =
-                new WindowGeometry(stage.getX(), stage.getY(), stage.getWidth(), stage.getHeight(), divider, mode);
-        lastFloatingGeometry = current;
-        return current;
-    }
-
-    static Rectangle2D visualBoundsFor(WindowGeometry geometry) {
-        double cx = Double.isNaN(geometry.x()) ? Double.NaN : geometry.x() + geometry.width() / 2.0;
-        double cy = Double.isNaN(geometry.y()) ? Double.NaN : geometry.y() + geometry.height() / 2.0;
-        if (!Double.isNaN(cx) && !Double.isNaN(cy)) {
-            for (Screen screen : Screen.getScreens()) {
-                Rectangle2D bounds = screen.getVisualBounds();
-                if (bounds.contains(cx, cy)) {
-                    return bounds;
-                }
-            }
-        }
-        return Screen.getPrimary().getVisualBounds();
+        stageGeometry.onStageShown();
     }
 
     public void onSceneShown() {
         Platform.runLater(() -> {
-            if (!easterEggActive) {
+            if (!easterEgg.isActive()) {
                 routeGraphPresenter.redrawIfExtended();
             }
         });
@@ -584,7 +291,7 @@ public final class MainController {
 
     public void shutdown() {
         shutdownRequested = true;
-        dismissEasterEgg();
+        easterEgg.dismiss();
         if (monitor != null) {
             monitor.close();
         }
@@ -594,95 +301,77 @@ public final class MainController {
         }
     }
 
-    private void initCoordinators() {
-        viewModeController = new ViewModeController(
-                mainView.graphPanel(),
-                mainView.leftPanel(),
-                mainView.root(),
-                mainView.mainSplit(),
-                mainView.logArea(),
-                mainView.statusLabel(),
-                () -> {
-                    if (routeGraphPresenter != null) {
-                        routeGraphPresenter.redrawIfExtended();
-                    }
-                    refreshRouteHistory();
-                },
-                this::showEasterEggCanvas,
-                () -> easterEggActive);
-        userFeedback = new UiFeedbackRouter(
-                () -> viewModeController.isExtended(),
-                mainView.statusLabel()::setText,
-                message -> mainView.logArea()
-                        .appendText("[" + TIME_FMT.format(java.time.Instant.now()) + "] " + message + "\n"),
-                this::showSimpleErrorAlert);
+    /** Re-applies dirty indicator after the Stage is shown. */
+    public void refreshDirtyUi() {
+        updateDirtyUi();
+    }
 
-        profileUi = new ProfileUiCoordinator(
+    private void initCoordinators() {
+        if (viewModeController != null) {
+            return;
+        }
+        MainCoordinators wired = MainCoordinators.wire(new MainCoordinators.Wiring(
+                options,
+                mainView,
+                hostItems,
+                expertMode,
+                TIME_FMT,
                 () -> profileDocument,
+                value -> store = value,
                 () -> store,
-                mainView.profileCombo(),
+                () -> monitor,
+                () -> telemetry,
                 () -> switchingProfile,
                 value -> switchingProfile = value,
                 this::reloadActiveProfile,
-                () -> profileUi.refreshCombo(),
-                userFeedback);
-        profileUi.setDirtyHooks(dirtyState::mark, dirtyState::isDirty, this::onSaveConfig, this::confirmUnsavedChanges);
-        if (profileDocument != null) {
-            profileUi.refreshCombo();
-        }
-
-        hostListPresenter = new HostListPresenter(
-                hostItems,
-                mainView.hostList(),
-                mainView.hostInput(),
-                () -> store,
-                () -> monitor,
-                expertMode,
-                userFeedback,
-                () -> hostListPresenter.syncInputLimits(),
                 this::redrawRouteGraph,
-                this::clearHistoryReplay,
+                () -> {
+                    if (easterEgg != null) {
+                        easterEgg.showCanvas();
+                    }
+                },
+                () -> easterEgg != null && easterEgg.isActive(),
+                this::onSceneShown,
+                this::showSimpleErrorAlert,
+                this::dialogOwner,
+                dirtyState::mark,
+                dirtyState::isDirty,
+                this::onSaveConfig,
+                this::confirmUnsavedChanges,
+                this::installMonitor,
+                this::closeMonitorAndTelemetry,
+                this::updateHistoryPanelVisibility,
+                entries -> hostListPresenter.rebuild(entries),
+                this::syncHistoryHostFilter,
+                this::resetReplayState,
+                this::clearHostSelection,
+                () -> hostListPresenter.syncInputLimits(),
+                this::recreateMonitorForProfileParams,
+                () -> attachTelemetry(monitor),
                 this::onHostRenamed,
-                this::startEasterEgg,
-                historyHostSync::runWhileSyncing);
-        hostListPresenter.setMarkDirty(dirtyState::mark);
+                this::clearHistoryReplay,
+                historyHostSync::runWhileSyncing,
+                historyHostSync));
+        viewModeController = wired.viewMode;
+        userFeedback = wired.userFeedback;
+        stageGeometry = wired.stageGeometry;
+        persistenceSession = wired.persistenceSession;
+        profileUi = wired.profileUi;
+        routeGraphPresenter = wired.routeGraph;
+        easterEgg = wired.easterEgg;
+        hostListPresenter = wired.hostList;
+        routeHistoryPresenter = wired.routeHistory;
+        monitorUi = wired.monitorUi;
+        settingsDialogs = wired.settingsDialogs;
+    }
 
-        routeGraphPresenter = new RouteGraphPresenter(
-                mainView.graphCanvas(),
-                mainView.hostList(),
-                () -> store,
-                () -> viewModeController.isExtended(),
-                () -> easterEggActive);
-        mainView.graphCanvas().setOnHopIpCopied(ip -> userFeedback.info(UiI18n.get("status.hop_ip_copied", ip)));
-        DnsResolver.addListener(() -> Platform.runLater(routeGraphPresenter::redrawIfExtended));
-
-        routeHistoryPresenter = new RouteHistoryPresenter(
-                () -> store,
-                mainView.historyHostFilter(),
-                mainView.historyList(),
-                mainView.historyRange24h(),
-                mainView.historyRange7d(),
-                () -> viewModeController.isExtended(),
-                routeGraphPresenter::replayRouteChange,
-                routeGraphPresenter::clearReplay);
-        routeHistoryPresenter.configure();
-        hostItems.addListener(
-                (javafx.collections.ListChangeListener<? super HostItem>) change -> syncHistoryHostFilter());
-        mainView.hostList().getSelectionModel().selectedItemProperty().addListener((obs, oldItem, item) -> {
-            historyHostSync.syncFilterFromHostList(
-                    item != null ? item.getHost() : null,
-                    mainView.historyHostFilter().getValue(),
-                    mainView.historyHostFilter()::setValue);
-        });
-        mainView.historyHostFilter().valueProperty().addListener((obs, oldHost, newHost) -> {
-            if (historyHostSync.isSyncing()) {
-                return;
-            }
-            hostListPresenter.ensureHostVisibleForTagFilter(newHost);
-            historyHostSync.syncHostListFromFilter(newHost, hostItems, mainView.hostList());
-            redrawRouteGraph();
-        });
-        syncHistoryHostFilter();
+    private void setShellBusy(boolean busy) {
+        if (mainView.root().getTop() != null) {
+            mainView.root().getTop().setDisable(busy);
+        }
+        mainView.leftPanel().setDisable(busy);
+        mainView.graphPanel().setDisable(busy);
+        mainView.mainSplit().setDisable(busy);
     }
 
     private void syncHistoryHostFilter() {
@@ -725,20 +414,6 @@ public final class MainController {
         syncHistoryHostFilter();
     }
 
-    /**
-     * Active target for live graph updates — same source as {@link RouteGraphPresenter} (host list).
-     * History filter is kept in sync via {@link HistoryHostSync}; do not prefer the filter here or
-     * pings for host A can redraw while the list shows host B.
-     */
-    private String viewHost() {
-        HostItem selected = mainView.hostList().getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            return selected.getHost();
-        }
-        String filterHost = mainView.historyHostFilter().getValue();
-        return filterHost != null && !filterHost.isBlank() ? filterHost : null;
-    }
-
     private void updateHistoryPanelVisibility() {
         boolean persistence = store != null && store.hasPersistence();
         mainView.historyLabel().setVisible(true);
@@ -757,53 +432,36 @@ public final class MainController {
     }
 
     private MonitorService createMonitor(TracingProfile profile, List<HostEntry> sessionHosts) {
-        MonitorService service = MonitorLifecycle.create(
-                profile,
-                profileDocument.activeProfile(),
-                store,
-                new MonitorService.Listener() {
-                    @Override
-                    public void onDataReceived(String host, RouteSnapshot snapshot) {
-                        Platform.runLater(() -> handleData(host, snapshot));
-                    }
+        return new MonitorServiceFactory(
+                        options,
+                        () -> store,
+                        () -> profileDocument.activeProfile(),
+                        monitorUi,
+                        hostListPresenter,
+                        userFeedback,
+                        this::dialogOwner,
+                        persistenceSession::sessionPersistenceOverride,
+                        this::attachTelemetry)
+                .create(profile, sessionHosts);
+    }
 
-                    @Override
-                    public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {
-                        Platform.runLater(() -> handleRouteChanged(host, oldIps, newIps));
-                    }
+    private void installMonitor(List<HostEntry> entries) {
+        monitor = createMonitor(profileDocument.active(), entries);
+    }
 
-                    @Override
-                    public void onProbeError(String host, String message) {
-                        Platform.runLater(() -> {
-                            userFeedback.info(UiI18n.get("status.probe", host, message));
-                            HostItem item = hostListPresenter.findItem(host);
-                            if (item != null) {
-                                hostListPresenter.syncMetrics(item);
-                            }
-                        });
-                    }
+    private void recreateMonitorForProfileParams(List<HostEntry> liveEntries) {
+        monitor.close();
+        closeTelemetry();
+        monitor = createMonitor(profileDocument.active(), liveEntries);
+    }
 
-                    @Override
-                    public void onPollFinished(String host) {
-                        Platform.runLater(() -> {
-                            HostItem item = hostListPresenter.findItem(host);
-                            if (item != null) {
-                                hostListPresenter.syncMetrics(item);
-                            }
-                        });
-                    }
-                },
-                options.alertOverrides().applyTo(profile.alerts()),
-                store.database(),
-                sessionHosts,
-                MonitorLifecycle.javaFxDesktopSink(this::dialogOwner));
-        applyPersistencePolicy(service, profile);
-        attachTelemetry(service);
-        return service;
+    private void closeMonitorAndTelemetry() {
+        monitor.close();
+        closeTelemetry();
     }
 
     private void attachTelemetry(MonitorService service) {
-        Optional<SessionDatabase> sessionDb =
+        Optional<io.pingui.persistence.SessionDatabase> sessionDb =
                 store != null && store.database() != null ? Optional.of(store.database()) : Optional.empty();
         telemetry = TelemetryAttachment.replace(
                 telemetry, service, profileDocument.active().telemetry(), sessionDb);
@@ -816,180 +474,16 @@ public final class MainController {
         }
     }
 
-    private void applyPersistencePolicy(MonitorService service, TracingProfile profile) {
-        PersistencePolicy baseline =
-                options.persistenceOverrides().applyTo(profile.persistence()).toPolicy();
-        PersistencePolicy effective = sessionPersistenceOverride.orElse(baseline);
-        service.setPendingPersistencePolicy(effective);
-        service.persistencePolicy().applyPendingAfterCycle();
+    private void reloadActiveProfile() {
+        easterEgg.dismiss();
+        persistenceSession.reloadActiveProfile();
     }
 
-    private void onExportNow() {
-        if (!store.hasPersistence() || store.database() == null) {
-            userFeedback.error(SessionExportUi.noSqliteMessage());
-            return;
-        }
-        try {
-            Optional<Path> written = SessionExportUi.chooseAndExport(dialogOwner(), store.database());
-            written.ifPresent(path -> userFeedback.info(SessionExportUi.successMessage(path)));
-        } catch (IOException | RuntimeException ex) {
-            userFeedback.error(SessionExportUi.failureMessage(ex));
-        }
-    }
-
-    private void onProfileParamsSettings() {
-        ProfileParamsSettingsDialog.show(
-                dialogOwner(), profileDocument.active(), options.profileOverrides(), this::handleProfileParamsSettings);
-    }
-
-    private void handleProfileParamsSettings(ProfileParamsSettingsDialog.Result result) {
-        List<HostEntry> liveEntries = HostViewRules.entriesForConfig(store.toHostEntries());
-        TracingProfile next = profileDocument
-                .active()
-                .withPollSettings(
-                        result.intervalSeconds(), result.maxHops(), result.timeoutSeconds(), result.probeMode())
-                .withHosts(liveEntries);
-        profileDocument.putProfile(profileDocument.activeProfile(), next);
-        monitor.close();
-        closeTelemetry();
-        monitor = createMonitor(next, liveEntries);
-        dirtyState.mark();
-        userFeedback.info(UiI18n.get(
-                "status.profile_params_applied",
-                next.intervalSeconds(),
-                next.maxHops(),
-                next.timeoutSeconds(),
-                next.probeMode().cliValue()));
-    }
-
-    private void onPersistenceSettings() {
-        PersistencePolicy active =
-                store.hasPersistence() ? monitor.persistencePolicy().active() : PersistencePolicy.defaults();
-        PersistencePolicy pending = store.hasPersistence()
-                ? monitor.persistencePolicy().pending()
-                : sessionPersistenceOverride.orElseGet(() -> options.persistenceOverrides()
-                        .applyTo(profileDocument.active().persistence())
-                        .toPolicy());
-        PersistenceSettingsDialog.show(
-                dialogOwner(),
-                resolveSessionDbPath(),
-                options.sessionDbPath(),
-                profileDocument.active().persistence().sessionDb(),
-                options.persistenceOverrides(),
-                active,
-                pending,
-                store.database(),
-                result -> handlePersistenceSettings(result));
-    }
-
-    private void handlePersistenceSettings(PersistenceSettingsDialog.Result result) {
-        if (result.sessionDbPath().isPresent()) {
-            sessionGuiDbOverride = result.sessionDbPath();
-            reconnectPersistence(Optional.of(result.policy()));
-            notifyPersistenceConnected(result.sessionDbPath().get());
-        } else {
-            sessionPersistenceOverride = Optional.of(result.policy());
-            monitor.setPendingPersistencePolicy(result.policy());
-        }
-        userFeedback.info(UiI18n.get("status.persistence_updated"));
-        if (result.sessionDbPath().isPresent()) {
-            dirtyState.mark();
-        }
-    }
-
-    private void onAlertsSettings() {
-        AlertsSettingsDialog.show(
-                dialogOwner(),
-                options.alertOverrides().applyTo(profileDocument.active().alerts()),
-                options.alertOverrides(),
-                this::handleAlertsSettings);
-    }
-
-    private void handleAlertsSettings(AlertsSettingsDialog.Result result) {
-        TracingProfile active = profileDocument.active();
-        profileDocument.putProfile(profileDocument.activeProfile(), active.withAlerts(result.alerts()));
-        AlertConfig effective = options.alertOverrides().applyTo(result.alerts());
-        MonitorLifecycle.applyAlertDispatcher(
-                monitor, effective, MonitorLifecycle.javaFxDesktopSink(this::dialogOwner));
-        MonitorLifecycle.applyAlertRules(monitor, effective);
-        dirtyState.mark();
-        userFeedback.info(UiI18n.get("status.alerts_updated", result.alerts().toRedactedString()));
-    }
-
-    private void onTelemetrySettings() {
-        TelemetrySettingsDialog.show(
-                dialogOwner(),
-                profileDocument.active().telemetry(),
-                options.telemetryOverrides(),
-                this::handleTelemetrySettings);
-    }
-
-    private void handleTelemetrySettings(TelemetrySettingsDialog.Result result) {
-        TracingProfile active = profileDocument.active();
-        profileDocument.putProfile(profileDocument.activeProfile(), active.withTelemetry(result.telemetry()));
-        attachTelemetry(monitor);
-        String sinks = telemetry != null && !telemetry.registeredIds().isEmpty()
-                ? String.join(", ", telemetry.registeredIds())
-                : UiI18n.get("status.no_sinks");
-        userFeedback.info(
-                UiI18n.get("status.telemetry_updated", sinks, result.telemetry().toRedactedString()));
-        if (viewModeController.isExtended()) {
-            mainView.statusLabel().setText(UiI18n.get("status.telemetry", sinks));
-        }
-        dirtyState.mark();
-    }
-
-    private void notifyPersistenceConnected(Path dbPath) {
-        userFeedback.info(UiI18n.get("status.sqlite_connected", dbPath.toAbsolutePath()));
-        if (viewModeController.isExtended()) {
-            mainView.statusLabel().setText(UiI18n.get("status.sqlite", dbPath.toAbsolutePath()));
-        }
-    }
-
-    private Optional<Path> resolveSessionDbPath() {
-        return SessionDbResolver.resolve(
-                options.sessionDbPath(), profileDocument.active().persistence().sessionDb(), sessionGuiDbOverride);
-    }
-
-    private io.pingui.persistence.SessionDatabase openSessionDatabase() {
-        return resolveSessionDbPath()
-                .map(io.pingui.persistence.SessionDatabase::new)
-                .orElse(null);
-    }
-
-    private void attachTimeSeries(SessionStore sessionStore) {
-        try {
-            var backend = TimeSeriesBackends.create(options.timeSeriesOverrides());
-            if (backend != null) {
-                sessionStore.setTimeSeriesBackend(backend);
-            }
-        } catch (TimeSeriesConfigException ex) {
-            throw new IllegalArgumentException(ex.getMessage(), ex);
-        }
-    }
-
-    private void reconnectPersistence(Optional<PersistencePolicy> policyOverride) {
-        dismissEasterEgg();
-        List<HostEntry> liveEntries = HostViewRules.entriesForConfig(store.toHostEntries());
-        TracingProfile profile = profileDocument.active();
-        monitor.close();
-        closeTelemetry();
-        store.close();
-        store = SessionStore.fromEntries(liveEntries, openSessionDatabase(), profile.hostProbeMode());
-        attachTimeSeries(store);
-        sessionPersistenceOverride = policyOverride != null ? policyOverride : Optional.empty();
-        monitor = createMonitor(profile, liveEntries);
-        updateHistoryPanelVisibility();
-        hostListPresenter.rebuild(liveEntries);
-        syncHistoryHostFilter();
+    private void clearHostSelection() {
         mainView.hostList().getSelectionModel().clearSelection();
         if (!hostItems.isEmpty()) {
             mainView.hostList().getSelectionModel().select(0);
         }
-        hostListPresenter.syncInputLimits();
-        viewModeController.apply();
-        resetReplayState();
-        redrawRouteGraph();
     }
 
     private void applyCliOverridesToActiveProfile() {
@@ -1004,37 +498,13 @@ public final class MainController {
         profileDocument.putProfile(profileDocument.activeProfile(), merged);
     }
 
-    private void reloadActiveProfile() {
-        dismissEasterEgg();
-        sessionPersistenceOverride = Optional.empty();
-        sessionGuiDbOverride = Optional.empty();
-        TracingProfile profile = profileDocument.active();
-        List<HostEntry> sessionHosts = HostViewRules.sessionEntries(profile.hosts());
-        monitor.close();
-        closeTelemetry();
-        store.close();
-        store = SessionStore.fromEntries(sessionHosts, openSessionDatabase(), profile.hostProbeMode());
-        attachTimeSeries(store);
-        monitor = createMonitor(profile, sessionHosts);
-        updateHistoryPanelVisibility();
-        hostListPresenter.rebuild(sessionHosts);
-        syncHistoryHostFilter();
-        mainView.hostList().getSelectionModel().clearSelection();
-        if (!hostItems.isEmpty()) {
-            mainView.hostList().getSelectionModel().select(0);
-        }
-        hostListPresenter.syncInputLimits();
-        viewModeController.apply();
-        resetReplayState();
-        redrawRouteGraph();
-    }
-
     /** @return {@code true} when YAML was written successfully */
     private boolean onSaveConfig() {
         try {
-            if (sessionGuiDbOverride.isPresent() && options.sessionDbPath().isEmpty()) {
+            Optional<Path> guiDb = persistenceSession.sessionGuiDbOverride();
+            if (guiDb.isPresent() && options.sessionDbPath().isEmpty()) {
                 TracingProfile active = profileDocument.active();
-                PersistenceConfig updated = active.persistence().withSessionDb(sessionGuiDbOverride.get());
+                PersistenceConfig updated = active.persistence().withSessionDb(guiDb.get());
                 profileDocument.putProfile(profileDocument.activeProfile(), active.withPersistence(updated));
             }
             profileUi.syncActiveProfileFromSession();
@@ -1046,11 +516,6 @@ public final class MainController {
             userFeedback.error(UiI18n.get("status.config_save_failed", ex.getMessage()));
             return false;
         }
-    }
-
-    /** Re-applies dirty indicator after the Stage is shown. */
-    public void refreshDirtyUi() {
-        updateDirtyUi();
     }
 
     private void updateDirtyUi() {
@@ -1065,91 +530,6 @@ public final class MainController {
 
     private ConfirmDialogs.UnsavedDecision confirmUnsavedChanges() {
         return ConfirmDialogs.confirmUnsaved(dialogOwner());
-    }
-
-    private void handleData(String host, RouteSnapshot snapshot) {
-        if (!store.containsHost(host)) {
-            return;
-        }
-        store.updateRoute(host, snapshot);
-        store.appendPingSamples(host, snapshot);
-        HostItem item = hostListPresenter.findItem(host);
-        if (item != null) {
-            hostListPresenter.syncMetrics(item);
-            hostListPresenter.syncProblem(item);
-        }
-        if (viewModeController.isExtended() && !easterEggActive) {
-            String activeHost = viewHost();
-            if (activeHost != null && host.equals(activeHost)) {
-                mainView.statusLabel()
-                        .setText(UiI18n.get("status.last_update", host, TIME_FMT.format(snapshot.timestamp())));
-                redrawRouteGraph();
-            }
-        }
-    }
-
-    private void handleRouteChanged(String host, List<String> oldIps, List<String> newIps) {
-        if (!store.containsHost(host)) {
-            return;
-        }
-        if (viewModeController.isExtended() && !easterEggActive) {
-            if (!oldIps.isEmpty()) {
-                String oldStr = String.join(" -> ", oldIps);
-                userFeedback.info(UiI18n.get("status.route_change", host, oldStr, String.join(" -> ", newIps)));
-            }
-            routeHistoryPresenter.onRouteChanged(host);
-            String activeHost = viewHost();
-            if (activeHost != null && host.equals(activeHost)) {
-                routeGraphPresenter.clearReplay();
-                routeHistoryPresenter.clearSelection();
-                redrawRouteGraph();
-            }
-        }
-    }
-
-    private void startEasterEgg() {
-        if (!HostViewRules.matches(mainView.hostInput().getText())) {
-            return;
-        }
-        if (!easterEggActive) {
-            easterEggActive = true;
-            viewModeBeforeEasterEgg = viewModeController.viewMode();
-            if (!viewModeController.isExtended()) {
-                viewModeController.forceExtended(mainView::extendedModeButton);
-                ensureExtendedStageGeometry();
-            }
-        }
-        showEasterEggCanvas();
-        restartEasterEggTimer();
-    }
-
-    private void showEasterEggCanvas() {
-        String message = HostViewRules.messageFor(mainView.hostInput().getText().strip());
-        if (message != null) {
-            routeGraphPresenter.showStaticMessage(message);
-        }
-    }
-
-    private void restartEasterEggTimer() {
-        if (easterEggTimer != null) {
-            easterEggTimer.stop();
-        }
-        easterEggTimer = new PauseTransition(EASTER_EGG_DURATION);
-        easterEggTimer.setOnFinished(e -> dismissEasterEgg());
-        easterEggTimer.play();
-    }
-
-    private void dismissEasterEgg() {
-        if (!easterEggActive) {
-            return;
-        }
-        easterEggActive = false;
-        if (easterEggTimer != null) {
-            easterEggTimer.stop();
-            easterEggTimer = null;
-        }
-        viewModeController.restoreMode(
-                viewModeBeforeEasterEgg, mainView::simpleModeButton, mainView::extendedModeButton);
     }
 
     /** Modal error for Simple mode only (injected into {@link UiFeedbackRouter}). */

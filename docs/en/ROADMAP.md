@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P26-005** |
+| **Current task** | **P26-006** |
 | **Phase** | 26 — hardening post-audit (telemetry / launchers / split / coverage) |
-| **DoD (short)** | MainController ≤550 LOC (dialogs/lifecycle extract) |
+| **DoD (short)** | MonitorService split (poll vs alert/telemetry wiring) |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -150,13 +150,13 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 104 | **P26-002** | [x] | Telemetry: failure isolation (timeout/backpressure/shutdown flush) |
 | 105 | **P26-003** | [x] | SQLite: reopen/migration/corrupt failure tests |
 | 106 | **P26-004** | [x] | Launcher: quoting + detached GUI smoke matrix |
-| 107 | **P26-005** | [ ] | MainController ≤550 LOC (dialogs/lifecycle extract) |
+| 107 | **P26-005** | [x] | MainController ≤550 LOC (dialogs/lifecycle extract) |
 | 108 | **P26-006** | [ ] | MonitorService split (poll vs alert/telemetry wiring) |
 | 109 | **P26-007** | [ ] | JaCoCo package-level thresholds (not one bundle) |
 | 110 | **P26-008** | [ ] | latency_high: EWMA/window baseline + UI ETA note |
 | 111 | **P26-009** | [ ] | ADR_HARDENING + LIVING_SPEC/CHECKLIST + phase close |
 
-**Queue status:** active — **NEXT = P26-005** (phase 26 post-P25 hardening).
+**Queue status:** active — **NEXT = P26-006** (phase 26 post-P25 hardening).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -880,7 +880,7 @@ flowchart TD
 | **P26-002** | [x] Telemetry failure isolation | `telemetry/*`, contract tests | Sink timeout/fail must not block poll; bounded queue or drop+metric; shutdown flush documented + tested |
 | **P26-003** | [x] SQLite reopen failures | `SessionDatabaseHardeningTest`, `SessionStorePersistenceTest` | append after reopen; v1/v3→v4 migration; corrupt/truncated → PersistenceException; concurrent export smoke |
 | **P26-004** | [x] Launcher smoke matrix | `pingui-java.sh`, `.bat`, `scripts/smoke_launcher.*`, `PinguiLauncherTest`, CI | space quoting; detached/`--foreground`; `PINGUI_JAVAW`; fail → gui.log |
-| **P26-005** | [ ] MainController ≤550 LOC | `MainController`, `ui/view/*` or `*Coordinator` | LOC gate or documented residual; dialogs/lifecycle out of constructor |
+| **P26-005** | [x] MainController ≤550 LOC | coordinators + `MainControllerLocGateTest` | 546 LOC; dialogs/geometry/lifecycle extracted; LocGate ≤550 |
 | **P26-006** | [ ] MonitorService split | `monitor/*` | Poll orchestration ≠ alert/telemetry wiring; layerCheck green; unit tests |
 | **P26-007** | [ ] Package JaCoCo thresholds | `java/build.gradle.kts` | Separate minima for `config`/`probe`/`monitor`/`persistence`/`telemetry`; UI exclusion explicit |
 | **P26-008** | [ ] Latency baseline evolution | `monitor/*`, ADR_ALERT_RULES, UI copy | EWMA or bounded window; contract + test; Help/Settings shows approximate FIRING time |
@@ -972,7 +972,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P26-005**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P26-006**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 
