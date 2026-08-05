@@ -12,10 +12,19 @@ public final class AlertDispatchers {
 
     private AlertDispatchers() {}
 
+    /** Builds the pipeline; desktop channel uses {@link DesktopAlertSink#noop()} (no popup). */
     public static AlertDispatcher build(AlertConfig config) {
+        return build(config, DesktopAlertSink.noop());
+    }
+
+    /**
+     * Builds the pipeline with an explicit desktop popup sink (GUI supplies JavaFX; tests may record).
+     */
+    public static AlertDispatcher build(AlertConfig config, DesktopAlertSink desktopSink) {
         if (config == null || !config.isEnabled()) {
             return AlertDispatcher.noop();
         }
+        DesktopAlertSink sink = desktopSink != null ? desktopSink : DesktopAlertSink.noop();
         List<AlertDispatcher> channels = new ArrayList<>();
         String webhook = config.normalizedWebhook();
         if (webhook != null) {
@@ -23,8 +32,8 @@ public final class AlertDispatchers {
             LOG.info("Webhook alerts enabled ({})", AlertWebhookSupport.redactWebhookUrl(webhook));
         }
         if (config.desktopAlerts()) {
-            channels.add(new DesktopAlertDispatcher());
-            LOG.info("Desktop alerts enabled");
+            channels.add(new DesktopAlertDispatcher(sink));
+            LOG.info("Desktop alerts enabled (in-app popup)");
         }
         if (channels.isEmpty()) {
             return AlertDispatcher.noop();

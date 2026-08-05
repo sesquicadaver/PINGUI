@@ -279,7 +279,7 @@ POST JSON `RouteChangeEvent`; URL у логах без секретів.
 
 ## pingui.monitor.desktop_notifier
 
-`notify_route_change(event)` — Linux `notify-send` (PY-043).
+`notify_route_change(event)` — in-app/callback popup (no notify-send / D-Bus) (PY-043).
 
 ---
 
@@ -306,6 +306,20 @@ POST JSON `RouteChangeEvent`; URL у логах без секретів.
 | `run()` | Background loop |
 
 ---
+
+## Java (`io.pingui.ui.view`) — P24-007
+
+Chrome-збірка JavaFX окремо від orchestration:
+
+| Клас | Роль |
+|------|------|
+| `MainView` | BorderPane/SplitPane assemble; accessors для coordinators |
+| `ProfileToolbar` / `MonitorModeToolbar` | профіль + Simple/Extended/Expert |
+| `HostListPanel` / `StatusPanel` | list/CRUD/save + status/log |
+| `RouteGraphPanel` / `HistoryPanel` | canvas + history chrome |
+| `MainViewActions` | callbacks у `MainController` |
+
+`MainController.createScene()` — тонкий assembler. LOC controller після G7 ≈ 850–900; ціль ≤550 — follow-up.
 
 ## pingui.ui
 

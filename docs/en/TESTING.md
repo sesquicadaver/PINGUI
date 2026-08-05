@@ -83,7 +83,7 @@ Lowest: `worker.run()` (background loop) — partially covered by `test_worker_r
 | `test_daemon_runner.py` | PID file, `run_headless_monitor`, stop/status |
 | `test_route_change_event.py` | `RouteChangeEvent` JSON round-trip |
 | `test_alert_rate_limiter.py` | Per-host hourly burst limit |
-| `test_desktop_notifier.py` | `notify-send` integration |
+| `test_desktop_notifier.py` | in-app/callback popup (no notify-send) |
 | `test_alert_webhook.py` (contract) | Webhook POST JSON payload |
 | `test_timeseries.py` | influx/timescale factory, memory backend |
 | `test_geoip_country.py` | CIDR longest-prefix, LAN, `prefixes_v6` |

@@ -1,5 +1,6 @@
 package io.pingui.ui;
 
+import io.pingui.i18n.UiI18n;
 import java.util.function.BiConsumer;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.value.ChangeListener;
@@ -15,21 +16,23 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
 /** Host list row: enable, Ping only, optional Exten./MTU, problem badge, name, metrics. */
 final class HostListCell extends ListCell<HostItem> {
     private final CheckBox checkBox = new CheckBox();
-    private final CheckBox pingOnlyCheck = new CheckBox("Ping only");
-    private final Button extenButton = new Button("Exten.");
-    private final Button mtuButton = new Button("MTU");
-    private final Button problemButton = new Button("!");
+    private final CheckBox pingOnlyCheck = new CheckBox(UiI18n.get("host.ping_only"));
+    private final Button extenButton = new Button(UiI18n.get("host.exten"));
+    private final Button mtuButton = new Button(UiI18n.get("host.mtu"));
+    private final Button problemButton = new Button(UiI18n.get("host.problem_badge"));
     private final Label hostLabel = new Label();
     private final Label tagsLabel = new Label();
+    private final Label pollCountersLabel = new Label();
     private final Label metricsLabel = new Label();
     private final HBox hostRow = new HBox(6, extenButton, mtuButton, problemButton, hostLabel);
-    private final VBox textBox = new VBox(2, hostRow, tagsLabel, metricsLabel);
+    private final VBox textBox = new VBox(2, hostRow, tagsLabel, pollCountersLabel, metricsLabel);
     private final HBox root = new HBox(8, checkBox, textBox, pingOnlyCheck);
     private final BiConsumer<HostItem, Boolean> onEnabledChanged;
     private final BiConsumer<HostItem, Boolean> onPingOnlyChanged;
@@ -57,14 +60,14 @@ final class HostListCell extends ListCell<HostItem> {
         this.onExpertOpen = onExpertOpen;
         this.onMtuWizardOpen = onMtuWizardOpen;
         this.onProblemOpen = onProblemOpen;
-        extenButton.setMinWidth(56);
-        mtuButton.setMinWidth(48);
-        mtuButton.setTooltip(new Tooltip("MTU discovery wizard (−s sweep + −M do)"));
-        problemButton.setMinWidth(28);
-        problemButton.setStyle("-fx-font-weight: bold; -fx-text-fill: #b71c1c;");
-        problemButton.setTooltip(new Tooltip("Проблема якості (endpoint_down / latency_high)"));
-        pingOnlyCheck.setStyle("-fx-font-size: 10px;");
-        pingOnlyCheck.setMinWidth(72);
+        extenButton.setMinWidth(Region.USE_PREF_SIZE);
+        mtuButton.setMinWidth(Region.USE_PREF_SIZE);
+        mtuButton.setTooltip(new Tooltip(UiI18n.get("host.mtu_tooltip")));
+        problemButton.setMinWidth(Region.USE_PREF_SIZE);
+        problemButton.getStyleClass().add("pingui-danger");
+        problemButton.setTooltip(new Tooltip(UiI18n.get("host.problem_tooltip")));
+        pingOnlyCheck.getStyleClass().add("pingui-muted");
+        pingOnlyCheck.setMinWidth(Region.USE_PREF_SIZE);
         extenButton.setOnAction(e -> {
             HostItem item = getItem();
             if (item != null) {
@@ -83,10 +86,13 @@ final class HostListCell extends ListCell<HostItem> {
                 onProblemOpen.accept(item, null);
             }
         });
-        metricsLabel.setStyle("-fx-font-family: monospace; -fx-font-size: 10px;");
-        tagsLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #666666;");
+        hostLabel.getStyleClass().add("pingui-host-name");
+        pollCountersLabel.getStyleClass().add("pingui-poll-counters");
+        metricsLabel.getStyleClass().add("pingui-metrics");
+        tagsLabel.getStyleClass().add("pingui-muted");
         HBox.setHgrow(textBox, Priority.ALWAYS);
         HBox.setHgrow(hostLabel, Priority.ALWAYS);
+        root.getStyleClass().add("pingui-host-row");
         root.setAlignment(Pos.CENTER_LEFT);
         root.setPadding(new Insets(4, 6, 4, 2));
         checkBox.selectedProperty().addListener((obs, was, isNow) -> {
@@ -123,6 +129,9 @@ final class HostListCell extends ListCell<HostItem> {
         tagsLabel.textProperty().bind(item.tagsTextProperty());
         tagsLabel.visibleProperty().bind(item.tagsTextProperty().isNotEmpty());
         tagsLabel.managedProperty().bind(item.tagsTextProperty().isNotEmpty());
+        pollCountersLabel.textProperty().bind(item.pollCountersTextProperty());
+        pollCountersLabel.visibleProperty().bind(item.showPollCountersProperty());
+        pollCountersLabel.managedProperty().bind(item.showPollCountersProperty());
         metricsLabel.textProperty().bind(item.metricsTextProperty());
         metricsLabel.visibleProperty().bind(item.showMetricsProperty());
         metricsLabel.managedProperty().bind(item.showMetricsProperty());
@@ -169,6 +178,9 @@ final class HostListCell extends ListCell<HostItem> {
         tagsLabel.textProperty().unbind();
         tagsLabel.visibleProperty().unbind();
         tagsLabel.managedProperty().unbind();
+        pollCountersLabel.textProperty().unbind();
+        pollCountersLabel.visibleProperty().unbind();
+        pollCountersLabel.managedProperty().unbind();
         metricsLabel.textProperty().unbind();
         metricsLabel.visibleProperty().unbind();
         metricsLabel.managedProperty().unbind();

@@ -1,42 +1,44 @@
 package io.pingui.ui;
 
+import io.pingui.i18n.UiI18n;
+
 /**
- * UK empty-state copy for Extended history and Simple mode (P20-007).
+ * Empty-state copy for Extended history and Simple mode (P20-007 / P25).
  * Unit-tested without JavaFX dialogs.
  */
-final class EmptyStateHints {
+public final class EmptyStateHints {
     private EmptyStateHints() {}
 
     /** Default idle status before first probe / feedback. */
-    static String waitingForData() {
-        return "Очікування даних…";
+    public static String waitingForData() {
+        return UiI18n.get("empty.waiting");
     }
 
     /** Simple mode: event log is hidden — point operators to Extended. */
-    static String simpleNoLog() {
-        return "Журнал подій доступний у режимі «Розширений».";
+    public static String simpleNoLog() {
+        return UiI18n.get("empty.simple_no_log");
     }
 
     /** Extended history without SQLite session. */
-    static String noSqlite() {
-        return "Історія змін потребує SQLite. Налаштування → База даних…";
+    public static String noSqlite() {
+        return UiI18n.get("empty.no_sqlite");
     }
 
     /** SQLite connected but no host selected in the history filter. */
-    static String noHostSelected() {
-        return "Оберіть ціль у фільтрі історії.";
+    public static String noHostSelected() {
+        return UiI18n.get("empty.no_host");
     }
 
     /** SQLite + host selected, but no route_change rows in the lookback window. */
-    static String emptyHistory() {
-        return "Поки немає змін маршруту за обраний період.";
+    public static String emptyHistory() {
+        return UiI18n.get("empty.history");
     }
 
     /**
      * Whether Simple-mode idle status may be replaced with {@link #simpleNoLog()}.
      * Keeps live feedback / probe messages intact.
      */
-    static boolean isReplaceableSimpleStatus(String current) {
+    public static boolean isReplaceableSimpleStatus(String current) {
         if (current == null || current.isBlank()) {
             return true;
         }

@@ -1,0 +1,128 @@
+/*
+ * PINGUI light theme (P24-008)
+ *
+ * Contract with io.pingui.ui.UiPalette (keep hex in sync):
+ *   bg            #fafafa
+ *   panel         #ffffff
+ *   text          #222222
+ *   muted         #666666
+ *   message       #333333
+ *   stroke        #555555
+ *   edge-active   #666666
+ *   edge-inactive #c8c8c8
+ *   danger        #b71c1c
+ *   space-sm      8px
+ *
+ * Canvas paint reads UiPalette Java constants — not these looked-up colors.
+ */
+
+.root {
+    -pingui-bg: #fafafa;
+    -pingui-panel: #ffffff;
+    -pingui-text: #222222;
+    -pingui-muted: #666666;
+    -pingui-message: #333333;
+    -pingui-stroke: #555555;
+    -pingui-edge-active: #666666;
+    -pingui-edge-inactive: #c8c8c8;
+    -pingui-danger: #b71c1c;
+    -pingui-space-sm: 8px;
+}
+
+.pingui-root {
+    -fx-background-color: -pingui-bg;
+    -fx-font-family: "Segoe UI", "Ubuntu", "Noto Sans", sans-serif;
+}
+
+.pingui-panel {
+    -fx-background-color: -pingui-panel;
+    -fx-padding: -pingui-space-sm;
+    -fx-spacing: -pingui-space-sm;
+}
+
+.pingui-toolbar {
+    -fx-spacing: -pingui-space-sm;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.pingui-status {
+    -fx-text-fill: -pingui-text;
+    -fx-wrap-text: true;
+}
+
+.pingui-log {
+    -fx-control-inner-background: -pingui-panel;
+    -fx-text-fill: -pingui-text;
+}
+
+.pingui-muted {
+    -fx-text-fill: -pingui-muted;
+    -fx-font-size: 10px;
+}
+
+.pingui-danger {
+    -fx-text-fill: -pingui-danger;
+    -fx-font-weight: bold;
+}
+
+.pingui-chip {
+    -fx-font-size: 11px;
+}
+
+.pingui-host-name {
+    /* Override ListCell:selected white text — rows use RTT pastel backgrounds. */
+    -fx-text-fill: -pingui-text;
+}
+
+.pingui-poll-counters {
+    -fx-font-family: monospace;
+    -fx-font-size: 11px;
+    -fx-text-fill: -pingui-text;
+}
+
+.pingui-metrics {
+    -fx-font-family: monospace;
+    -fx-font-size: 10px;
+    -fx-text-fill: -pingui-text;
+}
+
+.pingui-host-list {
+    -fx-background-color: -pingui-panel;
+}
+
+.pingui-host-list .list-cell {
+    -fx-text-fill: -pingui-text;
+}
+
+.pingui-host-list .list-cell:filled:selected,
+.pingui-host-list .list-cell:filled:selected:focused {
+    -fx-text-fill: -pingui-text;
+}
+
+.pingui-host-list .list-cell:filled:selected .label,
+.pingui-host-list .list-cell:filled:selected:focused .label {
+    -fx-text-fill: -pingui-text;
+}
+
+.pingui-host-list .list-cell:filled:selected .pingui-muted,
+.pingui-host-list .list-cell:filled:selected:focused .pingui-muted {
+    -fx-text-fill: -pingui-muted;
+}
+
+.pingui-host-list .list-cell:filled:selected .pingui-danger,
+.pingui-host-list .list-cell:filled:selected:focused .pingui-danger {
+    -fx-text-fill: -pingui-danger;
+}
+
+.pingui-split {
+    -fx-background-color: -pingui-bg;
+}
+
+/*
+ * Reserved for a future dark theme (not enabled).
+ * .theme-dark {
+ *   -pingui-bg: #1e1e1e;
+ *   -pingui-panel: #2a2a2a;
+ *   -pingui-text: #e8e8e8;
+ * }
+ */

@@ -81,7 +81,7 @@ gradlew.bat run        # Windows
 | `--timeout` | *(з YAML)* | Перезапис probe timeout (с), **лише якщо передано** |
 | `--probe` | *(з YAML)* | Перезапис `auto`/`process`/`raw`, **лише якщо передано** |
 | `--alert-webhook` | off | POST JSON `RouteChangeEvent` при зміні маршруту |
-| `--desktop-alerts` | off | Linux `notify-send` при зміні маршруту |
+| `--desktop-alerts` | off | In-app спливаюче вікно при зміні маршруту |
 | `--alert-rate-limit` | `10` | Макс. алертів на host / годину |
 | `--session-db` | off | SQLite метрики сесії + події (`host_session`, `persistence_event`); альтернатива — YAML `persistence.session_db` або GUI «База даних…» |
 | `--export-report` | off | Експорт CSV/HTML з `--session-db` і вихід (без GUI) |
@@ -144,8 +144,8 @@ io.pingui
 ├── observability/   PrometheusExporter, PrometheusTelemetrySink (P16-051), MetricsHttpServer (P15-010)
 ├── api/             ReadOnlyApiServer (P15-040)
 ├── export/          SessionReportExporter (P11-030), ScheduledExport (P15-030)
-└── ui/              MainController, HostListPresenter, PingExpertDialog,
-                       MtuDiscoveryDialog, PresetSelfCheckUi, TelemetrySettingsDialog, GraphCanvas
+└── ui/              MainController, HostListPresenter, dialogs, GraphCanvas
+    └── view/        MainView + toolbars/panels (P24-007); MainViewActions
 ```
 
 Деталі: [docs/JAVA.md](../docs/JAVA.md).

@@ -2,7 +2,7 @@
 
 # Документація PINGUI
 
-На **`main`** і **`beta`** — повний пакет (Java Pro + Python) після merge; **`beta`** — гілка розробки, **`main`** — останній стабільний зріз. Лінійна черга ROADMAP: **NEXT = DONE** (фаза 20 — [ROADMAP.md § NEXT](ROADMAP.md#next--єдине-джерело-правди)). «Гілки» — [README.md](../README.md).
+На **`main`** і **`beta`** — повний пакет (Java Pro + Python) після merge; **`beta`** — гілка розробки, **`main`** — останній стабільний зріз. Лінійна черга ROADMAP: **NEXT = P26-003** (фаза 26 — [ROADMAP.md § NEXT](ROADMAP.md#next--єдине-джерело-правди)). «Гілки» — [README.md](../README.md).
 
 ## Навігація
 
@@ -11,9 +11,10 @@
 | [CHECKLIST.md](CHECKLIST.md) | Адмін / DevOps | Checklist Linux / Windows / macOS |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Адмін / DevOps | JDK 21, venv, cap_net_raw, systemd |
 | [JAVA.md](JAVA.md) | Розробник | Probe, monitor, UI, YAML |
-| [ROADMAP.md](ROADMAP.md) | Розробник | Офіційний план: фази 0–20 (Pro/NOC + telemetry + hardening + GUI UX); NEXT=DONE |
+| [ROADMAP.md](ROADMAP.md) | Розробник | Офіційний план: фази 0–26; NEXT=P26-003 |
 | [LIVING_SPEC.md](LIVING_SPEC.md) | Розробник | Матриця модуль → тести |
 | [ADR_IPV6.md](ADR_IPV6.md) | Розробник | Dual-stack config ADR (V6-002) |
+| [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md) | Розробник | GUI paint / geometry ADR (P24-010) |
 | [ADR_ALERT_RULES.md](ADR_ALERT_RULES.md) | Розробник | Quality alert rules ADR (P21-001): endpoint_down lifecycle |
 | [ADR_HOST_PROBLEM_INDICATOR.md](ADR_HOST_PROBLEM_INDICATOR.md) | Розробник | Host-row problem badge / ack / auto session DB (P22-001) |
 | [ADR_ALERTS.md](ADR_ALERTS.md) | Розробник | Route-change alerts ADR (P10-001) |
@@ -32,6 +33,8 @@
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Контрибутор | PR, anti-stub |
 | [MVP_SPEC.md](MVP_SPEC.md) | Усі | MVP вимоги |
 | [USER_GUIDE.md](USER_GUIDE.md) | Користувач | Керівництво користувача |
+| [HOWTO.md](HOWTO.md) | Користувач | Швидкі сценарії (запуск, цілі, режими) |
+| [ADR_I18N.md](ADR_I18N.md) | Розробник | i18n: UI + **лише** user docs у інших мовах |
 | [../java/README.md](../java/README.md) | Усі | Java launcher, Gradle |
 | [../.github/workflows/java.yml](../.github/workflows/java.yml) | CI | Java `./gradlew check` |
 | [../.github/workflows/ci.yml](../.github/workflows/ci.yml) | CI | Python pytest |

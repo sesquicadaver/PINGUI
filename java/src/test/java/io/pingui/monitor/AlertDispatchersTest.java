@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.config.AlertConfig;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -28,6 +29,17 @@ class AlertDispatchersTest {
         AlertConfig config = new AlertConfig(true, "https://example.com/hook", 5);
         AlertDispatcher dispatcher = AlertDispatchers.build(config);
         assertInstanceOf(RateLimitedAlertDispatcher.class, dispatcher);
+    }
+
+    @Test
+    void desktopChannelUsesInjectedSink() {
+        List<String> titles = new ArrayList<>();
+        AlertConfig config = new AlertConfig(true, null, 10);
+        AlertDispatcher dispatcher = AlertDispatchers.build(config, (title, body) -> titles.add(title));
+        RouteChangeEvent event = RouteChangeEvent.fromRouteChange(
+                "8.8.8.8", List.of("10.0.0.1"), List.of("10.0.0.2"), "default", Instant.now());
+        dispatcher.dispatch(event);
+        assertEquals(List.of("PINGUI route change"), titles);
     }
 
     @Test

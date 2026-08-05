@@ -19,6 +19,10 @@ import java.util.logging.Logger;
  * <p><b>Drop policy:</b> see {@link DropPolicy}. Overflow never blocks the poll loop; discarded
  * items are counted via {@link #droppedCount()}.
  *
+ * <p><b>Failure isolation (P26-002):</b> {@link #offerSample}/{@link #offerEvent} never wait on
+ * sink I/O. Sink failures are isolated in {@link SinkRegistry}; {@link #close()} drains the queue
+ * and calls {@link AggregateTelemetryJob#flushAll()} (shutdown flush).
+ *
  * <p>This class does <em>not</em> close the registry — ownership stays with the daemon.
  */
 public final class TelemetryBus implements AutoCloseable {

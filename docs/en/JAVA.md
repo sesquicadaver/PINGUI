@@ -62,7 +62,7 @@ profiles:
   default:
     probe_mode: trace          # trace | mtr | ping_only
     interval: 30.0
-    max_concurrent_traces: 3
+    max_concurrent_traces: 10  # default = MAX_HOSTS; all enabled TRACE hosts may run in parallel
     hosts:
       - address: "8.8.8.8"
         probe_mode: ping_only  # optional override
@@ -134,13 +134,21 @@ Store/history/change detection — `SessionStore`, `RouteHistory`, `RouteChangeD
 
 ## UI layer
 
-`MainController` (JavaFX):
+`MainController` (JavaFX) — orchestration + coordinators/presenters.
+
+Chrome assembly (P24-007): package `io.pingui.ui.view` — `MainView` + `ProfileToolbar`, `MonitorModeToolbar`, `HostListPanel`, `StatusPanel`, `RouteGraphPanel`, `HistoryPanel`; callbacks via `MainViewActions`. `createScene()` delegates to `MainView.assemble(...)`. Expected `MainController` LOC after G7 ≈ 850–900 (≤550 target — follow-up presenter moves).
+
+Theme (P24-008): `UiPalette` + `classpath:io/pingui/ui/pingui.css` (light-first); `UiPalette.applyTo(scene)`; GraphCanvas paint from the same hex constants; dark is only a reserved `.theme-dark` stub.
+
+Startup (P24-009): `PinguiApplication.start` shows a shell Scene → `StartupBootstrap.load` in background (YAML/GeoIP/SQLite/`SessionStore`) → FX `attachBootstrap` creates `MonitorService` (polling). Until attach, UI is disabled with status «Завантаження…».
+
+Paint/geometry policy (P24-010): [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md) — coalesced redraw, layout cache, no forced resize on toggle, Canvas invalidate, SplitPane persist, deferred startup. Simple: Stage width fits the host column (height unchanged); Extended may expand width. Perf smoke: `GraphCanvasPerfTest` + CHECKLIST Extended+pan+route (optional JFR).
 
 - **About** / **Help** (F1) menu — `AppMenuDialogs`
 - **Trace profile** selection (ComboBox + new/delete); all profiles in one YAML
 - **“Expert”** checkbox → **Exten.** / **MTU** on host row → `PingExpertDialog` (catalog from `pingMan.txt`, without `-c/-w/-W/-i` etc.); 4 quick presets from `ping_presets.yaml` (MTU probe, DF, DSCP, Burst); **MTU wizard…** (`MtuDiscoveryDialog`); **Self-check** (`PresetSelfCheckUi`)
 - **Settings → Telemetry…** — `TelemetrySettingsDialog` + bus via `TelemetryAttachment`
-- `ListView<HostItem>` + CheckBox in cell
+- `ListView<HostItem>` + CheckBox in cell; separate liveness row `спроб N  помилки E  P%` (reset on Ping only / probe_mode) and RTT row `loss/min/avg/max`; host-row text always dark (contrast on pastel RTT backgrounds)
 - **GraphCanvas** — vertical graph, inactive/active columns
 - Log `TextArea`
 
@@ -159,7 +167,7 @@ profiles:
     timeout: 0.5
     probe: auto
     probe_mode: trace
-    max_concurrent_traces: 3
+    max_concurrent_traces: 10  # default = MAX_HOSTS; all enabled TRACE hosts may run in parallel
     hosts:
       - address: "8.8.8.8"
         enabled: true
@@ -216,4 +224,4 @@ Tests and CI — on **`main`** and **`beta`** (ROADMAP development on `beta`).
 
 ## Future
 
-The linear ROADMAP queue: **NEXT = DONE** (queue exhausted). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT.
+The linear ROADMAP queue: **NEXT = P26-003** (phase 26 — hardening). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT.

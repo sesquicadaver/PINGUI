@@ -1,21 +1,63 @@
 package io.pingui.telemetry;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Fan-out registry for {@link TelemetrySink} instances (P16-011 / ADR_TELEMETRY).
  *
- * <p>Empty registry is a silent no-op. Sink exceptions are logged and do not stop other sinks.
+ * <p>Empty registry is a silent no-op. Sink exceptions and per-call timeouts are logged, counted via
+ * {@link #failureCount()}, and do not stop other sinks or the poll loop (P26-002).
  */
 public final class SinkRegistry implements AutoCloseable {
     private static final Logger LOG = Logger.getLogger(SinkRegistry.class.getName());
 
+    /** Default per-sink call budget so one hanging sink cannot starve peers indefinitely. */
+    public static final Duration DEFAULT_SINK_CALL_TIMEOUT = Duration.ofSeconds(5);
+
     private final ConcurrentHashMap<String, TelemetrySink> sinks = new ConcurrentHashMap<>();
+    private final AtomicLong failureCount = new AtomicLong();
+    private final Duration sinkCallTimeout;
+    private final ExecutorService sinkCalls;
+
+    public SinkRegistry() {
+        this(DEFAULT_SINK_CALL_TIMEOUT);
+    }
+
+    /**
+     * @param sinkCallTimeout max time for one sink {@code onSample}/{@code onEvent}; {@link
+     *     Duration#ZERO} runs calls on the caller thread (tests that intentionally hang a sink).
+     */
+    public SinkRegistry(Duration sinkCallTimeout) {
+        Objects.requireNonNull(sinkCallTimeout, "sinkCallTimeout");
+        if (sinkCallTimeout.isNegative()) {
+            throw new IllegalArgumentException("sinkCallTimeout must be >= 0");
+        }
+        this.sinkCallTimeout = sinkCallTimeout;
+        this.sinkCalls = sinkCallTimeout.isZero()
+                ? null
+                : Executors.newCachedThreadPool(r -> {
+                    Thread thread = new Thread(r, "pingui-telemetry-sink");
+                    thread.setDaemon(true);
+                    return thread;
+                });
+    }
+
+    public Duration sinkCallTimeout() {
+        return sinkCallTimeout;
+    }
 
     /** Register or replace a sink by {@link TelemetrySink#id()}. Previous sink (if any) is closed. */
     public void register(TelemetrySink sink) {
@@ -51,6 +93,14 @@ public final class SinkRegistry implements AutoCloseable {
         return sinks.size();
     }
 
+    /**
+     * Cumulative count of sink call failures (sample/event delivery, including call timeouts). Close
+     * failures are logged but not counted here.
+     */
+    public long failureCount() {
+        return failureCount.get();
+    }
+
     /** Snapshot of registered ids (stable copy). */
     public List<String> ids() {
         return List.copyOf(sinks.keySet());
@@ -59,29 +109,53 @@ public final class SinkRegistry implements AutoCloseable {
     public void emitSample(MetricSample sample) {
         Objects.requireNonNull(sample, "sample");
         for (TelemetrySink sink : sinks.values()) {
-            String sinkId = "?";
-            try {
-                sinkId = safeId(sink);
+            invokeSink(safeId(sink), () -> {
                 if (sink.eventsOnly()) {
-                    continue;
+                    return;
                 }
                 sink.onSample(sample);
-            } catch (RuntimeException ex) {
-                LOG.log(Level.WARNING, "Telemetry sink sample failed: " + sinkId, ex);
-            }
+            });
         }
     }
 
     public void emitEvent(TelemetryEvent event) {
         Objects.requireNonNull(event, "event");
         for (TelemetrySink sink : sinks.values()) {
-            String sinkId = "?";
+            invokeSink(safeId(sink), () -> sink.onEvent(event));
+        }
+    }
+
+    private void invokeSink(String sinkId, Runnable call) {
+        if (sinkCalls == null) {
             try {
-                sinkId = safeId(sink);
-                sink.onEvent(event);
+                call.run();
             } catch (RuntimeException ex) {
-                LOG.log(Level.WARNING, "Telemetry sink event failed: " + sinkId, ex);
+                failureCount.incrementAndGet();
+                LOG.log(Level.WARNING, "Telemetry sink failed: " + sinkId, ex);
             }
+            return;
+        }
+        Future<?> future = sinkCalls.submit(call);
+        try {
+            future.get(sinkCallTimeout.toNanos(), TimeUnit.NANOSECONDS);
+        } catch (TimeoutException ex) {
+            future.cancel(true);
+            failureCount.incrementAndGet();
+            LOG.log(Level.WARNING, "Telemetry sink timed out: " + sinkId, ex);
+        } catch (ExecutionException ex) {
+            failureCount.incrementAndGet();
+            Throwable cause = ex.getCause() == null ? ex : ex.getCause();
+            LOG.log(Level.WARNING, "Telemetry sink failed: " + sinkId, cause);
+        } catch (InterruptedException ex) {
+            future.cancel(true);
+            // Shutdown flush often runs on an interrupted bus worker — deliver sync so events are not lost.
+            try {
+                call.run();
+            } catch (RuntimeException rex) {
+                failureCount.incrementAndGet();
+                LOG.log(Level.WARNING, "Telemetry sink failed after interrupt: " + sinkId, rex);
+            }
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -91,6 +165,9 @@ public final class SinkRegistry implements AutoCloseable {
         sinks.clear();
         for (TelemetrySink sink : snapshot) {
             closeQuietly(sink);
+        }
+        if (sinkCalls != null) {
+            sinkCalls.shutdownNow();
         }
     }
 

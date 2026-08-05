@@ -10,7 +10,7 @@ Post-MVP roadmap (2026-06-26) for **professional users** (NOC/SRE, network engin
 
 | Field | Value |
 |-------|-------|
-| **Branch** | `main` — stable snapshot after merge; `beta` — development (linear queue **P23**). Both: Java Pro (P9–P19) + Python after merge |
+| **Branch** | `main` — stable snapshot after merge; `beta` — development (linear queue **P26**). Both: Java Pro (P9–P19) + Python after merge |
 | **Priority** | P0 critical · P1 important · P2 nice-to-have |
 | **DoD** | Definition of Done — task closure condition |
 
@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **DONE** |
-| **Phase** | 23 — `latency_high` (closed) |
-| **DoD (short)** | linear queue exhausted |
+| **Current task** | **P26-003** |
+| **Phase** | 26 — hardening post-audit (telemetry / launchers / split / coverage) |
+| **DoD (short)** | SQLite reopen/migration/corrupt failure tests |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -128,8 +128,35 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 82 | **P23-003** | [x] | `MonitorService` wire terminal RTT → latency rule |
 | 83 | **P23-004** | [x] | YAML/GUI `alerts.rules.latency_high` |
 | 84 | **P23-005** | [x] | Badge/dialog + SQLite `latency_high` |
+| 85 | **P24-000** | [x] | ROADMAP/LIVING_SPEC: phase P24 G0–G10 IDs + baseline |
+| 86 | **P24-001** | [x] | GraphCanvas: invalidate without `width+1` (call-count test) |
+| 87 | **P24-002** | [x] | GraphCanvas: coalesced `requestRedraw` (1× pulse) |
+| 88 | **P24-003** | [x] | GraphCanvas: cache `GraphScene` on pan/zoom |
+| 89 | **P24-004** | [x] | GraphCanvas: color/hover cache |
+| 90 | **P24-005** | [x] | ViewMode: remove forced window resize / applyCss |
+| 91 | **P24-006** | [x] | SplitPane + persist window/divider geometry |
+| 92 | **P24-007** | [x] | View components from `MainController.createScene` |
+| 93 | **P24-008** | [x] | CSS theme layer (light-first palette) |
+| 94 | **P24-009** | [x] | Startup: heavy init off FX thread |
+| 95 | **P24-010** | [x] | ADR_GUI_PAINT + perf smoke + phase close |
+| 96 | **P25-001** | [x] | ADR_I18N + ROADMAP phase 25 |
+| 97 | **P25-002** | [x] | UiI18n + messages_uk + migrate UI to keys |
+| 98 | **P25-003** | [x] | Layout harden (HostListCell/CRUD/text-branches) |
+| 99 | **P25-004** | [x] | Runtime Language menu + persist + `--lang` |
+| 100 | **P25-005** | [x] | messages_en + es/it/pl/cs/lv/lt/et UI bundles |
+| 101 | **P25-006** | [x] | user-facing locale matrix (USER_GUIDE / HOWTO / README.lang) |
+| 102 | **P25-007** | [x] | USER_GUIDE + HOWTO wave (no CHECKLIST/ADR) |
+| 103 | **P26-001** | [x] | Docs: sync README/JAVA phase labels with ROADMAP (not “phase 22”) |
+| 104 | **P26-002** | [x] | Telemetry: failure isolation (timeout/backpressure/shutdown flush) |
+| 105 | **P26-003** | [ ] | SQLite: reopen/migration/corrupt failure tests |
+| 106 | **P26-004** | [ ] | Launcher: quoting + detached GUI smoke matrix |
+| 107 | **P26-005** | [ ] | MainController ≤550 LOC (dialogs/lifecycle extract) |
+| 108 | **P26-006** | [ ] | MonitorService split (poll vs alert/telemetry wiring) |
+| 109 | **P26-007** | [ ] | JaCoCo package-level thresholds (not one bundle) |
+| 110 | **P26-008** | [ ] | latency_high: EWMA/window baseline + UI ETA note |
+| 111 | **P26-009** | [ ] | ADR_HARDENING + LIVING_SPEC/CHECKLIST + phase close |
 
-**Queue status:** closed — **NEXT = DONE** (phase 23 `latency_high` complete).
+**Queue status:** active — **NEXT = P26-003** (phase 26 post-P25 hardening).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -419,7 +446,7 @@ flowchart TD
 | **PY-040** | [x] `RouteChangeEvent` in `models.py` | `models.py`, `tests/unit/test_route_change_event.py` | JSON serialize/deserialize; shared contract with P10-010 |
 | **PY-041** | [x] `AlertDispatcher` + `WebhookAlertDispatcher` | `monitor/alert_dispatcher.py` | POST JSON; contract test with mock HTTP |
 | **PY-042** | [x] CLI `--alert-webhook URL` | `__main__.py` | Secret not logged; network error → log, no crash |
-| **PY-043** | [x] Desktop notify (`notify-send`) | `monitor/desktop_notifier.py` | Linux smoke: route change → notification |
+| **PY-043** | [x] Desktop notify (in-app/callback popup) | `monitor/desktop_notifier.py` | Smoke: route change → popup/log |
 | **PY-044** | [x] Alert rate limit | `monitor/alert_rate_limiter.py` | Unit test burst per host |
 | **PY-045** | [x] Daemon + alerts | `daemon_runner.py` | Route change → webhook without GUI (Python P12-030) |
 
@@ -488,7 +515,7 @@ flowchart TD
 | **P10-001** | [x] ADR: alert policy (channels, rate limit, payload) | `docs/ADR_ALERTS.md`, `docs/en/ADR_ALERTS.md` | Webhook + desktop; SNMP/email — out of scope v1 |
 | **P10-010** | [x] Model `RouteChangeEvent` (host, old_ips, new_ips, ts, profile) | `monitor/RouteChangeEvent.java`, Python `models.py` | Unit test serialize/deserialize |
 | **P10-011** | [x] `AlertDispatcher` interface + no-op default | `monitor/AlertDispatcher.java`, `MonitorService` | Monitor calls on `onRouteChanged` |
-| **P10-020** | [x] Desktop notification (Linux notify-send / Windows toast / macOS) | `ui/RouteChangeNotifier.java` | Manual smoke: route change → notification |
+| **P10-020** | [x] Desktop notification (in-app JavaFX popup) | `ui/JavaFxDesktopAlertSink`, `RouteChangeNotifier` | Manual smoke: route change → popup |
 | **P10-021** | [x] YAML/CLI: `alerts.desktop: true\|false` | `ProfilesConfig`, `PinguiApplication` | Default off; documented in CONFIGURATION |
 | **P10-030** | [x] Webhook POST JSON (Slack-compatible + generic) | `monitor/WebhookAlertDispatcher.java` | Contract test with mock HTTP server |
 | **P10-031** | [x] CLI `--alert-webhook URL` + profile field `alert_webhook` | `CliAlertOverrides`, YAML schema | Do not log secrets; network error → log, no crash |
@@ -555,7 +582,7 @@ flowchart TD
 | **P13-011** | [x] YAML `probe_mode` per profile + host override | `ProfilesConfig`, `HostEntry`, `MonitorService` | `ProfilesConfigTest.loadProbeModeOnProfileAndHost`, `HostEntryProbeModeTest` |
 | **P13-020** | [x] Smart interval: `ping_only` 1–2s, `trace` 30–300s per host | `MonitorService`, `HostPollSchedule` | Profile default + per-host override |
 | **P13-021** | [x] Burst on change: after route change — interval ×0.25 for 5 min | `BurstSchedulePolicy.java` | Unit test timer |
-| **P13-030** | [x] Parallel poll: `max_concurrent_traces` (default 3) | `MonitorService`, `TraceConcurrencyLimiter` | At most N subprocess at once |
+| **P13-030** | [x] Parallel poll: `max_concurrent_traces` (default 10 = MAX_HOSTS) | `MonitorService`, `TraceConcurrencyLimiter` | N TRACE hosts ⇒ up to N concurrent (≤10) |
 | **P13-040** | [x] Windows profile preset: auto `ping_only` + `interval: 60` | `config/hosts.windows.example.yaml` | CHECKLIST Windows |
 | **P13-050** | [x] LIVING_SPEC + JAVA.md known limitations | `docs/JAVA.md` | MTR vs traceroute doc |
 
@@ -801,6 +828,68 @@ flowchart TD
 
 ---
 
+## Phase 24 — GUI architecture & paint (`beta`, P1)
+
+**Context:** monitor core is mature; GUI lags — paint jank (`GraphCanvas`), forced window resize, god-assembly `MainController.createScene`. Plan: `.omx/plans/gui-architecture-perf-plan.md`. Baseline (G0): `MainController` ≈862 LOC; `GraphCanvas` ≈323; no `GraphCanvasTest`; Windows CI = Monocle Headless (not native Glass).
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **P24-000** | [x] Baseline IDs in ROADMAP/LIVING_SPEC | `docs/ROADMAP.md`, `docs/en/ROADMAP.md`, `docs/LIVING_SPEC.md`, `docs/en/LIVING_SPEC.md` | Queue P24-000…010; NEXT=P24-001 |
+| **P24-001** | [x] Canvas invalidate without `width+1` | `GraphCanvas.java`, `GraphCanvasTest.java`, CHECKLIST | Call-count==0 when size unchanged; native Windows smoke in CHECKLIST |
+| **P24-002** | [x] Coalesced redraw | `GraphCanvas.java` | ≤1 paint / pulse; sync resize vs paintPixels; inherits G1 |
+| **P24-003** | [x] Cache GraphScene | `GraphCanvas.java`, `RouteGraphLayout` | Pan/zoom without `buildScene` |
+| **P24-004** | [x] Color/hover cache | `GraphCanvas.java`, `GraphCanvasTest.java` | No `Color.web` in draw loop; hover dedupe + switch-node test |
+| **P24-005** | [x] No forced window resize | `ViewModeController.java`, `PinguiApplication.java`, CHECKLIST | Toggle without setWidth/Height / applyCss; default stage once |
+| **P24-006** | [x] SplitPane + persist geometry | `WindowGeometryStore`, `ViewModeController`, CHECKLIST | Restore bounds+divider+mode; clamp visualBounds |
+| **P24-007** | [x] View components | `io.pingui.ui.view.*`, MODULES/JAVA | `createScene` → `MainView.assemble`; LOC residual documented |
+| **P24-008** | [x] CSS palette | `pingui.css`, `UiPalette`, CHECKLIST | Stylesheet on Scene; GraphCanvas sync; light smoke |
+| **P24-009** | [x] Deferred startup I/O | `StartupBootstrap`, `PinguiApplication`, CHECKLIST | Shell show → background load → attach; Monitor after show |
+| **P24-010** | [x] ADR + perf smoke | `ADR_GUI_PAINT.md`, CHECKLIST, `GraphCanvasPerfTest` | Phase closed; follow-ups below |
+
+**Follow-ups after P24 (not in the linear queue):** dark mode product; FXML — see [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md). `MainController` ≤550 / MonitorService split → **phase 26** (P26-005/006).
+
+---
+
+## Phase 25 — i18n UI + docs (`beta`, P1)
+
+**Context:** GUI was UK-only; docs UK↔EN. Additional locales with UK canon, runtime switcher, and docs stub matrix (no DE/FR).
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **P25-001** | [x] ADR_I18N | `docs/ADR_I18N.md`, `docs/en/…` | UK canon; locales; stubs; DE/FR out |
+| **P25-002** | [x] UiI18n framework | `io.pingui.i18n.*`, `messages_uk.properties` | UTF-8 ResourceBundle; fallback UK→key |
+| **P25-003** | [x] Layout harden | `HostListCell`, `HostListPanel`, `AppMenuDialogs`, `ViewModeController` | No text-branch; USE_PREF_SIZE/FlowPane |
+| **P25-004** | [x] Runtime switch | `MainView`, `MainController`, `AppOptions`, `--lang` | Language menu; persist `ui-locale.properties` |
+| **P25-005** | [x] UI bundles | `messages_{en,es,it,pl,cs,lv,lt,et}.properties` | 313 keys each; `UiI18nTest` |
+| **P25-006** | [x] Docs stub matrix | `docs/{es,it,…}/`, `check_doc_parity.py` | USER_GUIDE+HOWTO+`README.<lang>` only |
+| **P25-007** | [x] USER_GUIDE / HOWTO wave | `docs/*/USER_GUIDE.md`, `HOWTO.md` | User docs; no CHECKLIST/ADR |
+
+**Follow-ups:** DE/FR; full `README.<lang>`; Python GUI i18n. Developer docs stay UK/EN.
+
+---
+
+## Phase 26 — Hardening post-audit (`beta`, P1)
+
+**Context:** Static audit of `main` @ `baff7cc` (PR #14) + leftovers after P24/P25 on `beta`. GUI paint (buffer churn / coalesce / scene cache) already closed in P24 — **do not** redo. Focus: resilience, launchers, structural debt, coverage, latency baseline.
+
+**Source:** production-readiness audit; ADR_GUI_PAINT / ADR_I18N follow-ups excluding DE/FR.
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **P26-001** | [x] Docs phase sync | `README.md`, `README.en.md`, `docs/JAVA.md`, `docs/en/…`, CHANGELOG | No “phase 22/23 DONE” if NEXT=P26; main/beta table = current phase |
+| **P26-002** | [x] Telemetry failure isolation | `telemetry/*`, contract tests | Sink timeout/fail must not block poll; bounded queue or drop+metric; shutdown flush documented + tested |
+| **P26-003** | [ ] SQLite reopen failures | `persistence/*`, tests | append after reopen; corrupt/partial DB; migration; concurrent export smoke |
+| **P26-004** | [ ] Launcher smoke matrix | `pingui-java.sh`, `.bat`, `PinguiLauncher`, script/CI | space quoting; detached GUI; `--foreground`; Windows javaw path; fail → log |
+| **P26-005** | [ ] MainController ≤550 LOC | `MainController`, `ui/view/*` or `*Coordinator` | LOC gate or documented residual; dialogs/lifecycle out of constructor |
+| **P26-006** | [ ] MonitorService split | `monitor/*` | Poll orchestration ≠ alert/telemetry wiring; layerCheck green; unit tests |
+| **P26-007** | [ ] Package JaCoCo thresholds | `java/build.gradle.kts` | Separate minima for `config`/`probe`/`monitor`/`persistence`/`telemetry`; UI exclusion explicit |
+| **P26-008** | [ ] Latency baseline evolution | `monitor/*`, ADR_ALERT_RULES, UI copy | EWMA or bounded window; contract + test; Help/Settings shows approximate FIRING time |
+| **P26-009** | [ ] Phase close | `ADR_HARDENING.md`, LIVING_SPEC, CHECKLIST, ROADMAP | NEXT=DONE or explicit follow-up ID |
+
+**Out of this queue (intentional):** DE/FR i18n; dark mode product; FXML rewrite; >10 hosts; BGP/NMS.
+
+---
+
 ## Out of scope (not planned)
 
 | ID | Idea | Why not |
@@ -883,7 +972,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Linear queue — **NEXT=DONE**.
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P26-003**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

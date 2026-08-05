@@ -41,6 +41,12 @@ public final class MonitorService implements AutoCloseable {
         void onRouteChanged(String host, List<String> oldIps, List<String> newIps);
 
         void onProbeError(String host, String message);
+
+        /**
+         * Invoked after a completed poll when neither {@link #onDataReceived} nor {@link
+         * #onProbeError} runs (e.g. empty success snapshot), so UI can refresh liveness counters.
+         */
+        default void onPollFinished(String host) {}
     }
 
     /** Supplies per-host expert ping settings for enrichment after trace. */
@@ -282,6 +288,11 @@ public final class MonitorService implements AutoCloseable {
         poller.resetMtrHost(host);
     }
 
+    /** Liveness counters for the current probe mode (reset on {@link #setHostProbeMode}). */
+    public HostPollCounters pollCounters(String host) {
+        return registry.pollCounters(host);
+    }
+
     private void cycle() {
         if (!running.get()) {
             return;
@@ -369,7 +380,9 @@ public final class MonitorService implements AutoCloseable {
         if (resolved != probeMode || !registry.mappedModeUnchanged(host, mappedAtStart, profileProbeMode)) {
             return;
         }
-        if (outcome.error() != null) {
+        boolean probeFailed = outcome.error() != null;
+        registry.recordPoll(host, probeFailed);
+        if (probeFailed) {
             PersistenceEventWriter events = persistenceEvents;
             if (events != null) {
                 try {
@@ -383,6 +396,7 @@ public final class MonitorService implements AutoCloseable {
             return;
         }
         registry.putLastRoute(host, outcome.currentIps());
+        boolean deliveredSnapshot = false;
         if (outcome.snapshot() != null && registry.contains(host)) {
             RouteSnapshot snapshot = outcome.snapshot();
             if (probeMode != HostProbeMode.PING_ONLY) {
@@ -395,6 +409,7 @@ public final class MonitorService implements AutoCloseable {
             }
             offerTelemetrySuccess(host, probeMode, snapshot, durationMs);
             current.onDataReceived(host, snapshot);
+            deliveredSnapshot = true;
             evaluateEndpointDown(host, snapshot);
             evaluateLatencyHigh(host, snapshot);
         }
@@ -409,6 +424,9 @@ public final class MonitorService implements AutoCloseable {
             persistBaselineRouteChange(host, outcome.currentIps());
             offerTelemetryRouteChange(host, List.of(), outcome.currentIps(), probeMode);
             current.onRouteChanged(host, List.of(), outcome.currentIps());
+        }
+        if (!deliveredSnapshot) {
+            current.onPollFinished(host);
         }
     }
 

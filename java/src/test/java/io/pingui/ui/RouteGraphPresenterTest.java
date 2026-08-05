@@ -1,6 +1,5 @@
 package io.pingui.ui;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -19,7 +18,6 @@ class RouteGraphPresenterTest {
     void replayClearsOnClearReplay() throws Exception {
         FxTestSupport.runOnFxThread(() -> {
             GraphCanvas canvas = new GraphCanvas();
-            RouteDiffPresenter diff = new RouteDiffPresenter();
             var items = javafx.collections.FXCollections.observableArrayList(new HostItem("8.8.8.8", true));
             javafx.scene.control.ListView<HostItem> hostList = new javafx.scene.control.ListView<>(items);
             hostList.getSelectionModel().select(0);
@@ -27,13 +25,12 @@ class RouteGraphPresenterTest {
                     SessionStore.fromEntries(List.of(new HostEntry("8.8.8.8", true, false, PingExpertEntry.empty())));
 
             RouteGraphPresenter presenter =
-                    new RouteGraphPresenter(canvas, hostList, () -> store, () -> true, () -> false, diff);
+                    new RouteGraphPresenter(canvas, hostList, () -> store, () -> true, () -> false);
             RouteChangeEvent event = RouteChangeEvent.fromRouteChange(
                     "8.8.8.8", List.of("1.1.1.1"), List.of("8.8.8.8"), "default", java.time.Instant.now());
 
             presenter.replayRouteChange(event);
             assertTrue(presenter.isReplaying());
-            assertFalse(diff.listView().getItems().isEmpty());
 
             presenter.clearReplay();
             assertFalse(presenter.isReplaying());
@@ -41,10 +38,12 @@ class RouteGraphPresenterTest {
     }
 
     @Test
-    void liveRedrawShowsDiffAgainstPreviousRoute() throws Exception {
+    void liveRedrawRendersWithoutDiffPanel() throws Exception {
         FxTestSupport.runOnFxThread(() -> {
             GraphCanvas canvas = new GraphCanvas();
-            RouteDiffPresenter diff = new RouteDiffPresenter();
+            new javafx.scene.Scene(new javafx.scene.layout.StackPane(canvas), 400, 300);
+            canvas.resize(400, 300);
+            canvas.layout();
             var items = javafx.collections.FXCollections.observableArrayList(new HostItem("8.8.8.8", true));
             javafx.scene.control.ListView<HostItem> hostList = new javafx.scene.control.ListView<>(items);
             hostList.getSelectionModel().select(0);
@@ -58,13 +57,10 @@ class RouteGraphPresenterTest {
                     new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "192.168.1.1", 7.0, false))));
 
             RouteGraphPresenter presenter =
-                    new RouteGraphPresenter(canvas, hostList, () -> store, () -> true, () -> false, diff);
+                    new RouteGraphPresenter(canvas, hostList, () -> store, () -> true, () -> false);
             presenter.redrawIfExtended();
-
-            assertEquals(1, diff.listView().getItems().size());
-            assertEquals(
-                    RouteDiff.Kind.CHANGED, diff.listView().getItems().get(0).kind());
-            assertTrue(diff.listView().getItems().get(0).summary().contains("→"));
+            canvas.paintForTest();
+            assertTrue(canvas.layoutBuildCount() >= 1);
         });
     }
 
@@ -72,7 +68,6 @@ class RouteGraphPresenterTest {
     void staleReplayForOtherHostFallsBackToLiveSelection() throws Exception {
         FxTestSupport.runOnFxThread(() -> {
             GraphCanvas canvas = new GraphCanvas();
-            RouteDiffPresenter diff = new RouteDiffPresenter();
             var items = javafx.collections.FXCollections.observableArrayList(
                     new HostItem("1.1.1.1", true), new HostItem("kernel.org", true));
             javafx.scene.control.ListView<HostItem> hostList = new javafx.scene.control.ListView<>(items);
@@ -86,7 +81,7 @@ class RouteGraphPresenterTest {
                     new RouteSnapshot("kernel.org", "kernel.org", List.of(new HopNode(1, "10.1.2.3", 2.0, false))));
 
             RouteGraphPresenter presenter =
-                    new RouteGraphPresenter(canvas, hostList, () -> store, () -> true, () -> false, diff);
+                    new RouteGraphPresenter(canvas, hostList, () -> store, () -> true, () -> false);
             hostList.getSelectionModel().select(0);
             RouteChangeEvent foreign = RouteChangeEvent.fromRouteChange(
                     "1.1.1.1", List.of("9.9.9.9"), List.of("1.1.1.1"), "default", java.time.Instant.now());
@@ -97,7 +92,6 @@ class RouteGraphPresenterTest {
             presenter.redrawIfExtended();
 
             assertFalse(presenter.isReplaying());
-            assertTrue(diff.listView().getItems().isEmpty());
         });
     }
 }

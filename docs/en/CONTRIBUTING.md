@@ -9,7 +9,7 @@ Thank you for your interest in the project. This document describes the process 
 1. Run `./pingui.sh --deploy` in venv — all gates must pass.
 2. Update [LIVING_SPEC.md](../LIVING_SPEC.md) when behavior or modules change.
 3. Add or update tests for new logic.
-4. Documentation: README or the relevant file in `docs/` and `docs/en/` (see [README.md](README.md)). When behavior changes, update **both** language versions.
+4. Documentation: **UK canon** in `docs/` + required EN in `docs/en/` (see [ADR_I18N.md](ADR_I18N.md)). Other languages — **user-facing only** (`USER_GUIDE`, `HOWTO`, stub `README.<lang>.md`); do **not** translate ADR/CHECKLIST/CONTRIBUTING etc. Gate: `scripts/check_doc_parity.py`. UI strings — keys in `messages_uk.properties` (+ EN and the matching bundle).
 
 ## Branches
 

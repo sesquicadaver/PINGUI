@@ -9,11 +9,28 @@
 
 ### Added
 
+- **P26-002 — telemetry failure isolation:** `SinkRegistry.failureCount` + per-sink call timeout (5s); non-blocking bus offers; shutdown flush; ADR_TELEMETRY §7; NEXT→**P26-003**.
+- **P26-001 — docs phase sync:** README/JAVA/docs index більше не кажуть «фаза 22 / NEXT=DONE»; NEXT→**P26-002**.
+- **P26 — hardening queue (post-audit):** ROADMAP NEXT=`P26-001`…`P26-009` — docs phase sync, telemetry failure isolation, SQLite reopen tests, launcher smoke, MainController/MonitorService split, package JaCoCo, latency EWMA/window.
+- **P25 — UI/docs i18n:** `UiI18n` + `messages_{uk,en,es,it,pl,cs,lv,lt,et}`; меню Мова + `--lang` + persist; ADR_I18N; user-facing docs лише (`USER_GUIDE`/`HOWTO`/`README.<lang>`), без CHECKLIST/ADR у stub-локалях; DE/FR відкладено.
+- **Host poll liveness counters:** separate row `спроб N  помилки E  P%` above RTT metrics (reset on Ping only / mode change); dark text on colored host rows.
+- **P24-010 — ADR_GUI_PAINT + perf smoke:** політика Canvas coalesce/cache, no forced resize, geometry persist, deferred startup; `GraphCanvasPerfTest` (100 drag ≤1 paint); CHECKLIST Extended+pan+route (+JFR); фаза 24 → **DONE**.
 - **GUI launcher detach:** `pingui-java.sh` / `.bat` запускають GUI у фоні (Linux/macOS `nohup`, Windows `javaw`); термінал звільняється. `--foreground` для дебагу; daemon/export/help лишаються attached. Лог: `~/.cache/pingui/gui.log` / `%LOCALAPPDATA%\pingui\gui.log` (`PINGUI_GUI_LOG`). Entry point `PinguiLauncher` (без `extends Application`) — щоб `installDist`/jpackage бачили JavaFX на classpath.
 - **P23 — `latency_high`:** правило `rtt ≥ 2×AVG`, FIRING після 3 поганих пінгів поспіль (без вікна часу); YAML/GUI; badge/SQLite; AVG не отруюється spike-семплами; фаза 23 → **DONE**.
 
+### Removed
+
+- **Route Diff panel:** повністю прибрано `RouteDiff` / `RouteDiffPresenter` / `RouteDiffStyle` (Extended лишає граф + історію).
+
+### Fixed
+
+- **Simple window geometry:** старт завжди Простий; leftover Extended / ≈visualBounds (maximize) скидаються; перед fit — demaximize; close у maximized пише floating bounds; Extended→Simple стискає Stage до chrome pref.
+- **Extended geometry:** toggle Simple→Extended розширює width+height (~1400×820) за потреби; SplitPane divider ≈ ліва колонка 600 px.
+
 ### Changed
 
+- **Desktop alerts = in-app popup:** JavaFX `Alert` через `JavaFxDesktopAlertSink` (без `notify-send` / D-Bus / tray). Python — injectable popup або INFO log. ADR_ALERTS / CHECKLIST / CLI help оновлено.
+- **Trace concurrency default:** `max_concurrent_traces` default **10** (= `HostsConfig.MAX_HOSTS`). Увімкнені TRACE-хости в сесії (до 10) можуть трасуватись паралельно; YAML-зниження — лише свідоме throttling.
 - **P22-005 — Auto session DB name:** кнопка «Створити…» → `data/YYYY-MM-DD_HH-mm-ss_<lan-ip>.db`; фаза 22 → **DONE**.
 - **P22-004 — Host problem icon + dialog:** значок `!` на рядку хоста при unread `endpoint_down`; клік → деталі + ack; NEXT→P22-005.
 - **P22-003 — SQLite quality incidents:** `persistence_event.endpoint_down` на FIRING/RESOLVED (RESOLVED пишеться навіть без channel notify); NEXT→P22-004.

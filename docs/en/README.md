@@ -2,7 +2,7 @@
 
 # PINGUI documentation
 
-On **`main`** and **`beta`** — full package (Java Pro + Python) after merge; **`beta`** is the development branch, **`main`** is the last stable snapshot. Linear ROADMAP queue: **NEXT = DONE** (phase 20 — [ROADMAP.md § NEXT](ROADMAP.md#next--single-source-of-truth)). Branches: [README.en.md](../README.en.md).
+On **`main`** and **`beta`** — full package (Java Pro + Python) after merge; **`beta`** is the development branch, **`main`** is the last stable snapshot. Linear ROADMAP queue: **NEXT = P26-003** (phase 26 — [ROADMAP.md § NEXT](ROADMAP.md#next--single-source-of-truth)). Branches: [README.en.md](../README.en.md).
 
 ## Navigation
 
@@ -11,9 +11,10 @@ On **`main`** and **`beta`** — full package (Java Pro + Python) after merge; *
 | [CHECKLIST.md](CHECKLIST.md) | Admin / DevOps | Checklist Linux / Windows / macOS |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Admin / DevOps | JDK 21, venv, cap_net_raw, systemd |
 | [JAVA.md](JAVA.md) | Developer | Probe, monitor, UI, YAML |
-| [ROADMAP.md](ROADMAP.md) | Developer | Official plan: phases 0–20 (Pro/NOC + telemetry + hardening + GUI UX); NEXT=DONE |
+| [ROADMAP.md](ROADMAP.md) | Developer | Official plan: phases 0–26; NEXT=P26-003 |
 | [LIVING_SPEC.md](LIVING_SPEC.md) | Developer | Module → tests matrix |
 | [ADR_IPV6.md](ADR_IPV6.md) | Developer | Dual-stack config ADR (V6-002) |
+| [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md) | Developer | GUI paint / geometry ADR (P24-010) |
 | [ADR_ALERT_RULES.md](ADR_ALERT_RULES.md) | Developer | Quality alert rules ADR (P21-001): endpoint_down lifecycle |
 | [ADR_HOST_PROBLEM_INDICATOR.md](ADR_HOST_PROBLEM_INDICATOR.md) | Developer | Host-row problem badge / ack / auto session DB (P22-001) |
 | [ADR_ALERTS.md](ADR_ALERTS.md) | Developer | Route-change alerts ADR (P10-001) |
@@ -32,6 +33,8 @@ On **`main`** and **`beta`** — full package (Java Pro + Python) after merge; *
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contributor | PR, anti-stub |
 | [MVP_SPEC.md](MVP_SPEC.md) | All | MVP requirements |
 | [USER_GUIDE.md](USER_GUIDE.md) | User | End user guide |
+| [HOWTO.md](HOWTO.md) | User | Quick scenarios (start, targets, modes) |
+| [ADR_I18N.md](ADR_I18N.md) | Developer | i18n: UI + **user docs only** in other languages |
 | [../java/README.md](../java/README.md) | All | Java launcher, Gradle |
 | [../.github/workflows/java.yml](../.github/workflows/java.yml) | CI | Java `./gradlew check` |
 | [../.github/workflows/ci.yml](../.github/workflows/ci.yml) | CI | Python pytest |

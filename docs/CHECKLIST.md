@@ -63,7 +63,7 @@ Python-редакція та тести — у дереві **обох** гіл�
 ### Python alert smoke
 
 - [ ] `python -m pingui monitor --alert-webhook http://127.0.0.1:9/hook` — старт без crash (webhook недоступний → log)
-- [ ] `python -m pingui run --desktop-alerts` — GUI + notify-send при зміні маршруту (Linux)
+- [ ] `python -m pingui run --desktop-alerts` — GUI + desktop popup/log при зміні маршруту
 - [ ] `python -m pingui daemon --alert-webhook URL --session-db data/ping.db` — route change → POST JSON
 
 ### Java alert smoke (Linux)
@@ -71,7 +71,7 @@ Python-редакція та тести — у дереві **обох** гіл�
 - [ ] `./gradlew test --tests io.pingui.monitor.WebhookAlertDispatcherTest` — contract POST JSON (CI)
 - [ ] `./gradlew test --tests io.pingui.monitor.AlertRateLimiterTest` — burst rate limit (CI)
 - [ ] `./pingui-java.sh --alert-webhook http://127.0.0.1:9/hook` — старт без crash (webhook недоступний → WARNING)
-- [ ] `./pingui-java.sh --desktop-alerts` — GUI + `notify-send` при зміні маршруту (потрібен `libnotify-bin`)
+- [ ] `./pingui-java.sh --desktop-alerts` — GUI + in-app JavaFX popup при зміні маршруту (без `libnotify`)
 - [ ] YAML `alerts.webhook` / `alert_webhook` у профілі — route change → POST без CLI override
 
 ### Java telemetry smoke (P16-071)
@@ -284,12 +284,18 @@ chmod +x pingui-java.sh gradlew
 - [ ] **Про** (меню) — діалог версії відкривається без зависання
 - [ ] **F1 / Довідка** — діалог довідки відкривається
 - [ ] **Новий профіль** → ім'я `test` → список хостів порожній, вікно без чорних смуг
-- [ ] **Видалити профіль** (повернення до default) → Simple mode, вікно зменшується коректно (не лишається oversized frame)
-- [ ] **Розширений** → граф + лог; **Простий** → знову compact layout
+- [ ] **Видалити профіль** (повернення до default) → Simple mode; панелі compact (граф/лог hidden); розмір вікна **не** форсується (P24-005)
+- [ ] **Розширений** → граф + лог; **Простий** → панелі compact знову; розмір вікна без стрибка на toggle (P24-005)
+- [ ] **P24-006 Window geometry:** resize/move вікна → restart → position ±1px; Extended → drag SplitPane divider → restart → divider remembered; **restart завжди Простий** (навіть якщо закрито в Extended)
+- [ ] **Simple/Extended geometry:** старт завжди Простий (~580×700 + fit); maximize-слід (≈екран) не лишає fullscreen; → Розширений розширює (~1400×820); divider ≈ 600 px; **назад у Простий стискає**; close у maximized не записує розмір екрана
+- [ ] **P24-008 CSS light theme:** старт GUI → фон `#fafafa` / панелі світлі; host list danger `!` і muted tags читабельні; немає «сирого» unstyled chrome (screenshot smoke, light)
+- [ ] **P24-009 Deferred startup:** вікно з’являється зі статусом «Завантаження…» до готовності; потім host list заповнюється; помилковий YAML → error feedback без hang
+- [ ] **P24-010 Perf smoke (desktop):** Extended → pan графа ~5 с (drag) → оновлення route (poll/replay) без видимого freeze; опційно JFR: `jcmd <pid> JFR.start name=pingui settings=profile` на час pan+route, потім `JFR.stop filename=pingui-gui.jfr` — шукати довгі FX pulse / `paintPixels`. CI: `GraphCanvasPerfTest` (100 drag ≤1 paint).
 - [ ] **P22-005 Auto session DB:** Налаштування → База даних… → «Створити…» → шлях `data/YYYY-MM-DD_HH-mm-ss_<ip>.db`; Apply
 - [ ] **P22-004 Problem badge:** увімкнути endpoint_down → після FIRING зʼявляється `!` на рядку; клік → діалог; закриття ховає значок
 - [ ] **P21-003 Alerts rules:** Налаштування → Сповіщення… → endpoint_down + пресет/параметри + notify_resolved; Apply + Зберегти → YAML `alerts.rules`
 - [ ] **P20-012 Graph UX:** Extended → граф: zoom (колесо), pan (drag), tooltip на hop, double-click → copy IP; empty double-click → reset
+- [ ] **P24-001 Graph paint (native Windows):** на **нативному** Windows desktop (не CI/Monocle): Extended → граф малюється; pan/zoom без «замороженого» кадру після зняття `width+1` hack. CI Windows = Monocle Headless і **не** замінює цей пункт.
 - [ ] **P20-011 Alerts:** Налаштування → Сповіщення… → desktop/webhook/rate_limit; підписи зліва повністю видимі (не обрізані); статус з redacted URL; Apply + Зберегти
 - [ ] **P20-010 Profile params:** Налаштування → Профіль… → interval/max_hops/timeout/probe → Apply → Зберегти YAML
 - [ ] **P20-009 log_aggregates:** Телеметрія → увімкнути log_aggregates → після poll/закриття з’являються rtt_aggregate (не «backlog»)
@@ -297,7 +303,6 @@ chmod +x pingui-java.sh gradlew
 - [ ] **P20-007 Empty states:** Extended без SQLite → підказка База даних; порожня історія → placeholder; Simple → status про Розширений
 - [ ] **P20-006 Hotkeys:** Ctrl/Cmd+S Save, Ctrl/Cmd+N Add, F1 Help; typing in host field still works
 - [ ] **P20-005 Export:** Налаштування → Експорт зараз… → CSV/HTML; без SQLite → зрозуміла помилка
-- [ ] **P20-004 Route diff:** Extended — зміна маршруту → рядки з `~`/`+`/`−` і кольором
 - [ ] **P20-003 Dirty/unsaved:** змінити хост → «Зберегти *»; switch profile → Confirm; Save очищає *
 - [ ] **P20-002 Confirm delete:** Видалити ціль / профіль → Confirm; Cancel без змін
 - [ ] **P20-001 Simple feedback:** помилка add host (дублікат) → status + Alert; Extended fail → лише лог (без Alert); live «Останнє оновлення…» в Extended не затирається feedback info

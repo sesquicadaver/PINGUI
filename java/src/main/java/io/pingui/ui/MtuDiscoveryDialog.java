@@ -1,6 +1,7 @@
 package io.pingui.ui;
 
 import io.pingui.config.ConfigError;
+import io.pingui.i18n.UiI18n;
 import io.pingui.probe.MtuDiscovery;
 import io.pingui.probe.MtuDiscoveryConfig;
 import io.pingui.probe.MtuDiscoveryResult;
@@ -61,21 +62,20 @@ public final class MtuDiscoveryDialog {
         if (owner != null) {
             dialog.initOwner(owner);
         }
-        dialog.setTitle("MTU discovery — " + host);
-        dialog.setHeaderText(
-                "Перебір payload (-s) з Don't Fragment (-M do). «MTU probe» пресет — інше (фіксований -s).");
+        dialog.setTitle(UiI18n.get("mtu.title", host));
+        dialog.setHeaderText(UiI18n.get("mtu.header"));
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
 
-        Label progressLabel = new Label("Натисніть Старт, щоб почати sweep.");
+        Label progressLabel = new Label(UiI18n.get("mtu.idle"));
         progressLabel.setWrapText(true);
         ProgressBar bar = new ProgressBar(0);
         bar.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(bar, Priority.ALWAYS);
 
-        Button startButton = new Button("Старт");
-        Button stopButton = new Button("Stop");
+        Button startButton = new Button(UiI18n.get("mtu.start"));
+        Button stopButton = new Button(UiI18n.get("mtu.stop"));
         stopButton.setDisable(true);
-        Button applyButton = new Button("Apply → Expert");
+        Button applyButton = new Button(UiI18n.get("mtu.apply"));
         applyButton.setDisable(true);
         applyButton.setDefaultButton(true);
 
@@ -103,8 +103,7 @@ public final class MtuDiscoveryDialog {
             startButton.setDisable(true);
             stopButton.setDisable(false);
             bar.setProgress(0);
-            progressLabel.setText(
-                    "Старт… AF=" + (ipv6 ? "IPv6" : "IPv4") + ", поріг loss " + config.lossThresholdPct() + "%");
+            progressLabel.setText(UiI18n.get("mtu.starting", ipv6 ? "IPv6" : "IPv4", config.lossThresholdPct()));
 
             Thread.ofVirtual().name("mtu-discovery").start(() -> {
                 try {
@@ -135,12 +134,12 @@ public final class MtuDiscoveryDialog {
                             return;
                         }
                         resetBusy.run();
-                        progressLabel.setText("Помилка: " + ex.getMessage());
+                        progressLabel.setText(UiI18n.get("mtu.error", ex.getMessage()));
                         bar.setProgress(0);
                         Alert alert = new Alert(Alert.AlertType.ERROR);
                         alert.initOwner(ownerWindow(dialog, owner));
-                        alert.setTitle("MTU discovery");
-                        alert.setHeaderText("Sweep не вдався");
+                        alert.setTitle(UiI18n.get("mtu.title_short"));
+                        alert.setHeaderText(UiI18n.get("mtu.sweep_failed"));
                         alert.setContentText(ex.getMessage());
                         alert.showAndWait();
                     });
@@ -174,8 +173,8 @@ public final class MtuDiscoveryDialog {
             } catch (ConfigError ex) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.initOwner(ownerWindow(dialog, owner));
-                alert.setTitle("MTU discovery");
-                alert.setHeaderText("Не вдалося зібрати Expert args");
+                alert.setTitle(UiI18n.get("mtu.title_short"));
+                alert.setHeaderText(UiI18n.get("mtu.apply_failed"));
                 alert.setContentText(ex.getMessage());
                 alert.showAndWait();
             }
@@ -244,47 +243,34 @@ public final class MtuDiscoveryDialog {
     }
 
     static String formatStep(MtuDiscoveryResult.MtuProbeStep step) {
-        return String.format(
-                Locale.ROOT,
-                "Розмір -s=%d · sent=%d lost=%d · loss=%.1f%%%s",
-                step.payloadBytes(),
-                step.sent(),
-                step.lost(),
-                step.lossPct(),
-                step.stoppedHere() ? " · STOP (поріг)" : "");
+        String loss = String.format(Locale.ROOT, "%.1f", step.lossPct());
+        String suffix = step.stoppedHere() ? UiI18n.get("mtu.step_stop") : "";
+        return UiI18n.get("mtu.step", step.payloadBytes(), step.sent(), step.lost(), loss, suffix);
     }
 
     static String formatStopping(String current) {
         if (current == null || current.isBlank()) {
-            return "Зупинка…";
+            return UiI18n.get("mtu.stopping");
         }
-        if (current.contains("зупинка")) {
+        String suffix = UiI18n.get("mtu.stopping_suffix");
+        if (current.contains(suffix.strip()) || current.contains(UiI18n.get("mtu.stopping"))) {
             return current;
         }
-        return current + " (зупинка…)";
+        return current + suffix;
     }
 
     static String formatSummary(MtuDiscoveryResult result, MtuDiscoveryConfig config) {
         if (result.cancelled() && result.maxGoodPayload().isEmpty()) {
-            return "Скасовано до першого успішного розміру.";
+            return UiI18n.get("mtu.cancelled_empty");
         }
         if (result.maxGoodPayload().isEmpty()) {
-            return "Немає успішного розміру (вже min payload дав loss ≥ " + config.lossThresholdPct() + "%).";
+            return UiI18n.get("mtu.no_good", config.lossThresholdPct());
         }
         int payload = result.maxGoodPayload().getAsInt();
         int mtu = result.recommendedMtu().orElse(config.mtuForPayload(payload));
-        String stop = result.stoppedOnLoss() ? "stop на loss≥порогу" : "усі розміри до start пройшли";
-        String cancelNote = result.cancelled() ? " (перервано)" : "";
-        return "Рекомендований MTU ≈ "
-                + mtu
-                + " (payload -s="
-                + payload
-                + " + overhead "
-                + config.icmpOverhead()
-                + "). "
-                + stop
-                + cancelNote
-                + ".";
+        String stop = result.stoppedOnLoss() ? UiI18n.get("mtu.stop_on_loss") : UiI18n.get("mtu.all_passed");
+        String cancelNote = result.cancelled() ? UiI18n.get("mtu.interrupted") : "";
+        return UiI18n.get("mtu.summary", mtu, payload, config.icmpOverhead(), stop, cancelNote);
     }
 
     private static Window ownerWindow(Dialog<?> dialog, Window fallback) {
@@ -310,8 +296,8 @@ public final class MtuDiscoveryDialog {
         Alert.AlertType type = canApply ? Alert.AlertType.INFORMATION : Alert.AlertType.WARNING;
         Alert alert = new Alert(type);
         alert.initOwner(ownerWindow(dialog, null));
-        alert.setTitle("MTU discovery");
-        alert.setHeaderText(canApply ? "Оцінка max MTU" : "MTU не визначено");
+        alert.setTitle(UiI18n.get("mtu.title_short"));
+        alert.setHeaderText(canApply ? UiI18n.get("mtu.estimate") : UiI18n.get("mtu.undefined"));
         alert.setContentText(summary);
         alert.showAndWait();
     }

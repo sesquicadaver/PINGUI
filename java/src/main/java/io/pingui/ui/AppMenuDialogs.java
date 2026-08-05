@@ -1,6 +1,7 @@
 package io.pingui.ui;
 
 import io.pingui.AppInfo;
+import io.pingui.i18n.UiI18n;
 import io.pingui.platform.PlatformCapabilities;
 import javafx.application.HostServices;
 import javafx.geometry.Insets;
@@ -21,6 +22,17 @@ import javafx.stage.Window;
 public final class AppMenuDialogs {
     private static HostServices hostServices;
 
+    private enum InfoDialogKind {
+        ABOUT(460),
+        HELP(560);
+
+        private final double prefWidth;
+
+        InfoDialogKind(double prefWidth) {
+            this.prefWidth = prefWidth;
+        }
+    }
+
     private AppMenuDialogs() {}
 
     /** Called from {@link io.pingui.PinguiApplication#start} — do not use AWT Desktop. */
@@ -29,17 +41,17 @@ public final class AppMenuDialogs {
     }
 
     public static void showAbout(Window owner) {
-        Alert alert = baseAlert(owner, "Про PINGUI");
-        alert.setHeaderText(AppInfo.NAME + " — сесійний монітор маршрутів (" + AppInfo.EDITION + ")");
+        Alert alert = baseAlert(owner, UiI18n.get("about.title"), InfoDialogKind.ABOUT);
+        alert.setHeaderText(UiI18n.get("about.header", AppInfo.NAME, AppInfo.EDITION));
 
-        Label version = new Label("Версія " + AppInfo.versionDetail());
-        Label runtime = new Label("Java " + AppInfo.runtimeJavaVersion() + " · " + AppInfo.runtimeOsName());
+        Label version = new Label(UiI18n.get("about.version", AppInfo.versionDetail()));
+        Label runtime = new Label(UiI18n.get("about.runtime", AppInfo.runtimeJavaVersion(), AppInfo.runtimeOsName()));
         runtime.setStyle("-fx-text-fill: #555;");
 
         Label summary = new Label(aboutSummary());
         summary.setWrapText(true);
 
-        HBox linkRow = new HBox(4, new Label("Репозиторій:"), repositoryLink());
+        HBox linkRow = new HBox(4, new Label(UiI18n.get("about.repository")), repositoryLink());
         linkRow.setAlignment(Pos.CENTER_LEFT);
 
         VBox content = new VBox(10, version, runtime, summary, linkRow);
@@ -49,15 +61,15 @@ public final class AppMenuDialogs {
     }
 
     public static void showHelp(Window owner) {
-        Alert alert = baseAlert(owner, "Довідка PINGUI");
-        alert.setHeaderText("Коротка довідка");
+        Alert alert = baseAlert(owner, UiI18n.get("help.title"), InfoDialogKind.HELP);
+        alert.setHeaderText(UiI18n.get("help.header"));
 
         TextArea body = new TextArea(helpText());
         body.setEditable(false);
         body.setWrapText(true);
         body.setPrefRowCount(18);
 
-        HBox docRow = new HBox(4, new Label("Документація:"), repositoryLink());
+        HBox docRow = new HBox(4, new Label(UiI18n.get("help.documentation")), repositoryLink());
         docRow.setAlignment(Pos.CENTER_LEFT);
         docRow.setPadding(new Insets(8, 0, 0, 0));
 
@@ -71,14 +83,14 @@ public final class AppMenuDialogs {
         alert.showAndWait();
     }
 
-    private static Alert baseAlert(Window owner, String title) {
+    private static Alert baseAlert(Window owner, String title, InfoDialogKind kind) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION, "", ButtonType.OK);
         alert.setTitle(title);
         alert.initOwner(owner);
         alert.initModality(Modality.WINDOW_MODAL);
-        alert.getDialogPane().setPrefWidth(title.startsWith("Довідка") ? 560 : 460);
+        alert.getDialogPane().setPrefWidth(kind.prefWidth);
         if (alert.getDialogPane().lookupButton(ButtonType.OK) instanceof Button close) {
-            close.setText("Закрити");
+            close.setText(UiI18n.get("dialog.close"));
         }
         return alert;
     }
@@ -92,60 +104,17 @@ public final class AppMenuDialogs {
         return link;
     }
 
-    /** About body (unit-tested; P16-094). */
+    /** About body (unit-tested; P16-094 / P25). */
     static String aboutSummary() {
-        return "Монітор RTT і маршрутів до 10 цілей (IPv4/IPv6 literal або hostname). "
-                + "Сесія: RAM або SQLite (Налаштування → База даних…). "
-                + "Телеметрія / LOG sinks: Налаштування → Телеметрія… (YAML telemetry:).";
+        return UiI18n.get("about.summary");
     }
 
-    /** Help body (unit-tested; P16-094). */
+    /** Help body (unit-tested; P16-094 / P25). */
     static String helpText() {
         String expert = PlatformCapabilities.expertPingSupported()
-                ? "Експерт (Linux) — кнопка Exten. задає параметри ping(8) iputils."
-                : "Експерт недоступний на цій ОС (лише Linux, iputils ping).";
-        return """
-                Профілі та цілі
-                • Кілька профілів трасування в одному YAML; перемикання — «Профіль».
-                • До 10 IP (IPv4/IPv6 literal) або hostname; чекбокс увімкнює моніторинг хоста.
-                • IPv6 literal — trace через traceroute -6; на Linux з raw ICMP — auto fallback на process.
-                • Ping only — лише RTT до цілі без traceroute (рекомендовано на Windows).
-
-                Режими інтерфейсу
-                • Простий — компактний список із метриками RTT і loss %%.
-                • Розширений — граф hop-ів і журнал змін маршруту.
-                • Граф: коліщатко — zoom, перетягування — pan, наведення — tooltip; подвійний клік по hop — копіювати IP (подвійний клік по порожньому — скинути вид).
-                • %s
-
-                Налаштування
-                • База даних… — SQLite session (історія route_change), не telemetry archive.
-                • Профіль… — interval / max_hops / timeout / probe активного профілю; Apply + «Зберегти».
-                • Сповіщення… — desktop / webhook / rate_limit; endpoint_down + notify_resolved; Apply + «Зберегти».
-                • Телеметрія… — sinks (sqlite/jsonl/syslog/GELF/Loki/OTLP), events_only; Apply + «Зберегти».
-                • Експорт зараз… — CSV/HTML звіт сесії (як CLI --export-report); потрібен SQLite session.
-                • persistence.session_db ≠ telemetry.sqlite (різні ролі).
-
-                Expert ping (Linux)
-                • Експерт → Exten. / MTU — пресети, MTU wizard і Self-check (DF/DSCP/Burst → Alert).
-                • «MTU probe» пресет ≠ перебір MTU: кнопка MTU / «MTU wizard…» (sweep -s + -M do → Apply).
-                • Self-check — короткий batch пресетів DF/DSCP/Burst з ProgressBar; не змінює форму Expert.
-
-                Кнопки
-                • Додати / Змінити / Видалити — цілі в поточному профілі.
-                • Зберегти — запис усіх профілів у YAML (--config), включно з telemetry:.
-
-                %s
-                CLI (термінал)
-                • ./pingui-java.sh [--config PATH] [--interval SEC] …
-                • --interval / --max-hops / --timeout / --probe перезаписують YAML лише якщо передані.
-                • --telemetry-syslog / --telemetry-jsonl / --telemetry-otlp — override sinks.
-                • --help — повний список опцій.
-
-                Платформа
-                • Linux — рекомендована ОС (швидкий traceroute, Expert ping).
-                • Windows — повний trace через tracert може тривати хвилини; Ping only або interval ≥ 30 с.
-                """
-                .formatted(expert, AppAccelerators.helpSection());
+                ? UiI18n.get("help.expert_linux")
+                : UiI18n.get("help.expert_unavailable");
+        return UiI18n.get("help.body", expert, AppAccelerators.helpSection());
     }
 
     private static void openRepository() {

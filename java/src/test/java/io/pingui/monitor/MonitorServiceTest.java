@@ -427,6 +427,39 @@ class MonitorServiceTest {
     }
 
     @Test
+    void defaultConcurrencyAllowsFullSessionOfTraces() throws Exception {
+        int hostCount = TraceConcurrencyLimiter.DEFAULT_MAX;
+        AtomicInteger concurrent = new AtomicInteger();
+        AtomicInteger maxConcurrent = new AtomicInteger();
+        CountDownLatch allStarted = new CountDownLatch(hostCount);
+        CountDownLatch releaseAll = new CountDownLatch(1);
+        RouteProbe blockingProbe = (targetHost, maxHops, timeoutSeconds) -> {
+            int active = concurrent.incrementAndGet();
+            maxConcurrent.updateAndGet(prev -> Math.max(prev, active));
+            allStarted.countDown();
+            try {
+                if (!releaseAll.await(5, TimeUnit.SECONDS)) {
+                    throw new java.io.IOException("release wait timed out");
+                }
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new java.io.IOException("interrupted", ex);
+            } finally {
+                concurrent.decrementAndGet();
+            }
+            return new RouteSnapshot(targetHost, targetHost, List.of(new HopNode(1, "10.0.0.1", 1.0, false)));
+        };
+        MonitorService service = new MonitorService(0.05, 20, 0.5, blockingProbe, TraceConcurrencyLimiter.DEFAULT_MAX);
+        for (int i = 0; i < hostCount; i++) {
+            service.addHost("10.0.0." + (i + 1), true, HostProbeMode.TRACE);
+        }
+        assertTrue(allStarted.await(5, TimeUnit.SECONDS), "all TRACE hosts should start together");
+        assertEquals(hostCount, maxConcurrent.get());
+        releaseAll.countDown();
+        service.close();
+    }
+
+    @Test
     void pingOnlyPollsWhileTraceSlotExhausted() throws Exception {
         CountDownLatch traceStarted = new CountDownLatch(1);
         CountDownLatch releaseTrace = new CountDownLatch(1);
@@ -576,6 +609,68 @@ class MonitorServiceTest {
         service.setHostProbeMode("a", HostProbeMode.PING_ONLY);
         assertThrows(ConfigError.class, () -> service.setHostProbeMode("missing", HostProbeMode.PING_ONLY));
         service.close();
+    }
+
+    @Test
+    void pollCountersCountAttemptsAndErrorsThenResetOnModeChange() throws Exception {
+        AtomicInteger errors = new AtomicInteger();
+        AtomicInteger data = new AtomicInteger();
+        MonitorService failing = new MonitorService(0.05, 20, 0.2, (target, maxHops, timeout) -> {
+            throw new java.io.IOException("boom");
+        });
+        failing.setListener(new MonitorService.Listener() {
+            @Override
+            public void onDataReceived(String host, RouteSnapshot snapshot) {
+                data.incrementAndGet();
+            }
+
+            @Override
+            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
+
+            @Override
+            public void onProbeError(String host, String message) {
+                errors.incrementAndGet();
+            }
+        });
+        failing.addHost("8.8.8.8", true, HostProbeMode.TRACE);
+        long failDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(3);
+        while (failing.pollCounters("8.8.8.8").attempts() < 2 && System.nanoTime() < failDeadline) {
+            Thread.sleep(50);
+        }
+        HostPollCounters afterErrors = failing.pollCounters("8.8.8.8");
+        assertTrue(afterErrors.attempts() >= 2);
+        assertEquals(afterErrors.attempts(), afterErrors.errors());
+        assertTrue(errors.get() >= 2);
+        assertEquals(0, data.get());
+        failing.setHostProbeMode("8.8.8.8", HostProbeMode.PING_ONLY);
+        assertEquals(HostPollCounters.ZERO, failing.pollCounters("8.8.8.8"));
+        failing.close();
+
+        CountDownLatch gotData = new CountDownLatch(1);
+        MonitorService ok = new MonitorService(
+                0.05,
+                20,
+                0.5,
+                new FakeRouteProbe(
+                        new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "8.8.8.8", 9.0, false)))));
+        ok.setListener(new MonitorService.Listener() {
+            @Override
+            public void onDataReceived(String host, RouteSnapshot snapshot) {
+                gotData.countDown();
+            }
+
+            @Override
+            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
+
+            @Override
+            public void onProbeError(String host, String message) {}
+        });
+        ok.addHost("8.8.8.8", true, HostProbeMode.PING_ONLY);
+        assertTrue(gotData.await(3, TimeUnit.SECONDS));
+        HostPollCounters success = ok.pollCounters("8.8.8.8");
+        assertTrue(success.attempts() >= 1);
+        assertEquals(0, success.errors());
+        ok.close();
     }
 
     @Test

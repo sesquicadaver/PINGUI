@@ -89,7 +89,7 @@ persistence:
 | Опція | Тип | За замовч. | Опис |
 |-------|-----|------------|------|
 | `--alert-webhook` | URL | — | POST JSON `RouteChangeEvent` при зміні маршруту |
-| `--desktop-alerts` | flag | off | Linux `notify-send` при зміні маршруту |
+| `--desktop-alerts` | flag | off | In-app спливаюче вікно при зміні маршруту / quality alert |
 | `--alert-rate-limit` | int | `10` | Макс. алертів на host / годину |
 
 Секрети в URL не логуються; помилки webhook — лише WARNING, процес не падає.
@@ -99,7 +99,7 @@ persistence:
 | Опція | Тип | За замовч. | Опис |
 |-------|-----|------------|------|
 | `--alert-webhook` | URL | — | POST JSON `RouteChangeEvent` при зміні маршруту |
-| `--desktop-alerts` | flag | off | Linux `notify-send` при зміні маршруту |
+| `--desktop-alerts` | flag | off | In-app спливаюче вікно при зміні маршруту / quality alert |
 | `--alert-rate-limit` | int | `10` | Макс. алертів на host / годину |
 
 CLI має пріоритет над YAML. У профілі v2:

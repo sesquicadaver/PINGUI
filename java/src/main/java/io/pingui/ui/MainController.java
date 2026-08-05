@@ -16,15 +16,18 @@ import io.pingui.config.TracingProfile;
 import io.pingui.dns.DnsResolver;
 import io.pingui.geoip.AsnLookup;
 import io.pingui.geoip.GeoCountry;
+import io.pingui.i18n.UiI18n;
+import io.pingui.i18n.UiLocale;
+import io.pingui.i18n.UiLocaleStore;
 import io.pingui.model.Models.RouteSnapshot;
-import io.pingui.monitor.AlertDispatchers;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
 import io.pingui.persistence.PersistencePolicy;
 import io.pingui.persistence.SessionDatabase;
 import io.pingui.persistence.timeseries.TimeSeriesBackends;
 import io.pingui.persistence.timeseries.TimeSeriesConfigException;
-import io.pingui.platform.PlatformCapabilities;
+import io.pingui.ui.view.MainView;
+import io.pingui.ui.view.MainViewActions;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.ZoneId;
@@ -36,29 +39,11 @@ import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Insets;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.Tooltip;
-import javafx.scene.input.KeyCombination;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
@@ -67,13 +52,28 @@ import javafx.util.Duration;
 public final class MainController {
     private static final DateTimeFormatter TIME_FMT =
             DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
-    private static final double SIMPLE_PANEL_MIN_WIDTH = 580.0;
     private static final Duration EASTER_EGG_DURATION = Duration.seconds(30);
-    private static final String WINDOW_TITLE = "PINGUI — Сесійний монітор маршрутів (Java)";
-
     /** Window title without dirty suffix (shared with {@link io.pingui.PinguiApplication}). */
     public static String windowTitle() {
-        return WINDOW_TITLE;
+        return UiI18n.get("status.window_title");
+    }
+
+    /** Window title with dirty marker when YAML has unsaved edits. */
+    public static String windowTitleDirty() {
+        return UiI18n.get("status.window_title_dirty");
+    }
+
+    /**
+     * Resolve UI locale before Scene creation: CLI {@code --lang} &gt; prefs &gt; Ukrainian canon.
+     */
+    public static void bootstrapUiLocale(AppOptions options) {
+        UiLocale locale = UiLocale.UK;
+        if (options != null && options.uiLang().isPresent()) {
+            locale = UiLocale.fromCode(options.uiLang().get()).orElse(UiLocale.UK);
+        } else {
+            locale = UiLocaleStore.userDefault().load().orElse(UiLocale.UK);
+        }
+        UiI18n.setLocale(locale);
     }
 
     private final AppOptions options;
@@ -81,28 +81,12 @@ public final class MainController {
     private SessionStore store;
     private MonitorService monitor;
     private TelemetryAttachment telemetry;
+    private volatile boolean servicesReady;
+    private volatile boolean shutdownRequested;
     private final ObservableList<HostItem> hostItems = FXCollections.observableArrayList();
-    private final ListView<HostItem> hostList = new ListView<>();
-    private final TextField hostInput = new TextField();
-    private final TextArea logArea = new TextArea();
-    private final GraphCanvas graphCanvas = new GraphCanvas();
-    private final ListView<RouteHistoryItem> historyList = new ListView<>();
-    private final RadioButton historyRange24h = new RadioButton("24 год");
-    private final RadioButton historyRange7d = new RadioButton("7 днів");
-    private final Label historyLabel = new Label("Історія змін");
-    private final ComboBox<String> historyHostFilter = new ComboBox<>();
-    private final HBox historyFilterBar = new HBox(8);
-    private final HBox historyRangeBar = new HBox(8);
-    private final Label statusLabel = new Label(EmptyStateHints.waitingForData());
-    private final VBox graphPanel = new VBox(8);
-    private final VBox leftPanel = new VBox(8);
-    private final BorderPane root = new BorderPane();
-    private final ComboBox<String> profileCombo = new ComboBox<>();
+    private final MainView mainView = new MainView();
     private final SimpleBooleanProperty expertMode = new SimpleBooleanProperty(false);
-    private final Button saveButton = new Button("Зберегти");
     private final ConfigDirtyState dirtyState = new ConfigDirtyState(this::updateDirtyUi);
-    private RadioButton simpleModeButton;
-    private RadioButton extendedModeButton;
     private UiViewMode viewModeBeforeEasterEgg = UiViewMode.SIMPLE;
     private boolean easterEggActive;
     private PauseTransition easterEggTimer;
@@ -116,9 +100,27 @@ public final class MainController {
     private UserFeedback userFeedback;
     private RouteGraphPresenter routeGraphPresenter;
     private RouteHistoryPresenter routeHistoryPresenter;
-    private final RouteDiffPresenter routeDiffPresenter = new RouteDiffPresenter();
     private final HistoryHostSync historyHostSync = new HistoryHostSync();
+    private WindowGeometry pendingDividerRestore;
+    private Stage mainStage;
+    private double extendedDefaultWidth = WindowGeometry.DEFAULT_EXTENDED_WIDTH;
+    private double extendedDefaultHeight = WindowGeometry.DEFAULT_EXTENDED_HEIGHT;
+    /** Last non-maximized bounds — used when close would otherwise persist screen-sized maximized geometry. */
+    private WindowGeometry lastFloatingGeometry;
 
+    /**
+     * Shell constructor (P24-009): FX chrome only — no profile YAML, SQLite, or GeoIP I/O. Heavy load
+     * runs via {@link StartupBootstrap#load(AppOptions)} then {@link #attachBootstrap}.
+     */
+    public MainController(AppOptions options) {
+        this.options = options;
+    }
+
+    /**
+     * @deprecated Use {@link #MainController(AppOptions)} + {@link StartupBootstrap} (P24-009). Kept
+     *     for tests that need a fully wired controller on the calling thread.
+     */
+    @Deprecated
     public MainController(AppOptions options, ProfileDocument document) {
         this.options = options;
         this.profileDocument = document;
@@ -133,113 +135,443 @@ public final class MainController {
                 sessionHosts, openSessionDatabase(), profileDocument.active().hostProbeMode());
         attachTimeSeries(store);
         this.monitor = createMonitor(active, sessionHosts);
+        this.servicesReady = true;
         initCoordinators();
         hostListPresenter.rebuild(sessionHosts);
     }
 
+    /**
+     * Builds the shell Scene without waiting for {@link StartupBootstrap}. Controls stay disabled
+     * until {@link #attachBootstrap}.
+     */
     public Scene createScene() {
+        initCoordinators();
         hostListPresenter.configure();
-        hostInput.setPromptText("IP або hostname…");
-        logArea.setEditable(false);
-        logArea.setWrapText(true);
-        statusLabel.setWrapText(true);
-        statusLabel.setMaxWidth(SIMPLE_PANEL_MIN_WIDTH - 16);
+        mainView.monitorModeToolbar().bindExpertMode(expertMode);
+        if (!mainView.monitorModeToolbar().expertCheck().isDisable()) {
+            expertMode.addListener((obs, was, on) -> mainView.hostList().refresh());
+        }
 
-        Button addButton = new Button("Додати");
-        Button editButton = new Button("Змінити");
-        Button tagsButton = new Button("Теги");
-        Button removeButton = new Button("Видалити");
-        addButton.setOnAction(e -> hostListPresenter.addHost());
-        editButton.setOnAction(e -> hostListPresenter.editHost());
-        tagsButton.setOnAction(e -> hostListPresenter.editSelectedHostTags());
-        removeButton.setOnAction(e -> hostListPresenter.removeHost());
-        saveButton.setOnAction(e -> onSaveConfig());
-        hostInput.setOnAction(e -> hostListPresenter.addHost());
+        MainViewActions actions = buildViewActions();
+        mainView.assemble(actions, hostListPresenter.tagFilterBar());
         updateDirtyUi();
 
-        RadioButton simpleMode = new RadioButton("Простий");
-        extendedModeButton = new RadioButton("Розширений");
-        simpleModeButton = simpleMode;
-        ToggleGroup modeGroup = new ToggleGroup();
-        simpleMode.setToggleGroup(modeGroup);
-        extendedModeButton.setToggleGroup(modeGroup);
-        simpleMode.setSelected(true);
-        modeGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
+        // Cross-coordinator listeners (D4) — after assemble.
+        mainView.modeGroup().selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
             viewModeController.onToggleSelected(newToggle);
+            if (viewModeController.isExtended()) {
+                ensureExtendedStageGeometry();
+            } else {
+                // Pref sizes settle after Simple re-parent; shrink Stage to host-column chrome.
+                Platform.runLater(this::fitSimpleStageGeometryIfNeeded);
+            }
             updateHistoryPanelVisibility();
         });
 
-        CheckBox expertCheck = new CheckBox("Експерт");
-        if (PlatformCapabilities.expertPingSupported()) {
-            expertCheck.selectedProperty().bindBidirectional(expertMode);
-            expertMode.addListener((obs, was, on) -> hostList.refresh());
-        } else {
-            expertCheck.setDisable(true);
-            expertCheck.setTooltip(new Tooltip("Expert ping (iputils ping) доступний лише на Linux"));
-        }
-
-        Button newProfileButton = new Button("Новий профіль");
-        Button deleteProfileButton = new Button("Видалити профіль");
-        newProfileButton.setOnAction(e -> profileUi.onNewProfile());
-        deleteProfileButton.setOnAction(e -> profileUi.onDeleteProfile());
-        profileUi.refreshCombo();
-        profileCombo.setOnAction(e -> profileUi.onProfileSelected());
-
-        HBox profileBar = new HBox(8, new Label("Профіль:"), profileCombo, newProfileButton, deleteProfileButton);
-        profileCombo.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(profileCombo, Priority.ALWAYS);
-
-        HBox modeBar = new HBox(12, new Label("Режим:"), simpleMode, extendedModeButton, expertCheck);
-        HBox buttons = new HBox(8, addButton, editButton, tagsButton, removeButton, saveButton);
-        leftPanel
-                .getChildren()
-                .addAll(
-                        profileBar,
-                        modeBar,
-                        hostListPresenter.tagFilterBar(),
-                        hostList,
-                        hostInput,
-                        buttons,
-                        statusLabel,
-                        logArea);
-        VBox.setVgrow(hostList, Priority.NEVER);
-        VBox.setVgrow(logArea, Priority.ALWAYS);
-        leftPanel.setPadding(new Insets(8));
-        leftPanel.setMinWidth(SIMPLE_PANEL_MIN_WIDTH);
-        hostList.setPrefWidth(SIMPLE_PANEL_MIN_WIDTH);
-        hostInput.setMaxWidth(Double.MAX_VALUE);
-        hostInput.textProperty().addListener((obs, oldText, newText) -> {
+        mainView.hostInput().textProperty().addListener((obs, oldText, newText) -> {
             if (easterEggActive && !HostViewRules.matches(newText)) {
                 dismissEasterEgg();
             }
         });
 
-        graphPanel.getChildren().addAll(new Label("Граф маршруту"), graphCanvas, routeDiffPresenter.panel());
-        configureHistoryPanel();
-        VBox.setVgrow(graphCanvas, Priority.ALWAYS);
-        graphPanel.setPadding(new Insets(8));
-        graphCanvas.setMinSize(400, 280);
-
-        root.setLeft(leftPanel);
-        root.setTop(createMenuBar());
-
-        hostList.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, newItem) -> {
+        mainView.hostList().getSelectionModel().selectedItemProperty().addListener((obs, oldItem, newItem) -> {
             if (newItem != null) {
-                hostInput.setText(newItem.getHost());
+                mainView.hostInput().setText(newItem.getHost());
             }
             hostListPresenter.syncInputLimits();
-            // Host list is the live-graph source of truth: drop timeline replay for another target.
             if (oldItem != newItem) {
                 clearHistoryReplay();
             }
             routeGraphPresenter.redrawIfExtended();
         });
+        mainView.statusLabel().setText(UiI18n.get("status.loading"));
+        setShellBusy(true);
+        Scene scene = new Scene(mainView.root());
+        UiPalette.applyTo(scene);
+        return scene;
+    }
+
+    /**
+     * Attaches background-loaded services on the FX thread and starts polling ({@link
+     * MonitorService} ctor).
+     */
+    public void attachBootstrap(StartupBootstrap.Result result) {
+        if (shutdownRequested) {
+            // Window closed while bootstrap was in flight — do not start polling.
+            try {
+                result.store().close();
+            } catch (RuntimeException ignored) {
+                // best-effort
+            }
+            return;
+        }
+        this.profileDocument = result.document();
+        this.store = result.store();
+        TracingProfile active = profileDocument.active();
+        this.monitor = createMonitor(active, result.sessionHosts());
+        this.servicesReady = true;
+        profileUi.refreshCombo();
+        updateHistoryPanelVisibility();
+        hostListPresenter.rebuild(result.sessionHosts());
+        syncHistoryHostFilter();
+        mainView.hostList().getSelectionModel().clearSelection();
         if (!hostItems.isEmpty()) {
-            hostList.getSelectionModel().select(0);
+            mainView.hostList().getSelectionModel().select(0);
         }
         hostListPresenter.syncInputLimits();
         viewModeController.apply();
-        return new Scene(root, Color.web("#fafafa"));
+        setShellBusy(false);
+        if (EmptyStateHints.isReplaceableSimpleStatus(mainView.statusLabel().getText())
+                || UiI18n.get("status.loading").equals(mainView.statusLabel().getText())) {
+            mainView.statusLabel().setText(EmptyStateHints.waitingForData());
+        }
+        redrawRouteGraph();
+    }
+
+    /** Surfaces bootstrap failure after the Stage is already shown (status only — no modal Alert). */
+    public void onBootstrapFailed(Throwable error) {
+        if (shutdownRequested) {
+            return;
+        }
+        // Re-enable only the status label path: keep menus/panels disabled to avoid NPE on null store.
+        if (mainView.root().getTop() != null) {
+            mainView.root().getTop().setDisable(true);
+        }
+        mainView.leftPanel().setDisable(false);
+        mainView.hostInput().setDisable(true);
+        mainView.hostList().setDisable(true);
+        mainView.profileCombo().setDisable(true);
+        mainView.saveButton().setDisable(true);
+        mainView.graphPanel().setDisable(true);
+        mainView.mainSplit().setDisable(true);
+        String message = error.getMessage() != null ? error.getMessage() : error.toString();
+        mainView.statusLabel().setText(UiI18n.get("status.load_error", message));
+        if (viewModeController != null && viewModeController.isExtended()) {
+            mainView.logArea()
+                    .appendText("[" + TIME_FMT.format(java.time.Instant.now()) + "] "
+                            + UiI18n.get("status.load_failed_log", message) + "\n");
+        }
+    }
+
+    /** True after {@link #attachBootstrap} succeeded (test / guard seam). */
+    boolean servicesReady() {
+        return servicesReady;
+    }
+
+    /** Package-visible for startup tests. */
+    String statusTextForTest() {
+        return mainView.statusLabel().getText();
+    }
+
+    private void setShellBusy(boolean busy) {
+        // Disable all interactive chrome (including menu) while bootstrap runs — avoids NPE on null store.
+        if (mainView.root().getTop() != null) {
+            mainView.root().getTop().setDisable(busy);
+        }
+        mainView.leftPanel().setDisable(busy);
+        mainView.graphPanel().setDisable(busy);
+        mainView.mainSplit().setDisable(busy);
+    }
+
+    private MainViewActions buildViewActions() {
+        return new MainViewActions() {
+            @Override
+            public void onSaveConfig() {
+                MainController.this.onSaveConfig();
+            }
+
+            @Override
+            public void onAddHost() {
+                hostListPresenter.addHost();
+            }
+
+            @Override
+            public void onEditHost() {
+                hostListPresenter.editHost();
+            }
+
+            @Override
+            public void onEditTags() {
+                hostListPresenter.editSelectedHostTags();
+            }
+
+            @Override
+            public void onRemoveHost() {
+                hostListPresenter.removeHost();
+            }
+
+            @Override
+            public void onNewProfile() {
+                profileUi.onNewProfile();
+            }
+
+            @Override
+            public void onDeleteProfile() {
+                profileUi.onDeleteProfile();
+            }
+
+            @Override
+            public void onProfileSelected() {
+                profileUi.onProfileSelected();
+            }
+
+            @Override
+            public void onRefreshHistory() {
+                refreshRouteHistory();
+            }
+
+            @Override
+            public void onAbout() {
+                AppMenuDialogs.showAbout(dialogOwner());
+            }
+
+            @Override
+            public void onHelp() {
+                AppMenuDialogs.showHelp(dialogOwner());
+            }
+
+            @Override
+            public void onPersistenceSettings() {
+                MainController.this.onPersistenceSettings();
+            }
+
+            @Override
+            public void onProfileParamsSettings() {
+                MainController.this.onProfileParamsSettings();
+            }
+
+            @Override
+            public void onAlertsSettings() {
+                MainController.this.onAlertsSettings();
+            }
+
+            @Override
+            public void onTelemetrySettings() {
+                MainController.this.onTelemetrySettings();
+            }
+
+            @Override
+            public void onExportNow() {
+                MainController.this.onExportNow();
+            }
+
+            @Override
+            public void onLanguageSelected(UiLocale locale) {
+                MainController.this.applyUiLocale(locale);
+            }
+        };
+    }
+
+    /** Persist locale, refresh chrome labels, update Stage title (P25). */
+    void applyUiLocale(UiLocale locale) {
+        if (locale == null || locale == UiI18n.locale()) {
+            return;
+        }
+        UiI18n.setLocale(locale);
+        UiLocaleStore.userDefault().save(locale);
+        mainView.retranslateChrome();
+        updateDirtyUi();
+        if (hostListPresenter != null) {
+            hostListPresenter.configure();
+        }
+        viewModeController.apply();
+    }
+
+    /**
+     * Loads prefs, clamps to the visual screen, applies Simple layout once, sets stage bounds, and
+     * registers close-only save (P24-006). Call after {@link #createScene()} and before {@code
+     * stage.show()}. Startup always opens in Simple (saved {@code viewMode} is ignored; divider is
+     * kept for the next Extended session). Near-fullscreen / Extended leftover bounds reset to Simple
+     * defaults; maximize is cleared before Simple fit after show.
+     *
+     * @param defaultWidthSimple fallback width when prefs missing
+     * @param defaultWidthExtended expand target when toggling to Extended
+     * @param defaultHeightSimple fallback height for Simple / missing prefs
+     * @param defaultHeightExtended expand target when toggling to Extended
+     */
+    public void prepareStageGeometry(
+            Stage stage,
+            double defaultWidthSimple,
+            double defaultWidthExtended,
+            double defaultHeightSimple,
+            double defaultHeightExtended) {
+        this.mainStage = stage;
+        this.extendedDefaultWidth = defaultWidthExtended;
+        this.extendedDefaultHeight = defaultHeightExtended;
+        WindowGeometryStore store = WindowGeometryStore.userDefault();
+        WindowGeometry loaded =
+                store.load(defaultWidthSimple, defaultWidthExtended, defaultHeightSimple, defaultHeightExtended);
+        Rectangle2D visual = visualBoundsFor(loaded);
+        // Startup is always Simple: clamp with Simple defaults; ignore saved viewMode for layout.
+        WindowGeometry clamped = loaded.clamp(
+                visual.getMinX(),
+                visual.getMinY(),
+                visual.getWidth(),
+                visual.getHeight(),
+                defaultWidthSimple,
+                defaultHeightSimple);
+        // Extended leftovers or maximized-as-bounds (≈ visualBounds) → Simple defaults.
+        boolean resetSize = loaded.viewMode() == UiViewMode.EXTENDED
+                || WindowGeometry.fillsVisualBounds(
+                        clamped.width(), clamped.height(), visual.getWidth(), visual.getHeight());
+        double startW = resetSize ? defaultWidthSimple : clamped.width();
+        double startH = resetSize ? defaultHeightSimple : clamped.height();
+        WindowGeometry geometry =
+                new WindowGeometry(clamped.x(), clamped.y(), startW, startH, clamped.divider(), UiViewMode.SIMPLE);
+        lastFloatingGeometry = geometry;
+        applyRestoredGeometry(geometry);
+        clearStageMaximize(stage);
+        if (!Double.isNaN(geometry.x())) {
+            stage.setX(geometry.x());
+        }
+        if (!Double.isNaN(geometry.y())) {
+            stage.setY(geometry.y());
+        }
+        stage.setWidth(geometry.width());
+        stage.setHeight(geometry.height());
+        pendingDividerRestore = geometry;
+        stage.setOnCloseRequest(event -> store.save(captureGeometry(stage)));
+    }
+
+    /** Post-show: remember divider for Extended, fit Simple Stage to chrome, scene-shown redraw. */
+    public void onStageShown() {
+        if (pendingDividerRestore != null) {
+            WindowGeometry geometry = pendingDividerRestore;
+            pendingDividerRestore = null;
+            Platform.runLater(() -> viewModeController.applyDivider(geometry.divider()));
+        }
+        // Two pulses: some WMs maximize after show when prior bounds filled the screen.
+        Platform.runLater(() -> {
+            fitSimpleStageGeometryIfNeeded();
+            Platform.runLater(this::fitSimpleStageGeometryIfNeeded);
+        });
+        onSceneShown();
+    }
+
+    /**
+     * After layout in Simple: clear maximize/fullscreen, then shrink Stage to content pref when the
+     * frame is larger than chrome. Never expands; no-op in Extended.
+     */
+    void fitSimpleStageGeometryIfNeeded() {
+        if (mainStage == null || viewModeController == null || viewModeController.isExtended()) {
+            return;
+        }
+        clearStageMaximize(mainStage);
+        javafx.scene.layout.Region root = mainView.root();
+        root.applyCss();
+        root.layout();
+        double nextW = WindowGeometry.fitSimpleWidth(mainStage.getWidth(), root.prefWidth(-1));
+        double nextH = WindowGeometry.fitSimpleHeight(mainStage.getHeight(), root.prefHeight(-1));
+        if (nextW + 0.5 < mainStage.getWidth()) {
+            mainStage.setWidth(nextW);
+        }
+        if (nextH + 0.5 < mainStage.getHeight()) {
+            mainStage.setHeight(nextH);
+        }
+        rememberFloatingGeometry(mainStage);
+    }
+
+    /**
+     * When switching to Extended: expand Stage to Extended defaults if still Simple-sized, then set
+     * SplitPane divider from host-column target width (never shrinks Stage).
+     */
+    void ensureExtendedStageGeometry() {
+        if (mainStage == null || viewModeController == null || !viewModeController.isExtended()) {
+            return;
+        }
+        clearStageMaximize(mainStage);
+        double nextW = WindowGeometry.ensureExtendedWidth(mainStage.getWidth(), extendedDefaultWidth);
+        double nextH = WindowGeometry.ensureExtendedHeight(mainStage.getHeight(), extendedDefaultHeight);
+        if (nextW > mainStage.getWidth() + 0.5) {
+            mainStage.setWidth(nextW);
+        }
+        if (nextH > mainStage.getHeight() + 0.5) {
+            mainStage.setHeight(nextH);
+        }
+        viewModeController.applyDivider(
+                WindowGeometry.dividerForLeftWidth(mainStage.getWidth(), WindowGeometry.EXTENDED_LEFT_WIDTH));
+        rememberFloatingGeometry(mainStage);
+    }
+
+    /** Maximized/fullscreen Stages ignore setWidth/setHeight — clear chrome state first. */
+    static void clearStageMaximize(Stage stage) {
+        if (stage == null) {
+            return;
+        }
+        if (stage.isFullScreen()) {
+            stage.setFullScreen(false);
+        }
+        if (stage.isMaximized()) {
+            stage.setMaximized(false);
+        }
+    }
+
+    void rememberFloatingGeometry(Stage stage) {
+        if (stage == null || stage.isMaximized() || stage.isFullScreen()) {
+            return;
+        }
+        lastFloatingGeometry = new WindowGeometry(
+                stage.getX(),
+                stage.getY(),
+                stage.getWidth(),
+                stage.getHeight(),
+                viewModeController != null ? viewModeController.dividerForSave() : WindowGeometry.DEFAULT_DIVIDER,
+                viewModeController != null ? viewModeController.viewMode() : UiViewMode.SIMPLE);
+    }
+
+    /**
+     * Restores view mode and builds layout once before the Stage is shown (no Simple flash when
+     * prefs say EXTENDED).
+     */
+    void applyRestoredGeometry(WindowGeometry geometry) {
+        viewModeController.restoreMode(geometry.viewMode(), mainView::simpleModeButton, mainView::extendedModeButton);
+        viewModeController.apply();
+        viewModeController.applyDivider(geometry.divider());
+    }
+
+    /**
+     * Persists floating bounds. When the Stage is maximized/fullscreen, writes {@link
+     * #lastFloatingGeometry} (or Simple defaults) so the next start is not trapped at screen size.
+     */
+    WindowGeometry captureGeometry(Stage stage) {
+        double divider = viewModeController.dividerForSave();
+        UiViewMode mode = viewModeController.viewMode();
+        if (stage.isMaximized() || stage.isFullScreen()) {
+            if (lastFloatingGeometry != null) {
+                return new WindowGeometry(
+                        lastFloatingGeometry.x(),
+                        lastFloatingGeometry.y(),
+                        lastFloatingGeometry.width(),
+                        lastFloatingGeometry.height(),
+                        divider,
+                        mode);
+            }
+            return new WindowGeometry(
+                    Double.NaN,
+                    Double.NaN,
+                    WindowGeometry.DEFAULT_SIMPLE_WIDTH,
+                    WindowGeometry.DEFAULT_SIMPLE_HEIGHT,
+                    divider,
+                    mode);
+        }
+        WindowGeometry current =
+                new WindowGeometry(stage.getX(), stage.getY(), stage.getWidth(), stage.getHeight(), divider, mode);
+        lastFloatingGeometry = current;
+        return current;
+    }
+
+    static Rectangle2D visualBoundsFor(WindowGeometry geometry) {
+        double cx = Double.isNaN(geometry.x()) ? Double.NaN : geometry.x() + geometry.width() / 2.0;
+        double cy = Double.isNaN(geometry.y()) ? Double.NaN : geometry.y() + geometry.height() / 2.0;
+        if (!Double.isNaN(cx) && !Double.isNaN(cy)) {
+            for (Screen screen : Screen.getScreens()) {
+                Rectangle2D bounds = screen.getVisualBounds();
+                if (bounds.contains(cx, cy)) {
+                    return bounds;
+                }
+            }
+        }
+        return Screen.getPrimary().getVisualBounds();
     }
 
     public void onSceneShown() {
@@ -247,24 +579,29 @@ public final class MainController {
             if (!easterEggActive) {
                 routeGraphPresenter.redrawIfExtended();
             }
-            viewModeController.fitWindowToContent();
         });
     }
 
     public void shutdown() {
+        shutdownRequested = true;
         dismissEasterEgg();
-        monitor.close();
+        if (monitor != null) {
+            monitor.close();
+        }
         closeTelemetry();
-        store.close();
+        if (store != null) {
+            store.close();
+        }
     }
 
     private void initCoordinators() {
         viewModeController = new ViewModeController(
-                graphPanel,
-                leftPanel,
-                root,
-                logArea,
-                statusLabel,
+                mainView.graphPanel(),
+                mainView.leftPanel(),
+                mainView.root(),
+                mainView.mainSplit(),
+                mainView.logArea(),
+                mainView.statusLabel(),
                 () -> {
                     if (routeGraphPresenter != null) {
                         routeGraphPresenter.redrawIfExtended();
@@ -275,25 +612,29 @@ public final class MainController {
                 () -> easterEggActive);
         userFeedback = new UiFeedbackRouter(
                 () -> viewModeController.isExtended(),
-                statusLabel::setText,
-                message -> logArea.appendText("[" + TIME_FMT.format(java.time.Instant.now()) + "] " + message + "\n"),
+                mainView.statusLabel()::setText,
+                message -> mainView.logArea()
+                        .appendText("[" + TIME_FMT.format(java.time.Instant.now()) + "] " + message + "\n"),
                 this::showSimpleErrorAlert);
 
         profileUi = new ProfileUiCoordinator(
                 () -> profileDocument,
                 () -> store,
-                profileCombo,
+                mainView.profileCombo(),
                 () -> switchingProfile,
                 value -> switchingProfile = value,
                 this::reloadActiveProfile,
                 () -> profileUi.refreshCombo(),
                 userFeedback);
         profileUi.setDirtyHooks(dirtyState::mark, dirtyState::isDirty, this::onSaveConfig, this::confirmUnsavedChanges);
+        if (profileDocument != null) {
+            profileUi.refreshCombo();
+        }
 
         hostListPresenter = new HostListPresenter(
                 hostItems,
-                hostList,
-                hostInput,
+                mainView.hostList(),
+                mainView.hostInput(),
                 () -> store,
                 () -> monitor,
                 expertMode,
@@ -303,44 +644,45 @@ public final class MainController {
                 this::clearHistoryReplay,
                 this::onHostRenamed,
                 this::startEasterEgg,
-                () -> viewModeController.fitWindowToContent(),
                 historyHostSync::runWhileSyncing);
         hostListPresenter.setMarkDirty(dirtyState::mark);
 
         routeGraphPresenter = new RouteGraphPresenter(
-                graphCanvas,
-                hostList,
+                mainView.graphCanvas(),
+                mainView.hostList(),
                 () -> store,
                 () -> viewModeController.isExtended(),
-                () -> easterEggActive,
-                routeDiffPresenter);
-        graphCanvas.setOnHopIpCopied(ip -> userFeedback.info("Скопійовано hop IP: " + ip));
+                () -> easterEggActive);
+        mainView.graphCanvas().setOnHopIpCopied(ip -> userFeedback.info(UiI18n.get("status.hop_ip_copied", ip)));
         DnsResolver.addListener(() -> Platform.runLater(routeGraphPresenter::redrawIfExtended));
 
         routeHistoryPresenter = new RouteHistoryPresenter(
                 () -> store,
-                historyHostFilter,
-                historyList,
-                historyRange24h,
-                historyRange7d,
+                mainView.historyHostFilter(),
+                mainView.historyList(),
+                mainView.historyRange24h(),
+                mainView.historyRange7d(),
                 () -> viewModeController.isExtended(),
                 routeGraphPresenter::replayRouteChange,
                 routeGraphPresenter::clearReplay);
         routeHistoryPresenter.configure();
         hostItems.addListener(
                 (javafx.collections.ListChangeListener<? super HostItem>) change -> syncHistoryHostFilter());
-        hostList.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, item) -> {
+        mainView.hostList().getSelectionModel().selectedItemProperty().addListener((obs, oldItem, item) -> {
             historyHostSync.syncFilterFromHostList(
-                    item != null ? item.getHost() : null, historyHostFilter.getValue(), historyHostFilter::setValue);
+                    item != null ? item.getHost() : null,
+                    mainView.historyHostFilter().getValue(),
+                    mainView.historyHostFilter()::setValue);
         });
-        historyHostFilter.valueProperty().addListener((obs, oldHost, newHost) -> {
+        mainView.historyHostFilter().valueProperty().addListener((obs, oldHost, newHost) -> {
             if (historyHostSync.isSyncing()) {
                 return;
             }
             hostListPresenter.ensureHostVisibleForTagFilter(newHost);
-            historyHostSync.syncHostListFromFilter(newHost, hostItems, hostList);
+            historyHostSync.syncHostListFromFilter(newHost, hostItems, mainView.hostList());
             redrawRouteGraph();
         });
+        syncHistoryHostFilter();
     }
 
     private void syncHistoryHostFilter() {
@@ -349,20 +691,6 @@ public final class MainController {
         }
         routeHistoryPresenter.rebuildHostFilter(
                 hostItems.stream().map(HostItem::getHost).toList());
-    }
-
-    private void configureHistoryPanel() {
-        updateHistoryPanelVisibility();
-        historyList.setPrefHeight(120);
-        historyHostFilter.setPromptText("Оберіть ціль…");
-        historyHostFilter.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(historyHostFilter, Priority.ALWAYS);
-        historyFilterBar.getChildren().addAll(new Label("Ціль:"), historyHostFilter);
-        Button refreshHistory = new Button("Оновити");
-        refreshHistory.setOnAction(e -> refreshRouteHistory());
-        historyRangeBar.getChildren().addAll(historyRange24h, historyRange7d, refreshHistory);
-        graphPanel.getChildren().addAll(historyLabel, historyFilterBar, historyRangeBar, historyList);
-        syncHistoryHostFilter();
     }
 
     private void refreshRouteHistory() {
@@ -391,8 +719,8 @@ public final class MainController {
     }
 
     private void onHostRenamed(String oldHost, String newHost) {
-        if (oldHost.equals(historyHostFilter.getValue())) {
-            historyHostSync.runWhileSyncing(() -> historyHostFilter.setValue(newHost));
+        if (oldHost.equals(mainView.historyHostFilter().getValue())) {
+            historyHostSync.runWhileSyncing(() -> mainView.historyHostFilter().setValue(newHost));
         }
         syncHistoryHostFilter();
     }
@@ -403,70 +731,29 @@ public final class MainController {
      * pings for host A can redraw while the list shows host B.
      */
     private String viewHost() {
-        HostItem selected = hostList.getSelectionModel().getSelectedItem();
+        HostItem selected = mainView.hostList().getSelectionModel().getSelectedItem();
         if (selected != null) {
             return selected.getHost();
         }
-        String filterHost = historyHostFilter.getValue();
+        String filterHost = mainView.historyHostFilter().getValue();
         return filterHost != null && !filterHost.isBlank() ? filterHost : null;
     }
 
     private void updateHistoryPanelVisibility() {
-        // Extended graph panel owns history; always show list+label so empty-state hints are visible.
-        // Filter/range only when SQLite session is connected (P20-007).
-        boolean persistence = store.hasPersistence();
-        historyLabel.setVisible(true);
-        historyLabel.setManaged(true);
-        historyList.setVisible(true);
-        historyList.setManaged(true);
-        historyFilterBar.setVisible(persistence);
-        historyFilterBar.setManaged(persistence);
-        historyRangeBar.setVisible(persistence);
-        historyRangeBar.setManaged(persistence);
+        boolean persistence = store != null && store.hasPersistence();
+        mainView.historyLabel().setVisible(true);
+        mainView.historyLabel().setManaged(true);
+        mainView.historyList().setVisible(true);
+        mainView.historyList().setManaged(true);
+        mainView.historyFilterBar().setVisible(persistence);
+        mainView.historyFilterBar().setManaged(persistence);
+        mainView.historyRangeBar().setVisible(persistence);
+        mainView.historyRangeBar().setManaged(persistence);
         refreshRouteHistory();
     }
 
-    private MenuBar createMenuBar() {
-        MenuItem saveItem = new MenuItem("Зберегти");
-        saveItem.setAccelerator(KeyCombination.valueOf(AppAccelerators.SAVE));
-        saveItem.setOnAction(e -> onSaveConfig());
-        MenuItem addHostItem = new MenuItem("Додати ціль");
-        addHostItem.setAccelerator(KeyCombination.valueOf(AppAccelerators.ADD_HOST));
-        addHostItem.setOnAction(e -> hostListPresenter.addHost());
-        Menu fileMenu = new Menu("Файл");
-        fileMenu.getItems().addAll(saveItem, addHostItem);
-
-        MenuItem aboutItem = new MenuItem("Про PINGUI…");
-        aboutItem.setOnAction(e -> AppMenuDialogs.showAbout(dialogOwner()));
-        Menu aboutMenu = new Menu("Про");
-        aboutMenu.getItems().add(aboutItem);
-
-        MenuItem helpItem = new MenuItem("Довідка…");
-        helpItem.setAccelerator(KeyCombination.valueOf(AppAccelerators.HELP));
-        helpItem.setOnAction(e -> AppMenuDialogs.showHelp(dialogOwner()));
-        Menu helpMenu = new Menu("Довідка");
-        helpMenu.getItems().add(helpItem);
-
-        MenuItem databaseItem = new MenuItem("База даних…");
-        databaseItem.setOnAction(e -> onPersistenceSettings());
-        MenuItem profileParamsItem = new MenuItem("Профіль…");
-        profileParamsItem.setOnAction(e -> onProfileParamsSettings());
-        MenuItem alertsItem = new MenuItem("Сповіщення…");
-        alertsItem.setOnAction(e -> onAlertsSettings());
-        MenuItem telemetryItem = new MenuItem("Телеметрія…");
-        telemetryItem.setOnAction(e -> onTelemetrySettings());
-        MenuItem exportItem = new MenuItem("Експорт зараз…");
-        exportItem.setOnAction(e -> onExportNow());
-        Menu settingsMenu = new Menu("Налаштування");
-        settingsMenu.getItems().addAll(databaseItem, profileParamsItem, alertsItem, telemetryItem, exportItem);
-
-        MenuBar menuBar = new MenuBar(fileMenu, aboutMenu, settingsMenu, helpMenu);
-        menuBar.setUseSystemMenuBar(true);
-        return menuBar;
-    }
-
     private Window dialogOwner() {
-        return root.getScene() != null ? root.getScene().getWindow() : null;
+        return mainView.root().getScene() != null ? mainView.root().getScene().getWindow() : null;
     }
 
     private MonitorService createMonitor(TracingProfile profile, List<HostEntry> sessionHosts) {
@@ -487,13 +774,29 @@ public final class MainController {
 
                     @Override
                     public void onProbeError(String host, String message) {
-                        // info (not error): avoid Alert spam on recurring poll failures in Simple.
-                        Platform.runLater(() -> userFeedback.info("Probe [" + host + "]: " + message));
+                        Platform.runLater(() -> {
+                            userFeedback.info(UiI18n.get("status.probe", host, message));
+                            HostItem item = hostListPresenter.findItem(host);
+                            if (item != null) {
+                                hostListPresenter.syncMetrics(item);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onPollFinished(String host) {
+                        Platform.runLater(() -> {
+                            HostItem item = hostListPresenter.findItem(host);
+                            if (item != null) {
+                                hostListPresenter.syncMetrics(item);
+                            }
+                        });
                     }
                 },
                 options.alertOverrides().applyTo(profile.alerts()),
                 store.database(),
-                sessionHosts);
+                sessionHosts,
+                MonitorLifecycle.javaFxDesktopSink(this::dialogOwner));
         applyPersistencePolicy(service, profile);
         attachTelemetry(service);
         return service;
@@ -551,9 +854,8 @@ public final class MainController {
         closeTelemetry();
         monitor = createMonitor(next, liveEntries);
         dirtyState.mark();
-        userFeedback.info(String.format(
-                java.util.Locale.ROOT,
-                "Параметри профілю: interval=%.3g с, max_hops=%d, timeout=%.3g с, probe=%s — «Зберегти» → YAML",
+        userFeedback.info(UiI18n.get(
+                "status.profile_params_applied",
                 next.intervalSeconds(),
                 next.maxHops(),
                 next.timeoutSeconds(),
@@ -589,8 +891,7 @@ public final class MainController {
             sessionPersistenceOverride = Optional.of(result.policy());
             monitor.setPendingPersistencePolicy(result.policy());
         }
-        userFeedback.info("Політика persistence оновлена (з наступного poll-циклу)");
-        // YAML Save currently persists sessionDb override; policy-only Apply stays session-runtime.
+        userFeedback.info(UiI18n.get("status.persistence_updated"));
         if (result.sessionDbPath().isPresent()) {
             dirtyState.mark();
         }
@@ -608,10 +909,11 @@ public final class MainController {
         TracingProfile active = profileDocument.active();
         profileDocument.putProfile(profileDocument.activeProfile(), active.withAlerts(result.alerts()));
         AlertConfig effective = options.alertOverrides().applyTo(result.alerts());
-        monitor.setAlertDispatcher(AlertDispatchers.build(effective));
+        MonitorLifecycle.applyAlertDispatcher(
+                monitor, effective, MonitorLifecycle.javaFxDesktopSink(this::dialogOwner));
         MonitorLifecycle.applyAlertRules(monitor, effective);
         dirtyState.mark();
-        userFeedback.info("Сповіщення оновлено: " + result.alerts().toRedactedString() + " — «Зберегти» → YAML");
+        userFeedback.info(UiI18n.get("status.alerts_updated", result.alerts().toRedactedString()));
     }
 
     private void onTelemetrySettings() {
@@ -628,19 +930,19 @@ public final class MainController {
         attachTelemetry(monitor);
         String sinks = telemetry != null && !telemetry.registeredIds().isEmpty()
                 ? String.join(", ", telemetry.registeredIds())
-                : "немає активних sinks";
+                : UiI18n.get("status.no_sinks");
         userFeedback.info(
-                "Телеметрія оновлена: " + sinks + " — " + result.telemetry().toRedactedString());
+                UiI18n.get("status.telemetry_updated", sinks, result.telemetry().toRedactedString()));
         if (viewModeController.isExtended()) {
-            statusLabel.setText("Телеметрія: " + sinks);
+            mainView.statusLabel().setText(UiI18n.get("status.telemetry", sinks));
         }
         dirtyState.mark();
     }
 
     private void notifyPersistenceConnected(Path dbPath) {
-        userFeedback.info("SQLite підключено: " + dbPath.toAbsolutePath());
+        userFeedback.info(UiI18n.get("status.sqlite_connected", dbPath.toAbsolutePath()));
         if (viewModeController.isExtended()) {
-            statusLabel.setText("SQLite: " + dbPath.toAbsolutePath());
+            mainView.statusLabel().setText(UiI18n.get("status.sqlite", dbPath.toAbsolutePath()));
         }
     }
 
@@ -680,9 +982,9 @@ public final class MainController {
         updateHistoryPanelVisibility();
         hostListPresenter.rebuild(liveEntries);
         syncHistoryHostFilter();
-        hostList.getSelectionModel().clearSelection();
+        mainView.hostList().getSelectionModel().clearSelection();
         if (!hostItems.isEmpty()) {
-            hostList.getSelectionModel().select(0);
+            mainView.hostList().getSelectionModel().select(0);
         }
         hostListPresenter.syncInputLimits();
         viewModeController.apply();
@@ -717,9 +1019,9 @@ public final class MainController {
         updateHistoryPanelVisibility();
         hostListPresenter.rebuild(sessionHosts);
         syncHistoryHostFilter();
-        hostList.getSelectionModel().clearSelection();
+        mainView.hostList().getSelectionModel().clearSelection();
         if (!hostItems.isEmpty()) {
-            hostList.getSelectionModel().select(0);
+            mainView.hostList().getSelectionModel().select(0);
         }
         hostListPresenter.syncInputLimits();
         viewModeController.apply();
@@ -738,10 +1040,10 @@ public final class MainController {
             profileUi.syncActiveProfileFromSession();
             ProfilesConfig.save(options.configPath(), profileDocument);
             dirtyState.clear();
-            userFeedback.info("Конфіг збережено (усі профілі): " + options.configPath());
+            userFeedback.info(UiI18n.get("status.config_saved", options.configPath()));
             return true;
         } catch (IOException | ConfigError ex) {
-            userFeedback.error("Не вдалося зберегти конфіг: " + ex.getMessage());
+            userFeedback.error(UiI18n.get("status.config_save_failed", ex.getMessage()));
             return false;
         }
     }
@@ -753,10 +1055,11 @@ public final class MainController {
 
     private void updateDirtyUi() {
         boolean dirty = dirtyState.isDirty();
-        saveButton.setText(dirty ? "Зберегти *" : "Зберегти");
-        Window window = root.getScene() != null ? root.getScene().getWindow() : null;
+        mainView.saveButton().setText(dirty ? UiI18n.get("host.save_dirty") : UiI18n.get("host.save"));
+        Window window =
+                mainView.root().getScene() != null ? mainView.root().getScene().getWindow() : null;
         if (window instanceof Stage stage) {
-            stage.setTitle(dirty ? WINDOW_TITLE + " *" : WINDOW_TITLE);
+            stage.setTitle(dirty ? windowTitleDirty() : windowTitle());
         }
     }
 
@@ -778,7 +1081,8 @@ public final class MainController {
         if (viewModeController.isExtended() && !easterEggActive) {
             String activeHost = viewHost();
             if (activeHost != null && host.equals(activeHost)) {
-                statusLabel.setText("Останнє оновлення [" + host + "]: " + TIME_FMT.format(snapshot.timestamp()));
+                mainView.statusLabel()
+                        .setText(UiI18n.get("status.last_update", host, TIME_FMT.format(snapshot.timestamp())));
                 redrawRouteGraph();
             }
         }
@@ -791,8 +1095,7 @@ public final class MainController {
         if (viewModeController.isExtended() && !easterEggActive) {
             if (!oldIps.isEmpty()) {
                 String oldStr = String.join(" -> ", oldIps);
-                userFeedback.info("⚠ ЗМІНА МАРШРУТУ до " + host + "\nБуло: " + oldStr + "\nСтало: "
-                        + String.join(" -> ", newIps));
+                userFeedback.info(UiI18n.get("status.route_change", host, oldStr, String.join(" -> ", newIps)));
             }
             routeHistoryPresenter.onRouteChanged(host);
             String activeHost = viewHost();
@@ -805,14 +1108,15 @@ public final class MainController {
     }
 
     private void startEasterEgg() {
-        if (!HostViewRules.matches(hostInput.getText())) {
+        if (!HostViewRules.matches(mainView.hostInput().getText())) {
             return;
         }
         if (!easterEggActive) {
             easterEggActive = true;
             viewModeBeforeEasterEgg = viewModeController.viewMode();
             if (!viewModeController.isExtended()) {
-                viewModeController.forceExtended(() -> extendedModeButton);
+                viewModeController.forceExtended(mainView::extendedModeButton);
+                ensureExtendedStageGeometry();
             }
         }
         showEasterEggCanvas();
@@ -820,7 +1124,7 @@ public final class MainController {
     }
 
     private void showEasterEggCanvas() {
-        String message = HostViewRules.messageFor(hostInput.getText().strip());
+        String message = HostViewRules.messageFor(mainView.hostInput().getText().strip());
         if (message != null) {
             routeGraphPresenter.showStaticMessage(message);
         }
@@ -844,13 +1148,14 @@ public final class MainController {
             easterEggTimer.stop();
             easterEggTimer = null;
         }
-        viewModeController.restoreMode(viewModeBeforeEasterEgg, () -> simpleModeButton, () -> extendedModeButton);
+        viewModeController.restoreMode(
+                viewModeBeforeEasterEgg, mainView::simpleModeButton, mainView::extendedModeButton);
     }
 
     /** Modal error for Simple mode only (injected into {@link UiFeedbackRouter}). */
     private void showSimpleErrorAlert(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
-        alert.setTitle("Помилка");
+        alert.setTitle(UiI18n.get("error.title"));
         alert.setHeaderText(null);
         Window owner = dialogOwner();
         if (owner != null) {

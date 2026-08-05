@@ -3,11 +3,17 @@ package io.pingui.ui;
 import io.pingui.config.ConfigError;
 import io.pingui.config.HostAddressKind;
 import io.pingui.config.HostAddressParser;
+import io.pingui.i18n.UiI18n;
 
 /** UI enablement rules for expert ping options (testable without JavaFX). */
 public final class ExpertPingUiRules {
-    static final String AF_IPV4 = "IPv4 (-4)";
-    static final String AF_IPV6 = "IPv6 (-6)";
+    static String afIpv4() {
+        return UiI18n.get("expert.af_ipv4");
+    }
+
+    static String afIpv6() {
+        return UiI18n.get("expert.af_ipv6");
+    }
 
     private ExpertPingUiRules() {}
 
@@ -16,10 +22,10 @@ public final class ExpertPingUiRules {
      * Default address family is IPv4 (-4).
      */
     public static boolean flowLabelAllowed(String host, String addressFamilyChoice) {
-        if (AF_IPV6.equals(addressFamilyChoice)) {
+        if (afIpv6().equals(addressFamilyChoice)) {
             return true;
         }
-        if (AF_IPV4.equals(addressFamilyChoice)) {
+        if (afIpv4().equals(addressFamilyChoice)) {
             return false;
         }
         try {
@@ -30,6 +36,6 @@ public final class ExpertPingUiRules {
     }
 
     public static String flowLabelDisabledHint() {
-        return "IPv6 flow label (-F): лише для IPv6 literal або сімейства IPv6 (-6)";
+        return UiI18n.get("expert.flow_disabled");
     }
 }

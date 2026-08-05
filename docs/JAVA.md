@@ -62,7 +62,7 @@ profiles:
   default:
     probe_mode: trace          # trace | mtr | ping_only
     interval: 30.0
-    max_concurrent_traces: 3
+    max_concurrent_traces: 10  # default = MAX_HOSTS; all enabled TRACE hosts may run in parallel
     hosts:
       - address: "8.8.8.8"
         probe_mode: ping_only  # optional override
@@ -134,13 +134,21 @@ Store/history/change detection — `SessionStore`, `RouteHistory`, `RouteChangeD
 
 ## UI-шар
 
-`MainController` (JavaFX):
+`MainController` (JavaFX) — orchestration + coordinators/presenters.
+
+Chrome збірка (P24-007): пакет `io.pingui.ui.view` — `MainView` + `ProfileToolbar`, `MonitorModeToolbar`, `HostListPanel`, `StatusPanel`, `RouteGraphPanel`, `HistoryPanel`; callbacks через `MainViewActions`. `createScene()` делегує `MainView.assemble(...)`. Очікуваний LOC `MainController` після G7 ≈ 850–900 (ціль ≤550 — follow-up presenter moves).
+
+Тема (P24-008): `UiPalette` + `classpath:io/pingui/ui/pingui.css` (light-first); `UiPalette.applyTo(scene)`; GraphCanvas paint з тих самих hex-констант; dark — лише reserved `.theme-dark` stub.
+
+Старт (P24-009): `PinguiApplication.start` показує shell Scene → `StartupBootstrap.load` у фоні (YAML/GeoIP/SQLite/`SessionStore`) → FX `attachBootstrap` створює `MonitorService` (polling). До attach UI disabled + статус «Завантаження…».
+
+Політика paint/geometry (P24-010): [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md) — coalesced redraw, layout cache, no forced resize on toggle, Canvas invalidate, SplitPane persist, deferred startup. Simple: Stage width підганяється під колонку хостів (висота без змін); Extended може розширити width. Perf smoke: `GraphCanvasPerfTest` + CHECKLIST Extended+pan+route (опційно JFR).
 
 - Меню **Про** / **Довідка** (F1) — `AppMenuDialogs`
 - Вибір **профілю трасування** (ComboBox + новий/видалити); усі профілі в одному YAML
 - Чекбокс **«Експерт»** → **Exten.** / **MTU** на рядку хоста → `PingExpertDialog` (каталог з `pingMan.txt`, без `-c/-w/-W/-i` тощо); 4 quick presets з `ping_presets.yaml` (MTU probe, DF, DSCP, Burst); **MTU wizard…** (`MtuDiscoveryDialog`); **Self-check** (`PresetSelfCheckUi`)
 - Меню **Налаштування → Телеметрія…** — `TelemetrySettingsDialog` + bus via `TelemetryAttachment`
-- `ListView<HostItem>` + CheckBox у комірці
+- `ListView<HostItem>` + CheckBox у комірці; окремий рядок liveness `спроб N  помилки E  P%` (reset на Ping only / probe_mode) і рядок RTT `loss/min/avg/max`; текст рядка завжди темний (контраст на pastel RTT-фоні)
 - **GraphCanvas** — вертикальний граф, inactive/active колонки
 - Log `TextArea`
 
@@ -159,7 +167,7 @@ profiles:
     timeout: 0.5
     probe: auto
     probe_mode: trace
-    max_concurrent_traces: 3
+    max_concurrent_traces: 10  # default = MAX_HOSTS; all enabled TRACE hosts may run in parallel
     hosts:
       - address: "8.8.8.8"
         enabled: true
@@ -216,4 +224,4 @@ pingui-java.bat --package    REM .msi
 
 ## Майбутнє
 
-Лінійна черга ROADMAP: **NEXT = DONE** (черга вичерпана). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT.
+Лінійна черга ROADMAP: **NEXT = P26-003** (фаза 26 — hardening). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT.

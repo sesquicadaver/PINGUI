@@ -10,7 +10,7 @@
 
 | Поле | Значення |
 |------|----------|
-| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (лінійна черга **P23**). Обидві: Java Pro (P9–P19) + Python після merge |
+| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (лінійна черга **P26**). Обидві: Java Pro (P9–P19) + Python після merge |
 | **Пріоритет** | P0 критично · P1 важливо · P2 бажано |
 | **DoD** | Definition of Done — умова закриття задачі |
 
@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **DONE** |
-| **Фаза** | 23 — `latency_high` (закрита) |
-| **DoD (коротко)** | лінійна черга вичерпана |
+| **Поточна задача** | **P26-003** |
+| **Фаза** | 26 — hardening post-audit (telemetry / launchers / split / coverage) |
+| **DoD (коротко)** | SQLite reopen/migration/corrupt failure tests |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -128,8 +128,35 @@
 | 82 | **P23-003** | [x] | `MonitorService` wire terminal RTT → latency rule |
 | 83 | **P23-004** | [x] | YAML/GUI `alerts.rules.latency_high` |
 | 84 | **P23-005** | [x] | Badge/dialog + SQLite `latency_high` |
+| 85 | **P24-000** | [x] | ROADMAP/LIVING_SPEC: фаза P24 G0–G10 IDs + baseline |
+| 86 | **P24-001** | [x] | GraphCanvas: invalidate без `width+1` (call-count тест) |
+| 87 | **P24-002** | [x] | GraphCanvas: coalesced `requestRedraw` (1× pulse) |
+| 88 | **P24-003** | [x] | GraphCanvas: кеш `GraphScene` на pan/zoom |
+| 89 | **P24-004** | [x] | GraphCanvas: color/hover cache |
+| 90 | **P24-005** | [x] | ViewMode: прибрати forced window resize / applyCss |
+| 91 | **P24-006** | [x] | SplitPane + persist window/divider geometry |
+| 92 | **P24-007** | [x] | View components з `MainController.createScene` |
+| 93 | **P24-008** | [x] | CSS theme layer (light-first palette) |
+| 94 | **P24-009** | [x] | Startup: важкий init поза FX thread |
+| 95 | **P24-010** | [x] | ADR_GUI_PAINT + perf smoke + закриття фази |
+| 96 | **P25-001** | [x] | ADR_I18N + ROADMAP фаза 25 |
+| 97 | **P25-002** | [x] | UiI18n + messages_uk + міграція UI на ключі |
+| 98 | **P25-003** | [x] | Layout harden (HostListCell/CRUD/text-branches) |
+| 99 | **P25-004** | [x] | Runtime Language menu + persist + `--lang` |
+| 100 | **P25-005** | [x] | messages_en + es/it/pl/cs/lv/lt/et UI bundles |
+| 101 | **P25-006** | [x] | user-facing locale matrix (USER_GUIDE / HOWTO / README.lang) |
+| 102 | **P25-007** | [x] | USER_GUIDE + HOWTO wave (без CHECKLIST/ADR) |
+| 103 | **P26-001** | [x] | Docs: sync README/JAVA phase labels з ROADMAP (не «фаза 22») |
+| 104 | **P26-002** | [x] | Telemetry: failure isolation (timeout/backpressure/shutdown flush) |
+| 105 | **P26-003** | [ ] | SQLite: reopen/migration/corrupt failure tests |
+| 106 | **P26-004** | [ ] | Launcher: quoting + detached GUI smoke matrix |
+| 107 | **P26-005** | [ ] | MainController ≤550 LOC (dialogs/lifecycle extract) |
+| 108 | **P26-006** | [ ] | MonitorService split (poll vs alert/telemetry wiring) |
+| 109 | **P26-007** | [ ] | JaCoCo package-level thresholds (не один bundle) |
+| 110 | **P26-008** | [ ] | latency_high: EWMA/window baseline + UI ETA note |
+| 111 | **P26-009** | [ ] | ADR_HARDENING + LIVING_SPEC/CHECKLIST + phase close |
 
-**Стан черги:** закрита — **NEXT = DONE** (фаза 23 `latency_high` завершена).
+**Стан черги:** активна — **NEXT = P26-003** (фаза 26 post-P25 hardening).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -419,7 +446,7 @@ flowchart TD
 | **PY-040** | [x] `RouteChangeEvent` у `models.py` | `models.py`, `tests/unit/test_route_change_event.py` | Serialize/deserialize JSON; спільний контракт з P10-010 |
 | **PY-041** | [x] `AlertDispatcher` + `WebhookAlertDispatcher` | `monitor/alert_dispatcher.py` | POST JSON; contract test з mock HTTP |
 | **PY-042** | [x] CLI `--alert-webhook URL` | `__main__.py` | Secret не в логах; помилка мережі → log, не crash |
-| **PY-043** | [x] Desktop notify (`notify-send`) | `monitor/desktop_notifier.py` | Linux smoke: route change → notification |
+| **PY-043** | [x] Desktop notify (in-app/callback popup) | `monitor/desktop_notifier.py` | Smoke: route change → popup/log |
 | **PY-044** | [x] Rate limit alerts | `monitor/alert_rate_limiter.py` | Unit-тест burst per host |
 | **PY-045** | [x] Daemon + alerts | `daemon_runner.py` | Route change → webhook без GUI (Python P12-030) |
 
@@ -488,7 +515,7 @@ flowchart TD
 | **P10-001** | [x] ADR: політика alerts (channels, rate limit, payload) | `docs/ADR_ALERTS.md`, `docs/en/ADR_ALERTS.md` | Webhook + desktop; SNMP/email — out of scope v1 |
 | **P10-010** | [x] Модель `RouteChangeEvent` (host, old_ips, new_ips, ts, profile) | `monitor/RouteChangeEvent.java`, Python `models.py` | Unit-тест serialize/deserialize |
 | **P10-011** | [x] `AlertDispatcher` interface + no-op default | `monitor/AlertDispatcher.java`, `MonitorService` | Monitor викликає при `onRouteChanged` |
-| **P10-020** | [x] Desktop notification (Linux notify-send / Windows toast / macOS) | `ui/RouteChangeNotifier.java` | Manual smoke: route change → notification |
+| **P10-020** | [x] Desktop notification (in-app JavaFX popup) | `ui/JavaFxDesktopAlertSink`, `RouteChangeNotifier` | Manual smoke: route change → popup |
 | **P10-021** | [x] YAML/CLI: `alerts.desktop: true\|false` | `ProfilesConfig`, `PinguiApplication` | Default off; документовано в CONFIGURATION |
 | **P10-030** | [x] Webhook POST JSON (Slack-compatible + generic) | `monitor/WebhookAlertDispatcher.java` | Contract test з mock HTTP server |
 | **P10-031** | [x] CLI `--alert-webhook URL` + profile field `alert_webhook` | `CliAlertOverrides`, YAML schema | Secret не логувати; помилка мережі → log, не crash |
@@ -555,7 +582,7 @@ flowchart TD
 | **P13-011** | [x] YAML `probe_mode` на профіль + override на host | `ProfilesConfig`, `HostEntry`, `MonitorService` | `ProfilesConfigTest.loadProbeModeOnProfileAndHost`, `HostEntryProbeModeTest` |
 | **P13-020** | [x] Smart interval: `ping_only` 1–2s, `trace` 30–300s per host | `MonitorService`, `HostPollSchedule` | Profile default + per-host override |
 | **P13-021** | [x] Burst on change: після route change — interval ×0.25 на 5 хв | `BurstSchedulePolicy.java` | Unit-тест timer |
-| **P13-030** | [x] Parallel poll: `max_concurrent_traces` (default 3) | `MonitorService`, `TraceConcurrencyLimiter` | Не більше N subprocess одночасно |
+| **P13-030** | [x] Parallel poll: `max_concurrent_traces` (default 10 = MAX_HOSTS) | `MonitorService`, `TraceConcurrencyLimiter` | N TRACE hosts ⇒ up to N concurrent (≤10) |
 | **P13-040** | [x] Windows profile preset: auto `ping_only` + `interval: 60` | `config/hosts.windows.example.yaml` | CHECKLIST Windows |
 | **P13-050** | [x] LIVING_SPEC + JAVA.md known limitations | `docs/JAVA.md` | MTR vs traceroute doc |
 
@@ -801,7 +828,69 @@ flowchart TD
 
 ---
 
-## Поза scope (не плануємо)
+## Фаза 24 — GUI architecture & paint (`beta`, P1)
+
+**Контекст:** monitor core зрілий; GUI відстає — paint jank (`GraphCanvas`), forced window resize, god-assembly `MainController.createScene`. План: `.omx/plans/gui-architecture-perf-plan.md`. Baseline (G0): `MainController` ≈862 LOC; `GraphCanvas` ≈323; немає `GraphCanvasTest`; CI Windows = Monocle Headless (не native Glass).
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P24-000** | [x] Baseline IDs у ROADMAP/LIVING_SPEC | `docs/ROADMAP.md`, `docs/en/ROADMAP.md`, `docs/LIVING_SPEC.md`, `docs/en/LIVING_SPEC.md` | Черга P24-000…010; NEXT=P24-001 |
+| **P24-001** | [x] Canvas invalidate без `width+1` | `GraphCanvas.java`, `GraphCanvasTest.java`, CHECKLIST | Call-count==0 при same size; native Windows smoke у CHECKLIST |
+| **P24-002** | [x] Coalesced redraw | `GraphCanvas.java` | ≤1 paint / pulse; sync resize vs paintPixels; успадковує G1 |
+| **P24-003** | [x] Cache GraphScene | `GraphCanvas.java`, `RouteGraphLayout` | Pan/zoom без `buildScene` |
+| **P24-004** | [x] Color/hover cache | `GraphCanvas.java`, `GraphCanvasTest.java` | Немає `Color.web` у draw loop; hover dedupe + switch-node тест |
+| **P24-005** | [x] No forced window resize | `ViewModeController.java`, `PinguiApplication.java`, CHECKLIST | Toggle без setWidth/Height / applyCss; default stage once |
+| **P24-006** | [x] SplitPane + persist geometry | `WindowGeometryStore`, `ViewModeController`, CHECKLIST | Restore bounds+divider+mode; clamp visualBounds |
+| **P24-007** | [x] View components | `io.pingui.ui.view.*`, MODULES/JAVA | `createScene` → `MainView.assemble`; LOC residual documented |
+| **P24-008** | [x] CSS palette | `pingui.css`, `UiPalette`, CHECKLIST | Stylesheet на Scene; GraphCanvas sync; light smoke |
+| **P24-009** | [x] Deferred startup I/O | `StartupBootstrap`, `PinguiApplication`, CHECKLIST | Shell show → background load → attach; Monitor після show |
+| **P24-010** | [x] ADR + perf smoke | `ADR_GUI_PAINT.md`, CHECKLIST, `GraphCanvasPerfTest` | Фаза закрита; follow-ups нижче |
+
+**Follow-ups після P24 (не в лінійній черзі):** dark mode product; FXML — див. [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md). `MainController` ≤550 / MonitorService split → **фаза 26** (P26-005/006).
+
+---
+
+## Фаза 25 — i18n UI + docs (`beta`, P1)
+
+**Контекст:** GUI була UK-only; docs — UK↔EN. Потрібні додаткові мови з UK-каноном, runtime-перемикачем і stub-матрицею docs (без DE/FR).
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P25-001** | [x] ADR_I18N | `docs/ADR_I18N.md`, `docs/en/…` | UK-канон; локалі; stubs; DE/FR out |
+| **P25-002** | [x] UiI18n framework | `io.pingui.i18n.*`, `messages_uk.properties` | ResourceBundle UTF-8; fallback UK→key |
+| **P25-003** | [x] Layout harden | `HostListCell`, `HostListPanel`, `AppMenuDialogs`, `ViewModeController` | Немає text-branch; USE_PREF_SIZE/FlowPane |
+| **P25-004** | [x] Runtime switch | `MainView`, `MainController`, `AppOptions`, `--lang` | Меню Мова; persist `ui-locale.properties` |
+| **P25-005** | [x] UI bundles | `messages_{en,es,it,pl,cs,lv,lt,et}.properties` | 313 keys each; `UiI18nTest` |
+| **P25-006** | [x] Docs stub matrix | `docs/{es,it,…}/`, `check_doc_parity.py` | Лише USER_GUIDE+HOWTO+`README.<lang>` |
+| **P25-007** | [x] USER_GUIDE / HOWTO wave | `docs/*/USER_GUIDE.md`, `HOWTO.md` | User docs; без CHECKLIST/ADR |
+
+**Follow-ups:** DE/FR; повний `README.<lang>`; Python GUI i18n. Developer docs лишаються UK/EN.
+
+---
+
+## Фаза 26 — Hardening post-audit (`beta`, P1)
+
+**Контекст:** Статичний аудит `main` @ `baff7cc` (PR #14) + залишки після P24/P25 на `beta`. GUI paint (buffer churn / coalesce / scene cache) уже закриті в P24 — **не** повторювати. Фокус: resilience, launchers, structural debt, coverage, latency baseline.
+
+**Джерело:** аудит production-readiness; follow-ups ADR_GUI_PAINT / ADR_I18N поза DE/FR.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P26-001** | [x] Docs phase sync | `README.md`, `README.en.md`, `docs/JAVA.md`, `docs/en/…`, CHANGELOG | Немає «фаза 22/23 DONE» якщо NEXT=P26; таблиця main/beta = актуальна фаза |
+| **P26-002** | [x] Telemetry failure isolation | `telemetry/*`, contract tests | Sink timeout/fail не блокує poll; bounded queue або drop+metric; shutdown flush documented + тест |
+| **P26-003** | [ ] SQLite reopen failures | `persistence/*`, tests | append після reopen; corrupt/partial DB; migration; concurrent export smoke |
+| **P26-004** | [ ] Launcher smoke matrix | `pingui-java.sh`, `.bat`, `PinguiLauncher`, script/CI | quoting пробілів; detached GUI; `--foreground`; Windows javaw path; fail → лог |
+| **P26-005** | [ ] MainController ≤550 LOC | `MainController`, `ui/view/*` або `*Coordinator` | LOC gate або documented residual; dialogs/lifecycle поза конструктором |
+| **P26-006** | [ ] MonitorService split | `monitor/*` | Poll orchestration ≠ alert/telemetry wiring; layerCheck green; unit tests |
+| **P26-007** | [ ] Package JaCoCo thresholds | `java/build.gradle.kts` | Окремі мінімуми для `config`/`probe`/`monitor`/`persistence`/`telemetry`; UI exclusion явний |
+| **P26-008** | [ ] Latency baseline evolution | `monitor/*`, ADR_ALERT_RULES, UI copy | EWMA або bounded window; контракт + тест; Help/Settings показує орієнтовний час FIRING |
+| **P26-009** | [ ] Phase close | `ADR_HARDENING.md`, LIVING_SPEC, CHECKLIST, ROADMAP | NEXT=DONE або явний follow-up ID |
+
+**Поза цією чергою (свідомо):** DE/FR i18n; dark mode product; FXML rewrite; >10 hosts; BGP/NMS.
+
+---
+
+## Поза scope (опційно, в перспективі)
 
 | ID | Ідея | Чому ні |
 |----|------|---------|
@@ -883,7 +972,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Лінійна черга — **NEXT=DONE**.
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P26-003**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

@@ -279,7 +279,7 @@ Max N alerts per host / hour (PY-044).
 
 ## pingui.monitor.desktop_notifier
 
-`notify_route_change(event)` — Linux `notify-send` (PY-043).
+`notify_route_change(event)` — in-app/callback popup (no notify-send / D-Bus) (PY-043).
 
 ---
 
@@ -306,6 +306,20 @@ Thin Qt wrapper over `MonitorLoop`; delegates host CRUD and enabled state.
 | `run()` | Background loop |
 
 ---
+
+## Java (`io.pingui.ui.view`) — P24-007
+
+JavaFX chrome assembly separate from orchestration:
+
+| Class | Role |
+|-------|------|
+| `MainView` | BorderPane/SplitPane assemble; accessors for coordinators |
+| `ProfileToolbar` / `MonitorModeToolbar` | profile + Simple/Extended/Expert |
+| `HostListPanel` / `StatusPanel` | list/CRUD/save + status/log |
+| `RouteGraphPanel` / `HistoryPanel` | canvas + history chrome |
+| `MainViewActions` | callbacks into `MainController` |
+
+`MainController.createScene()` is a thin assembler. Controller LOC after G7 ≈ 850–900; ≤550 target is a follow-up.
 
 ## pingui.ui
 

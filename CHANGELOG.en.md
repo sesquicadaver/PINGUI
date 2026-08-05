@@ -9,11 +9,28 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **P26-002 — telemetry failure isolation:** `SinkRegistry.failureCount` + per-sink call timeout (5s); non-blocking bus offers; shutdown flush; ADR_TELEMETRY §7; NEXT→**P26-003**.
+- **P26-001 — docs phase sync:** README/JAVA/docs index no longer say “phase 22 / NEXT=DONE”; NEXT→**P26-002**.
+- **P26 — hardening queue (post-audit):** ROADMAP NEXT=`P26-001`…`P26-009` — docs phase sync, telemetry failure isolation, SQLite reopen tests, launcher smoke, MainController/MonitorService split, package JaCoCo, latency EWMA/window.
+- **P25 — UI/docs i18n:** `UiI18n` + `messages_{uk,en,es,it,pl,cs,lv,lt,et}`; Language menu + `--lang` + persist; ADR_I18N; user-facing docs only (`USER_GUIDE`/`HOWTO`/`README.<lang>`), no CHECKLIST/ADR in stub locales; DE/FR deferred.
+- **Host poll liveness counters:** separate row `спроб N  помилки E  P%` above RTT metrics (reset on Ping only / mode change); dark text on colored host rows.
+- **P24-010 — ADR_GUI_PAINT + perf smoke:** Canvas coalesce/cache, no forced resize, geometry persist, deferred startup policy; `GraphCanvasPerfTest` (100 drag ≤1 paint); CHECKLIST Extended+pan+route (+JFR); phase 24 → **DONE**.
 - **GUI launcher detach:** `pingui-java.sh` / `.bat` start the GUI in the background (Linux/macOS `nohup`, Windows `javaw`); the terminal is freed. `--foreground` for debug; daemon/export/help stay attached. Log: `~/.cache/pingui/gui.log` / `%LOCALAPPDATA%\pingui\gui.log` (`PINGUI_GUI_LOG`). Entry point `PinguiLauncher` (does not extend `Application`) so `installDist`/jpackage see JavaFX on the classpath.
 - **P23 — `latency_high`:** rule `rtt ≥ 2×AVG`, FIRING after 3 consecutive bad pings (no time window); YAML/GUI; badge/SQLite; AVG not poisoned by spike samples; phase 23 → **DONE**.
 
+### Removed
+
+- **Route Diff panel:** fully removed `RouteDiff` / `RouteDiffPresenter` / `RouteDiffStyle` (Extended keeps graph + history).
+
+### Fixed
+
+- **Simple window geometry:** startup always Simple; leftover Extended / ≈visualBounds (maximize) reset; demaximize before fit; close while maximized saves floating bounds; Extended→Simple shrinks Stage to chrome pref.
+- **Extended geometry:** Simple→Extended expands width+height (~1400×820) when needed; SplitPane divider ≈ left column 600 px.
+
 ### Changed
 
+- **Desktop alerts = in-app popup:** JavaFX `Alert` via `JavaFxDesktopAlertSink` (no `notify-send` / D-Bus / tray). Python — injectable popup or INFO log. ADR_ALERTS / CHECKLIST / CLI help updated.
+- **Trace concurrency default:** `max_concurrent_traces` default **10** (= `HostsConfig.MAX_HOSTS`). Enabled TRACE hosts in a session (up to 10) may run in parallel; lower the YAML value only for deliberate throttling.
 - **P22-005 — Auto session DB name:** “Create…” button → `data/YYYY-MM-DD_HH-mm-ss_<lan-ip>.db`; phase 22 → **DONE**.
 - **P22-004 — Host problem icon + dialog:** `!` badge on host row for unread `endpoint_down`; click → details + ack; NEXT→P22-005.
 - **P22-003 — SQLite quality incidents:** `persistence_event.endpoint_down` on FIRING/RESOLVED (RESOLVED persisted even without channel notify); NEXT→P22-004.

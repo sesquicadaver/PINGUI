@@ -8,10 +8,10 @@
 
 | Field | Value |
 |------|----------|
-| **Current task** | **[DONE](docs/en/ROADMAP.md#next--single-source-of-truth)** |
+| **Current task** | **[P26-003](docs/en/ROADMAP.md#next--single-source-of-truth)** |
 | **Rule** | if not `DONE` — `/autopilot` = this ID; if `DONE` — stop / wait for an explicit new ID. **Do not ask** “which item?”. |
 
-Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (phase 22, #75–79).
+Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (phase 26, #103–111).
 
 **MVP status:** ✅ implemented (2026-06-26)
 
@@ -44,6 +44,10 @@ Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#e
 | **20** | GUI UX (Simple feedback, confirm, dirty, polish, settings depth) | ✅ **DONE** |
 | **21** | Quality alert rules (`endpoint_down` → engine/GUI) | ✅ **DONE** |
 | **22** | Host problem UX (icon + dialog + auto session DB) | ✅ **DONE** |
+| **23** | `latency_high` alert rule | ✅ **DONE** |
+| **24** | GUI architecture & paint | ✅ **DONE** |
+| **25** | i18n UI + user-facing docs | ✅ **DONE** |
+| **26** | Hardening post-audit (telemetry / launchers / split) | 🔄 **P26-003** |
 
 ---
 

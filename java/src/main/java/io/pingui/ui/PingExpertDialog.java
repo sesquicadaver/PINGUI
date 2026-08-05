@@ -4,6 +4,7 @@ import io.pingui.config.ConfigError;
 import io.pingui.config.PingExpertEntry;
 import io.pingui.config.PingPreset;
 import io.pingui.config.PingPresets;
+import io.pingui.i18n.UiI18n;
 import io.pingui.probe.PingExpertCompatibility;
 import io.pingui.probe.PingExpertValidator;
 import io.pingui.probe.PingOptionCatalog;
@@ -37,11 +38,26 @@ import javafx.stage.Window;
 
 /** Dialog for per-host expert ping flags (iputils ping). */
 public final class PingExpertDialog {
-    private static final String BOOL_FALSE = "false";
-    private static final String BOOL_TRUE = "true";
-    private static final String UNSET = "—";
-    private static final String AF_IPV4 = "IPv4 (-4)";
-    private static final String AF_IPV6 = "IPv6 (-6)";
+    private static String boolFalse() {
+        return UiI18n.get("expert.bool_false");
+    }
+
+    private static String boolTrue() {
+        return UiI18n.get("expert.bool_true");
+    }
+
+    private static String unset() {
+        return UiI18n.get("expert.unset");
+    }
+
+    private static String afIpv4() {
+        return ExpertPingUiRules.afIpv4();
+    }
+
+    private static String afIpv6() {
+        return ExpertPingUiRules.afIpv6();
+    }
+
     private static final String FIELD_OK = "";
     private static final String FIELD_ERROR = "-fx-border-color: #c0392b; -fx-border-width: 1.5px;";
 
@@ -54,15 +70,12 @@ public final class PingExpertDialog {
     /** @param pingOnly when true, hide chain checkbox (direct ping only, no hop chain). */
     public static Optional<PingExpertEntry> show(String host, PingExpertEntry current, boolean pingOnly) {
         Dialog<ButtonType> dialog = new Dialog<>();
-        dialog.setTitle("Expert ping — " + host);
-        dialog.setHeaderText(
-                pingOnly
-                        ? "Параметри ping(8) для прямого ping до цілі (режим Ping only)"
-                        : "Параметри ping(8) для цілі (без -c/-w/-W/-i та інших лімітів часу/кількості)");
+        dialog.setTitle(UiI18n.get("expert.title", host));
+        dialog.setHeaderText(pingOnly ? UiI18n.get("expert.header_ping_only") : UiI18n.get("expert.header"));
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
         dialog.getDialogPane().setPrefWidth(580);
 
-        CheckBox chainCheck = new CheckBox("Застосувати до всього ланцюжка");
+        CheckBox chainCheck = new CheckBox(UiI18n.get("expert.chain"));
         if (pingOnly) {
             chainCheck.setVisible(false);
             chainCheck.setManaged(false);
@@ -86,17 +99,17 @@ public final class PingExpertDialog {
         Map<String, TextField> textValues = new HashMap<>();
         List<String> currentArgs = current != null ? current.args() : List.of();
         int row = 0;
-        grid.add(new Label("Опція"), 0, row);
-        grid.add(new Label("Опис"), 1, row);
-        grid.add(new Label("Значення"), 2, row);
+        grid.add(new Label(UiI18n.get("expert.col_option")), 0, row);
+        grid.add(new Label(UiI18n.get("expert.col_description")), 1, row);
+        grid.add(new Label(UiI18n.get("expert.col_value")), 2, row);
         row++;
 
-        ComboBox<String> addressFamily = new ComboBox<>(FXCollections.observableArrayList(AF_IPV4, AF_IPV6));
+        ComboBox<String> addressFamily = new ComboBox<>(FXCollections.observableArrayList(afIpv4(), afIpv6()));
         addressFamily.setMaxWidth(Double.MAX_VALUE);
-        addressFamily.setTooltip(new Tooltip("Взаємовиключні -4 та -6; за замовчуванням — IPv4"));
+        addressFamily.setTooltip(new Tooltip(UiI18n.get("expert.af_tooltip")));
         applyAddressFamilySelection(currentArgs, addressFamily);
-        grid.add(new Label("AF"), 0, row);
-        grid.add(wrapDescription("Сімейство адрес (лише одне)"), 1, row);
+        grid.add(new Label(UiI18n.get("expert.af")), 0, row);
+        grid.add(wrapDescription(UiI18n.get("expert.af_desc")), 1, row);
         grid.add(addressFamily, 2, row);
         row++;
 
@@ -107,7 +120,7 @@ public final class PingExpertDialog {
             grid.add(new Label(option.flag()), 0, row);
             grid.add(wrapDescription(option.description()), 1, row);
             if (option.kind() == Kind.FLAG) {
-                ComboBox<String> choice = new ComboBox<>(FXCollections.observableArrayList(BOOL_FALSE, BOOL_TRUE));
+                ComboBox<String> choice = new ComboBox<>(FXCollections.observableArrayList(boolFalse(), boolTrue()));
                 choice.setMaxWidth(Double.MAX_VALUE);
                 applyFlagSelection(option, currentArgs, choice);
                 flagChoices.put(option.flag(), choice);
@@ -116,11 +129,12 @@ public final class PingExpertDialog {
                 ValueSpec spec = option.valueSpec();
                 if (spec.kind() == ValueKind.CHOICES) {
                     List<String> items = new ArrayList<>();
-                    items.add(UNSET);
+                    items.add(unset());
                     items.addAll(spec.choices());
                     ComboBox<String> choice = new ComboBox<>(FXCollections.observableArrayList(items));
                     choice.setMaxWidth(Double.MAX_VALUE);
-                    choice.setTooltip(new Tooltip("Допустимо: " + String.join(", ", spec.choices())));
+                    choice.setTooltip(
+                            new Tooltip(UiI18n.get("expert.choices_allowed", String.join(", ", spec.choices()))));
                     applyChoiceSelection(option, currentArgs, choice, spec.choices());
                     choiceValues.put(option.flag(), choice);
                     grid.add(choice, 2, row);
@@ -139,23 +153,21 @@ public final class PingExpertDialog {
 
         wireUiConstraints(host, addressFamily, flagChoices, textValues);
 
-        Label presetStatus = new Label(
-                "Оберіть пресет — args у форму. «MTU wizard…» — перебір MTU; «Self-check» — короткий DF/DSCP/Burst batch (Alert).");
+        Label presetStatus = new Label(UiI18n.get("expert.preset_hint"));
         presetStatus.setWrapText(true);
         presetStatus.setStyle("-fx-text-fill: #444;");
         HBox presetsBar = buildPresetsBar(addressFamily, flagChoices, choiceValues, textValues, presetStatus);
-        Button mtuWizardButton = new Button("MTU wizard…");
-        mtuWizardButton.setTooltip(new Tooltip("Ascending -s sweep with -M do; Apply підставляє -s/-M у форму"));
-        Button selfCheckButton = new Button("Self-check");
-        selfCheckButton.setTooltip(
-                new Tooltip("Короткий ping batch для пресетів DF / DSCP / Burst → Alert (без зміни форми)"));
+        Button mtuWizardButton = new Button(UiI18n.get("expert.mtu_wizard"));
+        mtuWizardButton.setTooltip(new Tooltip(UiI18n.get("expert.mtu_wizard_tooltip")));
+        Button selfCheckButton = new Button(UiI18n.get("expert.self_check"));
+        selfCheckButton.setTooltip(new Tooltip(UiI18n.get("expert.self_check_tooltip")));
         ProgressBar selfCheckBar = new ProgressBar(0);
         selfCheckBar.setMaxWidth(Double.MAX_VALUE);
         selfCheckBar.setVisible(false);
         selfCheckBar.setManaged(false);
         HBox.setHgrow(selfCheckBar, Priority.ALWAYS);
         mtuWizardButton.setOnAction(event -> {
-            boolean ipv6 = AF_IPV6.equals(addressFamily.getValue());
+            boolean ipv6 = afIpv6().equals(addressFamily.getValue());
             Window owner = dialog.getDialogPane().getScene() != null
                     ? dialog.getDialogPane().getScene().getWindow()
                     : null;
@@ -165,11 +177,11 @@ public final class PingExpertDialog {
                 String mtu = result.discovery().recommendedMtu().isPresent()
                         ? Integer.toString(result.discovery().recommendedMtu().getAsInt())
                         : "?";
-                presetStatus.setText("MTU wizard: MTU≈" + mtu + " → форма: " + result.expertArgs());
+                presetStatus.setText(UiI18n.get("expert.mtu_form_status", mtu, String.join(" ", result.expertArgs())));
             });
         });
         selfCheckButton.setOnAction(event -> {
-            boolean ipv6 = AF_IPV6.equals(addressFamily.getValue());
+            boolean ipv6 = afIpv6().equals(addressFamily.getValue());
             Window owner = dialog.getDialogPane().getScene() != null
                     ? dialog.getDialogPane().getScene().getWindow()
                     : null;
@@ -184,10 +196,10 @@ public final class PingExpertDialog {
                         selfCheckBar.setManaged(busy);
                         if (busy) {
                             selfCheckBar.setProgress(0);
-                            presetStatus.setText("Self-check DF/DSCP/Burst…");
+                            presetStatus.setText(UiI18n.get("expert.self_check_running"));
                         } else {
                             selfCheckBar.setProgress(1);
-                            presetStatus.setText("Self-check завершено (див. Alert).");
+                            presetStatus.setText(UiI18n.get("expert.self_check_done"));
                         }
                     },
                     progress -> {
@@ -216,7 +228,7 @@ public final class PingExpertDialog {
                 return Optional.of(new PingExpertEntry(!pingOnly && chainCheck.isSelected(), validated));
             } catch (ConfigError ex) {
                 Dialog<Void> error = new Dialog<>();
-                error.setTitle("Помилка параметрів");
+                error.setTitle(UiI18n.get("expert.params_error_title"));
                 error.setHeaderText(ex.getMessage());
                 error.getDialogPane().getButtonTypes().add(ButtonType.OK);
                 error.showAndWait();
@@ -231,7 +243,7 @@ public final class PingExpertDialog {
             Map<String, TextField> textValues,
             Label presetStatus) {
         HBox bar = new HBox(6);
-        Label title = new Label("Presets:");
+        Label title = new Label(UiI18n.get("expert.presets"));
         title.setMinWidth(56);
         bar.getChildren().add(title);
         for (PingPreset preset : PingPresets.all()) {
@@ -353,9 +365,9 @@ public final class PingExpertDialog {
 
     private static void applyAddressFamilySelection(List<String> args, ComboBox<String> choice) {
         if (args.contains("-6") && !args.contains("-4")) {
-            choice.getSelectionModel().select(AF_IPV6);
+            choice.getSelectionModel().select(afIpv6());
         } else {
-            choice.getSelectionModel().select(AF_IPV4);
+            choice.getSelectionModel().select(afIpv4());
         }
     }
 
@@ -398,8 +410,8 @@ public final class PingExpertDialog {
             }
             boolean hasIface = iface != null && !iface.getText().strip().isEmpty();
             bypassRoute.setDisable(!hasIface);
-            if (!hasIface && BOOL_TRUE.equals(bypassRoute.getValue())) {
-                bypassRoute.getSelectionModel().select(BOOL_FALSE);
+            if (!hasIface && boolTrue().equals(bypassRoute.getValue())) {
+                bypassRoute.getSelectionModel().select(boolFalse());
             }
         };
         if (iface != null) {
@@ -416,29 +428,29 @@ public final class PingExpertDialog {
             return;
         }
         boxA.valueProperty().addListener((obs, oldValue, newValue) -> {
-            if (BOOL_TRUE.equals(newValue)) {
-                boxB.getSelectionModel().select(BOOL_FALSE);
+            if (boolTrue().equals(newValue)) {
+                boxB.getSelectionModel().select(boolFalse());
             }
         });
         boxB.valueProperty().addListener((obs, oldValue, newValue) -> {
-            if (BOOL_TRUE.equals(newValue)) {
-                boxA.getSelectionModel().select(BOOL_FALSE);
+            if (boolTrue().equals(newValue)) {
+                boxA.getSelectionModel().select(boolFalse());
             }
         });
     }
 
     private static void applyFlagSelection(PingOption option, List<String> args, ComboBox<String> choice) {
         if (option == null) {
-            choice.getSelectionModel().select(BOOL_FALSE);
+            choice.getSelectionModel().select(boolFalse());
             return;
         }
         for (String arg : args) {
             if (option.flag().equals(arg)) {
-                choice.getSelectionModel().select(BOOL_TRUE);
+                choice.getSelectionModel().select(boolTrue());
                 return;
             }
         }
-        choice.getSelectionModel().select(BOOL_FALSE);
+        choice.getSelectionModel().select(boolFalse());
     }
 
     private static void applyChoiceSelection(
@@ -454,10 +466,10 @@ public final class PingExpertDialog {
                     return;
                 }
             }
-            choice.getSelectionModel().select(UNSET);
+            choice.getSelectionModel().select(unset());
             return;
         }
-        choice.getSelectionModel().select(UNSET);
+        choice.getSelectionModel().select(unset());
     }
 
     private static void applyTextSelection(PingOption option, List<String> args, TextField field) {
@@ -479,9 +491,9 @@ public final class PingExpertDialog {
             Map<String, TextField> textValues) {
         List<String> args = new ArrayList<>();
         String family = addressFamily.getValue();
-        if (AF_IPV4.equals(family)) {
+        if (afIpv4().equals(family)) {
             args.add("-4");
-        } else if (AF_IPV6.equals(family)) {
+        } else if (afIpv6().equals(family)) {
             args.add("-6");
         }
         for (PingOption option : PingOptionCatalog.options()) {
@@ -490,7 +502,7 @@ public final class PingExpertDialog {
             }
             if (option.kind() == Kind.FLAG) {
                 ComboBox<String> choice = flagChoices.get(option.flag());
-                if (choice != null && BOOL_TRUE.equals(choice.getValue())) {
+                if (choice != null && boolTrue().equals(choice.getValue())) {
                     args.add(option.flag());
                 }
                 continue;
@@ -498,7 +510,7 @@ public final class PingExpertDialog {
             ComboBox<String> choice = choiceValues.get(option.flag());
             if (choice != null) {
                 String value = choice.getValue();
-                if (value != null && !value.isBlank() && !UNSET.equals(value)) {
+                if (value != null && !value.isBlank() && !unset().equals(value)) {
                     args.add(option.flag());
                     args.add(value);
                 }

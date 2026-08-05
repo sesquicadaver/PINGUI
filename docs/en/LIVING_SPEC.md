@@ -21,10 +21,10 @@ Module → unit test matrix. Update when adding features.
 | YAML `probe_mode` (P13-011) | `HostProbeMode`, `ProfilesConfig`, `MonitorService` | `HostProbeModeTest`, `HostEntryProbeModeTest`, `ProfilesConfigTest.loadProbeModeOnProfileAndHost` |
 | Smart poll interval (P13-020) | `HostPollSchedule`, `MonitorService`, `HostEntry`, `SessionStore` | `HostPollScheduleTest`, `HostEntryTest.effectiveIntervalUsesModeDefaultsAndOverride`, `ProfilesConfigTest.loadHostIntervalOverride`, `MonitorServiceTest.pollsHostsOnIndependentSchedules` |
 | Burst on route change (P13-021) | `BurstSchedulePolicy`, `MonitorService` | `BurstSchedulePolicyTest`, `MonitorServiceTest.acceleratesPollingAfterRouteChange` |
-| Trace concurrency cap (P13-030) | `TraceConcurrencyLimiter`, `TracingProfile`, `MonitorService` | `TraceConcurrencyLimiterTest`, `ProfilesConfigTest.loadMaxConcurrentTraces`, `MonitorServiceTest.limitsConcurrentTracePolls`, `MonitorServiceTest.pingOnlyPollsWhileTraceSlotExhausted` |
+| Trace concurrency cap (P13-030) | `TraceConcurrencyLimiter`, `TracingProfile`, `MonitorService` | `TraceConcurrencyLimiterTest` (default = `MAX_HOSTS`), `ProfilesConfigTest.loadMaxConcurrentTraces`, `MonitorServiceTest.limitsConcurrentTracePolls`, `MonitorServiceTest.defaultConcurrencyAllowsFullSessionOfTraces`, `MonitorServiceTest.pingOnlyPollsWhileTraceSlotExhausted` |
 | Windows preset YAML (P13-040 / P16-043) | `config/hosts.windows.example.yaml`, `ProfilesConfig` | `ProfilesConfigTest.loadWindowsExamplePreset` |
 | MTR vs trace docs (P13-050) | `docs/JAVA.md`, `docs/ADR_PROBE_MODES.md` | Docs parity (`check_doc_parity.py`); § probe_mode + MTR limitations in JAVA.md |
-| Route diff panel (P14-010) | `RouteDiff`, `RouteDiffPresenter`, `RouteGraphPresenter`, `GraphCanvas` | `RouteDiffTest`, `RouteDiffPresenterTest`, `RouteGraphPresenterTest.liveRedrawShowsDiffAgainstPreviousRoute` |
+| Route graph (ex-P14-010 Diff removed) | `RouteGraphPresenter`, `GraphCanvas`, `RouteGraphPanel` | `RouteGraphPresenterTest` (live/replay without Diff panel) |
 | Host tags YAML (P14-020) | `HostTags`, `HostEntry`, `ProfilesConfig`, `HostItem`, `MainController` | `HostTagsTest`, `HostEntryTest.withTagsPreservesOtherFields`, `ProfilesConfigTest.loadHostTagsRoundTrip` |
 | Tag filter chips + edit (P14-021) | `HostListPresenter`, `HostTagsDialog`, `SessionStore.setTags` | `HostTagsDialogTest`, `HostListPresenterTest`, `SessionStoreTest.setTagsUpdatesSessionAndToHostEntries` |
 | ASN hop labels (P14-030) | `AsnLookup`, `AsnInfo`, `IpLiterals`, `PingColor`, `AppOptions` | `AsnLookupTest`, `IpLiteralsTest`, `PingColorTest.nodeLabelUsesAvgPing`, `PinguiApplicationTest` ASN flags |
@@ -44,6 +44,7 @@ Module → unit test matrix. Update when adding features.
 | Telemetry models (P16-010) | `MetricSample`, `TelemetryEvent`; `models.py` | `MetricSampleTest`, `TelemetryEventTest`, `test_telemetry_models.py` |
 | Sink registry (P16-011) | `TelemetrySink`, `SinkRegistry`, `NoOpTelemetrySink` | `SinkRegistryTest` |
 | Telemetry bus (P16-012) | `TelemetryBus`, `DropPolicy` | `TelemetryBusTest` |
+| Telemetry failure isolation (P26-002) | `SinkRegistry.failureCount` + per-sink call timeout (default 5s); `TelemetryBus` non-blocking offer / close drain | `TelemetryBusTest` hang/timeout/peer/close; `SinkRegistryTest.sinkFailureDoesNotStopOthers` |
 | Monitor → bus (P16-013) | `MonitorService.setTelemetryBus`; `telemetry_emit.py` | `MonitorServiceTelemetryTest`, `test_monitor_telemetry.py` |
 | Metric names (P16-014) | `MetricNames.java`; `metric_names.py` | `MetricNamesTest`, `test_metric_names.py` |
 | Sqlite telemetry sink (P16-020) | `SqliteTelemetrySink`; schema v4 | `SqliteTelemetrySinkTest` |
@@ -83,7 +84,7 @@ Module → unit test matrix. Update when adding features.
 | Simple-mode feedback (P20-001) | `UserFeedback`, `UiFeedbackRouter`, `ViewModeController`, `MainController`, `HostListPresenter`, `ProfileUiCoordinator` | `UiFeedbackRouterTest`, `ViewModeControllerTest`, `HostListPresenterTest.addHostValidationFailureCallsErrorFeedback` |
 | Confirm delete host/profile (P20-002) | `ConfirmDialogs`, `HostListPresenter`, `ProfileUiCoordinator` | `HostListPresenterTest.removeHostCancelDoesNotMutate`, `removeHostOkDeletesSelectedHost`, `ProfileUiCoordinatorTest` |
 | Dirty / unsaved (P20-003) | `ConfigDirtyState`, `ConfirmDialogs.confirmUnsaved`, `MainController`, `HostListPresenter`, `ProfileUiCoordinator` | `ConfigDirtyStateTest`, `ProfileUiCoordinatorTest` (Cancel/Save/Discard), `HostListPresenterTest.addHostMarksDirtyOnSuccess` |
-| Route diff visual (P20-004) | `RouteDiffStyle`, `RouteDiffPresenter` | `RouteDiffStyleTest`, `RouteDiffPresenterTest.showChangedRowExposesKindForStyledCell` |
+| Route Diff removed (ex-P20-004) | — (UI/code removed) | `RouteGraphPresenterTest.liveRedrawRendersWithoutDiffPanel` |
 | Export from menu (P20-005) | `SessionExportUi`, `SessionReportExporter`, `MainController` | `SessionExportUiTest`, `SessionReportExporterTest.isHtmlReportMatchesHtmlExtensionsOnly`, `exportChoosesFormatByExtension`, `AppMenuDialogsTest` |
 | Keyboard accelerators (P20-006) | `AppAccelerators`, `MainController`, `AppMenuDialogs` | `AppAcceleratorsTest`, `AppMenuDialogsTest` |
 | Empty states (P20-007) | `EmptyStateHints`, `RouteHistoryPresenter`, `ViewModeController`, `MainController` | `EmptyStateHintsTest`, `RouteHistoryPresenterTest` (placeholders), `ViewModeControllerTest` |
@@ -94,6 +95,21 @@ Module → unit test matrix. Update when adding features.
 | Alert rules ADR (P21-001) | `docs/ADR_ALERT_RULES.md`, `docs/en/ADR_ALERT_RULES.md`; related `ADR_ALERTS` | Doc parity; contract for `endpoint_down` lifecycle |
 | AlertRuleEngine endpoint_down (P21-002) | `AlertRuleEngine`, `QualityAlertEvent`, `EndpointDownRuleConfig`, `MonitorService` | `AlertRuleEngineTest`, `MonitorServiceTest.dispatchesEndpointDownAfterConsecutiveUnreachablePolls` |
 | latency_high (P23) | `LatencyHighRuleConfig`, `AlertRuleEngine`, `MonitorService`, `AlertsSettingsDialog`, `PersistenceEventType.LATENCY_HIGH` | `AlertRuleEngineTest.latencyHigh*`, `ProfilesConfigTest.saveAndReloadLatencyHighRules`, `AlertsSettingsDialogTest.buildConfigEnablesLatencyHighCriticalDefaults` |
+| GUI paint baseline (P24-000) | `docs/ROADMAP.md` phase 24; `.omx/plans/gui-architecture-perf-plan.md` | Doc parity; P24 queue opened |
+| GraphCanvas invalidate (P24-001) | `GraphCanvas` | `GraphCanvasTest` (resize call-count); CHECKLIST native Windows smoke |
+| GraphCanvas coalesce (P24-002) | `GraphCanvas` | `GraphCanvasTest` paint≤1 / pulse |
+| GraphScene cache (P24-003) | `GraphCanvas`, `RouteGraphLayout` | `GraphCanvasTest` pan/zoom without rebuild |
+| Graph paint cache (P24-004) | `GraphCanvas` | `GraphCanvasTest` hover/color |
+| No forced window resize (P24-005) | `ViewModeController`, `PinguiApplication`, `HostListPresenter` | `ViewModeControllerTest.applyDoesNotChangeStageSizeAcrossModeToggle` + source guard |
+| Window geometry persist (P24-006) | `WindowGeometry`, `WindowGeometryStore`, `ViewModeController`, `MainController`, `PinguiApplication` | `WindowGeometryTest` (fit W/H, ensure, divider, fillsVisualBounds); `WindowGeometryStoreTest`; startup Simple + demaximize/fit + floating save |
+| GUI view components (P24-007) | `io.pingui.ui.view.*`, `MainController` | Presenter tests unchanged; `createScene` → `MainView.assemble` |
+| CSS light theme (P24-008) | `UiPalette`, `pingui.css`, `MainView`, `GraphCanvas` | `UiPaletteTest` |
+| Deferred startup I/O (P24-009) | `StartupBootstrap`, `MainController`, `PinguiApplication` | `StartupBootstrapTest` |
+| ADR GUI paint (P24-010) | `docs/ADR_GUI_PAINT.md`, `docs/en/ADR_GUI_PAINT.md` | Doc parity; `GraphCanvasPerfTest` (100 drag ≤1 paint); CHECKLIST Extended+pan+route; NEXT=`DONE` |
+| UI i18n runtime (P25) | `UiI18n`, `UiLocale`, `UiLocaleStore`, `messages_*.properties`, `MainView` Language menu | `UiI18nTest`; UI tests with UK locale |
+| ADR i18n (P25) | `docs/ADR_I18N.md`, `docs/en/ADR_I18N.md` | User-facing locales only: USER_GUIDE + HOWTO + `README.<lang>` |
+| Doc parity multi-locale (P25) | `scripts/check_doc_parity.py` | `test_doc_parity.py`; UK/EN full; stub locales = user docs |
+| Hardening queue (P26) | ROADMAP phase 26: telemetry isolation, SQLite reopen, launchers, MainController/MonitorService split, JaCoCo packages, latency EWMA | NEXT=`P26-003`; P26-002 telemetry isolation [x] (`SinkRegistry.failureCount`, bus non-blocking offer tests) |
 | YAML/GUI alerts.rules (P21-003) | `AlertConfig`, `EndpointDownRuleConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `ProfilesConfigTest`, `AlertsSettingsDialogTest`, `AppMenuDialogsTest` |
 | Host problem indicator ADR (P22-001) | `docs/ADR_HOST_PROBLEM_INDICATOR.md` | docs review / ROADMAP P22 |
 | HostProblemSummary (P22-002) | `AlertRuleEngine`, `HostProblemSummary`, `MonitorService` | `AlertRuleEngineTest`, `MonitorServiceTest` |
@@ -102,7 +118,7 @@ Module → unit test matrix. Update when adding features.
 | Session DB auto-name (P22-005) | `LocalIpv4`, `SessionDbAutoName`, `PersistenceSettingsDialog` | `LocalIpv4Test`, `SessionDbAutoNameTest` |
 | Graph UX (P20-012) | `GraphCanvas`, `RouteGraphInteraction`, `RouteGraphLayout`, `MainController` | `RouteGraphInteractionTest`, `RouteGraphLayoutTest`, `AppMenuDialogsTest` |
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
-| Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
+| Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `DesktopAlertDispatcher`, `DesktopAlertSink`, `JavaFxDesktopAlertSink`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `DesktopAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
 | SQLite session (P11-010) | `SessionDatabase`, `SessionJsonCodec` | `SessionDatabaseTest` |
 | Persistence wire (P11-011) | `SessionStore`, `PersistenceEventWriter`, `MonitorService` | `SessionStorePersistenceTest`, `PersistenceEventWriterTest`, `MonitorServiceTest.persistsRouteChangeAndProbeErrorEvents` |
@@ -113,6 +129,7 @@ Module → unit test matrix. Update when adding features.
 | Graph host source (stale replay) | `RouteGraphPresenter`, `MainController.viewHost` | `RouteGraphPresenterTest.staleReplayForOtherHostFallsBackToLiveSelection` |
 | Raw ICMP packet | `IcmpPacket`, `IcmpV6Packet` | `IcmpPacketTest`, `IcmpV6PacketTest` |
 | Expert ping flags | `PingExpertValidator`, `ProcessExpertPing`, `ExpertPingArgs`, `HostAddressResolver` | `PingExpertValidatorTest`, `ExpertPingArgsTest`, `ProcessExpertPingTest`, `ExpertPingUiRulesTest`, `HostAddressResolverTest`, `PingTargetResolverTest` |
+| Host poll liveness counters | `HostPollCounters`, `HostRegistry`, `MonitorService`, `HostItem`, `HostListPresenter` | `HostPollCountersTest`, `HostRegistryTest.pollCounters*`, `HostItemMetricsTest`, `MonitorServiceTest.pollCounters*` |
 | GUI / MonitorService | `MainController`, `MonitorService` | *(manual / TestFX — backlog)* |
 | UI coordinators | `ProfileUiCoordinator`, `HostListPresenter`, `MonitorLifecycle`, `ViewModeController`, `RouteGraphPresenter` | `./gradlew check`; B-035 manual smoke |
 | CI gate | `.github/workflows/java.yml` | `./gradlew check` (ubuntu + windows jobs block merge; Monocle headless for FX UI tests) |

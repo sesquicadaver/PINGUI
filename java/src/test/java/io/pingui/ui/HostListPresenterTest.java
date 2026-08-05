@@ -36,7 +36,7 @@ class HostListPresenterTest {
             FlowPane chips = harness.chipPane();
             assertEquals(3, chips.getChildren().size());
             assertEquals(
-                    HostListPresenter.TAG_FILTER_ALL,
+                    HostListPresenter.tagFilterAllLabel(),
                     ((ToggleButton) chips.getChildren().get(0)).getText());
             assertEquals("dc", ((ToggleButton) chips.getChildren().get(1)).getText());
             assertEquals("vpn", ((ToggleButton) chips.getChildren().get(2)).getText());
@@ -215,7 +215,6 @@ class HostListPresenterTest {
                     () -> {},
                     () -> {},
                     (oldHost, newHost) -> {},
-                    () -> {},
                     () -> {},
                     Runnable::run);
             this.presenter.setMarkDirty(dirtyMarks::incrementAndGet);

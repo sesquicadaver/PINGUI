@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -167,6 +168,11 @@ class SinkRegistryTest {
     }
 
     @Test
+    void rejectsNegativeSinkCallTimeout() {
+        assertThrows(IllegalArgumentException.class, () -> new SinkRegistry(Duration.ofMillis(-1)));
+    }
+
+    @Test
     void sinkFailureDoesNotStopOthers() {
         SinkRegistry registry = new SinkRegistry();
         AtomicInteger calls = new AtomicInteger();
@@ -202,9 +208,11 @@ class SinkRegistryTest {
                 calls.incrementAndGet();
             }
         });
+        assertEquals(0, registry.failureCount());
         registry.emitSample(sample());
         registry.emitEvent(event());
         assertEquals(2, calls.get());
+        assertEquals(2, registry.failureCount());
     }
 
     @Test

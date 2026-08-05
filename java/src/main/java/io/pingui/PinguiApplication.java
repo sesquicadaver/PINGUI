@@ -1,8 +1,6 @@
 package io.pingui;
 
 import io.pingui.config.ConfigError;
-import io.pingui.config.ProfileDocument;
-import io.pingui.config.ProfilesConfig;
 import io.pingui.daemon.DaemonPidFile;
 import io.pingui.daemon.DaemonRunner;
 import io.pingui.export.ExportSchedulePeriod;
@@ -14,6 +12,7 @@ import io.pingui.probe.ProbeMode;
 import io.pingui.telemetry.TelemetryRetentionJob;
 import io.pingui.ui.AppMenuDialogs;
 import io.pingui.ui.MainController;
+import io.pingui.ui.StartupBootstrap;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -23,37 +22,86 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 /** Cross-platform JavaFX entry point for PINGUI. */
 public final class PinguiApplication extends Application {
+    /** Fallback Stage width for Simple when window-geometry prefs are missing (host column). */
+    static final double DEFAULT_STAGE_WIDTH_SIMPLE = 580.0;
+    /** Fallback Stage width for Extended when prefs omit width (graph chrome). */
+    static final double DEFAULT_STAGE_WIDTH_EXTENDED = 1400.0;
+    /** Fallback Stage height for Simple when prefs are missing. */
+    static final double DEFAULT_STAGE_HEIGHT_SIMPLE = 700.0;
+    /** Fallback Stage height for Extended (graph + history). */
+    static final double DEFAULT_STAGE_HEIGHT_EXTENDED = 820.0;
+
     private MainController controller;
+    private ExecutorService startupExecutor;
 
     @Override
     public void start(Stage stage) {
         try {
             AppOptions options = parseOptions(getParameters().getNamed());
             LoggingSetup.configure(options.verbose());
-            ProfileDocument document = ProfilesConfig.load(options.configPath());
-            controller = new MainController(options, document);
             AppMenuDialogs.bindHostServices(getHostServices());
+            MainController.bootstrapUiLocale(options);
+            // P24-009: show shell UI first; heavy I/O (YAML/SQLite/GeoIP) on a background thread.
+            controller = new MainController(options);
             Scene scene = controller.createScene();
             stage.setTitle(MainController.windowTitle());
             stage.setScene(scene);
+            // P24-006: restore clamped bounds + mode; close-only save registered inside.
+            controller.prepareStageGeometry(
+                    stage,
+                    DEFAULT_STAGE_WIDTH_SIMPLE,
+                    DEFAULT_STAGE_WIDTH_EXTENDED,
+                    DEFAULT_STAGE_HEIGHT_SIMPLE,
+                    DEFAULT_STAGE_HEIGHT_EXTENDED);
             stage.show();
-            controller.onSceneShown();
+            controller.onStageShown();
             controller.refreshDirtyUi();
-        } catch (ConfigError | IllegalArgumentException ex) {
-            failCli(ex.getMessage());
-        } catch (IOException ex) {
+            startupExecutor = Executors.newSingleThreadExecutor(r -> {
+                Thread t = new Thread(r, "pingui-startup");
+                t.setDaemon(true);
+                return t;
+            });
+            CompletableFuture.supplyAsync(
+                            () -> {
+                                try {
+                                    return StartupBootstrap.load(options);
+                                } catch (IOException | RuntimeException ex) {
+                                    throw new java.util.concurrent.CompletionException(ex);
+                                }
+                            },
+                            startupExecutor)
+                    .whenComplete((result, error) -> Platform.runLater(() -> {
+                        if (error != null) {
+                            Throwable cause = error.getCause() != null ? error.getCause() : error;
+                            controller.onBootstrapFailed(cause);
+                            return;
+                        }
+                        try {
+                            controller.attachBootstrap(result);
+                        } catch (RuntimeException ex) {
+                            controller.onBootstrapFailed(ex);
+                        }
+                    }));
+        } catch (IllegalArgumentException ex) {
             failCli(ex.getMessage());
         }
     }
 
     @Override
     public void stop() {
+        if (startupExecutor != null) {
+            startupExecutor.shutdownNow();
+        }
         if (controller != null) {
             controller.shutdown();
         }
@@ -177,6 +225,18 @@ public final class PinguiApplication extends Application {
                 && (telemetryRetention.isPresent() || exportReport.isPresent() || exportSchedule.isPresent())) {
             throw new IllegalArgumentException("Use either --telemetry-dump or retention/export flags, not both");
         }
+        Optional<String> uiLang = Optional.empty();
+        if (params.containsKey("lang")) {
+            String value = params.get("lang");
+            if (value == null || value.isBlank()) {
+                throw new IllegalArgumentException("Missing value for --lang");
+            }
+            String code = value.strip();
+            if (io.pingui.i18n.UiLocale.fromCode(code).isEmpty()) {
+                throw new IllegalArgumentException("--lang must be one of: uk, en, es, it, pl, cs, lv, lt, et");
+            }
+            uiLang = Optional.of(code);
+        }
         CliRunMode runMode = CliRunMode.GUI;
         if (params.containsKey("daemon")) {
             runMode = CliRunMode.DAEMON;
@@ -222,7 +282,8 @@ public final class PinguiApplication extends Application {
                 apiPort,
                 telemetryRetention,
                 telemetryJsonlDir,
-                telemetryDump);
+                telemetryDump,
+                uiLang);
     }
 
     private static CliTelemetryOverrides parseTelemetryOverrides(Map<String, String> params) {
@@ -571,7 +632,7 @@ public final class PinguiApplication extends Application {
                   --timeout SEC     Override probe timeout for this session
                   --probe MODE      Override probe: auto | process | raw
                   --alert-webhook URL  POST route-change JSON (secrets not logged)
-                  --desktop-alerts     Linux desktop notifications (notify-send)
+                  --desktop-alerts     In-app desktop popup (JavaFX; no notify-send)
                   --alert-rate-limit N Max alerts per host per hour (default: 10)
                   --session-db PATH  SQLite session metrics + events (optional)
                   --telemetry-syslog HOST:PORT  Override telemetry syslog sink (profile)
@@ -602,6 +663,7 @@ public final class PinguiApplication extends Application {
                   --asn-hints PATH    CIDR→ASN YAML (default: config/asn_hints.yaml)
                   --no-asn          Disable ASN hints in hop labels
                   --asn-timeout-ms N Reserved for future whois fallback (default: 2000)
+                  --lang CODE       UI language: uk|en|es|it|pl|cs|lv|lt|et (default: prefs or uk)
                   --verbose         Debug logging
                 """);
     }

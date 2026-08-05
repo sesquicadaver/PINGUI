@@ -66,7 +66,9 @@ profiles:
 
 ### Concurrency (P13-030)
 
-`max_concurrent_traces` (default **3**) caps simultaneous subprocess/raw traces — does not apply to `ping_only` (light pings).
+`max_concurrent_traces` (default **10** = `HostsConfig.MAX_HOSTS`) caps simultaneous subprocess/raw traces — does not apply to `ping_only` (light pings).
+
+**Operator contract:** if TRACE is enabled on N hosts in a session (N ≤ 10), all N may run in parallel. Default equals the session cap; lower it in YAML only when deliberately throttling load.
 
 ### Platforms
 
