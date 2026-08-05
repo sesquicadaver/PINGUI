@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P26-004** |
+| **Поточна задача** | **P26-005** |
 | **Фаза** | 26 — hardening post-audit (telemetry / launchers / split / coverage) |
-| **DoD (коротко)** | Launcher: quoting + detached GUI smoke matrix |
+| **DoD (коротко)** | MainController ≤550 LOC (dialogs/lifecycle extract) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -149,14 +149,14 @@
 | 103 | **P26-001** | [x] | Docs: sync README/JAVA phase labels з ROADMAP (не «фаза 22») |
 | 104 | **P26-002** | [x] | Telemetry: failure isolation (timeout/backpressure/shutdown flush) |
 | 105 | **P26-003** | [x] | SQLite: reopen/migration/corrupt failure tests |
-| 106 | **P26-004** | [ ] | Launcher: quoting + detached GUI smoke matrix |
+| 106 | **P26-004** | [x] | Launcher: quoting + detached GUI smoke matrix |
 | 107 | **P26-005** | [ ] | MainController ≤550 LOC (dialogs/lifecycle extract) |
 | 108 | **P26-006** | [ ] | MonitorService split (poll vs alert/telemetry wiring) |
 | 109 | **P26-007** | [ ] | JaCoCo package-level thresholds (не один bundle) |
 | 110 | **P26-008** | [ ] | latency_high: EWMA/window baseline + UI ETA note |
 | 111 | **P26-009** | [ ] | ADR_HARDENING + LIVING_SPEC/CHECKLIST + phase close |
 
-**Стан черги:** активна — **NEXT = P26-004** (фаза 26 post-P25 hardening).
+**Стан черги:** активна — **NEXT = P26-005** (фаза 26 post-P25 hardening).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -879,7 +879,7 @@ flowchart TD
 | **P26-001** | [x] Docs phase sync | `README.md`, `README.en.md`, `docs/JAVA.md`, `docs/en/…`, CHANGELOG | Немає «фаза 22/23 DONE» якщо NEXT=P26; таблиця main/beta = актуальна фаза |
 | **P26-002** | [x] Telemetry failure isolation | `telemetry/*`, contract tests | Sink timeout/fail не блокує poll; bounded queue або drop+metric; shutdown flush documented + тест |
 | **P26-003** | [x] SQLite reopen failures | `SessionDatabaseHardeningTest`, `SessionStorePersistenceTest` | append після reopen; v1/v3→v4 migration; corrupt/truncated → PersistenceException; concurrent export smoke |
-| **P26-004** | [ ] Launcher smoke matrix | `pingui-java.sh`, `.bat`, `PinguiLauncher`, script/CI | quoting пробілів; detached GUI; `--foreground`; Windows javaw path; fail → лог |
+| **P26-004** | [x] Launcher smoke matrix | `pingui-java.sh`, `.bat`, `scripts/smoke_launcher.*`, `PinguiLauncherTest`, CI | quoting пробілів; detached/`--foreground`; `PINGUI_JAVAW`; fail → gui.log |
 | **P26-005** | [ ] MainController ≤550 LOC | `MainController`, `ui/view/*` або `*Coordinator` | LOC gate або documented residual; dialogs/lifecycle поза конструктором |
 | **P26-006** | [ ] MonitorService split | `monitor/*` | Poll orchestration ≠ alert/telemetry wiring; layerCheck green; unit tests |
 | **P26-007** | [ ] Package JaCoCo thresholds | `java/build.gradle.kts` | Окремі мінімуми для `config`/`probe`/`monitor`/`persistence`/`telemetry`; UI exclusion явний |
@@ -972,7 +972,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P26-004**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P26-005**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

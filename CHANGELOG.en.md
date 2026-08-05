@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **P26-004 — launcher smoke matrix:** `scripts/smoke_launcher.sh`/`.cmd` (space quoting, detach/`--foreground`, fail→gui.log); `.bat` quoted args + `PINGUI_JAVAW`; CI java.yml; NEXT→**P26-005**.
 - **P26-003 — SQLite reopen/migration/corrupt tests:** `SessionDatabaseHardeningTest` (v1/v3→v4, corrupt/truncated → PersistenceException, concurrent export smoke); NEXT→**P26-004**.
 - **P26-002 — telemetry failure isolation:** `SinkRegistry.failureCount` + per-sink call timeout (5s); non-blocking bus offers; shutdown flush; ADR_TELEMETRY §7; NEXT→**P26-003**.
 - **P26-001 — docs phase sync:** README/JAVA/docs index no longer say “phase 22 / NEXT=DONE”; NEXT→**P26-002**.

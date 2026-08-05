@@ -1,8 +1,9 @@
 @echo off
-rem PINGUI Java — Windows launcher v7.
+rem PINGUI Java — Windows launcher v8.
 rem GUI defaults to detached javaw (no console). CLI modes stay attached.
 rem JDK 21: set JAVA_HOME or PINGUI_JAVA_HOME before run.
 rem Note: in cmd.exe %* is NEVER updated by shift — collect extras with a loop.
+rem Args with spaces are preserved as quoted tokens in PINGUI_EXTRA (P26-004).
 setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
 
@@ -26,10 +27,11 @@ if /I "%~1"=="--fg" (
   shift /1
   goto collect_extra
 )
+rem Keep each token quoted so paths with spaces survive %PINGUI_EXTRA% expansion.
 if defined PINGUI_EXTRA (
-  set "PINGUI_EXTRA=!PINGUI_EXTRA! %~1"
+  set "PINGUI_EXTRA=!PINGUI_EXTRA! "%~1""
 ) else (
-  set "PINGUI_EXTRA=%~1"
+  set "PINGUI_EXTRA="%~1""
 )
 shift /1
 goto collect_extra
@@ -55,14 +57,14 @@ if /I "%CMD%"=="run" goto do_gui_entry
 if /I "%CMD%"=="--" goto do_gui_entry
 rem First token is an app flag/arg (e.g. --daemon)
 if defined PINGUI_EXTRA (
-  set "PINGUI_EXTRA=%CMD% !PINGUI_EXTRA!"
+  set "PINGUI_EXTRA="%CMD%" !PINGUI_EXTRA!"
 ) else (
-  set "PINGUI_EXTRA=%CMD%"
+  set "PINGUI_EXTRA="%CMD%""
 )
 goto do_gui_entry
 
 :do_help
-call gradlew.bat installDist -q
+call :ensure_install_dist
 if errorlevel 1 exit /b %ERRORLEVEL%
 call "build\install\pingui-java\bin\pingui-java.bat" --help
 exit /b %ERRORLEVEL%
@@ -70,7 +72,7 @@ exit /b %ERRORLEVEL%
 :do_build
 echo [pingui-java] Building...
 if defined PINGUI_EXTRA (
-  call gradlew.bat build %PINGUI_EXTRA%
+  call gradlew.bat build !PINGUI_EXTRA!
 ) else (
   call gradlew.bat build
 )
@@ -79,7 +81,7 @@ exit /b %ERRORLEVEL%
 :do_package
 echo [pingui-java] Packaging...
 if defined PINGUI_EXTRA (
-  call gradlew.bat jpackage %PINGUI_EXTRA%
+  call gradlew.bat jpackage !PINGUI_EXTRA!
 ) else (
   call gradlew.bat jpackage
 )
@@ -93,10 +95,10 @@ goto do_run_detached
 
 :do_run_attached
 echo [pingui-java] Starting (attached)...
-call gradlew.bat installDist -q
+call :ensure_install_dist
 if errorlevel 1 exit /b %ERRORLEVEL%
 if defined PINGUI_EXTRA (
-  call "build\install\pingui-java\bin\pingui-java.bat" %PINGUI_EXTRA%
+  call "build\install\pingui-java\bin\pingui-java.bat" !PINGUI_EXTRA!
 ) else (
   call "build\install\pingui-java\bin\pingui-java.bat"
 )
@@ -104,26 +106,43 @@ exit /b %ERRORLEVEL%
 
 :do_run_detached
 echo [pingui-java] Starting GUI (detached, javaw)...
-call gradlew.bat installDist -q
+call :ensure_install_dist
 if errorlevel 1 exit /b %ERRORLEVEL%
 set "APP_HOME=%CD%\build\install\pingui-java"
-set "JAVAW_EXE=javaw"
-if defined JAVA_HOME if exist "%JAVA_HOME%\bin\javaw.exe" set "JAVAW_EXE=%JAVA_HOME%\bin\javaw.exe"
+call :resolve_javaw
 if not defined PINGUI_GUI_LOG set "PINGUI_GUI_LOG=%LOCALAPPDATA%\pingui\gui.log"
 for %%D in ("%PINGUI_GUI_LOG%") do if not exist "%%~dpD" mkdir "%%~dpD"
 set "CP=%APP_HOME%\lib\*"
 if defined PINGUI_EXTRA (
-  start "" /B cmd /c ""%JAVAW_EXE%" -Dfile.encoding=UTF-8 -cp "%CP%" io.pingui.PinguiLauncher %PINGUI_EXTRA% >>"%PINGUI_GUI_LOG%" 2>&1"
+  start "" /B cmd /c ""!JAVAW_EXE!" -Dfile.encoding=UTF-8 -cp "%CP%" io.pingui.PinguiLauncher !PINGUI_EXTRA! >>"%PINGUI_GUI_LOG%" 2>&1"
 ) else (
-  start "" /B cmd /c ""%JAVAW_EXE%" -Dfile.encoding=UTF-8 -cp "%CP%" io.pingui.PinguiLauncher >>"%PINGUI_GUI_LOG%" 2>&1"
+  start "" /B cmd /c ""!JAVAW_EXE!" -Dfile.encoding=UTF-8 -cp "%CP%" io.pingui.PinguiLauncher >>"%PINGUI_GUI_LOG%" 2>&1"
 )
 echo [pingui-java] GUI launched (no console). Log: %PINGUI_GUI_LOG%
 echo [pingui-java] Foreground debug: pingui-java.bat --foreground
 exit /b 0
 
+:ensure_install_dist
+if /I "%PINGUI_SKIP_INSTALL_DIST%"=="1" exit /b 0
+call gradlew.bat installDist -q
+exit /b %ERRORLEVEL%
+
+:resolve_javaw
+rem Smoke/tests may inject a stub via PINGUI_JAVAW (absolute path to exe/bat).
+if defined PINGUI_JAVAW (
+  set "JAVAW_EXE=%PINGUI_JAVAW%"
+  exit /b 0
+)
+set "JAVAW_EXE=javaw"
+if defined JAVA_HOME if exist "%JAVA_HOME%\bin\javaw.exe" set "JAVAW_EXE=%JAVA_HOME%\bin\javaw.exe"
+if defined JAVA_HOME if not exist "%JAVA_HOME%\bin\javaw.exe" (
+  echo [pingui-java] WARNING: JAVA_HOME set but javaw.exe missing: "%JAVA_HOME%\bin\javaw.exe" >&2
+)
+exit /b 0
+
 :detect_console_need
 set "PINGUI_NEED_CONSOLE=0"
 if not defined PINGUI_EXTRA exit /b 0
-echo !PINGUI_EXTRA! | findstr /I /C:"--daemon" /C:"--stop" /C:"--status" /C:"--help" /C:"--export-report" /C:"--export-schedule" /C:"--telemetry-dump" /C:"--telemetry-retention" >nul
+echo !PINGUI_EXTRA! | findstr /I /C:"--daemon" /C:"--stop" /C:"--status" /C:"--help" /C:"-h" /C:"--export-report" /C:"--export-schedule" /C:"--telemetry-dump" /C:"--telemetry-retention" >nul
 if not errorlevel 1 set "PINGUI_NEED_CONSOLE=1"
 exit /b 0
