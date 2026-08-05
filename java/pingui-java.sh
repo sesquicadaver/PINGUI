@@ -113,6 +113,9 @@ gui_log_path() {
 }
 
 ensure_install_dist() {
+  if [[ "${PINGUI_SKIP_INSTALL_DIST:-}" == "1" ]]; then
+    return 0
+  fi
   ./gradlew installDist -q
 }
 

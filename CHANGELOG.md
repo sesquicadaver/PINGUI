@@ -9,6 +9,9 @@
 
 ### Added
 
+- **P26-005 — MainController ≤550 LOC:** geometry/settings/easter-egg/persistence session винесено в coordinators; `MainControllerLocGateTest`; NEXT→**P26-006**.
+- **P26-004 — launcher smoke matrix:** `scripts/smoke_launcher.sh`/`.cmd` (quoting пробілів, detach/`--foreground`, fail→gui.log); `.bat` quoted args + `PINGUI_JAVAW`; CI java.yml; NEXT→**P26-005**.
+- **P26-003 — SQLite reopen/migration/corrupt tests:** `SessionDatabaseHardeningTest` (v1/v3→v4, corrupt/truncated → PersistenceException, concurrent export smoke); NEXT→**P26-004**.
 - **P26-002 — telemetry failure isolation:** `SinkRegistry.failureCount` + per-sink call timeout (5s); non-blocking bus offers; shutdown flush; ADR_TELEMETRY §7; NEXT→**P26-003**.
 - **P26-001 — docs phase sync:** README/JAVA/docs index більше не кажуть «фаза 22 / NEXT=DONE»; NEXT→**P26-002**.
 - **P26 — hardening queue (post-audit):** ROADMAP NEXT=`P26-001`…`P26-009` — docs phase sync, telemetry failure isolation, SQLite reopen tests, launcher smoke, MainController/MonitorService split, package JaCoCo, latency EWMA/window.

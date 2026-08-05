@@ -136,7 +136,7 @@ Store/history/change detection — `SessionStore`, `RouteHistory`, `RouteChangeD
 
 `MainController` (JavaFX) — orchestration + coordinators/presenters.
 
-Chrome assembly (P24-007): package `io.pingui.ui.view` — `MainView` + `ProfileToolbar`, `MonitorModeToolbar`, `HostListPanel`, `StatusPanel`, `RouteGraphPanel`, `HistoryPanel`; callbacks via `MainViewActions`. `createScene()` delegates to `MainView.assemble(...)`. Expected `MainController` LOC after G7 ≈ 850–900 (≤550 target — follow-up presenter moves).
+Chrome assembly (P24-007): package `io.pingui.ui.view` — `MainView` + `ProfileToolbar`, `MonitorModeToolbar`, `HostListPanel`, `StatusPanel`, `RouteGraphPanel`, `HistoryPanel`; callbacks via `MainViewActions`. `createScene()` delegates to `MainView.assemble(...)`. After P26-005 `MainController` shell is ≈ **546 LOC** (LocGate ≤550).
 
 Theme (P24-008): `UiPalette` + `classpath:io/pingui/ui/pingui.css` (light-first); `UiPalette.applyTo(scene)`; GraphCanvas paint from the same hex constants; dark is only a reserved `.theme-dark` stub.
 
@@ -224,4 +224,4 @@ Tests and CI — on **`main`** and **`beta`** (ROADMAP development on `beta`).
 
 ## Future
 
-The linear ROADMAP queue: **NEXT = P26-003** (phase 26 — hardening). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT.
+The linear ROADMAP queue: **NEXT = P26-006** (phase 26 — hardening). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT.

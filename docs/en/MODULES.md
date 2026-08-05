@@ -319,7 +319,7 @@ JavaFX chrome assembly separate from orchestration:
 | `RouteGraphPanel` / `HistoryPanel` | canvas + history chrome |
 | `MainViewActions` | callbacks into `MainController` |
 
-`MainController.createScene()` is a thin assembler. Controller LOC after G7 ≈ 850–900; ≤550 target is a follow-up.
+`MainController.createScene()` is a thin assembler. After P26-005 the shell is ≈ **546 LOC** (`MainControllerLocGateTest` ≤550); dialogs/geometry/lifecycle live in coordinators.
 
 ## pingui.ui
 

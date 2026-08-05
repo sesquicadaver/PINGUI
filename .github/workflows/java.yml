@@ -35,6 +35,11 @@ jobs:
           chmod +x gradlew
           ./gradlew check --no-daemon --stacktrace
 
+      - name: Launcher smoke (P26-004)
+        run: |
+          chmod +x scripts/smoke_launcher.sh pingui-java.sh
+          ./scripts/smoke_launcher.sh
+
   check-windows:
     name: check (windows)
     runs-on: windows-latest
@@ -52,3 +57,6 @@ jobs:
 
       - name: Gradle check
         run: .\gradlew.bat check --no-daemon --stacktrace
+
+      - name: Launcher smoke (P26-004)
+        run: .\scripts\smoke_launcher.cmd

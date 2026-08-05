@@ -8,7 +8,7 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **[P26-003](docs/ROADMAP.md#next--єдине-джерело-правди)** |
+| **Поточна задача** | **[P26-006](docs/ROADMAP.md#next--єдине-джерело-правди)** |
 | **Правило** | якщо не `DONE` — `/autopilot` = цей ID; якщо `DONE` — зупинитись / чекати явного нового ID. **Не питати** «який пункт?». |
 
 Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна) (фаза 26, #103–111).
@@ -47,7 +47,7 @@
 | **23** | `latency_high` alert rule | ✅ **DONE** |
 | **24** | GUI architecture & paint | ✅ **DONE** |
 | **25** | i18n UI + user-facing docs | ✅ **DONE** |
-| **26** | Hardening post-audit (telemetry / launchers / split) | 🔄 **P26-003** |
+| **26** | Hardening post-audit (telemetry / launchers / split) | 🔄 **P26-006** |
 
 ---
 

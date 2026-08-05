@@ -194,11 +194,14 @@ class TelemetryBusTest {
         SinkRegistry registry = new SinkRegistry();
         RecordingSink sink = new RecordingSink("agg", true);
         registry.register(sink);
-        AggregateTelemetryJob job = AggregateTelemetryJob.enabled(registry);
+        // Fixed clock at sample time so flushDue does not race-emit before close (wall clock ≫ TS).
+        java.time.Clock clock = java.time.Clock.fixed(TS, java.time.ZoneOffset.UTC);
+        AggregateTelemetryJob job =
+                new AggregateTelemetryJob(registry, true, AggregateTelemetryJob.DEFAULT_WINDOW, clock);
         TelemetryBus bus = new TelemetryBus(registry, 32, DropPolicy.DROP_OLDEST, 4, Duration.ofHours(1), job);
         assertTrue(job.logAggregates());
         assertTrue(bus.offerSample(sample(1)));
-        assertTrue(await(() -> sink.samples.isEmpty() && bus.queued() == 0, 2_000));
+        assertTrue(await(() -> bus.queued() == 0 && job.openWindowCount() == 1, 2_000));
         bus.close();
         assertEquals(1, sink.events.size());
         assertEquals(TelemetryEvent.RTT_AGGREGATE, sink.events.get(0).event());

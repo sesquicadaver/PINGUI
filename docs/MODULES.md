@@ -319,7 +319,7 @@ Chrome-збірка JavaFX окремо від orchestration:
 | `RouteGraphPanel` / `HistoryPanel` | canvas + history chrome |
 | `MainViewActions` | callbacks у `MainController` |
 
-`MainController.createScene()` — тонкий assembler. LOC controller після G7 ≈ 850–900; ціль ≤550 — follow-up.
+`MainController.createScene()` — тонкий assembler. Після P26-005 shell ≈ **546 LOC** (`MainControllerLocGateTest` ≤550); dialogs/geometry/lifecycle — у coordinators.
 
 ## pingui.ui
 

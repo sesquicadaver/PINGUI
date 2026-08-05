@@ -136,7 +136,7 @@ Store/history/change detection — `SessionStore`, `RouteHistory`, `RouteChangeD
 
 `MainController` (JavaFX) — orchestration + coordinators/presenters.
 
-Chrome збірка (P24-007): пакет `io.pingui.ui.view` — `MainView` + `ProfileToolbar`, `MonitorModeToolbar`, `HostListPanel`, `StatusPanel`, `RouteGraphPanel`, `HistoryPanel`; callbacks через `MainViewActions`. `createScene()` делегує `MainView.assemble(...)`. Очікуваний LOC `MainController` після G7 ≈ 850–900 (ціль ≤550 — follow-up presenter moves).
+Chrome збірка (P24-007): пакет `io.pingui.ui.view` — `MainView` + `ProfileToolbar`, `MonitorModeToolbar`, `HostListPanel`, `StatusPanel`, `RouteGraphPanel`, `HistoryPanel`; callbacks через `MainViewActions`. `createScene()` делегує `MainView.assemble(...)`. Після P26-005 `MainController` shell ≈ **546 LOC** (LocGate ≤550).
 
 Тема (P24-008): `UiPalette` + `classpath:io/pingui/ui/pingui.css` (light-first); `UiPalette.applyTo(scene)`; GraphCanvas paint з тих самих hex-констант; dark — лише reserved `.theme-dark` stub.
 
@@ -224,4 +224,4 @@ pingui-java.bat --package    REM .msi
 
 ## Майбутнє
 
-Лінійна черга ROADMAP: **NEXT = P26-003** (фаза 26 — hardening). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT.
+Лінійна черга ROADMAP: **NEXT = P26-006** (фаза 26 — hardening). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT.

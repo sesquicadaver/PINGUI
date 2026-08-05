@@ -71,6 +71,7 @@ Integration-тести GUI створюють `QApplication` перед `MainWin
 | `test_session_store.py` | routes, ping history, inactive |
 | `test_graph_canvas.py` | layout, ping_color |
 | `test_ui_smoke.py` | MainWindow CRUD, logs, checkbox |
+| `java/scripts/smoke_launcher.sh` | P26-004: quoting/detach/`--foreground`/fail→log (stub, без JavaFX) |
 | `test_tracer.py` (contract) | trace_route з mock transport |
 | `test_tracer_network.py` (integration) | live v4/v6 trace (`@pytest.mark.network`) |
 | `test_worker_store.py` (contract) | worker → store flow |
