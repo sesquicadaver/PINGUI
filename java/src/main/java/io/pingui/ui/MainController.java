@@ -278,20 +278,26 @@ public final class MainController {
 
     /** Post-show: remember divider for Extended, fit Simple Stage to chrome, scene-shown redraw. */
     public void onStageShown() {
-        stageGeometry.onStageShown();
+        if (stageGeometry != null) {
+            stageGeometry.onStageShown();
+        }
     }
 
     public void onSceneShown() {
         Platform.runLater(() -> {
-            if (!easterEgg.isActive()) {
-                routeGraphPresenter.redrawIfExtended();
+            if (easterEgg == null || !easterEgg.isActive()) {
+                if (routeGraphPresenter != null) {
+                    routeGraphPresenter.redrawIfExtended();
+                }
             }
         });
     }
 
     public void shutdown() {
         shutdownRequested = true;
-        easterEgg.dismiss();
+        if (easterEgg != null) {
+            easterEgg.dismiss();
+        }
         if (monitor != null) {
             monitor.close();
         }
@@ -475,7 +481,9 @@ public final class MainController {
     }
 
     private void reloadActiveProfile() {
-        easterEgg.dismiss();
+        if (easterEgg != null) {
+            easterEgg.dismiss();
+        }
         persistenceSession.reloadActiveProfile();
     }
 

@@ -1,7 +1,6 @@
 package io.pingui.ui;
 
 import io.pingui.ui.view.MainView;
-import java.util.function.BooleanSupplier;
 import javafx.animation.PauseTransition;
 import javafx.util.Duration;
 
@@ -31,10 +30,6 @@ final class EasterEggController {
 
     boolean isActive() {
         return active;
-    }
-
-    BooleanSupplier activeSupplier() {
-        return () -> active;
     }
 
     void start() {
