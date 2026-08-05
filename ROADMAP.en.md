@@ -8,7 +8,7 @@
 
 | Field | Value |
 |------|----------|
-| **Current task** | **[P26-003](docs/en/ROADMAP.md#next--single-source-of-truth)** |
+| **Current task** | **[P26-004](docs/en/ROADMAP.md#next--single-source-of-truth)** |
 | **Rule** | if not `DONE` — `/autopilot` = this ID; if `DONE` — stop / wait for an explicit new ID. **Do not ask** “which item?”. |
 
 Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (phase 26, #103–111).
@@ -47,7 +47,7 @@ Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#e
 | **23** | `latency_high` alert rule | ✅ **DONE** |
 | **24** | GUI architecture & paint | ✅ **DONE** |
 | **25** | i18n UI + user-facing docs | ✅ **DONE** |
-| **26** | Hardening post-audit (telemetry / launchers / split) | 🔄 **P26-003** |
+| **26** | Hardening post-audit (telemetry / launchers / split) | 🔄 **P26-004** |
 
 ---
 
