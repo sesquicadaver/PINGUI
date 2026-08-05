@@ -44,14 +44,25 @@ public final class SessionDatabase implements AutoCloseable {
         } catch (java.io.IOException ex) {
             throw new PersistenceException("Failed to create database directory: " + path, ex);
         }
+        Connection opened;
         try {
-            connection = DriverManager.getConnection("jdbc:sqlite:" + path.toAbsolutePath());
-            connection.setAutoCommit(false);
-            try (Statement pragma = connection.createStatement()) {
+            opened = DriverManager.getConnection("jdbc:sqlite:" + path.toAbsolutePath());
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to open session database: " + path, ex);
+        }
+        try {
+            opened.setAutoCommit(false);
+            try (Statement pragma = opened.createStatement()) {
                 pragma.execute("PRAGMA foreign_keys = ON");
             }
+            this.connection = opened;
             initSchema();
         } catch (SQLException ex) {
+            try {
+                opened.close();
+            } catch (SQLException ignored) {
+                // Best-effort so Windows can delete @TempDir files after failed open.
+            }
             throw new PersistenceException("Failed to open session database: " + path, ex);
         }
     }
