@@ -285,10 +285,8 @@ public final class MainController {
 
     public void onSceneShown() {
         Platform.runLater(() -> {
-            if (easterEgg == null || !easterEgg.isActive()) {
-                if (routeGraphPresenter != null) {
-                    routeGraphPresenter.redrawIfExtended();
-                }
+            if ((easterEgg == null || !easterEgg.isActive()) && routeGraphPresenter != null) {
+                routeGraphPresenter.redrawIfExtended();
             }
         });
     }
@@ -545,10 +543,7 @@ public final class MainController {
         Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
         alert.setTitle(UiI18n.get("error.title"));
         alert.setHeaderText(null);
-        Window owner = dialogOwner();
-        if (owner != null) {
-            alert.initOwner(owner);
-        }
+        Optional.ofNullable(dialogOwner()).ifPresent(alert::initOwner);
         alert.showAndWait();
     }
 }
