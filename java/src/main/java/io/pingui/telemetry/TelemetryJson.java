@@ -68,6 +68,23 @@ final class TelemetryJson {
         return sb.toString();
     }
 
+    /** Parses a bare labels object JSON (SQLite {@code labels_json} column, P27-001). */
+    static Map<String, String> parseLabelsJson(String json) {
+        if (json == null || json.isBlank()) {
+            return Map.of();
+        }
+        return readLabelsObject("{\"labels\":" + json + "}", "labels");
+    }
+
+    /** Parses a bare string-array JSON (SQLite ips columns, P27-001). */
+    static List<String> parseStringArrayJson(String json) {
+        if (json == null || json.isBlank()) {
+            return List.of();
+        }
+        List<String> values = readOptionalStringArray("{\"items\":" + json + "}", "items");
+        return values == null ? List.of() : List.copyOf(values);
+    }
+
     static Map<String, String> copyLabels(Map<String, String> labels) {
         if (labels == null || labels.isEmpty()) {
             return Map.of();

@@ -155,8 +155,11 @@
 | 109 | **P26-007** | [ ] | JaCoCo package-level thresholds (не один bundle) |
 | 110 | **P26-008** | [ ] | latency_high: EWMA/window baseline + UI ETA note |
 | 111 | **P26-009** | [ ] | ADR_HARDENING + LIVING_SPEC/CHECKLIST + phase close |
+| 112 | **P27-001** | [x] | SQLite telemetry: колонки SSOT, без `payload_json` (schema v5) |
+| 113 | **P27-002** | [ ] | `persistence_event`: typed columns + `detail_json` (schema v6) |
+| 114 | **P27-003** | [ ] | `host_session` normalize: hop/history tables (schema v7) |
 
-**Стан черги:** активна — **NEXT = P26-007** (фаза 26 post-P25 hardening).
+**Стан черги:** активна — **NEXT = P26-007** (фаза 26 post-P25 hardening; P27 після P26-009).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -884,9 +887,21 @@ flowchart TD
 | **P26-006** | [x] MonitorService split | `PollResultEffects`, `TelemetryEmission`, `MonitorService` | poll ≠ effects; `PollResultEffectsTest` (9); MonitorService 467 LOC |
 | **P26-007** | [ ] Package JaCoCo thresholds | `java/build.gradle.kts` | Окремі мінімуми для `config`/`probe`/`monitor`/`persistence`/`telemetry`; UI exclusion явний |
 | **P26-008** | [ ] Latency baseline evolution | `monitor/*`, ADR_ALERT_RULES, UI copy | EWMA або bounded window; контракт + тест; Help/Settings показує орієнтовний час FIRING |
-| **P26-009** | [ ] Phase close | `ADR_HARDENING.md`, LIVING_SPEC, CHECKLIST, ROADMAP | NEXT=DONE або явний follow-up ID |
+| **P26-009** | [ ] Phase close | `ADR_HARDENING.md`, LIVING_SPEC, CHECKLIST, ROADMAP | NEXT→P27-001 (черга нижче) |
 
 **Поза цією чергою (свідомо):** DE/FR i18n; dark mode product; FXML rewrite; >10 hosts; BGP/NMS.
+
+---
+
+## Фаза 27 — SQLite record format normalize (`beta`, P1)
+
+**Контекст:** Гібрид «колонки + повний JSON blob» у session DB роздуває диск і дублює поля. Java-only спочатку; Python parity — окремо. **Немає міграції старих `.db`** — відкриття schema &lt; required → помилка; оператор видаляє файл і створює наново.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P27-001** | [x] Telemetry columns SSOT | `SessionDatabase`, `MetricSample`/`TelemetryEvent` helpers, tests | schema v5; `telemetry_*` без `payload_json`; `labels_json` (+ ips для events); dump/list збирають DTO з колонок; legacy DB rejected |
+| **P27-002** | [ ] persistence_event typed | `SessionDatabase`, `PersistenceEventWriter`, `PersistenceEventRecord`, UI history | schema v6; колонки `state`/`message`/`old_ips_json`/`new_ips_json`/`detail_json`; без дубля host/profile/time у blob |
+| **P27-003** | [ ] host_session normalize | `SessionDatabase`, `SessionJsonCodec`/tables, SessionStore tests | schema v7; мета в `host_session`; hops/history/stats у нормалізованих таблицях; roundtrip API `load`/`save` збережено |
 
 ---
 

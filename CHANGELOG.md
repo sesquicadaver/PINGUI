@@ -9,6 +9,8 @@
 
 ### Added
 
+- **P27 — SQLite format normalize (черга після P26):** P27-001…003 — telemetry columns SSOT → typed `persistence_event` → normalized `host_session`; Java-only; без міграції старих `.db`.
+- **P27-001 — telemetry schema v5:** `telemetry_sample`/`telemetry_event` без `payload_json`; `labels_json` (+ `old_ips_json`/`new_ips_json`); list/dump з колонок; legacy schema → PersistenceException.
 - **P26-006 — MonitorService split:** post-poll effects → `PollResultEffects` + `TelemetryEmission`; poll orchestration лишається в `MonitorService` (467 LOC); `PollResultEffectsTest`; NEXT→**P26-007**.
 - **P26-005 — MainController ≤550 LOC:** geometry/settings/easter-egg/persistence session винесено в coordinators; `MainControllerLocGateTest`; NEXT→**P26-006**.
 - **P26-004 — launcher smoke matrix:** `scripts/smoke_launcher.sh`/`.cmd` (quoting пробілів, detach/`--foreground`, fail→gui.log); `.bat` quoted args + `PINGUI_JAVAW`; CI java.yml; NEXT→**P26-005**.

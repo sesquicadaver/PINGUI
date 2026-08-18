@@ -11,7 +11,7 @@
 | **Current task** | **[P26-007](docs/en/ROADMAP.md#next--single-source-of-truth)** |
 | **Rule** | if not `DONE` — `/autopilot` = this ID; if `DONE` — stop / wait for an explicit new ID. **Do not ask** “which item?”. |
 
-Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (phase 26, #103–111).
+Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (phases 26–27, #103–114).
 
 **MVP status:** ✅ implemented (2026-06-26)
 
@@ -48,6 +48,7 @@ Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#e
 | **24** | GUI architecture & paint | ✅ **DONE** |
 | **25** | i18n UI + user-facing docs | ✅ **DONE** |
 | **26** | Hardening post-audit (telemetry / launchers / split) | 🔄 **P26-007** |
+| **27** | SQLite record format normalize (Java) | ⏳ after P26 |
 
 ---
 

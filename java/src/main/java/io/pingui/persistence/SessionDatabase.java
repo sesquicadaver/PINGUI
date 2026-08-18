@@ -20,14 +20,15 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * SQLite persistence for per-host session metrics (P11-010) and telemetry archive (P16-020).
+ * SQLite persistence for per-host session metrics (P11-010) and telemetry archive (P16-020 / P27-001).
  *
- * <p>Schema parity with Python {@code session_db.py}: v2 {@code host_session}, v3
- * {@code persistence_event}, v4 {@code telemetry_sample}/{@code telemetry_event}.
+ * <p>Schema: v2 {@code host_session}, v3 {@code persistence_event}, v5 telemetry columns SSOT (no
+ * full {@code payload_json}). Java-only for P27; legacy schema versions are rejected (delete and
+ * recreate the DB file).
  */
 public final class SessionDatabase implements AutoCloseable {
-    /** Shared with Python {@code SCHEMA_VERSION} (v4 = telemetry tables). */
-    public static final int SCHEMA_VERSION = 4;
+    /** Current Java session DB schema (v5 = telemetry columns SSOT, P27-001). */
+    public static final int SCHEMA_VERSION = 5;
 
     private static final DateTimeFormatter ISO_UTC = DateTimeFormatter.ISO_INSTANT.withZone(ZoneOffset.UTC);
 
@@ -58,12 +59,11 @@ public final class SessionDatabase implements AutoCloseable {
             this.connection = opened;
             initSchema();
         } catch (SQLException ex) {
-            try {
-                opened.close();
-            } catch (SQLException ignored) {
-                // Best-effort so Windows can delete @TempDir files after failed open.
-            }
+            closeQuietly(opened);
             throw new PersistenceException("Failed to open session database: " + path, ex);
+        } catch (PersistenceException ex) {
+            closeQuietly(opened);
+            throw ex;
         }
     }
 
@@ -335,13 +335,13 @@ public final class SessionDatabase implements AutoCloseable {
     }
 
     /**
-     * Appends one telemetry sample row (P16-020). No FK to {@code host_session}.
+     * Appends one telemetry sample row (P16-020 / P27-001). Columns are SSOT; dump rebuilds JSON.
      */
     public synchronized void insertTelemetrySample(MetricSample sample) {
         Objects.requireNonNull(sample, "sample");
         try (PreparedStatement ps = connection.prepareStatement(
                 """
-                INSERT INTO telemetry_sample(name, value, host, hop, payload_json, observed_at)
+                INSERT INTO telemetry_sample(name, value, host, hop, labels_json, observed_at)
                 VALUES (?, ?, ?, ?, ?, ?)
                 """)) {
             ps.setString(1, sample.name());
@@ -352,7 +352,7 @@ public final class SessionDatabase implements AutoCloseable {
             } else {
                 ps.setInt(4, sample.hop());
             }
-            ps.setString(5, sample.toJson());
+            ps.setString(5, sample.labelsJson());
             ps.setString(6, ISO_UTC.format(sample.timestamp()));
             ps.executeUpdate();
             connection.commit();
@@ -362,19 +362,22 @@ public final class SessionDatabase implements AutoCloseable {
         }
     }
 
-    /** Appends one telemetry event row (P16-020). */
+    /** Appends one telemetry event row (P16-020 / P27-001). */
     public synchronized void insertTelemetryEvent(TelemetryEvent event) {
         Objects.requireNonNull(event, "event");
         try (PreparedStatement ps = connection.prepareStatement(
                 """
-                INSERT INTO telemetry_event(event, host, message, payload_json, observed_at)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO telemetry_event(
+                    event, host, message, labels_json, old_ips_json, new_ips_json, observed_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """)) {
             ps.setString(1, event.event());
             ps.setString(2, event.host());
             ps.setString(3, event.message());
-            ps.setString(4, event.toJson());
-            ps.setString(5, ISO_UTC.format(event.timestamp()));
+            ps.setString(4, event.labelsJson());
+            ps.setString(5, event.oldIpsJson());
+            ps.setString(6, event.newIpsJson());
+            ps.setString(7, ISO_UTC.format(event.timestamp()));
             ps.executeUpdate();
             connection.commit();
         } catch (SQLException ex) {
@@ -383,7 +386,7 @@ public final class SessionDatabase implements AutoCloseable {
         }
     }
 
-    /** Newest-first sample payloads for {@code host} (tests / diagnostics / dump). */
+    /** Newest-first samples for {@code host} (tests / diagnostics / dump). */
     public synchronized List<MetricSample> listTelemetrySamples(String host, int limit) {
         Objects.requireNonNull(host, "host");
         if (limit < 1) {
@@ -391,7 +394,7 @@ public final class SessionDatabase implements AutoCloseable {
         }
         try (PreparedStatement ps = connection.prepareStatement(
                 """
-                SELECT payload_json FROM telemetry_sample
+                SELECT name, value, host, hop, labels_json, observed_at FROM telemetry_sample
                 WHERE host = ?
                 ORDER BY observed_at DESC, id DESC
                 LIMIT ?
@@ -401,7 +404,7 @@ public final class SessionDatabase implements AutoCloseable {
             try (ResultSet rs = ps.executeQuery()) {
                 List<MetricSample> rows = new ArrayList<>();
                 while (rs.next()) {
-                    rows.add(MetricSample.fromJson(rs.getString(1)));
+                    rows.add(readTelemetrySample(rs));
                 }
                 return List.copyOf(rows);
             }
@@ -410,7 +413,7 @@ public final class SessionDatabase implements AutoCloseable {
         }
     }
 
-    /** Newest-first event payloads for {@code host}. */
+    /** Newest-first events for {@code host}. */
     public synchronized List<TelemetryEvent> listTelemetryEvents(String host, int limit) {
         Objects.requireNonNull(host, "host");
         if (limit < 1) {
@@ -418,7 +421,8 @@ public final class SessionDatabase implements AutoCloseable {
         }
         try (PreparedStatement ps = connection.prepareStatement(
                 """
-                SELECT payload_json FROM telemetry_event
+                SELECT event, host, message, labels_json, old_ips_json, new_ips_json, observed_at
+                FROM telemetry_event
                 WHERE host = ?
                 ORDER BY observed_at DESC, id DESC
                 LIMIT ?
@@ -428,7 +432,7 @@ public final class SessionDatabase implements AutoCloseable {
             try (ResultSet rs = ps.executeQuery()) {
                 List<TelemetryEvent> rows = new ArrayList<>();
                 while (rs.next()) {
-                    rows.add(TelemetryEvent.fromJson(rs.getString(1)));
+                    rows.add(readTelemetryEvent(rs));
                 }
                 return List.copyOf(rows);
             }
@@ -437,17 +441,17 @@ public final class SessionDatabase implements AutoCloseable {
         }
     }
 
-    /** Oldest-first sample payloads for full archive dump (P16-023). */
+    /** Oldest-first samples for full archive dump (P16-023). */
     public synchronized List<MetricSample> listAllTelemetrySamples() {
         try (PreparedStatement ps = connection.prepareStatement(
                         """
-                SELECT payload_json FROM telemetry_sample
+                SELECT name, value, host, hop, labels_json, observed_at FROM telemetry_sample
                 ORDER BY observed_at ASC, id ASC
                 """);
                 ResultSet rs = ps.executeQuery()) {
             List<MetricSample> rows = new ArrayList<>();
             while (rs.next()) {
-                rows.add(MetricSample.fromJson(rs.getString(1)));
+                rows.add(readTelemetrySample(rs));
             }
             return List.copyOf(rows);
         } catch (SQLException ex) {
@@ -455,22 +459,45 @@ public final class SessionDatabase implements AutoCloseable {
         }
     }
 
-    /** Oldest-first event payloads for full archive dump (P16-023). */
+    /** Oldest-first events for full archive dump (P16-023). */
     public synchronized List<TelemetryEvent> listAllTelemetryEvents() {
         try (PreparedStatement ps = connection.prepareStatement(
                         """
-                SELECT payload_json FROM telemetry_event
+                SELECT event, host, message, labels_json, old_ips_json, new_ips_json, observed_at
+                FROM telemetry_event
                 ORDER BY observed_at ASC, id ASC
                 """);
                 ResultSet rs = ps.executeQuery()) {
             List<TelemetryEvent> rows = new ArrayList<>();
             while (rs.next()) {
-                rows.add(TelemetryEvent.fromJson(rs.getString(1)));
+                rows.add(readTelemetryEvent(rs));
             }
             return List.copyOf(rows);
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to list all telemetry events", ex);
         }
+    }
+
+    private static MetricSample readTelemetrySample(ResultSet rs) throws SQLException {
+        Integer hop = rs.getObject(4) == null ? null : rs.getInt(4);
+        return MetricSample.fromColumns(
+                rs.getString(1),
+                rs.getDouble(2),
+                rs.getString(3),
+                hop,
+                rs.getString(5),
+                Instant.parse(rs.getString(6)));
+    }
+
+    private static TelemetryEvent readTelemetryEvent(ResultSet rs) throws SQLException {
+        return TelemetryEvent.fromColumns(
+                rs.getString(1),
+                rs.getString(2),
+                rs.getString(3),
+                rs.getString(4),
+                rs.getString(5),
+                rs.getString(6),
+                Instant.parse(rs.getString(7)));
     }
 
     public synchronized int countTelemetrySamples() {
@@ -573,7 +600,13 @@ public final class SessionDatabase implements AutoCloseable {
             createTelemetryTables(statement);
         }
         int currentVersion = readOrSeedSchemaVersion();
-        migrateSchema(currentVersion);
+        if (currentVersion != SCHEMA_VERSION) {
+            throw new PersistenceException("Unsupported session DB schema version "
+                    + currentVersion
+                    + " (required "
+                    + SCHEMA_VERSION
+                    + "). Delete the database file and recreate.");
+        }
         connection.commit();
     }
 
@@ -586,7 +619,7 @@ public final class SessionDatabase implements AutoCloseable {
                     value REAL NOT NULL,
                     host TEXT NOT NULL,
                     hop INTEGER,
-                    payload_json TEXT NOT NULL,
+                    labels_json TEXT NOT NULL DEFAULT '{}',
                     observed_at TEXT NOT NULL
                 )
                 """);
@@ -602,7 +635,9 @@ public final class SessionDatabase implements AutoCloseable {
                     event TEXT NOT NULL,
                     host TEXT NOT NULL,
                     message TEXT,
-                    payload_json TEXT NOT NULL,
+                    labels_json TEXT NOT NULL DEFAULT '{}',
+                    old_ips_json TEXT NOT NULL DEFAULT '[]',
+                    new_ips_json TEXT NOT NULL DEFAULT '[]',
                     observed_at TEXT NOT NULL
                 )
                 """);
@@ -627,66 +662,19 @@ public final class SessionDatabase implements AutoCloseable {
         return SCHEMA_VERSION;
     }
 
-    private void migrateSchema(int currentVersion) throws SQLException {
-        if (currentVersion < 2) {
-            try (Statement statement = connection.createStatement()) {
-                statement.execute("ALTER TABLE host_session ADD COLUMN hop_stats_json TEXT NOT NULL DEFAULT '{}'");
-            } catch (SQLException ex) {
-                if (!isDuplicateColumn(ex)) {
-                    throw ex;
-                }
-            }
-            setSchemaVersion(2);
-            currentVersion = 2;
-        }
-        if (currentVersion < 3) {
-            try (Statement statement = connection.createStatement()) {
-                statement.execute(
-                        """
-                        CREATE TABLE IF NOT EXISTS persistence_event (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            event_type TEXT NOT NULL,
-                            host TEXT NOT NULL,
-                            profile TEXT,
-                            payload_json TEXT NOT NULL,
-                            observed_at TEXT NOT NULL,
-                            FOREIGN KEY (host) REFERENCES host_session(host) ON DELETE CASCADE
-                        )
-                        """);
-                statement.execute(
-                        """
-                        CREATE INDEX IF NOT EXISTS idx_pe_host_type_time
-                            ON persistence_event(host, event_type, observed_at)
-                        """);
-            }
-            setSchemaVersion(3);
-            currentVersion = 3;
-        }
-        if (currentVersion < 4) {
-            try (Statement statement = connection.createStatement()) {
-                createTelemetryTables(statement);
-            }
-            setSchemaVersion(4);
-        }
-    }
-
-    private void setSchemaVersion(int version) throws SQLException {
-        try (PreparedStatement ps = connection.prepareStatement("UPDATE schema_meta SET version = ?")) {
-            ps.setInt(1, version);
-            ps.executeUpdate();
-        }
-    }
-
-    private static boolean isDuplicateColumn(SQLException ex) {
-        String message = ex.getMessage();
-        return message != null && message.toLowerCase().contains("duplicate column");
-    }
-
     private void rollbackQuietly() {
         try {
             connection.rollback();
         } catch (SQLException ignored) {
             // Best effort after failure.
+        }
+    }
+
+    private static void closeQuietly(Connection connection) {
+        try {
+            connection.close();
+        } catch (SQLException ignored) {
+            // Best-effort so Windows can delete @TempDir files after failed open.
         }
     }
 }
