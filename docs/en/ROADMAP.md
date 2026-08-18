@@ -156,7 +156,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 110 | **P26-008** | [ ] | latency_high: EWMA/window baseline + UI ETA note |
 | 111 | **P26-009** | [ ] | ADR_HARDENING + LIVING_SPEC/CHECKLIST + phase close |
 | 112 | **P27-001** | [x] | SQLite telemetry: column SSOT, no `payload_json` (schema v5) |
-| 113 | **P27-002** | [ ] | `persistence_event`: typed columns + `detail_json` (schema v6) |
+| 113 | **P27-002** | [x] | `persistence_event`: typed columns + `detail_json` (schema v6) |
 | 114 | **P27-003** | [ ] | `host_session` normalize: hop/history tables (schema v7) |
 
 **Queue status:** active — **NEXT = P26-007** (phase 26 post-P25 hardening; P27 after P26-009).

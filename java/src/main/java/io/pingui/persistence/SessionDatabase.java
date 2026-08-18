@@ -1,7 +1,6 @@
 package io.pingui.persistence;
 
 import io.pingui.model.Models.HostSessionData;
-import io.pingui.monitor.RouteChangeEvent;
 import io.pingui.telemetry.MetricSample;
 import io.pingui.telemetry.TelemetryEvent;
 import java.nio.file.Files;
@@ -20,15 +19,14 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * SQLite persistence for per-host session metrics (P11-010) and telemetry archive (P16-020 / P27-001).
+ * SQLite persistence for per-host session metrics (P11-010) and telemetry archive (P16-020 / P27).
  *
- * <p>Schema: v2 {@code host_session}, v3 {@code persistence_event}, v5 telemetry columns SSOT (no
- * full {@code payload_json}). Java-only for P27; legacy schema versions are rejected (delete and
- * recreate the DB file).
+ * <p>Schema: v2 {@code host_session}, v6 typed {@code persistence_event}, v5 telemetry columns SSOT.
+ * Java-only for P27; legacy schema versions are rejected (delete and recreate the DB file).
  */
 public final class SessionDatabase implements AutoCloseable {
-    /** Current Java session DB schema (v5 = telemetry columns SSOT, P27-001). */
-    public static final int SCHEMA_VERSION = 5;
+    /** Current Java session DB schema (v6 = typed persistence_event, P27-002). */
+    public static final int SCHEMA_VERSION = 6;
 
     private static final DateTimeFormatter ISO_UTC = DateTimeFormatter.ISO_INSTANT.withZone(ZoneOffset.UTC);
 
@@ -183,41 +181,16 @@ public final class SessionDatabase implements AutoCloseable {
     }
 
     private void rewriteEventHosts(String oldHost, String newHost) {
-        try (PreparedStatement select = connection.prepareStatement(
-                "SELECT id, event_type, payload_json FROM persistence_event WHERE host = ?")) {
-            select.setString(1, oldHost);
-            try (ResultSet rs = select.executeQuery()) {
-                while (rs.next()) {
-                    long id = rs.getLong(1);
-                    String eventType = rs.getString(2);
-                    String payload = rs.getString(3);
-                    String rewritten = rewriteEventPayload(eventType, oldHost, newHost, payload);
-                    try (PreparedStatement update = connection.prepareStatement(
-                            "UPDATE persistence_event SET host = ?, payload_json = ? WHERE id = ?")) {
-                        update.setString(1, newHost);
-                        update.setString(2, rewritten);
-                        update.setLong(3, id);
-                        update.executeUpdate();
-                    }
-                }
-            }
+        try (PreparedStatement update =
+                connection.prepareStatement("UPDATE persistence_event SET host = ? WHERE host = ?")) {
+            update.setString(1, newHost);
+            update.setString(2, oldHost);
+            update.executeUpdate();
             connection.commit();
         } catch (SQLException ex) {
             rollbackQuietly();
             throw new PersistenceException("Failed to rename persistence events: " + oldHost + " -> " + newHost, ex);
         }
-    }
-
-    private static String rewriteEventPayload(String eventType, String oldHost, String newHost, String payload) {
-        if (!PersistenceEventType.ROUTE_CHANGE.id().equals(eventType)) {
-            return payload;
-        }
-        RouteChangeEvent event = RouteChangeEvent.fromJson(payload);
-        if (!oldHost.equals(event.host())) {
-            return payload;
-        }
-        return new RouteChangeEvent(newHost, event.oldIps(), event.newIps(), event.timestamp(), event.profile())
-                .toJson();
     }
 
     /** Returns all hosts with persisted session rows, sorted lexicographically. */
@@ -235,31 +208,59 @@ public final class SessionDatabase implements AutoCloseable {
     }
 
     /**
-     * Appends a discrete event row (P11-011+). Table is created by schema v3 migration.
+     * Appends a discrete event row (P11-011+ / P27-002 typed columns).
      */
     public synchronized void insertEvent(
-            PersistenceEventType eventType, String host, String profile, String payloadJson, Instant observedAt) {
+            PersistenceEventType eventType,
+            String host,
+            String profile,
+            String state,
+            String message,
+            String oldIpsJson,
+            String newIpsJson,
+            String detailJson,
+            Instant observedAt) {
         Objects.requireNonNull(eventType, "eventType");
         Objects.requireNonNull(host, "host");
-        Objects.requireNonNull(payloadJson, "payloadJson");
         Instant when = observedAt != null ? observedAt : Instant.now();
         String profileValue = profile == null || profile.isBlank() ? null : profile;
         try (PreparedStatement ps = connection.prepareStatement(
                 """
-                INSERT INTO persistence_event(event_type, host, profile, payload_json, observed_at)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO persistence_event(
+                    event_type, host, profile, state, message,
+                    old_ips_json, new_ips_json, detail_json, observed_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """)) {
             ps.setString(1, eventType.id());
             ps.setString(2, host);
             ps.setString(3, profileValue);
-            ps.setString(4, payloadJson);
-            ps.setString(5, ISO_UTC.format(when));
+            ps.setString(4, state);
+            ps.setString(5, message);
+            ps.setString(6, oldIpsJson);
+            ps.setString(7, newIpsJson);
+            ps.setString(8, detailJson);
+            ps.setString(9, ISO_UTC.format(when));
             ps.executeUpdate();
             connection.commit();
         } catch (SQLException ex) {
             rollbackQuietly();
             throw new PersistenceException("Failed to insert persistence event for " + host, ex);
         }
+    }
+
+    /** Convenience insert for route-change tests and writers. */
+    public synchronized void insertRouteChange(
+            String host, String profile, List<String> oldIps, List<String> newIps, Instant observedAt) {
+        insertEvent(
+                PersistenceEventType.ROUTE_CHANGE,
+                host,
+                profile,
+                null,
+                null,
+                PersistenceJson.stringArray(oldIps),
+                PersistenceJson.stringArray(newIps),
+                null,
+                observedAt);
     }
 
     /** Deletes all rows of {@code eventType}; used by purge policy (P11-014). */
@@ -306,7 +307,8 @@ public final class SessionDatabase implements AutoCloseable {
         String sinceIso = ISO_UTC.format(since);
         try (PreparedStatement ps = connection.prepareStatement(
                 """
-                SELECT id, event_type, host, profile, payload_json, observed_at
+                SELECT id, event_type, host, profile, state, message,
+                       old_ips_json, new_ips_json, detail_json, observed_at
                 FROM persistence_event
                 WHERE event_type = ? AND host = ? AND observed_at >= ?
                 ORDER BY observed_at DESC
@@ -325,7 +327,11 @@ public final class SessionDatabase implements AutoCloseable {
                             rs.getString(3),
                             rs.getString(4),
                             rs.getString(5),
-                            Instant.parse(rs.getString(6))));
+                            rs.getString(6),
+                            rs.getString(7),
+                            rs.getString(8),
+                            rs.getString(9),
+                            Instant.parse(rs.getString(10))));
                 }
                 return List.copyOf(rows);
             }
@@ -587,7 +593,11 @@ public final class SessionDatabase implements AutoCloseable {
                         event_type TEXT NOT NULL,
                         host TEXT NOT NULL,
                         profile TEXT,
-                        payload_json TEXT NOT NULL,
+                        state TEXT,
+                        message TEXT,
+                        old_ips_json TEXT,
+                        new_ips_json TEXT,
+                        detail_json TEXT,
                         observed_at TEXT NOT NULL,
                         FOREIGN KEY (host) REFERENCES host_session(host) ON DELETE CASCADE
                     )

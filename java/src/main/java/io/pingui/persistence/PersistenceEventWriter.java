@@ -5,7 +5,7 @@ import io.pingui.monitor.RouteChangeEvent;
 import java.time.Instant;
 import java.util.Objects;
 
-/** Writes discrete events to SQLite (P11-011); policy gate (P11-013 / P22-003). */
+/** Writes discrete events to SQLite (P11-011); policy gate (P11-013 / P22-003 / P27-002). */
 public final class PersistenceEventWriter {
     private final SessionDatabase database;
     private final PersistencePolicyHolder policyHolder;
@@ -29,7 +29,15 @@ public final class PersistenceEventWriter {
         }
         ensureHostRow(event.host());
         database.insertEvent(
-                PersistenceEventType.ROUTE_CHANGE, event.host(), event.profile(), event.toJson(), event.timestamp());
+                PersistenceEventType.ROUTE_CHANGE,
+                event.host(),
+                event.profile(),
+                null,
+                null,
+                PersistenceJson.stringArray(event.oldIps()),
+                PersistenceJson.stringArray(event.newIps()),
+                null,
+                event.timestamp());
     }
 
     public boolean hasRouteChangeEvents(String host) {
@@ -45,8 +53,16 @@ public final class PersistenceEventWriter {
             return;
         }
         ensureHostRow(host);
-        String payload = probeErrorPayload(host, message);
-        database.insertEvent(PersistenceEventType.PROBE_ERROR, host, null, payload, Instant.now());
+        database.insertEvent(
+                PersistenceEventType.PROBE_ERROR,
+                host,
+                null,
+                null,
+                message == null ? "" : message,
+                null,
+                null,
+                null,
+                Instant.now());
     }
 
     /**
@@ -62,7 +78,16 @@ public final class PersistenceEventWriter {
             return;
         }
         ensureHostRow(event.host());
-        database.insertEvent(type, event.host(), event.profile(), event.toJson(), event.timestamp());
+        database.insertEvent(
+                type,
+                event.host(),
+                event.profile(),
+                event.state(),
+                null,
+                null,
+                null,
+                event.detailJson(),
+                event.timestamp());
     }
 
     private static PersistenceEventType qualityEventType(QualityAlertEvent event) {
@@ -78,25 +103,12 @@ public final class PersistenceEventWriter {
         }
     }
 
+    /** Wire-shaped probe_error JSON for reconstructed {@link PersistenceEventRecord#payloadJson()}. */
     static String probeErrorPayload(String host, String message) {
-        return "{\"message\":" + quote(message == null ? "" : message) + ",\"host\":" + quote(host) + "}";
-    }
-
-    private static String quote(String value) {
-        StringBuilder sb = new StringBuilder(value.length() + 8);
-        sb.append('"');
-        for (int i = 0; i < value.length(); i++) {
-            char ch = value.charAt(i);
-            switch (ch) {
-                case '\\' -> sb.append("\\\\");
-                case '"' -> sb.append("\\\"");
-                case '\n' -> sb.append("\\n");
-                case '\r' -> sb.append("\\r");
-                case '\t' -> sb.append("\\t");
-                default -> sb.append(ch);
-            }
-        }
-        sb.append('"');
-        return sb.toString();
+        return "{\"message\":"
+                + PersistenceJson.quote(message == null ? "" : message)
+                + ",\"host\":"
+                + PersistenceJson.quote(host)
+                + "}";
     }
 }

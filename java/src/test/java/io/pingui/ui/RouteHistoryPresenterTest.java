@@ -7,9 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.config.HostEntry;
 import io.pingui.config.PingExpertEntry;
-import io.pingui.monitor.RouteChangeEvent;
 import io.pingui.monitor.SessionStore;
-import io.pingui.persistence.PersistenceEventType;
 import io.pingui.persistence.SessionDatabase;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -212,8 +210,8 @@ class RouteHistoryPresenterTest {
         }
 
         void insertEvent(String host, List<String> oldIps, List<String> newIps, Instant timestamp) {
-            RouteChangeEvent event = RouteChangeEvent.fromRouteChange(host, oldIps, newIps, "default", timestamp);
-            database.insertEvent(PersistenceEventType.ROUTE_CHANGE, host, "default", event.toJson(), timestamp);
+            database.save(host, new io.pingui.model.Models.HostSessionData());
+            database.insertRouteChange(host, "default", oldIps, newIps, timestamp);
         }
 
         @Override

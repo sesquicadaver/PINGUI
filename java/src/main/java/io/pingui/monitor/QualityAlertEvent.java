@@ -65,9 +65,14 @@ public record QualityAlertEvent(
         sb.append(",\"timestamp\":").append(quote(timestamp.toString()));
         sb.append(",\"profile\":").append(quote(profile));
         sb.append(",\"rule\":").append(quote(rule));
-        sb.append(",\"detail\":").append(detailObject(detail));
+        sb.append(",\"detail\":").append(detailJson());
         sb.append('}');
         return sb.toString();
+    }
+
+    /** Detail object JSON for SQLite {@code detail_json} (P27-002). */
+    public String detailJson() {
+        return detailObject(detail);
     }
 
     public String desktopTitle() {
