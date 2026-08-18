@@ -10,6 +10,8 @@ Versioning: [Semantic Versioning](https://semver.org/).
 ### Added
 
 - **P27 — SQLite format normalize (queue after P26):** P27-001…003 — telemetry columns SSOT → typed `persistence_event` → normalized `host_session`; Java-only; no legacy `.db` migration.
+- **P27-003 — normalized host_session (schema v7):** `session_route_hop` / `session_ping_sample` / `session_hop_stats` / `session_hop_rtt_sample`; unchanged `load`/`save` API.
+- **P27-002 — typed persistence_event (schema v6):** columns `state`/`message`/`old_ips_json`/`new_ips_json`/`detail_json`; no `payload_json`; `payloadJson()` only for UI rebuild.
 - **P27-001 — telemetry schema v5:** `telemetry_sample`/`telemetry_event` without `payload_json`; `labels_json` (+ `old_ips_json`/`new_ips_json`); list/dump from columns; legacy schema → PersistenceException.
 - **P26-006 — MonitorService split:** post-poll effects → `PollResultEffects` + `TelemetryEmission`; poll orchestration stays in `MonitorService` (467 LOC); `PollResultEffectsTest`; NEXT→**P26-007**.
 - **P26-005 — MainController ≤550 LOC:** geometry/settings/easter-egg/persistence session extracted to coordinators; `MainControllerLocGateTest`; NEXT→**P26-006**.

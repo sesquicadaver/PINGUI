@@ -157,7 +157,7 @@
 | 111 | **P26-009** | [ ] | ADR_HARDENING + LIVING_SPEC/CHECKLIST + phase close |
 | 112 | **P27-001** | [x] | SQLite telemetry: колонки SSOT, без `payload_json` (schema v5) |
 | 113 | **P27-002** | [x] | `persistence_event`: typed columns + `detail_json` (schema v6) |
-| 114 | **P27-003** | [ ] | `host_session` normalize: hop/history tables (schema v7) |
+| 114 | **P27-003** | [x] | `host_session` normalize: hop/history tables (schema v7) |
 
 **Стан черги:** активна — **NEXT = P26-007** (фаза 26 post-P25 hardening; P27 після P26-009).
 
@@ -901,7 +901,7 @@ flowchart TD
 |----|--------|-------|-----|
 | **P27-001** | [x] Telemetry columns SSOT | `SessionDatabase`, `MetricSample`/`TelemetryEvent` helpers, tests | schema v5; `telemetry_*` без `payload_json`; `labels_json` (+ ips для events); dump/list збирають DTO з колонок; legacy DB rejected |
 | **P27-002** | [x] persistence_event typed | `SessionDatabase`, `PersistenceEventWriter`, `PersistenceEventRecord`, UI history | schema v6; колонки `state`/`message`/`old_ips_json`/`new_ips_json`/`detail_json`; без дубля host/profile/time у blob |
-| **P27-003** | [ ] host_session normalize | `SessionDatabase`, `SessionJsonCodec`/tables, SessionStore tests | schema v7; мета в `host_session`; hops/history/stats у нормалізованих таблицях; roundtrip API `load`/`save` збережено |
+| **P27-003** | [x] host_session normalize | `SessionDatabase`, `SessionJsonCodec`/tables, SessionStore tests | schema v7; мета в `host_session`; hops/history/stats у нормалізованих таблицях; roundtrip API `load`/`save` збережено |
 
 ---
 

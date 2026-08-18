@@ -157,7 +157,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 111 | **P26-009** | [ ] | ADR_HARDENING + LIVING_SPEC/CHECKLIST + phase close |
 | 112 | **P27-001** | [x] | SQLite telemetry: column SSOT, no `payload_json` (schema v5) |
 | 113 | **P27-002** | [x] | `persistence_event`: typed columns + `detail_json` (schema v6) |
-| 114 | **P27-003** | [ ] | `host_session` normalize: hop/history tables (schema v7) |
+| 114 | **P27-003** | [x] | `host_session` normalize: hop/history tables (schema v7) |
 
 **Queue status:** active — **NEXT = P26-007** (phase 26 post-P25 hardening; P27 after P26-009).
 
@@ -900,8 +900,8 @@ flowchart TD
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
 | **P27-001** | [x] Telemetry columns SSOT | `SessionDatabase`, `MetricSample`/`TelemetryEvent` helpers, tests | schema v5; `telemetry_*` without `payload_json`; `labels_json` (+ ips for events); dump/list rebuild DTOs from columns; legacy DB rejected |
-| **P27-002** | [ ] persistence_event typed | `SessionDatabase`, `PersistenceEventWriter`, `PersistenceEventRecord`, UI history | schema v6; `state`/`message`/`old_ips_json`/`new_ips_json`/`detail_json`; no host/profile/time duplication in blob |
-| **P27-003** | [ ] host_session normalize | `SessionDatabase`, tables / SessionStore tests | schema v7; meta in `host_session`; hops/history/stats in normalized tables; `load`/`save` API preserved |
+| **P27-002** | [x] persistence_event typed | `SessionDatabase`, `PersistenceEventWriter`, `PersistenceEventRecord`, UI history | schema v6; `state`/`message`/`old_ips_json`/`new_ips_json`/`detail_json`; no host/profile/time duplication in blob |
+| **P27-003** | [x] host_session normalize | `SessionDatabase`, tables / SessionStore tests | schema v7; meta in `host_session`; hops/history/stats in normalized tables; `load`/`save` API preserved |
 
 ---
 
