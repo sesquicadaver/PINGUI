@@ -3,7 +3,6 @@ package io.pingui.monitor;
 import io.pingui.config.EndpointDownRuleConfig;
 import io.pingui.config.LatencyHighRuleConfig;
 import io.pingui.config.PingExpertEntry;
-import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.persistence.PersistenceEventWriter;
 import io.pingui.persistence.PersistencePolicy;
@@ -13,13 +12,9 @@ import io.pingui.probe.MtrProbe;
 import io.pingui.probe.ProbeMode;
 import io.pingui.probe.RouteProbe;
 import io.pingui.probe.RouteProbeFactory;
-import io.pingui.telemetry.MetricNames;
-import io.pingui.telemetry.MetricSample;
 import io.pingui.telemetry.TelemetryBus;
-import io.pingui.telemetry.TelemetryEvent;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.concurrent.ExecutorService;
@@ -78,12 +73,8 @@ public final class MonitorService implements AutoCloseable {
     private final int maxHops;
     private final double timeoutSeconds;
     private Listener listener;
-    private volatile AlertDispatcher alertDispatcher = AlertDispatcher.noop();
-    private volatile String alertProfileName = "default";
     private final AlertRuleEngine alertRuleEngine = new AlertRuleEngine();
-    private volatile EndpointDownRuleConfig endpointDownRule = EndpointDownRuleConfig.disabled();
-    private volatile LatencyHighRuleConfig latencyHighRule = LatencyHighRuleConfig.disabled();
-    private volatile boolean notifyResolved;
+    private final PollResultEffects pollEffects = new PollResultEffects(alertRuleEngine);
     private volatile PingExpertResolver expertResolver;
     private volatile HostProbeModeResolver probeModeResolver;
     private volatile HostPollIntervalResolver intervalResolver;
@@ -92,7 +83,6 @@ public final class MonitorService implements AutoCloseable {
     private final PersistencePolicyHolder persistencePolicy = new PersistencePolicyHolder();
     private final BurstSchedulePolicy burstPolicy = new BurstSchedulePolicy();
     private final TraceConcurrencyLimiter traceLimiter;
-    private volatile TelemetryBus telemetryBus;
 
     public MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds) {
         this(intervalSeconds, maxHops, timeoutSeconds, ProbeMode.AUTO);
@@ -163,14 +153,14 @@ public final class MonitorService implements AutoCloseable {
     }
 
     public void setAlertDispatcher(AlertDispatcher alertDispatcher) {
-        this.alertDispatcher = alertDispatcher != null ? alertDispatcher : AlertDispatcher.noop();
+        pollEffects.setAlertDispatcher(alertDispatcher);
     }
 
     /**
      * In-memory {@code endpoint_down} rule (P21-002). Default disabled; YAML/GUI wiring is P21-003.
      */
     public void setEndpointDownRule(EndpointDownRuleConfig endpointDownRule) {
-        this.endpointDownRule = endpointDownRule != null ? endpointDownRule : EndpointDownRuleConfig.disabled();
+        pollEffects.setEndpointDownRule(endpointDownRule);
         alertRuleEngine.clearAll();
     }
 
@@ -178,13 +168,13 @@ public final class MonitorService implements AutoCloseable {
      * In-memory {@code latency_high} rule (P23). Default disabled. Clears latency baselines for all hosts.
      */
     public void setLatencyHighRule(LatencyHighRuleConfig latencyHighRule) {
-        this.latencyHighRule = latencyHighRule != null ? latencyHighRule : LatencyHighRuleConfig.disabled();
+        pollEffects.setLatencyHighRule(latencyHighRule);
         alertRuleEngine.clearAll();
     }
 
     /** When true, emit quality RESOLVED after clear_after successes (ADR). */
     public void setNotifyResolved(boolean notifyResolved) {
-        this.notifyResolved = notifyResolved;
+        pollEffects.setNotifyResolved(notifyResolved);
     }
 
     /** Session quality problem summary for host-row badge (P22-002 / P23). */
@@ -202,11 +192,7 @@ public final class MonitorService implements AutoCloseable {
     }
 
     public void setAlertProfileName(String alertProfileName) {
-        if (alertProfileName == null || alertProfileName.isBlank()) {
-            this.alertProfileName = "default";
-        } else {
-            this.alertProfileName = alertProfileName;
-        }
+        pollEffects.setAlertProfileName(alertProfileName);
     }
 
     public void setExpertResolver(PingExpertResolver expertResolver) {
@@ -227,11 +213,12 @@ public final class MonitorService implements AutoCloseable {
 
     public void setPersistenceEventWriter(PersistenceEventWriter persistenceEvents) {
         this.persistenceEvents = persistenceEvents;
+        pollEffects.setPersistenceEventWriter(persistenceEvents);
     }
 
     /** Optional telemetry bus (P16-013); null disables offers. Must not block poll. */
     public void setTelemetryBus(TelemetryBus telemetryBus) {
-        this.telemetryBus = telemetryBus;
+        pollEffects.setTelemetryBus(telemetryBus);
     }
 
     public PersistencePolicyHolder persistencePolicy() {
@@ -391,7 +378,7 @@ public final class MonitorService implements AutoCloseable {
                     LOG.warn("Persistence probe_error failed for {}: {}", host, ex.getMessage());
                 }
             }
-            offerTelemetryFailure(host, outcome.error(), probeMode, durationMs);
+            pollEffects.offerTelemetryFailure(host, outcome.error(), probeMode, durationMs);
             current.onProbeError(host, outcome.error());
             return;
         }
@@ -407,235 +394,26 @@ public final class MonitorService implements AutoCloseable {
                     snapshot = defaultTargetPingEnricher.enrich(snapshot, timeoutSeconds);
                 }
             }
-            offerTelemetrySuccess(host, probeMode, snapshot, durationMs);
+            pollEffects.offerTelemetrySuccess(host, probeMode, snapshot, durationMs);
             current.onDataReceived(host, snapshot);
             deliveredSnapshot = true;
-            evaluateEndpointDown(host, snapshot);
-            evaluateLatencyHigh(host, snapshot);
+            pollEffects.evaluateEndpointDown(host, snapshot);
+            pollEffects.evaluateLatencyHigh(host, snapshot);
         }
         if (outcome.routeChanged() && BurstSchedulePolicy.shouldArmBurst(outcome.oldIps(), outcome.newIps())) {
             burstPolicy.onRouteChange(host, Instant.now());
         }
         if (outcome.routeChanged()) {
-            offerTelemetryRouteChange(host, outcome.oldIps(), outcome.newIps(), probeMode);
+            pollEffects.offerTelemetryRouteChange(host, outcome.oldIps(), outcome.newIps(), probeMode);
             current.onRouteChanged(host, outcome.oldIps(), outcome.newIps());
-            dispatchRouteChangeAlert(host, outcome.oldIps(), outcome.newIps());
-        } else if (isFirstBaseline(previousIps, outcome.currentIps())) {
-            persistBaselineRouteChange(host, outcome.currentIps());
-            offerTelemetryRouteChange(host, List.of(), outcome.currentIps(), probeMode);
+            pollEffects.dispatchRouteChangeAlert(host, outcome.oldIps(), outcome.newIps());
+        } else if (PollResultEffects.isFirstBaseline(previousIps, outcome.currentIps())) {
+            pollEffects.persistBaselineRouteChange(host, outcome.currentIps());
+            pollEffects.offerTelemetryRouteChange(host, List.of(), outcome.currentIps(), probeMode);
             current.onRouteChanged(host, List.of(), outcome.currentIps());
         }
         if (!deliveredSnapshot) {
             current.onPollFinished(host);
-        }
-    }
-
-    /** Target reachable when a hop IP matches {@code targetIp}, else any reachable hop. */
-    static boolean isTargetReachable(RouteSnapshot snapshot) {
-        String targetIp = snapshot.targetIp();
-        if (targetIp != null && !targetIp.isBlank()) {
-            for (var node : snapshot.nodes()) {
-                if (node.isReachable() && targetIp.equals(node.ip())) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        for (var node : snapshot.nodes()) {
-            if (node.isReachable()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void offerTelemetrySuccess(
-            String host, HostProbeMode probeMode, RouteSnapshot snapshot, double durationMs) {
-        TelemetryBus bus = telemetryBus;
-        if (bus == null) {
-            return;
-        }
-        Instant ts = Instant.now();
-        Map<String, String> labels = telemetryLabels(probeMode);
-        try {
-            bus.offerSample(new MetricSample(
-                    MetricNames.TARGET_REACHABLE, isTargetReachable(snapshot) ? 1.0 : 0.0, host, null, labels, ts));
-            bus.offerSample(new MetricSample(MetricNames.TRACE_DURATION_MS, durationMs, host, null, labels, ts));
-            for (HopNode node : snapshot.nodes()) {
-                double lossPct = node.isReachable() && node.pingMs() != null ? 0.0 : 100.0;
-                bus.offerSample(new MetricSample(MetricNames.HOP_LOSS_PCT, lossPct, host, node.hop(), labels, ts));
-                if (node.pingMs() != null && node.isReachable()) {
-                    bus.offerSample(MetricSample.rttMs(host, node.hop(), node.pingMs(), labels, ts));
-                }
-            }
-        } catch (RuntimeException ex) {
-            LOG.warn("Telemetry sample offer failed for {}: {}", host, ex.getMessage());
-        }
-    }
-
-    private void offerTelemetryFailure(String host, String message, HostProbeMode probeMode, double durationMs) {
-        TelemetryBus bus = telemetryBus;
-        if (bus == null) {
-            return;
-        }
-        Instant ts = Instant.now();
-        Map<String, String> labels = telemetryLabels(probeMode);
-        try {
-            // No TARGET_REACHABLE sample: probe_error sets unreachable without clearHostRtt (P15 parity).
-            bus.offerSample(new MetricSample(MetricNames.TRACE_DURATION_MS, durationMs, host, null, labels, ts));
-            bus.offerEvent(TelemetryEvent.probeError(host, message, labels, ts));
-        } catch (RuntimeException ex) {
-            LOG.warn("Telemetry failure offer failed for {}: {}", host, ex.getMessage());
-        }
-    }
-
-    private void offerTelemetryRouteChange(
-            String host, List<String> oldIps, List<String> newIps, HostProbeMode probeMode) {
-        TelemetryBus bus = telemetryBus;
-        if (bus == null) {
-            return;
-        }
-        try {
-            bus.offerEvent(TelemetryEvent.routeChange(host, oldIps, newIps, telemetryLabels(probeMode), Instant.now()));
-        } catch (RuntimeException ex) {
-            LOG.warn("Telemetry route_change offer failed for {}: {}", host, ex.getMessage());
-        }
-    }
-
-    private Map<String, String> telemetryLabels(HostProbeMode probeMode) {
-        return MetricNames.javaLabels(alertProfileName, probeMode.yamlValue());
-    }
-
-    private static boolean isFirstBaseline(List<String> previousIps, List<String> currentIps) {
-        return previousIps.isEmpty() && currentIps != null && !currentIps.isEmpty();
-    }
-
-    private void persistBaselineRouteChange(String host, List<String> currentIps) {
-        RouteChangeEvent event =
-                RouteChangeEvent.fromRouteChange(host, List.of(), currentIps, alertProfileName, Instant.now());
-        PersistenceEventWriter events = persistenceEvents;
-        if (events == null || events.hasRouteChangeEvents(host)) {
-            return;
-        }
-        try {
-            events.writeRouteChange(event);
-        } catch (RuntimeException ex) {
-            LOG.warn("Persistence baseline route_change failed for {}: {}", host, ex.getMessage());
-        }
-    }
-
-    private void dispatchRouteChangeAlert(String host, List<String> oldIps, List<String> newIps) {
-        RouteChangeEvent event =
-                RouteChangeEvent.fromRouteChange(host, oldIps, newIps, alertProfileName, Instant.now());
-        PersistenceEventWriter events = persistenceEvents;
-        if (events != null) {
-            try {
-                events.writeRouteChange(event);
-            } catch (RuntimeException ex) {
-                LOG.warn("Persistence route_change failed for {}: {}", host, ex.getMessage());
-            }
-        }
-        AlertDispatcher dispatcher = alertDispatcher;
-        if (dispatcher == null) {
-            return;
-        }
-        try {
-            dispatcher.dispatch(event);
-        } catch (RuntimeException ex) {
-            LOG.warn("Alert dispatch failed for {}: {}", host, ex.getMessage());
-        }
-    }
-
-    private void evaluateEndpointDown(String host, RouteSnapshot snapshot) {
-        EndpointDownRuleConfig rule = endpointDownRule;
-        if (rule == null || !rule.enabled() || snapshot == null) {
-            return;
-        }
-        boolean down = !isTargetReachable(snapshot);
-        Instant now = Instant.now();
-        try {
-            alertRuleEngine
-                    .observeEndpointDown(host, down, now, alertProfileName, rule)
-                    .ifPresent(this::onQualityAlertEdge);
-        } catch (RuntimeException ex) {
-            LOG.warn("endpoint_down rule failed for {}: {}", host, ex.getMessage());
-        }
-    }
-
-    private void evaluateLatencyHigh(String host, RouteSnapshot snapshot) {
-        LatencyHighRuleConfig rule = latencyHighRule;
-        if (rule == null || !rule.enabled() || snapshot == null) {
-            return;
-        }
-        if (!isTargetReachable(snapshot)) {
-            return;
-        }
-        OptionalDouble rtt = terminalRttMs(snapshot);
-        if (rtt.isEmpty()) {
-            return;
-        }
-        Instant now = Instant.now();
-        try {
-            alertRuleEngine
-                    .observeLatencyHigh(host, rtt.getAsDouble(), now, alertProfileName, rule)
-                    .ifPresent(this::onQualityAlertEdge);
-        } catch (RuntimeException ex) {
-            LOG.warn("latency_high rule failed for {}: {}", host, ex.getMessage());
-        }
-    }
-
-    /** Terminal / target-hop RTT when reachable; empty when missing. */
-    static OptionalDouble terminalRttMs(RouteSnapshot snapshot) {
-        if (snapshot == null || snapshot.nodes().isEmpty()) {
-            return OptionalDouble.empty();
-        }
-        String targetIp = snapshot.targetIp();
-        if (targetIp != null && !targetIp.isBlank()) {
-            for (HopNode node : snapshot.nodes()) {
-                if (node.isReachable() && targetIp.equals(node.ip()) && node.pingMs() != null) {
-                    return OptionalDouble.of(node.pingMs());
-                }
-            }
-            return OptionalDouble.empty();
-        }
-        for (int i = snapshot.nodes().size() - 1; i >= 0; i--) {
-            HopNode node = snapshot.nodes().get(i);
-            if (node.isReachable() && node.pingMs() != null) {
-                return OptionalDouble.of(node.pingMs());
-            }
-        }
-        return OptionalDouble.empty();
-    }
-
-    private void onQualityAlertEdge(QualityAlertEvent event) {
-        persistQualityAlert(event);
-        if (QualityAlertEvent.STATE_RESOLVED.equals(event.state()) && !notifyResolved) {
-            return;
-        }
-        dispatchQualityAlert(event);
-    }
-
-    private void persistQualityAlert(QualityAlertEvent event) {
-        PersistenceEventWriter events = persistenceEvents;
-        if (events == null || event == null) {
-            return;
-        }
-        try {
-            events.writeQualityAlert(event);
-        } catch (RuntimeException ex) {
-            LOG.warn("Persistence endpoint_down failed for {}: {}", event.host(), ex.getMessage());
-        }
-    }
-
-    private void dispatchQualityAlert(QualityAlertEvent event) {
-        AlertDispatcher dispatcher = alertDispatcher;
-        if (dispatcher == null || event == null) {
-            return;
-        }
-        try {
-            dispatcher.dispatchQuality(event);
-        } catch (RuntimeException ex) {
-            LOG.warn("Quality alert dispatch failed for {}: {}", event.host(), ex.getMessage());
         }
     }
 
@@ -684,6 +462,6 @@ public final class MonitorService implements AutoCloseable {
             Thread.currentThread().interrupt();
         }
         // Bus lifecycle is owned by TelemetryAttachment / caller — drop the pointer only.
-        telemetryBus = null;
+        pollEffects.clearTelemetry();
     }
 }

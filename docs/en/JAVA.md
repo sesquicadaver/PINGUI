@@ -224,4 +224,4 @@ Tests and CI — on **`main`** and **`beta`** (ROADMAP development on `beta`).
 
 ## Future
 
-The linear ROADMAP queue: **NEXT = P26-006** (phase 26 — hardening). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT.
+The linear ROADMAP queue: **NEXT = P26-007** (phase 26 — hardening). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT.

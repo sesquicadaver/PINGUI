@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **P26-006 — MonitorService split:** post-poll effects → `PollResultEffects` + `TelemetryEmission`; poll orchestration stays in `MonitorService` (467 LOC); `PollResultEffectsTest`; NEXT→**P26-007**.
 - **P26-005 — MainController ≤550 LOC:** geometry/settings/easter-egg/persistence session extracted to coordinators; `MainControllerLocGateTest`; NEXT→**P26-006**.
 - **P26-004 — launcher smoke matrix:** `scripts/smoke_launcher.sh`/`.cmd` (space quoting, detach/`--foreground`, fail→gui.log); `.bat` quoted args + `PINGUI_JAVAW`; CI java.yml; NEXT→**P26-005**.
 - **P26-003 — SQLite reopen/migration/corrupt tests:** `SessionDatabaseHardeningTest` (v1/v3→v4, corrupt/truncated → PersistenceException, concurrent export smoke); NEXT→**P26-004**.
