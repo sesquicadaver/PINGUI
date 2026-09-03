@@ -115,8 +115,9 @@ Module → unit test matrix. Update when adding features.
 | Doc parity multi-locale (P25) | `scripts/check_doc_parity.py` | `test_doc_parity.py`; UK/EN full; stub locales = user docs |
 | Hardening queue (P26) | ROADMAP phase 26 closed: telemetry isolation, SQLite reopen, launchers, MainController/MonitorService split, JaCoCo packages, latency EWMA; [ADR_HARDENING.md](ADR_HARDENING.md) | P26-001…009 [x]; CHECKLIST § Hardening smoke |
 | SQLite format normalize (P27) | schema v5–v7: telemetry columns SSOT; typed `persistence_event`; normalized `host_session` | Java-only; no legacy migrate (delete `.db`); [x] in queue |
-| Runtime hardening follow-up (P28) | SinkRegistry hang [x]; inFlight before pool [x]; Python schema `!=` gate [x] | NEXT=`DONE`; phase 28 closed |
-| Diagnostic evolution (P29) | multi-host correlation; incident timeline; alert silence; DNS control; TCP connect | NEXT=`P29-001`; Java-first |
+| Runtime hardening follow-up (P28) | SinkRegistry hang [x]; inFlight before pool [x]; Python schema `!=` gate [x] | phase 28 closed |
+| Diagnostic evolution (P29) | multi-host correlation [x]; incident timeline; alert silence; DNS control; TCP connect | NEXT=`P29-002`; Java-first |
+| Multi-host problem correlation (P29-001) | `ProblemCorrelator`, `ProblemCorrelation`, `MonitorService.correlateActiveProblems`, `ProblemDetailsDialog` | `ProblemCorrelatorTest`, `MonitorServiceTest.correlateActiveProblems*`, `ProblemDetailsDialogTest` |
 | YAML/GUI alerts.rules (P21-003) | `AlertConfig`, `EndpointDownRuleConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `ProfilesConfigTest`, `AlertsSettingsDialogTest`, `AppMenuDialogsTest` |
 | Host problem indicator ADR (P22-001) | `docs/ADR_HOST_PROBLEM_INDICATOR.md` | docs review / ROADMAP P22 |
 | HostProblemSummary (P22-002) | `AlertRuleEngine`, `HostProblemSummary`, `MonitorService` | `AlertRuleEngineTest`, `MonitorServiceTest` |

@@ -437,3 +437,7 @@ CLI: `--session-db PATH --export-report PATH` (`.html`/`.htm` → HTML, інак
 | `scripts/setup_caps.sh` | Manual setcap |
 | `scripts/check_imports.py` | Cycle detection |
 | `scripts/check_doc_parity.py` | UK/EN docs parity |
+
+### Java: ProblemCorrelator (P29-001)
+
+Multi-host FIRING correlation from session routes: last shared stable hop, first shared problem hop, scope (`LOCAL`/`ISP`/`EDGE`), host count + start-time overlap. Wired via `MonitorService.correlateActiveProblems` → `ProblemDetailsDialog`.

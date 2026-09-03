@@ -14,6 +14,7 @@ import io.pingui.probe.RouteProbe;
 import io.pingui.probe.RouteProbeFactory;
 import io.pingui.telemetry.TelemetryBus;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -181,6 +182,37 @@ public final class MonitorService implements AutoCloseable {
     /** Session quality problem summary for host-row badge (P22-002 / P23). */
     public Optional<HostProblemSummary> hostProblemSummary(String host) {
         return alertRuleEngine.problemSummary(host, Instant.now());
+    }
+
+    /**
+     * Correlates hosts currently in {@code FIRING} using their session routes (P29-001).
+     *
+     * @param store session routes + host set; must not be null
+     * @return empty when fewer than two firing hosts have usable routes
+     */
+    public Optional<ProblemCorrelation> correlateActiveProblems(SessionStore store) {
+        return correlateActiveProblems(store, Instant.now());
+    }
+
+    /** Same as {@link #correlateActiveProblems(SessionStore)} with an explicit clock. */
+    public Optional<ProblemCorrelation> correlateActiveProblems(SessionStore store, Instant now) {
+        if (store == null) {
+            throw new IllegalArgumentException("store required");
+        }
+        Instant at = now != null ? now : Instant.now();
+        ArrayList<ProblemHostObservation> observations = new ArrayList<>();
+        for (String host : store.hosts()) {
+            Optional<HostProblemSummary> summary = alertRuleEngine.problemSummary(host, at);
+            if (summary.isEmpty() || !HostProblemSummary.STATE_FIRING.equals(summary.get().lastState())) {
+                continue;
+            }
+            Instant started = summary.get().lastStartedAt();
+            if (started == null) {
+                started = at;
+            }
+            observations.add(new ProblemHostObservation(host, store.get(host).getCurrentRoute(), started));
+        }
+        return ProblemCorrelator.correlate(observations, store.hosts().size());
     }
 
     /**
