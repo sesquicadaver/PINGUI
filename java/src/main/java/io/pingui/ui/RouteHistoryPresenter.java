@@ -1,17 +1,22 @@
 package io.pingui.ui;
 
 import io.pingui.model.Models.HopNode;
+import io.pingui.monitor.HostProblemSummary;
+import io.pingui.monitor.IncidentTimeline;
+import io.pingui.monitor.IncidentTimelineBuilder;
+import io.pingui.monitor.IncidentTimelineEntry;
 import io.pingui.monitor.RouteChangeEvent;
 import io.pingui.monitor.SessionStore;
 import io.pingui.persistence.PersistenceEventRecord;
-import io.pingui.persistence.PersistenceEventType;
 import io.pingui.persistence.SessionDatabase;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -22,7 +27,10 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
 
-/** Route-change timeline from SQLite (P11-020); selection triggers graph replay (P11-021). */
+/**
+ * Per-host incident timeline from SQLite (+ live problem duration) (P11-020 / P29-002). Route-change
+ * selection still triggers graph replay (P11-021).
+ */
 final class RouteHistoryPresenter {
     private static final int MAX_ROWS = 200;
 
@@ -34,6 +42,7 @@ final class RouteHistoryPresenter {
     private final BooleanSupplier extendedView;
     private final Consumer<RouteChangeEvent> onReplay;
     private final Runnable onClearReplay;
+    private final Function<String, Optional<HostProblemSummary>> liveProblem;
     private final Label placeholderLabel = new Label();
 
     private Duration lookback = Duration.ofHours(24);
@@ -47,6 +56,28 @@ final class RouteHistoryPresenter {
             BooleanSupplier extendedView,
             Consumer<RouteChangeEvent> onReplay,
             Runnable onClearReplay) {
+        this(
+                store,
+                hostFilter,
+                historyList,
+                range24h,
+                range7d,
+                extendedView,
+                onReplay,
+                onClearReplay,
+                host -> Optional.empty());
+    }
+
+    RouteHistoryPresenter(
+            Supplier<SessionStore> store,
+            ComboBox<String> hostFilter,
+            ListView<RouteHistoryItem> historyList,
+            RadioButton range24h,
+            RadioButton range7d,
+            BooleanSupplier extendedView,
+            Consumer<RouteChangeEvent> onReplay,
+            Runnable onClearReplay,
+            Function<String, Optional<HostProblemSummary>> liveProblem) {
         this.store = store;
         this.hostFilter = hostFilter;
         this.historyList = historyList;
@@ -55,6 +86,7 @@ final class RouteHistoryPresenter {
         this.extendedView = extendedView;
         this.onReplay = onReplay;
         this.onClearReplay = onClearReplay;
+        this.liveProblem = liveProblem != null ? liveProblem : host -> Optional.empty();
     }
 
     void configure() {
@@ -84,10 +116,10 @@ final class RouteHistoryPresenter {
             }
         });
         historyList.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, newItem) -> {
-            if (newItem == null) {
+            if (newItem == null || newItem.routeEvent().isEmpty()) {
                 onClearReplay.run();
             } else {
-                onReplay.accept(newItem.event());
+                onReplay.accept(newItem.routeEvent().get());
             }
         });
         hostFilter.valueProperty().addListener((obs, oldHost, newHost) -> resetAndRefresh());
@@ -168,16 +200,13 @@ final class RouteHistoryPresenter {
             return;
         }
         SessionDatabase database = session.database();
-        Instant since = Instant.now().minus(lookback);
-        List<PersistenceEventRecord> rows =
-                database.listEvents(PersistenceEventType.ROUTE_CHANGE, host, since, MAX_ROWS);
-        for (PersistenceEventRecord row : rows) {
-            try {
-                RouteChangeEvent event = RouteChangeEvent.fromJson(row.payloadJson());
-                items.add(new RouteHistoryItem(row.id(), event));
-            } catch (RuntimeException ignored) {
-                // Skip malformed payloads.
-            }
+        Instant now = Instant.now();
+        Instant since = now.minus(lookback);
+        List<PersistenceEventRecord> rows = database.listHostEvents(host, since, MAX_ROWS);
+        Optional<HostProblemSummary> live = liveProblem.apply(host);
+        IncidentTimeline timeline = IncidentTimelineBuilder.build(host, rows, live, now);
+        for (IncidentTimelineEntry entry : timeline.entries()) {
+            items.add(new RouteHistoryItem(entry.id(), entry));
         }
         historyList.setItems(items);
         updatePlaceholder();

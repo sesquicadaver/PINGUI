@@ -9,6 +9,7 @@
 
 ### Added
 
+- **P29-002 — incident timeline:** `IncidentTimelineBuilder` + `listHostEvents`; Extended history shows down/latency/route/ack (+ DNS kind reserved); `PROBLEM_ACK` on ack; NEXT→**P29-003**.
 - **P29-001 — multi-host problem correlation:** `ProblemCorrelator` на FIRING + `RouteSnapshot` (last shared stable hop, first shared problem hop, scope local/ISP/edge, count + start overlap); UI summary у `ProblemDetailsDialog`; NEXT→**P29-002**.
 - **P29 NEXT activated:** ROADMAP **NEXT = P29-001** (multi-host problem correlation); черга P29-001…005 без змін статусів задач.
 - **P29 — diagnostic evolution (черга, NEXT лишається DONE):** з `pingui-evo-func.md` — P29-001 multi-host correlation; P29-002 incident timeline; P29-003 alert silence; P29-004 DNS control; P29-005 TCP connect. Java-first; backlog: snapshot/SLA/baseline. Активація — явний NEXT=`P29-001`.
@@ -94,6 +95,7 @@
 
 ### Added
 
+- **P29-002 — incident timeline:** `IncidentTimelineBuilder` + `listHostEvents`; Extended history shows down/latency/route/ack (+ DNS kind reserved); `PROBLEM_ACK` on ack; NEXT→**P29-003**.
 - **Expert Self-check DF/DSCP/Burst (P17-030):** `PresetSelfCheck` + Exten. «Self-check» → короткий batch → Alert (без wizard). ROADMAP NEXT → **DONE**.
 - **MTU wizard UI (P17-021):** `MtuDiscoveryDialog` (progress / Stop / Alert / Apply → Expert `-M do -s`); HostList **MTU** + Expert «MTU wizard…». ROADMAP NEXT → P17-030.
 - **MtuDiscovery engine (P17-020):** ascending `-s` sweep (`min→start`) with `-M do`, stop at ≥1% loss, recommended MTU = last good payload + IP/ICMP overhead; `ProcessMtuProbeRunner`. ROADMAP NEXT → P17-021.
@@ -184,6 +186,7 @@
 
 ### Added
 
+- **P29-002 — incident timeline:** `IncidentTimelineBuilder` + `listHostEvents`; Extended history shows down/latency/route/ack (+ DNS kind reserved); `PROBLEM_ACK` on ack; NEXT→**P29-003**.
 - **Dual-stack IPv6 (phase 9):** Java + Python — RFC 5952 literals, subprocess `traceroute -6`, GeoIP `prefixes_v6`, dual-stack UI.
 - **Python IPv6 (PY-S4):** `config.py`, `process_tracer.py`, `geoip/country.py` v6 longest-prefix.
 - **Java raw ICMPv6 (V6-040…043):** `IcmpV6Packet`, dual `LinuxJnaIcmpTransport`, `probe: raw` hop-limit trace.
@@ -227,6 +230,7 @@
 
 ### Added
 
+- **P29-002 — incident timeline:** `IncidentTimelineBuilder` + `listHostEvents`; Extended history shows down/latency/route/ack (+ DNS kind reserved); `PROBLEM_ACK` on ack; NEXT→**P29-003**.
 - **CI:** GitHub Actions [Java CI](.github/workflows/java.yml).
 - **Tests:** JUnit 5 contract tests + beta JaCoCo coverage gate.
 - **Docs:** [docs/LIVING_SPEC.md](docs/LIVING_SPEC.md), [docs/SPIKE_IPV6.md](docs/SPIKE_IPV6.md).
@@ -249,6 +253,7 @@
 
 ### Added
 
+- **P29-002 — incident timeline:** `IncidentTimelineBuilder` + `listHostEvents`; Extended history shows down/latency/route/ack (+ DNS kind reserved); `PROBLEM_ACK` on ack; NEXT→**P29-003**.
 - **Java UI:** кілька профілів трасування в одному YAML (`ProfilesConfig`); режим «Експерт» з діалогом параметрів `ping(8)` на хост (кнопка Exten., chain-wide ping, валідація сумісності flags).
 - **Java UI:** режими «Простий» / «Розширений»; у простому — метрики кінцевого hop (loss, min/avg/max ms) і постійна кольорова індикація рядка.
 
@@ -259,6 +264,7 @@
 
 ### Added
 
+- **P29-002 — incident timeline:** `IncidentTimelineBuilder` + `listHostEvents`; Extended history shows down/latency/route/ack (+ DNS kind reserved); `PROBLEM_ACK` on ack; NEXT→**P29-003**.
 - **J-06 Java hop stats:** jitter/loss у graph labels (parity з B-06).
 - **B-06 Hop stats:** jitter (RTT stdev) і loss % по hop у graph labels, SQLite persistence, CSV/HTML export.
 - **B-05 Time-series:** optional InfluxDB/Timescale backends for RTT samples and route events (`--ts-backend`, `persistence/timeseries/`).
@@ -281,6 +287,7 @@
 
 ### Added
 
+- **P29-002 — incident timeline:** `IncidentTimelineBuilder` + `listHostEvents`; Extended history shows down/latency/route/ack (+ DNS kind reserved); `PROBLEM_ACK` on ack; NEXT→**P29-003**.
 - Linux desktop GUI (PyQt6) для моніторингу до 10 цілей.
 - ICMP traceroute через scapy (TTL 1..N, RTT, timeout hop `*`).
 - Фоновий `LightweightMonitorWorker` (QThread); трасування лише enabled цілей.

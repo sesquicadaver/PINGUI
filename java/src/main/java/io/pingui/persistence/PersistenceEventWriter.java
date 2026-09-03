@@ -90,6 +90,16 @@ public final class PersistenceEventWriter {
                 event.timestamp());
     }
 
+    /** Persists administrator problem acknowledgment (P29-002 timeline). */
+    public void writeProblemAck(String host, Instant when) {
+        if (host == null || host.isBlank() || !policyHolder.active().allows(PersistenceEventType.PROBLEM_ACK)) {
+            return;
+        }
+        Instant at = when != null ? when : Instant.now();
+        ensureHostRow(host);
+        database.insertEvent(PersistenceEventType.PROBLEM_ACK, host, null, null, null, null, null, null, at);
+    }
+
     private static PersistenceEventType qualityEventType(QualityAlertEvent event) {
         if (QualityAlertEvent.EVENT_LATENCY_HIGH.equals(event.event())) {
             return PersistenceEventType.LATENCY_HIGH;
@@ -110,5 +120,29 @@ public final class PersistenceEventWriter {
                 + ",\"host\":"
                 + PersistenceJson.quote(host)
                 + "}";
+    }
+
+    /** Wire-shaped problem_ack JSON for reconstructed {@link PersistenceEventRecord#payloadJson()}. */
+    static String problemAckPayload(String host, Instant when) {
+        Instant at = when != null ? when : Instant.now();
+        return "{\"event\":\"problem_ack\",\"host\":"
+                + PersistenceJson.quote(host)
+                + ",\"timestamp\":"
+                + PersistenceJson.quote(at.toString())
+                + '}';
+    }
+
+    /** Wire-shaped dns_change JSON for reconstructed {@link PersistenceEventRecord#payloadJson()}. */
+    static String dnsChangePayload(String host, String state, String message, Instant when) {
+        Instant at = when != null ? when : Instant.now();
+        return "{\"event\":\"dns_change\",\"host\":"
+                + PersistenceJson.quote(host)
+                + ",\"state\":"
+                + PersistenceJson.quote(state == null ? "" : state)
+                + ",\"message\":"
+                + PersistenceJson.quote(message == null ? "" : message)
+                + ",\"timestamp\":"
+                + PersistenceJson.quote(at.toString())
+                + '}';
     }
 }

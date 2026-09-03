@@ -188,6 +188,8 @@ public final class PersistenceSettingsDialog {
             case PROBE_ERROR -> UiI18n.get("persistence.label.probe_error");
             case ENDPOINT_DOWN -> UiI18n.get("persistence.label.endpoint_down");
             case LATENCY_HIGH -> UiI18n.get("persistence.label.latency_high");
+            case PROBLEM_ACK -> UiI18n.get("persistence.label.problem_ack");
+            case DNS_CHANGE -> UiI18n.get("persistence.label.dns_change");
         };
     }
 }

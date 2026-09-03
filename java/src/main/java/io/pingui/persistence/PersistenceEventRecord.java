@@ -39,6 +39,8 @@ public record PersistenceEventRecord(
                     .toJson();
             case PROBE_ERROR -> PersistenceEventWriter.probeErrorPayload(host, message);
             case ENDPOINT_DOWN, LATENCY_HIGH -> qualityPayload();
+            case PROBLEM_ACK -> PersistenceEventWriter.problemAckPayload(host, observedAt);
+            case DNS_CHANGE -> PersistenceEventWriter.dnsChangePayload(host, state, message, observedAt);
         };
     }
 

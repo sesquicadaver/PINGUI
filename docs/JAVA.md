@@ -224,4 +224,4 @@ pingui-java.bat --package    REM .msi
 
 ## Майбутнє
 
-Лінійна черга ROADMAP: **NEXT = P29-002** (фаза 29 — diagnostic evolution). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT. Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
+Лінійна черга ROADMAP: **NEXT = P29-003** (фаза 29 — diagnostic evolution). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT. Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
