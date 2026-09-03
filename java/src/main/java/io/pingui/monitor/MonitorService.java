@@ -4,6 +4,8 @@ import io.pingui.config.AlertSilenceConfig;
 import io.pingui.config.EndpointDownRuleConfig;
 import io.pingui.config.LatencyHighRuleConfig;
 import io.pingui.config.PingExpertEntry;
+import io.pingui.dns.DnsControlTracker;
+import io.pingui.dns.ForwardDnsLookup;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.persistence.PersistenceEventWriter;
 import io.pingui.persistence.PersistencePolicy;
@@ -87,6 +89,7 @@ public final class MonitorService implements AutoCloseable {
     private final PersistencePolicyHolder persistencePolicy = new PersistencePolicyHolder();
     private final BurstSchedulePolicy burstPolicy = new BurstSchedulePolicy();
     private final TraceConcurrencyLimiter traceLimiter;
+    private volatile DnsControlTracker dnsControl = new DnsControlTracker();
 
     public MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds) {
         this(intervalSeconds, maxHops, timeoutSeconds, ProbeMode.AUTO);
@@ -274,6 +277,11 @@ public final class MonitorService implements AutoCloseable {
         pollEffects.setPersistenceEventWriter(persistenceEvents);
     }
 
+    /** Test hook: replace forward-DNS lookup used by hostname DNS control (P29-004). */
+    void setForwardDnsLookupForTests(ForwardDnsLookup lookup) {
+        dnsControl = lookup == null ? new DnsControlTracker() : new DnsControlTracker(lookup);
+    }
+
     /** Optional telemetry bus (P16-013); null disables offers. Must not block poll. */
     public void setTelemetryBus(TelemetryBus telemetryBus) {
         pollEffects.setTelemetryBus(telemetryBus);
@@ -408,75 +416,100 @@ public final class MonitorService implements AutoCloseable {
         if (start == null) {
             return;
         }
-        List<String> previousIps = start.previousIps();
-        HostProbeMode mappedAtStart = start.mappedMode();
-        HostProbeMode probeMode = resolveProbeMode(host);
-        long startedNanos = System.nanoTime();
-        HostPollOutcome outcome =
-                switch (probeMode) {
-                    case PING_ONLY -> poller.pollHostPingOnly(host, previousIps, timeoutSeconds, resolveExpert(host));
-                    case MTR -> poller.pollHostMtr(host, previousIps, maxHops, timeoutSeconds);
-                    case TRACE -> poller.pollHostRoute(host, previousIps, maxHops, timeoutSeconds);
-                };
-        double durationMs = (System.nanoTime() - startedNanos) / 1_000_000.0;
-        Listener current = listener;
-        if (current == null || !registry.contains(host)) {
-            return;
+        try {
+            List<String> previousIps = start.previousIps();
+            HostProbeMode mappedAtStart = start.mappedMode();
+            HostProbeMode probeMode = resolveProbeMode(host);
+            long startedNanos = System.nanoTime();
+            HostPollOutcome outcome =
+                    switch (probeMode) {
+                        case PING_ONLY -> poller.pollHostPingOnly(
+                                host, previousIps, timeoutSeconds, resolveExpert(host));
+                        case MTR -> poller.pollHostMtr(host, previousIps, maxHops, timeoutSeconds);
+                        case TRACE -> poller.pollHostRoute(host, previousIps, maxHops, timeoutSeconds);
+                    };
+            double durationMs = (System.nanoTime() - startedNanos) / 1_000_000.0;
+            Listener current = listener;
+            if (current == null || !registry.contains(host)) {
+                return;
+            }
+            // Discard if resolver or local map changed mid-flight (half-updated probe-mode toggle).
+            // Compare each to its start snapshot — not to each other — so HostProbeModeResolver
+            // (SessionStore) may still report the old mode while the local map already flipped.
+            HostProbeMode resolved = resolveProbeMode(host);
+            if (resolved != probeMode || !registry.mappedModeUnchanged(host, mappedAtStart, profileProbeMode)) {
+                return;
+            }
+            boolean probeFailed = outcome.error() != null;
+            registry.recordPoll(host, probeFailed);
+            if (probeFailed) {
+                PersistenceEventWriter events = persistenceEvents;
+                if (events != null) {
+                    try {
+                        events.writeProbeError(host, outcome.error());
+                    } catch (RuntimeException ex) {
+                        LOG.warn("Persistence probe_error failed for {}: {}", host, ex.getMessage());
+                    }
+                }
+                pollEffects.offerTelemetryFailure(host, outcome.error(), probeMode, durationMs);
+                current.onProbeError(host, outcome.error());
+                return;
+            }
+            registry.putLastRoute(host, outcome.currentIps());
+            boolean deliveredSnapshot = false;
+            if (outcome.snapshot() != null && registry.contains(host)) {
+                RouteSnapshot snapshot = outcome.snapshot();
+                if (probeMode != HostProbeMode.PING_ONLY) {
+                    PingExpertEntry expert = resolveExpert(host);
+                    if (expert.isConfigured()) {
+                        snapshot = expertEnricher.enrich(snapshot, expert, timeoutSeconds);
+                    } else {
+                        snapshot = defaultTargetPingEnricher.enrich(snapshot, timeoutSeconds);
+                    }
+                }
+                pollEffects.offerTelemetrySuccess(host, probeMode, snapshot, durationMs);
+                current.onDataReceived(host, snapshot);
+                deliveredSnapshot = true;
+                pollEffects.evaluateEndpointDown(host, snapshot);
+                pollEffects.evaluateLatencyHigh(host, snapshot);
+            }
+            if (outcome.routeChanged() && BurstSchedulePolicy.shouldArmBurst(outcome.oldIps(), outcome.newIps())) {
+                burstPolicy.onRouteChange(host, Instant.now());
+            }
+            if (outcome.routeChanged()) {
+                pollEffects.offerTelemetryRouteChange(host, outcome.oldIps(), outcome.newIps(), probeMode);
+                current.onRouteChanged(host, outcome.oldIps(), outcome.newIps());
+                pollEffects.dispatchRouteChangeAlert(host, outcome.oldIps(), outcome.newIps());
+            } else if (PollResultEffects.isFirstBaseline(previousIps, outcome.currentIps())) {
+                pollEffects.persistBaselineRouteChange(host, outcome.currentIps());
+                pollEffects.offerTelemetryRouteChange(host, List.of(), outcome.currentIps(), probeMode);
+                current.onRouteChanged(host, List.of(), outcome.currentIps());
+            }
+            if (!deliveredSnapshot) {
+                current.onPollFinished(host);
+            }
+        } finally {
+            // After probe effects so DNS latency never delays ICMP/MTR scheduling (P29-004).
+            observeDnsControl(host);
         }
-        // Discard if resolver or local map changed mid-flight (half-updated probe-mode toggle).
-        // Compare each to its start snapshot — not to each other — so HostProbeModeResolver
-        // (SessionStore) may still report the old mode while the local map already flipped.
-        HostProbeMode resolved = resolveProbeMode(host);
-        if (resolved != probeMode || !registry.mappedModeUnchanged(host, mappedAtStart, profileProbeMode)) {
-            return;
-        }
-        boolean probeFailed = outcome.error() != null;
-        registry.recordPoll(host, probeFailed);
-        if (probeFailed) {
+    }
+
+    /**
+     * Forward-DNS control for hostname targets (P29-004). Persists distinct dns_change events only —
+     * never opens quality incidents or alert dispatch.
+     */
+    private void observeDnsControl(String host) {
+        try {
+            var event = dnsControl.observe(host);
+            if (event.isEmpty()) {
+                return;
+            }
             PersistenceEventWriter events = persistenceEvents;
             if (events != null) {
-                try {
-                    events.writeProbeError(host, outcome.error());
-                } catch (RuntimeException ex) {
-                    LOG.warn("Persistence probe_error failed for {}: {}", host, ex.getMessage());
-                }
+                events.writeDnsChange(event.get());
             }
-            pollEffects.offerTelemetryFailure(host, outcome.error(), probeMode, durationMs);
-            current.onProbeError(host, outcome.error());
-            return;
-        }
-        registry.putLastRoute(host, outcome.currentIps());
-        boolean deliveredSnapshot = false;
-        if (outcome.snapshot() != null && registry.contains(host)) {
-            RouteSnapshot snapshot = outcome.snapshot();
-            if (probeMode != HostProbeMode.PING_ONLY) {
-                PingExpertEntry expert = resolveExpert(host);
-                if (expert.isConfigured()) {
-                    snapshot = expertEnricher.enrich(snapshot, expert, timeoutSeconds);
-                } else {
-                    snapshot = defaultTargetPingEnricher.enrich(snapshot, timeoutSeconds);
-                }
-            }
-            pollEffects.offerTelemetrySuccess(host, probeMode, snapshot, durationMs);
-            current.onDataReceived(host, snapshot);
-            deliveredSnapshot = true;
-            pollEffects.evaluateEndpointDown(host, snapshot);
-            pollEffects.evaluateLatencyHigh(host, snapshot);
-        }
-        if (outcome.routeChanged() && BurstSchedulePolicy.shouldArmBurst(outcome.oldIps(), outcome.newIps())) {
-            burstPolicy.onRouteChange(host, Instant.now());
-        }
-        if (outcome.routeChanged()) {
-            pollEffects.offerTelemetryRouteChange(host, outcome.oldIps(), outcome.newIps(), probeMode);
-            current.onRouteChanged(host, outcome.oldIps(), outcome.newIps());
-            pollEffects.dispatchRouteChangeAlert(host, outcome.oldIps(), outcome.newIps());
-        } else if (PollResultEffects.isFirstBaseline(previousIps, outcome.currentIps())) {
-            pollEffects.persistBaselineRouteChange(host, outcome.currentIps());
-            pollEffects.offerTelemetryRouteChange(host, List.of(), outcome.currentIps(), probeMode);
-            current.onRouteChanged(host, List.of(), outcome.currentIps());
-        }
-        if (!deliveredSnapshot) {
-            current.onPollFinished(host);
+        } catch (RuntimeException ex) {
+            LOG.warn("DNS control failed for {}: {}", host, ex.getMessage());
         }
     }
 

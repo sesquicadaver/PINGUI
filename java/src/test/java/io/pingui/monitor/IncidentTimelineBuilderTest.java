@@ -83,6 +83,29 @@ class IncidentTimelineBuilderTest {
                 IncidentTimelineKind.LATENCY_HIGH, timeline.entries().get(1).kind());
     }
 
+    @Test
+    void includesDnsChangeWithoutTreatingAsIncidentDuration() {
+        List<PersistenceEventRecord> rows = List.of(new PersistenceEventRecord(
+                1,
+                PersistenceEventType.DNS_CHANGE,
+                "dns.example",
+                null,
+                "nxdomain",
+                "NXDOMAIN (3ms)",
+                "[]",
+                "[]",
+                "{\"resolve_ms\":3,\"outcome\":\"nxdomain\",\"state\":\"nxdomain\"}",
+                T0));
+
+        IncidentTimeline timeline =
+                IncidentTimelineBuilder.build("dns.example", rows, Optional.empty(), T0.plusSeconds(5));
+
+        assertEquals(1, timeline.entries().size());
+        assertEquals(IncidentTimelineKind.DNS_CHANGE, timeline.entries().get(0).kind());
+        assertEquals("nxdomain", timeline.entries().get(0).state());
+        assertEquals(Duration.ZERO, timeline.totalIncidentDuration());
+    }
+
     private static PersistenceEventRecord quality(long id, PersistenceEventType type, String state, Instant when) {
         return new PersistenceEventRecord(id, type, "8.8.8.8", "default", state, null, null, null, "{}", when);
     }

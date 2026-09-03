@@ -3,6 +3,8 @@ package io.pingui.persistence;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.pingui.dns.DnsControlEvent;
+import io.pingui.dns.DnsLookupOutcome;
 import io.pingui.monitor.QualityAlertEvent;
 import io.pingui.monitor.RouteChangeEvent;
 import java.nio.file.Path;
@@ -73,6 +75,32 @@ class PersistenceEventWriterTest {
                     .get(0)
                     .payloadJson()
                     .contains("problem_ack"));
+        }
+    }
+
+    @Test
+    void writesDnsChangeWithAddressSetAndDetail() {
+        Path dbPath = tempDir.resolve("dns.db");
+        try (SessionDatabase database = new SessionDatabase(dbPath)) {
+            PersistenceEventWriter writer = new PersistenceEventWriter(database);
+            Instant at = Instant.parse("2026-09-03T12:30:00Z");
+            writer.writeDnsChange(new DnsControlEvent(
+                    "dns.example",
+                    "change",
+                    "DNS address set changed (4ms): 1.1.1.1",
+                    List.of("9.9.9.9"),
+                    List.of("1.1.1.1"),
+                    4L,
+                    DnsLookupOutcome.OK,
+                    at));
+            assertEquals(1, database.countEvents(PersistenceEventType.DNS_CHANGE));
+            PersistenceEventRecord row = database.listEvents(
+                            PersistenceEventType.DNS_CHANGE, "dns.example", Instant.EPOCH, 10)
+                    .get(0);
+            assertEquals("change", row.state());
+            assertTrue(row.message().contains("1.1.1.1"));
+            assertTrue(row.detailJson().contains("resolve_ms"));
+            assertTrue(row.payloadJson().contains("dns_change"));
         }
     }
 }
