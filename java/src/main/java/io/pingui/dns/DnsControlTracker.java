@@ -3,6 +3,7 @@ package io.pingui.dns;
 import io.pingui.config.ConfigError;
 import io.pingui.config.HostAddressKind;
 import io.pingui.config.HostAddressParser;
+import io.pingui.config.TcpEndpoint;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -43,18 +44,26 @@ public final class DnsControlTracker {
         if (host == null || host.isBlank()) {
             return Optional.empty();
         }
-        String normalized;
+        String sessionKey;
+        String lookupHost;
         try {
-            normalized = HostAddressParser.normalize(host);
+            if (TcpEndpoint.looksLike(host)) {
+                TcpEndpoint endpoint = TcpEndpoint.parse(host);
+                sessionKey = endpoint.display();
+                lookupHost = endpoint.host();
+            } else {
+                sessionKey = HostAddressParser.normalize(host);
+                lookupHost = sessionKey;
+            }
         } catch (ConfigError ex) {
             return Optional.empty();
         }
-        if (HostAddressParser.kindOf(normalized) != HostAddressKind.HOSTNAME) {
+        if (HostAddressParser.kindOf(lookupHost) != HostAddressKind.HOSTNAME) {
             return Optional.empty();
         }
         Instant at = when != null ? when : Instant.now();
-        DnsObservation observation = DnsControl.lookup(normalized, lookup, at);
-        Snapshot previous = lastByHost.put(normalized, new Snapshot(observation.outcome(), observation.addresses()));
+        DnsObservation observation = DnsControl.lookup(lookupHost, lookup, at);
+        Snapshot previous = lastByHost.put(sessionKey, new Snapshot(observation.outcome(), observation.addresses()));
         if (previous != null
                 && previous.outcome() == observation.outcome()
                 && previous.addresses().equals(observation.addresses())) {
@@ -64,7 +73,7 @@ public final class DnsControlTracker {
         List<String> previousAddresses = previous == null ? List.of() : previous.addresses();
         String message = formatMessage(state, observation);
         return Optional.of(new DnsControlEvent(
-                normalized,
+                sessionKey,
                 state,
                 message,
                 previousAddresses,

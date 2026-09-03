@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P29-005** |
+| **Current task** | **DONE** |
 | **Phase** | 29 — diagnostic evolution (correlation / timeline / silence / DNS / TCP) |
-| **DoD (short)** | TCP Connect probe (`host:port` DNS+connect time) |
+| **DoD (short)** | phase 29 linear queue exhausted |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -165,9 +165,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 119 | **P29-002** | [x] | Per-host incident timeline (compact event list) |
 | 120 | **P29-003** | [x] | Maintenance / alert silence (host / tag / profile) |
 | 121 | **P29-004** | [x] | DNS control (resolve set / latency / change event) |
-| 122 | **P29-005** | [ ] | TCP Connect probe (`host:port`) |
+| 122 | **P29-005** | [x] | TCP Connect probe (`host:port`) |
 
-**Queue status:** active — **NEXT = P29-005** (phase 29; P29-004 [x]; Java-first).
+**Queue status:** **NEXT = DONE** (phase 29 closed; P29-005 [x]; Java-first).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -929,7 +929,7 @@ flowchart TD
 
 **Context:** After hardening (P26–P28) — features on **existing** probe data (`RouteSnapshot`, RTT/loss, SQLite events), without a heavy NMS. Source: `pingui-evo-func.md`. **Java-first** (GUI/`beta`); Python parity — separate. SNMP / NetFlow / HTTP synthetic / auto-remediation — out of scope.
 
-**Queue:** after P28; **NEXT = P29-005** (P29-004 [x]).
+**Queue:** after P28; **NEXT = DONE** (P29-005 [x]).
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
@@ -937,7 +937,7 @@ flowchart TD
 | **P29-002** | [x] Incident timeline | `IncidentTimelineBuilder`, `SessionDatabase.listHostEvents`, `PROBLEM_ACK`, Extended history UI, tests | Compact per-host list: down/latency/route/ack/DNS; FIRING→RESOLVED duration; SQLite/engine |
 | **P29-003** | [x] Alert silence / maintenance | `AlertSilenceConfig`, `PollResultEffects` gate, YAML/GUI | Monitoring continues; silence host/tag/profile until + reason; dispatch suppressed, persistence kept |
 | **P29-004** | [x] DNS control | `DnsControl`/`DnsControlTracker`, `PersistenceEventWriter.writeDnsChange`, `MonitorService.observeDnsControl`, tests | Hostname: address set (v4/v6), resolve time, change/NXDOMAIN/timeout/SERVFAIL as distinct event (not auto-incident) |
-| **P29-005** | [ ] TCP Connect probe | `HostProbeMode` / poller, YAML/GUI | `host:port` → DNS time + connect time + success/refused/timeout + resolved IP; alternate/complement to PING_ONLY, not ICMP replacement |
+| **P29-005** | [x] TCP Connect probe | `TcpEndpoint`, `TcpConnectProbe`, `HostProbeMode.TCP_CONNECT`, `RoutePoller.pollHostTcpConnect`, YAML/GUI | `host:port` → DNS time + connect time + success/refused/timeout + resolved IP; alternate/complement to PING_ONLY, not ICMP replacement |
 
 **Backlog (after P29, not queued):** diagnostic snapshot; SLA table/export; baseline route (pin + sustain).
 
@@ -1028,7 +1028,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P29-005**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **DONE**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

@@ -11,6 +11,7 @@ public final class HostPollSchedule {
 
     public static final double PING_ONLY_DEFAULT_SECONDS = 1.5;
     public static final double MTR_DEFAULT_SECONDS = 10.0;
+    public static final double TCP_CONNECT_DEFAULT_SECONDS = 2.0;
 
     private HostPollSchedule() {}
 
@@ -26,6 +27,7 @@ public final class HostPollSchedule {
         }
         return switch (mode) {
             case PING_ONLY -> PING_ONLY_DEFAULT_SECONDS;
+            case TCP_CONNECT -> TCP_CONNECT_DEFAULT_SECONDS;
             case MTR -> MTR_DEFAULT_SECONDS;
             case TRACE -> profileIntervalSeconds;
         };

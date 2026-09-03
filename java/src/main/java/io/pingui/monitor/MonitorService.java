@@ -425,6 +425,7 @@ public final class MonitorService implements AutoCloseable {
                     switch (probeMode) {
                         case PING_ONLY -> poller.pollHostPingOnly(
                                 host, previousIps, timeoutSeconds, resolveExpert(host));
+                        case TCP_CONNECT -> poller.pollHostTcpConnect(host, previousIps, timeoutSeconds);
                         case MTR -> poller.pollHostMtr(host, previousIps, maxHops, timeoutSeconds);
                         case TRACE -> poller.pollHostRoute(host, previousIps, maxHops, timeoutSeconds);
                     };
@@ -459,7 +460,7 @@ public final class MonitorService implements AutoCloseable {
             boolean deliveredSnapshot = false;
             if (outcome.snapshot() != null && registry.contains(host)) {
                 RouteSnapshot snapshot = outcome.snapshot();
-                if (probeMode != HostProbeMode.PING_ONLY) {
+                if (!probeMode.isTargetOnly()) {
                     PingExpertEntry expert = resolveExpert(host);
                     if (expert.isConfigured()) {
                         snapshot = expertEnricher.enrich(snapshot, expert, timeoutSeconds);

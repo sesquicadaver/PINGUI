@@ -9,6 +9,7 @@
 
 ### Added
 
+- **P29-005 — TCP Connect probe:** `host:port` / `[ipv6]:port` → DNS time + connect time + success/refused/timeout + resolved IP; `HostProbeMode.TCP_CONNECT`; YAML/GUI; NEXT→**DONE**.
 - **P29-004 — DNS control:** forward resolve (`DnsControl`/`DnsControlTracker`) — address set v4/v6, resolve time, distinct `dns_change` (ok/change/NXDOMAIN/timeout/SERVFAIL); wire у `MonitorService` + timeline; не auto-incident; NEXT→**P29-005**.
 - **P29-003 — alert silence / maintenance:** `AlertSilenceConfig` (host/tag/profile until+reason); gate in `PollResultEffects` (persist keeps, dispatch skips); YAML/GUI; NEXT→**P29-004**.
 - **P29-002 — incident timeline:** `IncidentTimelineBuilder` + `listHostEvents`; Extended history shows down/latency/route/ack (+ DNS kind reserved); `PROBLEM_ACK` on ack; NEXT→**P29-003**.

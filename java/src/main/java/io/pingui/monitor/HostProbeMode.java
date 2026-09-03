@@ -1,10 +1,11 @@
 package io.pingui.monitor;
 
-/** Monitoring strategy per host (P13-001); orthogonal to transport {@link io.pingui.probe.ProbeMode}. */
+/** Monitoring strategy per host (P13-001 / P29-005); orthogonal to transport {@link io.pingui.probe.ProbeMode}. */
 public enum HostProbeMode {
     TRACE("trace"),
     MTR("mtr"),
-    PING_ONLY("ping_only");
+    PING_ONLY("ping_only"),
+    TCP_CONNECT("tcp_connect");
 
     private final String yamlValue;
 
@@ -18,6 +19,11 @@ public enum HostProbeMode {
 
     public boolean isPingOnly() {
         return this == PING_ONLY;
+    }
+
+    /** Lightweight non-trace modes (no hop graph; no concurrent-trace permit). */
+    public boolean isTargetOnly() {
+        return this == PING_ONLY || this == TCP_CONNECT;
     }
 
     public static HostProbeMode parse(String value) {
