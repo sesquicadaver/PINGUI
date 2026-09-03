@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **DONE** |
-| **Phase** | — linear queue exhausted |
-| **DoD (short)** | New work only after an explicit ID in NEXT |
+| **Current task** | **P29-002** |
+| **Phase** | 29 — diagnostic evolution (correlation / timeline / silence / DNS / TCP) |
+| **DoD (short)** | Per-host incident timeline (compact event list) |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -161,8 +161,13 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 115 | **P28-001** | [x] | SinkRegistry: bounded executor + hang isolation (no re-dispatch) |
 | 116 | **P28-002** | [x] | MonitorService: reserve `inFlight` before `probePool.execute` (PING_ONLY) |
 | 117 | **P28-003** | [x] | Python `session_db`: reject schema `!= SCHEMA_VERSION` (forward-compat) |
+| 118 | **P29-001** | [x] | Multi-host problem correlation (shared hop / segment) |
+| 119 | **P29-002** | [ ] | Per-host incident timeline (compact event list) |
+| 120 | **P29-003** | [ ] | Maintenance / alert silence (host / tag / profile) |
+| 121 | **P29-004** | [ ] | DNS control (resolve set / latency / change event) |
+| 122 | **P29-005** | [ ] | TCP Connect probe (`host:port`) |
 
-**Queue status:** **DONE** — P28-001…003 [x]; linear queue exhausted.
+**Queue status:** active — **NEXT = P29-002** (phase 29; P29-001 [x]; Java-first).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -920,6 +925,24 @@ flowchart TD
 
 ---
 
+## Phase 29 — Diagnostic evolution (`beta`, P1)
+
+**Context:** After hardening (P26–P28) — features on **existing** probe data (`RouteSnapshot`, RTT/loss, SQLite events), without a heavy NMS. Source: `pingui-evo-func.md`. **Java-first** (GUI/`beta`); Python parity — separate. SNMP / NetFlow / HTTP synthetic / auto-remediation — out of scope.
+
+**Queue:** after P28; **NEXT = P29-002** (P29-001 [x]).
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **P29-001** | [x] Multi-host problem correlation | `ProblemCorrelator`, `MonitorService.correlateActiveProblems`, `ProblemDetailsDialog`, tests | FIRING hosts + RouteSnapshot: last shared stable hop, first shared problem hop, scope local/ISP/edge, count + start overlap; UI summary in problem dialog; no new probes |
+| **P29-002** | [ ] Incident timeline | persistence/events UI, tests | Compact per-host list: down/latency/route/DNS/ack + duration; from existing SQLite/engine |
+| **P29-003** | [ ] Alert silence / maintenance | alerts config + MonitorService gate, YAML/GUI | Monitoring continues; silence host/tag/profile until timestamp + reason; alerts suppressed independently of enabled |
+| **P29-004** | [ ] DNS control | resolve path + event/optional alert | Hostname: address set (v4/v6), resolve time, change/NXDOMAIN/timeout/SERVFAIL as distinct event (not auto-incident) |
+| **P29-005** | [ ] TCP Connect probe | `HostProbeMode` / poller, YAML/GUI | `host:port` → DNS time + connect time + success/refused/timeout + resolved IP; alternate/complement to PING_ONLY, not ICMP replacement |
+
+**Backlog (after P29, not queued):** diagnostic snapshot; SLA table/export; baseline route (pin + sustain).
+
+---
+
 ## Out of scope (not planned)
 
 | ID | Idea | Why not |
@@ -927,6 +950,9 @@ flowchart TD
 | **X-001** | BGP looking glass | Different product class |
 | **X-002** | >10 targets without worker redesign | Conscious MVP limit |
 | **X-003** | Full NMS/alert manager | PINGUI is route-focused utility |
+| **X-004** | SNMP / NetFlow / config mgmt | Heavy NMS; outside light probe utility |
+| **X-005** | Full HTTP/TLS synthetic monitoring | Different product class (not TCP connect) |
+| **X-006** | Auto-remediation | Outside diagnostic monitor scope |
 
 ---
 
@@ -1002,7 +1028,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **DONE**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P29-002**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

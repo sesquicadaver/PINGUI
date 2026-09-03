@@ -11,6 +11,7 @@ import io.pingui.monitor.HostProbeMode;
 import io.pingui.monitor.HostProblemSummary;
 import io.pingui.monitor.HostTargetStats;
 import io.pingui.monitor.MonitorService;
+import io.pingui.monitor.ProblemCorrelation;
 import io.pingui.monitor.SessionStore;
 import java.util.List;
 import java.util.Optional;
@@ -551,8 +552,15 @@ final class HostListPresenter {
             return;
         }
         Window owner = hostList.getScene() != null ? hostList.getScene().getWindow() : null;
-        ProblemDetailsDialog.show(owner, summary);
         MonitorService service = monitor.get();
+        Optional<ProblemCorrelation> correlation = Optional.empty();
+        if (service != null) {
+            SessionStore session = store.get();
+            if (session != null) {
+                correlation = service.correlateActiveProblems(session);
+            }
+        }
+        ProblemDetailsDialog.show(owner, summary, correlation);
         if (service != null) {
             service.ackHostProblem(item.getHost());
             item.applyProblem(service.hostProblemSummary(item.getHost()).orElse(null));

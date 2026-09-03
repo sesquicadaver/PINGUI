@@ -14,6 +14,7 @@ import io.pingui.persistence.SessionDatabase;
 import io.pingui.probe.RouteProbe;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -965,6 +966,68 @@ class MonitorServiceTest {
             assertEquals(1, database.countEvents(PersistenceEventType.ROUTE_CHANGE));
             service.close();
         }
+    }
+
+    @Test
+    void correlateActiveProblemsFromFiringHostsAndRoutes() throws Exception {
+        RouteSnapshot downA = new RouteSnapshot(
+                "1.1.1.1",
+                "1.1.1.1",
+                List.of(
+                        new HopNode(1, "198.51.100.1", 5.0, false),
+                        new HopNode(2, "198.51.100.10", 8.0, false),
+                        new HopNode(3, "*", null, true)));
+        RouteSnapshot downB = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(
+                        new HopNode(1, "198.51.100.1", 5.0, false),
+                        new HopNode(2, "198.51.100.10", 9.0, false),
+                        new HopNode(3, "*", null, true)));
+        RouteProbe probe = (targetHost, maxHops, timeoutSeconds) -> "1.1.1.1".equals(targetHost) ? downA : downB;
+        MonitorService service = new MonitorService(0.05, 20, 0.5, probe);
+        service.setEndpointDownRule(new EndpointDownRuleConfig(true, 1, 1, 15));
+        service.setNotifyResolved(false);
+        service.setListener(new MonitorService.Listener() {
+            @Override
+            public void onDataReceived(String host, RouteSnapshot snap) {}
+
+            @Override
+            public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {}
+
+            @Override
+            public void onProbeError(String host, String message) {}
+        });
+        service.addHost("1.1.1.1", true);
+        service.addHost("8.8.8.8", true);
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+        while (System.nanoTime() < deadline) {
+            boolean aFiring = service.hostProblemSummary("1.1.1.1")
+                    .map(s -> HostProblemSummary.STATE_FIRING.equals(s.lastState()))
+                    .orElse(false);
+            boolean bFiring = service.hostProblemSummary("8.8.8.8")
+                    .map(s -> HostProblemSummary.STATE_FIRING.equals(s.lastState()))
+                    .orElse(false);
+            if (aFiring && bFiring) {
+                break;
+            }
+            Thread.sleep(50);
+        }
+        assertEquals(
+                HostProblemSummary.STATE_FIRING,
+                service.hostProblemSummary("1.1.1.1").orElseThrow().lastState());
+        assertEquals(
+                HostProblemSummary.STATE_FIRING,
+                service.hostProblemSummary("8.8.8.8").orElseThrow().lastState());
+
+        SessionStore store = new SessionStore(List.of("1.1.1.1", "8.8.8.8"));
+        store.updateRoute("1.1.1.1", downA);
+        store.updateRoute("8.8.8.8", downB);
+        ProblemCorrelation correlation = service.correlateActiveProblems(store).orElseThrow();
+        assertEquals(2, correlation.degradedHostCount());
+        assertEquals(Optional.of("198.51.100.10"), correlation.lastSharedStableHop());
+        assertEquals(ProblemCorrelationScope.ISP, correlation.scope());
+        service.close();
     }
 
     private static RouteProbe singleRouteChangeProbe() {

@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **DONE** |
-| **Фаза** | — лінійна черга вичерпана |
-| **DoD (коротко)** | Нова робота лише після явного ID у NEXT |
+| **Поточна задача** | **P29-002** |
+| **Фаза** | 29 — diagnostic evolution (correlation / timeline / silence / DNS / TCP) |
+| **DoD (коротко)** | Per-host incident timeline (компактний список подій) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -161,8 +161,13 @@
 | 115 | **P28-001** | [x] | SinkRegistry: bounded executor + hang isolation (не re-dispatch) |
 | 116 | **P28-002** | [x] | MonitorService: reserve `inFlight` before `probePool.execute` (PING_ONLY) |
 | 117 | **P28-003** | [x] | Python `session_db`: reject schema `!= SCHEMA_VERSION` (forward-compat) |
+| 118 | **P29-001** | [x] | Multi-host problem correlation (спільний hop / сегмент) |
+| 119 | **P29-002** | [ ] | Per-host incident timeline (компактний список подій) |
+| 120 | **P29-003** | [ ] | Maintenance / alert silence (host / tag / profile) |
+| 121 | **P29-004** | [ ] | DNS control (resolve set / latency / change event) |
+| 122 | **P29-005** | [ ] | TCP Connect probe (`host:port`) |
 
-**Стан черги:** **DONE** — P28-001…003 [x]; лінійна черга вичерпана.
+**Стан черги:** активна — **NEXT = P29-002** (фаза 29; P29-001 [x]; Java-first).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -920,6 +925,24 @@ flowchart TD
 
 ---
 
+## Фаза 29 — Diagnostic evolution (`beta`, P1)
+
+**Контекст:** Після hardening (P26–P28) — функції на **наявних** probe-даних (`RouteSnapshot`, RTT/loss, SQLite events), без важкого NMS. Джерело: `pingui-evo-func.md`. **Java-first** (GUI/`beta`); Python parity — окремо. SNMP / NetFlow / HTTP synthetic / auto-remediation — поза scope.
+
+**Черга:** після P28; **NEXT = P29-002** (P29-001 [x]).
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P29-001** | [x] Multi-host problem correlation | `ProblemCorrelator`, `MonitorService.correlateActiveProblems`, `ProblemDetailsDialog`, tests | FIRING hosts + RouteSnapshot: last shared stable hop, first shared problem hop, scope local/ISP/edge, count + start overlap; UI summary у problem dialog; без нових probes |
+| **P29-002** | [ ] Incident timeline | persistence/events UI, tests | Компактний per-host список: down/latency/route/DNS/ack + duration; дані з наявного SQLite/engine |
+| **P29-003** | [ ] Alert silence / maintenance | alerts config + MonitorService gate, YAML/GUI | Monitoring continues; silence host/tag/profile until timestamp + reason; alerts suppressed independently of enabled |
+| **P29-004** | [ ] DNS control | resolve path + event/optional alert | Hostname: address set (v4/v6), resolve time, change/NXDOMAIN/timeout/SERVFAIL as distinct event (not auto-incident) |
+| **P29-005** | [ ] TCP Connect probe | `HostProbeMode` / poller, YAML/GUI | `host:port` → DNS time + connect time + success/refused/timeout + resolved IP; alternate/complement to PING_ONLY, not ICMP replacement |
+
+**Backlog (після P29, не в черзі):** діагностичний snapshot; SLA table/export; еталонний маршрут (baseline + sustain).
+
+---
+
 ## Поза scope (опційно, в перспективі)
 
 | ID | Ідея | Чому ні |
@@ -927,6 +950,9 @@ flowchart TD
 | **X-001** | BGP looking glass | Інший клас продукту |
 | **X-002** | >10 цілей без redesign worker | MVP-обмеження свідоме |
 | **X-003** | Повноцінний NMS/alert manager | PINGUI — route-focused utility |
+| **X-004** | SNMP / NetFlow / config mgmt | Важкий NMS; поза легким probe-utility |
+| **X-005** | Full HTTP/TLS synthetic monitoring | Інший клас продукту (не TCP connect) |
+| **X-006** | Auto-remediation | Поза scope діагностичного монітора |
 
 ---
 
@@ -1002,7 +1028,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **DONE**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P29-002**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

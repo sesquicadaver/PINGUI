@@ -9,6 +9,8 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **P29 NEXT activated:** ROADMAP **NEXT = P29-001** (multi-host problem correlation); P29-001…005 queue task statuses unchanged.
+- **P29 — diagnostic evolution (queued, NEXT stays DONE):** from `pingui-evo-func.md` — P29-001 multi-host correlation; P29-002 incident timeline; P29-003 alert silence; P29-004 DNS control; P29-005 TCP connect. Java-first; backlog: snapshot/SLA/baseline. Activate with explicit NEXT=`P29-001`.
 - **P28-003 — Python session_db schema gate:** reject `version != SCHEMA_VERSION` (v4) with `SessionDatabaseError`; no silent migrate; NEXT→**DONE**.
 - **P28-002 — inFlight before probePool.execute:** CAS `inFlight` before queue; clear on reject/complete; no unbounded duplicate runnables; NEXT→**P28-003**.
 - **P28-001 — SinkRegistry hang isolation:** bounded pool (8) instead of `newCachedThreadPool`; per-sink busy gate; no sync re-dispatch of hung sink on interrupt; ADR_TELEMETRY §7; NEXT→**P28-002**.
