@@ -196,6 +196,23 @@ class AlertRuleEngineTest {
     }
 
     @Test
+    void latencyBaselineUsesEwmaNotUnboundedMean() {
+        LatencyHighRuleConfig rule = LatencyHighRuleConfig.critical(true);
+        for (int i = 0; i < 100; i++) {
+            assertTrue(engine.observeLatencyHigh("h", 10.0, t0.plusSeconds(i), "p", rule)
+                    .isEmpty());
+        }
+        assertEquals(10.0, engine.latencyAvg("h").orElseThrow(), 0.001);
+        // 18 < 2×10 → good sample; EWMA moves toward 18, unbounded mean would stay ~10.08
+        assertTrue(engine.observeLatencyHigh("h", 18.0, t0.plusSeconds(100), "p", rule)
+                .isEmpty());
+        double expected = AlertRuleEngine.LATENCY_EWMA_ALPHA * 18.0 + (1.0 - AlertRuleEngine.LATENCY_EWMA_ALPHA) * 10.0;
+        assertEquals(expected, engine.latencyAvg("h").orElseThrow(), 0.001);
+        assertEquals(Duration.ofSeconds(15), LatencyHighRuleConfig.approximateFiringEta(3, Duration.ofSeconds(5)));
+        assertEquals(Duration.ofSeconds(15), rule.approximateFiringEta(Duration.ofSeconds(5)));
+    }
+
+    @Test
     void problemSummaryPrefersUnreadEndpointDownOverLatency() {
         EndpointDownRuleConfig down = new EndpointDownRuleConfig(true, 1, 1, 0);
         LatencyHighRuleConfig latency = LatencyHighRuleConfig.critical(true);

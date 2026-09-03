@@ -15,7 +15,7 @@
 |------|---------|
 | Scope v1 | Лише **`endpoint_down`**; `loss_high` / `latency_high` → **v2** |
 | RESOLVED | Опція користувача (`notify_resolved`, default **false**) |
-| Latency (v2) | Default: `rtt ≥ 2×AVG`; FIRING після **3** поганих пінгів **поспіль** (без часового вікна); absolute/інший множник — лише якщо задано |
+| Latency (v2) | Default: `rtt ≥ 2×AVG` (AVG = **EWMA** α=0.2); FIRING після **3** поганих пінгів **поспіль** (без часового вікна); absolute/інший множник — лише якщо задано |
 | Per-host overrides | **Не в v1** (зарезервовано; див. нижче) |
 | Форма ADR | Окремий **ADR_ALERT_RULES**; `ADR_ALERTS` лишається SSOT каналів |
 
@@ -119,20 +119,22 @@ alerts:
 Пріоритет: CLI (майбутні flags) > YAML профілю > defaults.  
 **Per-host `alerts:` — не в v1.**
 
-### 7. `latency_high` (v2 — accepted decisions 2026-07-22)
+### 7. `latency_high` (v2 — accepted decisions 2026-07-22; baseline EWMA P26-008)
 
 Окремо від `endpoint_down`: успішний reply з високим RTT — **не** down.
 
 | Параметр | Default (критичний) | Опис |
 |----------|---------------------|------|
 | `enabled` | `false` | default off |
-| `multiplier` | `2.0` | сигнал: `rtt ≥ multiplier × AVG` (AVG = running mean успішних terminal RTT **до** поточної проби) |
+| `multiplier` | `2.0` | сигнал: `rtt ≥ multiplier × AVG` (AVG = **EWMA** успішних terminal RTT **до** поточної проби; α=`0.2` у `AlertRuleEngine`) |
 | `fail_after` | `3` | послідовні «погані» пінги → FIRING (**без** часового вікна) |
 | `clear_after` | `2` | послідовні ok → RESOLVED/OK |
 | `cooldown_minutes` | `15` | між повторними FIRING |
 | `threshold_ms` | omit | optional absolute OR з relative, якщо задано в YAML/GUI |
 
-Warm-up: доки немає AVG (0 успішних проб) — relative не спрацьовує. Unreachable poll → **не** оновлює latency-стан (лише `endpoint_down`). «Погані» семпли **не** входять у AVG (анти-отруєння baseline під час spike).
+Warm-up: доки немає AVG (0 успішних проб) — relative не спрацьовує; перший good sample сіє EWMA. Unreachable poll → **не** оновлює latency-стан (лише `endpoint_down`). «Погані» семпли **не** входять у AVG (анти-отруєння baseline під час spike).
+
+**ETA (UI/Help):** орієнтовний час до FIRING після warm-up ≈ `fail_after × interval` профілю (`LatencyHighRuleConfig.approximateFiringEta`); cooldown між повторними FIRING — окремо.
 
 YAML:
 

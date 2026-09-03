@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P26-008** |
+| **Поточна задача** | **P26-009** |
 | **Фаза** | 26 — hardening post-audit (telemetry / launchers / split / coverage) |
-| **DoD (коротко)** | latency_high: EWMA/window baseline + UI ETA note |
+| **DoD (коротко)** | ADR_HARDENING + LIVING_SPEC/CHECKLIST + phase close |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -153,7 +153,7 @@
 | 107 | **P26-005** | [x] | MainController ≤550 LOC (dialogs/lifecycle extract) |
 | 108 | **P26-006** | [x] | MonitorService split (poll vs alert/telemetry wiring) |
 | 109 | **P26-007** | [x] | JaCoCo package-level thresholds (не один bundle) |
-| 110 | **P26-008** | [ ] | latency_high: EWMA/window baseline + UI ETA note |
+| 110 | **P26-008** | [x] | latency_high: EWMA/window baseline + UI ETA note |
 | 111 | **P26-009** | [ ] | ADR_HARDENING + LIVING_SPEC/CHECKLIST + phase close |
 | 112 | **P27-001** | [x] | SQLite telemetry: колонки SSOT, без `payload_json` (schema v5) |
 | 113 | **P27-002** | [x] | `persistence_event`: typed columns + `detail_json` (schema v6) |
@@ -162,7 +162,7 @@
 | 116 | **P28-002** | [ ] | MonitorService: reserve `inFlight` before `probePool.execute` (PING_ONLY) |
 | 117 | **P28-003** | [ ] | Python `session_db`: reject schema `!= SCHEMA_VERSION` (forward-compat) |
 
-**Стан черги:** активна — **NEXT = P26-008** (фаза 26; P26-007 JaCoCo packages [x]; P28 після P27).
+**Стан черги:** активна — **NEXT = P26-009** (фаза 26; P26-008 EWMA latency [x]; P28 після P27).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -889,7 +889,7 @@ flowchart TD
 | **P26-005** | [x] MainController ≤550 LOC | coordinators + `MainControllerLocGateTest` | 546 LOC; dialogs/geometry/lifecycle винесено; LocGate ≤550 |
 | **P26-006** | [x] MonitorService split | `PollResultEffects`, `TelemetryEmission`, `MonitorService` | poll ≠ effects; `PollResultEffectsTest` (9); MonitorService 467 LOC |
 | **P26-007** | [x] Package JaCoCo thresholds | `java/build.gradle.kts` | PACKAGE minima: config/probe/monitor ≥85%, telemetry ≥80%, persistence ≥75%; BUNDLE ≥80%; UI `io/pingui/ui/**` exclusion явний |
-| **P26-008** | [ ] Latency baseline evolution | `monitor/*`, ADR_ALERT_RULES, UI copy | EWMA або bounded window; контракт + тест; Help/Settings показує орієнтовний час FIRING |
+| **P26-008** | [x] Latency baseline evolution | `AlertRuleEngine`, `LatencyHighRuleConfig`, ADR_ALERT_RULES, i18n | EWMA α=0.2; тест vs unbounded mean; Help/Settings ETA ≈ fail_after×interval |
 | **P26-009** | [ ] Phase close | `ADR_HARDENING.md`, LIVING_SPEC, CHECKLIST, ROADMAP | NEXT→перший `[ ]` у черзі (P28-001 після P27 [x]) |
 
 **Поза цією чергою (свідомо):** DE/FR i18n; dark mode product; FXML rewrite; >10 hosts; BGP/NMS.
@@ -1002,7 +1002,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P26-008**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P26-009**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 
