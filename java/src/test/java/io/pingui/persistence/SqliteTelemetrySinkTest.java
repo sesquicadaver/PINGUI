@@ -18,10 +18,10 @@ class SqliteTelemetrySinkTest {
     Path tempDir;
 
     @Test
-    void freshDatabaseIsSchemaV7() {
+    void freshDatabaseMatchesCurrentSchemaVersion() {
         Path dbPath = tempDir.resolve("telemetry.db");
         try (SessionDatabase db = new SessionDatabase(dbPath)) {
-            assertEquals(7, db.schemaVersion());
+            assertEquals(SessionDatabase.SCHEMA_VERSION, db.schemaVersion());
             assertEquals(0, db.countTelemetrySamples());
             assertEquals(0, db.countTelemetryEvents());
         }
