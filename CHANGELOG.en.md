@@ -13,6 +13,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P31-003 — host inspector:** compact Extended panel (metrics/last poll/route/problem + copy/ack/diagnostics); NEXT→**P31-004**.
 - **P31-002 — endpoint vs route states:** independent Endpoint (UP/DEGRADED/DOWN/UNKNOWN) and Route (STABLE/CHANGED/INCOMPLETE/NOT TRACED); PING_ONLY/TCP → NOT TRACED without error glyph; NEXT→**P31-003**.
 - **P31-001 — unified host row:** `[state] name RTT loss mode [problem]` columns; fixed 36px row height; poll/RTT/tags in tooltip; NEXT→**P31-002**.
 - **P30-006 — export reliability:** `SessionDatabase.readOnly` for export/dump; CLI `--integrity-check`; backup note in DEPLOYMENT; NEXT→**DONE**.

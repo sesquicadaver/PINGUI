@@ -11,6 +11,7 @@ final class HistoryPanelWiring {
             ObservableList<HostItem> hostItems,
             MainView mainView,
             HostListPresenter hostListPresenter,
+            HostInspectorPresenter hostInspectorPresenter,
             HistoryHostSync historyHostSync,
             Runnable syncHistoryHostFilter,
             Runnable redrawRouteGraph) {
@@ -21,6 +22,7 @@ final class HistoryPanelWiring {
                     item != null ? item.getHost() : null,
                     mainView.historyHostFilter().getValue(),
                     mainView.historyHostFilter()::setValue);
+            hostInspectorPresenter.show(item);
         });
         mainView.historyHostFilter().valueProperty().addListener((obs, oldHost, newHost) -> {
             if (historyHostSync.isSyncing()) {

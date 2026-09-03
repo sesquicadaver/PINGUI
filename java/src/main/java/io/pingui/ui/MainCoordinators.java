@@ -28,6 +28,7 @@ final class MainCoordinators {
     final RouteGraphPresenter routeGraph;
     final EasterEggController easterEgg;
     final HostListPresenter hostList;
+    final HostInspectorPresenter hostInspector;
     final RouteHistoryPresenter routeHistory;
     final MonitorUiHandler monitorUi;
     final SettingsDialogsCoordinator settingsDialogs;
@@ -41,6 +42,7 @@ final class MainCoordinators {
             RouteGraphPresenter routeGraph,
             EasterEggController easterEgg,
             HostListPresenter hostList,
+            HostInspectorPresenter hostInspector,
             RouteHistoryPresenter routeHistory,
             MonitorUiHandler monitorUi,
             SettingsDialogsCoordinator settingsDialogs) {
@@ -52,6 +54,7 @@ final class MainCoordinators {
         this.routeGraph = routeGraph;
         this.easterEgg = easterEgg;
         this.hostList = hostList;
+        this.hostInspector = hostInspector;
         this.routeHistory = routeHistory;
         this.monitorUi = monitorUi;
         this.settingsDialogs = settingsDialogs;
@@ -132,6 +135,9 @@ final class MainCoordinators {
         hostList.setMarkDirty(wiring.markDirty);
         wiring.mainView.graphCanvas().setOnHopIpCopied(ip -> userFeedback.info(UiI18n.get("status.hop_ip_copied", ip)));
         io.pingui.dns.DnsResolver.addListener(() -> Platform.runLater(routeGraph::redrawIfExtended));
+        HostInspectorPresenter hostInspector = new HostInspectorPresenter(
+                wiring.mainView.hostInspectorPanel(), wiring.store, wiring.monitor, wiring.dialogOwner, userFeedback);
+        hostList.setHostInspector(hostInspector);
         RouteHistoryPresenter routeHistory = new RouteHistoryPresenter(
                 wiring.store,
                 wiring.mainView.historyHostFilter(),
@@ -149,6 +155,7 @@ final class MainCoordinators {
         MonitorUiHandler monitorUi = new MonitorUiHandler(
                 wiring.store,
                 hostList,
+                hostInspector,
                 () -> viewMode,
                 easterEgg::isActive,
                 wiring.mainView,
@@ -181,6 +188,7 @@ final class MainCoordinators {
                 wiring.hostItems,
                 wiring.mainView,
                 hostList,
+                hostInspector,
                 wiring.historyHostSync,
                 wiring.syncHistoryHostFilter,
                 wiring.redrawRouteGraph);
@@ -194,6 +202,7 @@ final class MainCoordinators {
                 routeGraph,
                 easterEgg,
                 hostList,
+                hostInspector,
                 routeHistory,
                 monitorUi,
                 settingsDialogs);

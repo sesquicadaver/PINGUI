@@ -17,6 +17,7 @@ final class MonitorUiHandler {
 
     private final Supplier<io.pingui.monitor.SessionStore> store;
     private final HostListPresenter hostListPresenter;
+    private final HostInspectorPresenter hostInspectorPresenter;
     private final Supplier<ViewModeController> viewModeController;
     private final BooleanSupplier easterEggActive;
     private final MainView mainView;
@@ -28,6 +29,7 @@ final class MonitorUiHandler {
     MonitorUiHandler(
             Supplier<io.pingui.monitor.SessionStore> store,
             HostListPresenter hostListPresenter,
+            HostInspectorPresenter hostInspectorPresenter,
             Supplier<ViewModeController> viewModeController,
             BooleanSupplier easterEggActive,
             MainView mainView,
@@ -37,6 +39,7 @@ final class MonitorUiHandler {
             Runnable redrawRouteGraph) {
         this.store = store;
         this.hostListPresenter = hostListPresenter;
+        this.hostInspectorPresenter = hostInspectorPresenter;
         this.viewModeController = viewModeController;
         this.easterEggActive = easterEggActive;
         this.mainView = mainView;
@@ -58,6 +61,7 @@ final class MonitorUiHandler {
             item.clearRouteChangedLatch();
             hostListPresenter.syncMetrics(item);
             hostListPresenter.syncProblem(item);
+            hostInspectorPresenter.refreshIfHost(host);
         }
         ViewModeController mode = viewModeController.get();
         if (mode.isExtended() && !easterEggActive.getAsBoolean()) {
@@ -78,6 +82,7 @@ final class MonitorUiHandler {
         if (item != null && !oldIps.isEmpty()) {
             item.markRouteChanged();
             hostListPresenter.syncRouteState(item);
+            hostInspectorPresenter.refreshIfHost(host);
         }
         ViewModeController mode = viewModeController.get();
         if (mode.isExtended() && !easterEggActive.getAsBoolean()) {
