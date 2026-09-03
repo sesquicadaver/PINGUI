@@ -453,3 +453,7 @@ Maintenance windows: silence host/tag/profile until ISO timestamp with reason. M
 ### Java: DnsControl (P29-004)
 
 Forward DNS for hostname targets: address set (v4/v6), resolve latency, distinct `dns_change` events (`ok` / `change` / `nxdomain` / `timeout` / `servfail`). `DnsControlTracker` in poll path; persistence only — not an auto-incident.
+
+### Java: TcpConnectProbe (P29-005)
+
+`host:port` / `[ipv6]:port` alternate to `ping_only`: timed DNS + TCP connect; outcomes success / refused / timeout / DNS error; `HostProbeMode.TCP_CONNECT`; YAML `probe_mode: tcp_connect` and GUI add of ported addresses.

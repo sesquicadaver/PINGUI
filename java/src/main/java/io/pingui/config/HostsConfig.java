@@ -20,15 +20,27 @@ public final class HostsConfig {
     private HostsConfig() {}
 
     public static String normalizeHostEntry(String entry) {
+        if (TcpEndpoint.looksLike(entry)) {
+            return TcpEndpoint.parse(entry).display();
+        }
         return HostAddressParser.normalize(entry);
+    }
+
+    /** Duplicate detection key for session/YAML hosts (supports {@code host:port}). */
+    public static String duplicateKey(String normalizedOrRaw) {
+        String normalized = normalizeHostEntry(normalizedOrRaw);
+        if (TcpEndpoint.looksLike(normalized)) {
+            return TcpEndpoint.parse(normalized).duplicateKey();
+        }
+        return HostAddressParser.duplicateKey(normalized);
     }
 
     public static String validateSessionHost(String host, List<String> existing) {
         String normalized = normalizeHostEntry(host);
-        String key = HostAddressParser.duplicateKey(normalized);
+        String key = duplicateKey(normalized);
         Set<String> seen = new HashSet<>();
         for (String h : existing) {
-            seen.add(HostAddressParser.duplicateKey(h));
+            seen.add(duplicateKey(h));
         }
         if (seen.contains(key)) {
             throw new ConfigError("Duplicate host: " + normalized);
@@ -61,7 +73,7 @@ public final class HostsConfig {
                         "Each host must be a string, got " + entry.getClass().getSimpleName());
             }
             String host = normalizeHostEntry(hostStr);
-            String key = HostAddressParser.duplicateKey(host);
+            String key = duplicateKey(host);
             if (!seen.add(key)) {
                 throw new ConfigError("Duplicate host: " + host);
             }
@@ -79,7 +91,7 @@ public final class HostsConfig {
         Set<String> seen = new HashSet<>();
         for (String entry : hosts) {
             String host = normalizeHostEntry(entry);
-            String key = HostAddressParser.duplicateKey(host);
+            String key = duplicateKey(host);
             if (!seen.add(key)) {
                 throw new ConfigError("Duplicate host: " + host);
             }

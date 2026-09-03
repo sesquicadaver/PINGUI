@@ -124,7 +124,16 @@ final class HostListCell extends ListCell<HostItem> {
         boundItem = item;
         updating = true;
         checkBox.setSelected(item.isEnabled());
-        pingOnlyCheck.setSelected(item.isPingOnly());
+        boolean tcpTarget = io.pingui.config.TcpEndpoint.looksLike(item.getHost());
+        pingOnlyCheck.setDisable(tcpTarget);
+        pingOnlyCheck.setSelected(!tcpTarget && item.isPingOnly());
+        if (tcpTarget) {
+            pingOnlyCheck.setText(UiI18n.get("host.tcp_connect"));
+            pingOnlyCheck.setTooltip(new Tooltip(UiI18n.get("host.tcp_connect_tooltip")));
+        } else {
+            pingOnlyCheck.setText(UiI18n.get("host.ping_only"));
+            pingOnlyCheck.setTooltip(null);
+        }
         hostLabel.textProperty().bind(item.hostProperty());
         tagsLabel.textProperty().bind(item.tagsTextProperty());
         tagsLabel.visibleProperty().bind(item.tagsTextProperty().isNotEmpty());

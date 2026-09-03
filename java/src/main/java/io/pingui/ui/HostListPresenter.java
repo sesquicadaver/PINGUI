@@ -305,9 +305,14 @@ final class HostListPresenter {
         try {
             SessionStore session = store.get();
             String host = HostsConfig.validateSessionHost(raw, session.hosts());
-            monitor.get().addHost(host, false, false);
-            session.addHost(host, false, false, PingExpertEntry.empty());
+            HostProbeMode mode =
+                    io.pingui.config.TcpEndpoint.looksLike(host) ? HostProbeMode.TCP_CONNECT : HostProbeMode.TRACE;
+            monitor.get().addHost(host, false, mode);
+            session.addHost(host, false, mode, PingExpertEntry.empty());
             HostItem item = new HostItem(host, false);
+            if (mode == HostProbeMode.TCP_CONNECT) {
+                item.pingOnlyProperty().set(false);
+            }
             hostItems.add(item);
             if (!item.hasTag(activeFilterTag)) {
                 selectAllChip();
@@ -344,6 +349,13 @@ final class HostListPresenter {
             String renamed = HostsConfig.validateSessionHost(newText, others);
             monitor.get().renameHost(oldHost, renamed);
             session.renameHost(oldHost, renamed);
+            if (io.pingui.config.TcpEndpoint.looksLike(renamed)) {
+                session.setProbeMode(renamed, HostProbeMode.TCP_CONNECT);
+                monitor.get().setHostProbeMode(renamed, HostProbeMode.TCP_CONNECT);
+            } else if (io.pingui.config.TcpEndpoint.looksLike(oldHost)) {
+                session.setProbeMode(renamed, HostProbeMode.TRACE);
+                monitor.get().setHostProbeMode(renamed, HostProbeMode.TRACE);
+            }
             selected.hostProperty().set(renamed);
             hostInput.setText(renamed);
             onHostRenamed.accept(oldHost, renamed);
@@ -471,6 +483,14 @@ final class HostListPresenter {
 
     private void onTogglePingOnly(HostItem item, boolean pingOnly) {
         try {
+            if (io.pingui.config.TcpEndpoint.looksLike(item.getHost())) {
+                updatingList = true;
+                item.pingOnlyProperty().set(false);
+                updatingList = false;
+                userFeedback.error(UiI18n.get("host.tcp_connect_no_ping_only"));
+                syncMetrics(item);
+                return;
+            }
             SessionStore session = store.get();
             HostProbeMode mode = pingOnly ? HostProbeMode.PING_ONLY : HostProbeMode.TRACE;
             // Session first: resolver (store::getProbeMode) matches intended mode before monitor flips.

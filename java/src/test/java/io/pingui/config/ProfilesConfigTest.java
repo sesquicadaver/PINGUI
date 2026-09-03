@@ -522,6 +522,30 @@ class ProfilesConfigTest {
     }
 
     @Test
+    void loadTcpConnectHostPortRoundTrip() throws Exception {
+        Path path = tempDir.resolve("tcp-connect.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    hosts:
+                      - address: "example.com:443"
+                        enabled: true
+                        probe_mode: tcp_connect
+                """);
+        TracingProfile profile = ProfilesConfig.load(path).active();
+        HostEntry host = profile.hosts().get(0);
+        assertEquals("example.com:443", host.address());
+        assertEquals(HostProbeMode.TCP_CONNECT, host.probeModeOverride());
+        ProfilesConfig.save(path, ProfilesConfig.load(path));
+        HostEntry reloaded = ProfilesConfig.load(path).active().hosts().get(0);
+        assertEquals(HostProbeMode.TCP_CONNECT, reloaded.probeModeOverride());
+        assertEquals("example.com:443", reloaded.address());
+    }
+
+    @Test
     void loadHostTagsRoundTrip() throws Exception {
         Path path = tempDir.resolve("tags.yaml");
         Files.writeString(

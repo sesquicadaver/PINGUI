@@ -462,7 +462,7 @@ public final class ProfilesConfig {
         Set<String> seen = new HashSet<>();
         for (Object entry : hostsList) {
             HostEntry parsed = parseHostEntry(entry, profileName);
-            String key = HostAddressParser.duplicateKey(parsed.address());
+            String key = HostsConfig.duplicateKey(parsed.address());
             if (!seen.add(key)) {
                 throw new ConfigError("Duplicate host in profile '" + profileName + "': " + parsed.address());
             }
@@ -487,6 +487,17 @@ public final class ProfilesConfig {
             Object hostProbeModeObj = hostMap.get("probe_mode");
             if (hostProbeModeObj instanceof String hostProbeModeStr && !hostProbeModeStr.isBlank()) {
                 probeModeOverride = HostProbeMode.parse(hostProbeModeStr);
+            }
+            if (probeModeOverride == null && TcpEndpoint.looksLike(normalized)) {
+                probeModeOverride = HostProbeMode.TCP_CONNECT;
+            }
+            if (probeModeOverride == HostProbeMode.TCP_CONNECT && !TcpEndpoint.looksLike(normalized)) {
+                throw new ConfigError(
+                        "Host in profile '" + profileName + "' probe_mode tcp_connect requires address host:port");
+            }
+            if (pingOnly && TcpEndpoint.looksLike(normalized)) {
+                throw new ConfigError("Host in profile '" + profileName
+                        + "' cannot combine ping_only with host:port (use tcp_connect)");
             }
             PingExpertEntry expert = PingExpertEntry.empty();
             Object expertObj = hostMap.get("ping_expert");

@@ -25,13 +25,14 @@ Phase 13 introduces an explicit **`probe_mode`** at profile level with per-host 
 
 ## Decision
 
-### Three monitoring modes (`probe_mode`)
+### Monitoring modes (`probe_mode`)
 
 | Mode | Poll cycle | Hops | Route change |
 |------|------------|------|--------------|
 | **`trace`** | Full traceroute/tracert/raw trace to `max_hops` | Yes, every cycle | Yes (`route_ips` compare) |
 | **`mtr`** | **Continuous per-hop**: one or more hops per cycle (state machine) | Yes, incremental | Yes (when path changes) |
 | **`ping_only`** | Single ping to target (existing `pollHostPingOnly`) | No (empty route) | No (target RTT/loss only) |
+| **`tcp_connect`** (P29-005) | DNS + TCP connect to `host:port` | No (single-hop connect RTT) | No (resolved IP / up-down only) |
 
 **MTR ≠ trace:** do not run a full trace on every tick. `MtrProbe` keeps a TTL/hop cursor and probes the next hop or rotates hops per cycle (details — P13-010).
 
@@ -41,11 +42,14 @@ Phase 13 introduces an explicit **`probe_mode`** at profile level with per-host 
 profiles:
   default:
     interval: 30.0          # default for trace
-    probe_mode: trace       # trace | mtr | ping_only
+    probe_mode: trace       # trace | mtr | ping_only | tcp_connect
     hosts:
       - address: 8.8.8.8
         enabled: true
         probe_mode: ping_only   # optional per-host override
+      - address: example.com:443
+        enabled: true
+        probe_mode: tcp_connect
 ```
 
 **Backward compatibility:**
@@ -59,6 +63,7 @@ profiles:
 | `probe_mode` | Recommended default interval | Note |
 |--------------|-------------------------------|------|
 | `ping_only` | 1–2 s | Light ICMP to target |
+| `tcp_connect` | 1–3 s | DNS + TCP connect; not ICMP |
 | `mtr` | 5–15 s | Per-hop steps; N hops per cycle |
 | `trace` | 30–300 s | Full trace; Windows ≥ 60 s |
 

@@ -14,6 +14,7 @@ class HostPollScheduleTest {
     @Test
     void effectiveIntervalUsesModeDefaults() {
         assertEquals(1.5, HostPollSchedule.effectiveInterval(HostProbeMode.PING_ONLY, 30.0, OptionalDouble.empty()));
+        assertEquals(2.0, HostPollSchedule.effectiveInterval(HostProbeMode.TCP_CONNECT, 30.0, OptionalDouble.empty()));
         assertEquals(10.0, HostPollSchedule.effectiveInterval(HostProbeMode.MTR, 30.0, OptionalDouble.empty()));
         assertEquals(45.0, HostPollSchedule.effectiveInterval(HostProbeMode.TRACE, 45.0, OptionalDouble.empty()));
     }

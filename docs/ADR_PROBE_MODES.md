@@ -32,6 +32,7 @@ PINGUI зараз має два **різні** поняття «режиму»:
 | **`trace`** | Повний traceroute/tracert/raw trace до `max_hops` | Так, кожен цикл | Так (порівняння `route_ips`) |
 | **`mtr`** | **Continuous per-hop**: один або кілька hop-ів за цикл (state machine) | Так, інкрементально | Так (коли змінився шлях) |
 | **`ping_only`** | Один ping до цілі (існуючий `pollHostPingOnly`) | Ні (порожній route) | Ні (лише RTT/loss цілі) |
+| **`tcp_connect`** (P29-005) | DNS + TCP connect до `host:port` | Ні (single-hop connect RTT) | Ні (лише resolved IP / up-down) |
 
 **MTR ≠ trace:** не запускати повний trace на кожен tick. `MtrProbe` тримає курсор TTL/hop, probe-ить наступний hop або ротацію hop-ів за цикл (деталі — P13-010).
 
@@ -41,11 +42,14 @@ PINGUI зараз має два **різні** поняття «режиму»:
 profiles:
   default:
     interval: 30.0          # default для trace
-    probe_mode: trace       # trace | mtr | ping_only
+    probe_mode: trace       # trace | mtr | ping_only | tcp_connect
     hosts:
       - address: 8.8.8.8
         enabled: true
         probe_mode: ping_only   # optional per-host override
+      - address: example.com:443
+        enabled: true
+        probe_mode: tcp_connect
 ```
 
 **Backward compatibility:**
@@ -59,6 +63,7 @@ profiles:
 | `probe_mode` | Рекомендований default interval | Примітка |
 |--------------|----------------------------------|----------|
 | `ping_only` | 1–2 с | Легкий ICMP до цілі |
+| `tcp_connect` | 1–3 с | DNS + TCP connect; не ICMP |
 | `mtr` | 5–15 с | Per-hop кроки; N hop за цикл |
 | `trace` | 30–300 с | Повний trace; Windows ≥ 60 с |
 
