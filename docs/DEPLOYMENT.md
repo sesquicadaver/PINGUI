@@ -358,8 +358,9 @@ Session persistence (`host_session` / `persistence_event`) — окремий ш
 | Файл БД | `--session-db PATH`, YAML `persistence.session_db`, або GUI **Налаштування → База даних…** |
 | Метрики маршруту | Таблиця `host_session` (schema v8: `id` + `address`) + дочірні hop/history таблиці |
 | Події | `persistence_event` (`host_id` FK; `route_change`, `probe_error`, …) |
+| Інциденти | `incident` (`host_id`; FIRING/RESOLVED/ack; P30-002) |
 
-**Схема:** Java `SCHEMA_VERSION = 8`. Старі `.db` (v7 і нижче) **не мігруються** — видаліть файл і створіть наново ([ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md)).
+**Схема:** Java `SCHEMA_VERSION = 9`. Старі `.db` (v8 і нижче) **не мігруються** — видаліть файл і створіть наново ([ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md)).
 
 **Запис у БД:** після підключення SQLite увімкніть чекбокс цілі в списку хостів — legacy YAML за замовчуванням має `enabled: false`, без активного моніторингу маршрут і `hop_stats` не оновлюються. Рядки `host_session` з’являються одразу при connect; маршрут — після першого trace; ping history — після першого poll (авто-`ping` цілі, якщо Expert ping вимкнено). **Історія змін:** перший trace дає рядок «Початковий маршрут»; наступні — лише при зміні IP-ланцюга.
 

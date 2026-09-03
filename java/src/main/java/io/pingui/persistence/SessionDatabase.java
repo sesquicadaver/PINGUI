@@ -14,6 +14,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -23,19 +24,20 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalDouble;
 import java.util.OptionalLong;
 
 /**
- * SQLite persistence for per-host session metrics (P11-010 / P27-003 / P30-001) and telemetry
- * archive (P16 / P27).
+ * SQLite persistence for per-host session metrics (P11-010 / P27-003 / P30-001 / P30-002) and
+ * telemetry archive (P16 / P27).
  *
- * <p>Schema v8: stable {@code host_session.id} (INTEGER); child tables and {@code
- * persistence_event} reference {@code host_id}. Public API remains address-keyed. Legacy schema
- * versions are rejected (delete and recreate the DB file).
+ * <p>Schema v9: stable {@code host_session.id}; {@code incident} table for quality FIRING/RESOLVED;
+ * child tables and {@code persistence_event} use {@code host_id}. Public API remains address-keyed.
+ * Legacy schema versions are rejected (delete and recreate the DB file).
  */
 public final class SessionDatabase implements AutoCloseable {
-    /** Current Java session DB schema (v8 = stable host id, P30-001). */
-    public static final int SCHEMA_VERSION = 8;
+    /** Current Java session DB schema (v9 = incident table, P30-002). */
+    public static final int SCHEMA_VERSION = 9;
 
     private static final String ROUTE_CURRENT = "current";
     private static final String ROUTE_PREVIOUS = "previous";
@@ -377,6 +379,231 @@ public final class SessionDatabase implements AutoCloseable {
     }
 
     /**
+     * Opens or refreshes a FIRING incident for {@code host}/{@code kind} (P30-002). Same open kind
+     * increments {@code occurrences}.
+     *
+     * @return incident id
+     */
+    public synchronized long openOrRefreshIncident(
+            String host, String kind, String severity, Instant startedAt, Double peakValue, String detailsJson) {
+        Objects.requireNonNull(host, "host");
+        Objects.requireNonNull(kind, "kind");
+        Objects.requireNonNull(severity, "severity");
+        Instant when = startedAt != null ? startedAt : Instant.now();
+        String details = detailsJson == null || detailsJson.isBlank() ? "{}" : detailsJson;
+        try {
+            long hostId = requireHostId(host);
+            OptionalLong openId = findOpenIncidentId(hostId, kind);
+            if (openId.isPresent()) {
+                try (PreparedStatement ps = connection.prepareStatement(
+                        """
+                        UPDATE incident
+                        SET occurrences = occurrences + 1,
+                            peak_value = CASE
+                                WHEN ? IS NOT NULL AND (peak_value IS NULL OR ? > peak_value) THEN ?
+                                ELSE peak_value
+                            END,
+                            details_json = ?
+                        WHERE id = ?
+                        """)) {
+                    if (peakValue == null) {
+                        ps.setObject(1, null);
+                        ps.setObject(2, null);
+                        ps.setObject(3, null);
+                    } else {
+                        ps.setDouble(1, peakValue);
+                        ps.setDouble(2, peakValue);
+                        ps.setDouble(3, peakValue);
+                    }
+                    ps.setString(4, details);
+                    ps.setLong(5, openId.getAsLong());
+                    ps.executeUpdate();
+                }
+                connection.commit();
+                return openId.getAsLong();
+            }
+            try (PreparedStatement ps = connection.prepareStatement(
+                    """
+                    INSERT INTO incident(
+                        host_id, kind, severity, state, started_at, ended_at, acknowledged_at,
+                        occurrences, peak_value, details_json)
+                    VALUES (?, ?, ?, ?, ?, NULL, NULL, 1, ?, ?)
+                    """)) {
+                ps.setLong(1, hostId);
+                ps.setString(2, kind);
+                ps.setString(3, severity);
+                ps.setString(4, IncidentRecord.STATE_FIRING);
+                ps.setString(5, ISO_UTC.format(when));
+                if (peakValue == null) {
+                    ps.setObject(6, null);
+                } else {
+                    ps.setDouble(6, peakValue);
+                }
+                ps.setString(7, details);
+                ps.executeUpdate();
+            }
+            long id;
+            try (PreparedStatement ps = connection.prepareStatement("SELECT last_insert_rowid()");
+                    ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                id = rs.getLong(1);
+            }
+            connection.commit();
+            return id;
+        } catch (SQLException ex) {
+            rollbackQuietly();
+            throw new PersistenceException("Failed to open incident for " + host + "/" + kind, ex);
+        }
+    }
+
+    /**
+     * Resolves the open FIRING incident for {@code host}/{@code kind}, if any.
+     *
+     * @return true when a row was updated
+     */
+    public synchronized boolean resolveIncident(String host, String kind, Instant endedAt) {
+        Objects.requireNonNull(host, "host");
+        Objects.requireNonNull(kind, "kind");
+        Instant when = endedAt != null ? endedAt : Instant.now();
+        try {
+            OptionalLong hostId = findHostId(host);
+            if (hostId.isEmpty()) {
+                return false;
+            }
+            OptionalLong openId = findOpenIncidentId(hostId.getAsLong(), kind);
+            if (openId.isEmpty()) {
+                return false;
+            }
+            try (PreparedStatement ps = connection.prepareStatement(
+                    """
+                    UPDATE incident
+                    SET state = ?, ended_at = ?
+                    WHERE id = ?
+                    """)) {
+                ps.setString(1, IncidentRecord.STATE_RESOLVED);
+                ps.setString(2, ISO_UTC.format(when));
+                ps.setLong(3, openId.getAsLong());
+                int updated = ps.executeUpdate();
+                connection.commit();
+                return updated > 0;
+            }
+        } catch (SQLException ex) {
+            rollbackQuietly();
+            throw new PersistenceException("Failed to resolve incident for " + host + "/" + kind, ex);
+        }
+    }
+
+    /**
+     * Sets {@code acknowledged_at} on all open FIRING incidents for {@code host}.
+     *
+     * @return number of rows updated
+     */
+    public synchronized int acknowledgeOpenIncidents(String host, Instant when) {
+        Objects.requireNonNull(host, "host");
+        Instant at = when != null ? when : Instant.now();
+        try {
+            OptionalLong hostId = findHostId(host);
+            if (hostId.isEmpty()) {
+                return 0;
+            }
+            try (PreparedStatement ps = connection.prepareStatement(
+                    """
+                    UPDATE incident
+                    SET acknowledged_at = ?
+                    WHERE host_id = ? AND state = ? AND ended_at IS NULL
+                    """)) {
+                ps.setString(1, ISO_UTC.format(at));
+                ps.setLong(2, hostId.getAsLong());
+                ps.setString(3, IncidentRecord.STATE_FIRING);
+                int updated = ps.executeUpdate();
+                connection.commit();
+                return updated;
+            }
+        } catch (SQLException ex) {
+            rollbackQuietly();
+            throw new PersistenceException("Failed to acknowledge incidents for " + host, ex);
+        }
+    }
+
+    /** Active (FIRING, no end) incidents, newest first. */
+    public synchronized List<IncidentRecord> listActiveIncidents(int limit) {
+        if (limit < 1) {
+            throw new IllegalArgumentException("limit must be >= 1");
+        }
+        try (PreparedStatement ps = connection.prepareStatement(
+                """
+                SELECT i.id, i.host_id, hs.address, i.kind, i.severity, i.state,
+                       i.started_at, i.ended_at, i.acknowledged_at,
+                       i.occurrences, i.peak_value, i.details_json
+                FROM incident i
+                JOIN host_session hs ON hs.id = i.host_id
+                WHERE i.state = ? AND i.ended_at IS NULL
+                ORDER BY i.started_at DESC
+                LIMIT ?
+                """)) {
+            ps.setString(1, IncidentRecord.STATE_FIRING);
+            ps.setInt(2, limit);
+            return readIncidentRows(ps);
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to list active incidents", ex);
+        }
+    }
+
+    /** Incidents for {@code host} address, newest first. */
+    public synchronized List<IncidentRecord> listIncidents(String host, int limit) {
+        Objects.requireNonNull(host, "host");
+        if (limit < 1) {
+            throw new IllegalArgumentException("limit must be >= 1");
+        }
+        try (PreparedStatement ps = connection.prepareStatement(
+                """
+                SELECT i.id, i.host_id, hs.address, i.kind, i.severity, i.state,
+                       i.started_at, i.ended_at, i.acknowledged_at,
+                       i.occurrences, i.peak_value, i.details_json
+                FROM incident i
+                JOIN host_session hs ON hs.id = i.host_id
+                WHERE hs.address = ?
+                ORDER BY i.started_at DESC
+                LIMIT ?
+                """)) {
+            ps.setString(1, host);
+            ps.setInt(2, limit);
+            return readIncidentRows(ps);
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to list incidents for " + host, ex);
+        }
+    }
+
+    /**
+     * Mean resolved duration in seconds for {@code kind} (MTTR helper). Uses columns only — no
+     * {@code details_json} parsing.
+     */
+    public synchronized OptionalDouble averageResolvedDurationSeconds(String kind) {
+        Objects.requireNonNull(kind, "kind");
+        try (PreparedStatement ps = connection.prepareStatement(
+                """
+                SELECT started_at, ended_at FROM incident
+                WHERE kind = ? AND state = ? AND ended_at IS NOT NULL
+                """)) {
+            ps.setString(1, kind);
+            ps.setString(2, IncidentRecord.STATE_RESOLVED);
+            try (ResultSet rs = ps.executeQuery()) {
+                double sum = 0;
+                int count = 0;
+                while (rs.next()) {
+                    Instant start = Instant.parse(rs.getString(1));
+                    Instant end = Instant.parse(rs.getString(2));
+                    sum += Duration.between(start, end).toMillis() / 1000.0;
+                    count++;
+                }
+                return count == 0 ? OptionalDouble.empty() : OptionalDouble.of(sum / count);
+            }
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to compute average duration for " + kind, ex);
+        }
+    }
+
+    /**
      * Appends one telemetry sample row (P16-020 / P27-001). Columns are SSOT; dump rebuilds JSON.
      * Host remains the address string (no FK in v8).
      */
@@ -652,6 +879,7 @@ public final class SessionDatabase implements AutoCloseable {
                     CREATE INDEX IF NOT EXISTS idx_pe_host_type_time
                         ON persistence_event(host_id, event_type, observed_at)
                     """);
+            createIncidentTable(statement);
             createTelemetryTables(statement);
         }
         if (existingVersion == null) {
@@ -1004,6 +1232,81 @@ public final class SessionDatabase implements AutoCloseable {
                         rs.getString(8),
                         rs.getString(9),
                         Instant.parse(rs.getString(10))));
+            }
+            return List.copyOf(rows);
+        }
+    }
+
+    private static void createIncidentTable(Statement statement) throws SQLException {
+        statement.execute(
+                """
+                CREATE TABLE IF NOT EXISTS incident (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    host_id INTEGER NOT NULL,
+                    kind TEXT NOT NULL,
+                    severity TEXT NOT NULL,
+                    state TEXT NOT NULL,
+                    started_at TEXT NOT NULL,
+                    ended_at TEXT,
+                    acknowledged_at TEXT,
+                    occurrences INTEGER NOT NULL DEFAULT 1,
+                    peak_value REAL,
+                    details_json TEXT NOT NULL DEFAULT '{}',
+                    FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
+                )
+                """);
+        statement.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_incident_host_state
+                    ON incident(host_id, state, started_at DESC)
+                """);
+        statement.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_incident_active
+                    ON incident(state, severity, started_at DESC)
+                """);
+    }
+
+    private OptionalLong findOpenIncidentId(long hostId, String kind) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement(
+                """
+                SELECT id FROM incident
+                WHERE host_id = ? AND kind = ? AND state = ? AND ended_at IS NULL
+                ORDER BY started_at DESC
+                LIMIT 1
+                """)) {
+            ps.setLong(1, hostId);
+            ps.setString(2, kind);
+            ps.setString(3, IncidentRecord.STATE_FIRING);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return OptionalLong.empty();
+                }
+                return OptionalLong.of(rs.getLong(1));
+            }
+        }
+    }
+
+    private static List<IncidentRecord> readIncidentRows(PreparedStatement ps) throws SQLException {
+        try (ResultSet rs = ps.executeQuery()) {
+            List<IncidentRecord> rows = new ArrayList<>();
+            while (rs.next()) {
+                String ended = rs.getString(8);
+                String acked = rs.getString(9);
+                Object peak = rs.getObject(11);
+                rows.add(new IncidentRecord(
+                        rs.getLong(1),
+                        rs.getLong(2),
+                        rs.getString(3),
+                        rs.getString(4),
+                        rs.getString(5),
+                        rs.getString(6),
+                        Instant.parse(rs.getString(7)),
+                        ended == null ? null : Instant.parse(ended),
+                        acked == null ? null : Instant.parse(acked),
+                        rs.getInt(10),
+                        peak == null ? null : rs.getDouble(11),
+                        rs.getString(12)));
             }
             return List.copyOf(rows);
         }
