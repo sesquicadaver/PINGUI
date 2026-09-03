@@ -309,7 +309,9 @@ class MonitorServiceTest {
             });
             service.addHost("8.8.8.8", true);
             long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(20);
-            while (database.countEvents(PersistenceEventType.ENDPOINT_DOWN) < 1 && System.nanoTime() < deadline) {
+            while ((database.countEvents(PersistenceEventType.ENDPOINT_DOWN) < 1
+                            || alerts.qualityEvents().isEmpty())
+                    && System.nanoTime() < deadline) {
                 Thread.sleep(50);
             }
             assertEquals(1, database.countEvents(PersistenceEventType.ENDPOINT_DOWN));
