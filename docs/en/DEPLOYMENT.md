@@ -361,6 +361,7 @@ Session persistence (`host_session` / `persistence_event`) is a separate layer; 
 | Incidents | `incident` (`host_id`; FIRING/RESOLVED/ack; P30-002) |
 | Poll history | `poll_result` (canonical poll aggregate; P30-003) |
 | Routes | `route` (deduped signature + hops_json; P30-004) |
+| Rollups | `metric_rollup` (5m/1h; retention `--poll-retention`; P30-005) |
 
 **Schema:** Java `SCHEMA_VERSION = 11`. Older `.db` files (v10 and below) are **not migrated** — delete the file and recreate ([ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md)).
 

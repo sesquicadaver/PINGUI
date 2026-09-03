@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P30-005** |
+| **Current task** | **P30-006** |
 | **Phase** | 30 — SQLite schema evolution (stable host id / incident / poll / route) |
-| **DoD (short)** | `metric_rollup` + bounded retention |
+| **DoD (short)** | RO export conn / integrity_check / backup note |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -170,10 +170,10 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 124 | **P30-002** | [x] | `incident` table (FIRING/RESOLVED, duration, ack) |
 | 125 | **P30-003** | [x] | `poll_result` canonical poll aggregate |
 | 126 | **P30-004** | [x] | Deduped `route` (signature + hops_json) |
-| 127 | **P30-005** | [ ] | `metric_rollup` + bounded retention |
+| 127 | **P30-005** | [x] | `metric_rollup` + bounded retention |
 | 128 | **P30-006** | [ ] | RO export conn / integrity_check / backup note |
 
-**Queue status:** **NEXT = P30-005** (phase 30; P30-004 [x]; Java-first; delete/recreate `.db`).
+**Queue status:** **NEXT = P30-006** (phase 30; P30-005 [x]; Java-first; delete/recreate `.db`).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -953,7 +953,7 @@ flowchart TD
 
 **Context:** `pingui-evo-db.md`. Schema v7 normalized hops but kept address as PK. Evolve for historical analysis **without** replacing SQLite/ORM. **No legacy `.db` migration** — delete & recreate (same as P27). ADR: [ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md).
 
-**Queue:** after P29; **NEXT = P30-005**.
+**Queue:** after P29; **NEXT = P30-006**.
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
@@ -961,7 +961,7 @@ flowchart TD
 | **P30-002** | [x] Incident table | `SessionDatabase`, `IncidentRecord`, `PersistenceEventWriter`, tests | schema v9; `incident` on `host_id`; FIRING/RESOLVED/ack; MTTR from columns; wire quality+ack |
 | **P30-003** | [x] poll_result | `SessionDatabase`, `PollResultRecord`, `PollResultEffects`, `MonitorService`, tests | schema v10; canonical poll aggregate (RTT/loss/reachable/duration/error); wire after poll; do not duplicate telemetry_sample |
 | **P30-004** | [x] Deduped route | `SessionDatabase`, `RouteSignature`, `RouteRecord`, `PollResultEffects`, tests | schema v11; `route(signature, hops_json, seen_count)`; UNIQUE(host_id, signature); `poll_result.route_id` |
-| **P30-005** | [ ] Rollup + retention | `SessionDatabase`, policy | `metric_rollup` + bounded retention tiers |
+| **P30-005** | [x] Rollup + retention | `SessionDatabase`, `PollResultRetentionJob`, CLI `--poll-retention` | schema v12; `metric_rollup` + bounded retention (7d raw / 5m→90d / 1h beyond) |
 | **P30-006** | [ ] Export reliability | `SessionDatabase`, export | RO connection for long export; integrity_check CLI; busy_timeout already in P30-001 |
 
 **Out of scope:** Postgres desktop; ORM; full hop/ASN/DNS IP normalization; silent migrate.
@@ -1053,7 +1053,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P30-005**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P30-006**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

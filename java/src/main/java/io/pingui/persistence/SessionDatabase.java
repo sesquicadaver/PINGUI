@@ -30,13 +30,13 @@ import java.util.OptionalLong;
 /**
  * SQLite persistence for per-host session metrics (P11-010 / P27 / P30) and telemetry archive (P16).
  *
- * <p>Schema v11: stable {@code host_session.id}; {@code incident}; {@code poll_result}; deduplicated
- * {@code route} (signature + hops_json). Public API remains address-keyed. Legacy schema versions
- * are rejected (delete and recreate the DB file).
+ * <p>Schema v12: stable {@code host_session.id}; {@code incident}; {@code poll_result}; deduplicated
+ * {@code route}; {@code metric_rollup} with bounded poll retention. Public API remains address-keyed.
+ * Legacy schema versions are rejected (delete and recreate the DB file).
  */
 public final class SessionDatabase implements AutoCloseable {
-    /** Current Java session DB schema (v11 = deduped route, P30-004). */
-    public static final int SCHEMA_VERSION = 11;
+    /** Current Java session DB schema (v12 = metric_rollup + poll retention, P30-005). */
+    public static final int SCHEMA_VERSION = 12;
 
     private static final String ROUTE_CURRENT = "current";
     private static final String ROUTE_PREVIOUS = "previous";
@@ -777,6 +777,199 @@ public final class SessionDatabase implements AutoCloseable {
         return countTable("route");
     }
 
+    /** All poll_result rows with {@code observed_at} strictly before {@code cutoff} (oldest first). */
+    public synchronized List<PollResultRecord> listPollResultsBefore(Instant cutoff) {
+        Objects.requireNonNull(cutoff, "cutoff");
+        String cutoffIso = ISO_UTC.format(cutoff);
+        try (PreparedStatement ps = connection.prepareStatement(
+                """
+                SELECT p.id, p.host_id, hs.address, p.observed_at, p.probe_mode, p.reachable,
+                       p.terminal_rtt_ms, p.jitter_ms, p.loss_percent, p.duration_ms,
+                       p.route_id, p.error_code
+                FROM poll_result p
+                JOIN host_session hs ON hs.id = p.host_id
+                WHERE p.observed_at < ?
+                ORDER BY p.observed_at ASC, p.id ASC
+                """)) {
+            ps.setString(1, cutoffIso);
+            return readPollResultRows(ps);
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to list poll_result before " + cutoffIso, ex);
+        }
+    }
+
+    /** Deletes poll_result rows with {@code observed_at} strictly before {@code cutoff}. */
+    public synchronized int deletePollResultsBefore(Instant cutoff) {
+        Objects.requireNonNull(cutoff, "cutoff");
+        String cutoffIso = ISO_UTC.format(cutoff);
+        try (PreparedStatement ps = connection.prepareStatement("DELETE FROM poll_result WHERE observed_at < ?")) {
+            ps.setString(1, cutoffIso);
+            int deleted = ps.executeUpdate();
+            connection.commit();
+            return deleted;
+        } catch (SQLException ex) {
+            rollbackQuietly();
+            throw new PersistenceException("Failed to delete poll_result before " + cutoffIso, ex);
+        }
+    }
+
+    /**
+     * Upserts a metric rollup bucket (P30-005). Weighted merge when the bucket already exists.
+     */
+    public synchronized void upsertMetricRollup(
+            long hostId,
+            Instant bucketStart,
+            int bucketSizeSeconds,
+            int samples,
+            Double uptimeRatio,
+            Double rttMin,
+            Double rttAvg,
+            Double rttMax,
+            Double lossAvg) {
+        Objects.requireNonNull(bucketStart, "bucketStart");
+        if (bucketSizeSeconds < 1) {
+            throw new IllegalArgumentException("bucketSizeSeconds must be >= 1");
+        }
+        if (samples < 1) {
+            throw new IllegalArgumentException("samples must be >= 1");
+        }
+        String startIso = ISO_UTC.format(bucketStart);
+        try (PreparedStatement ps = connection.prepareStatement(
+                """
+                INSERT INTO metric_rollup(
+                    host_id, bucket_start, bucket_size, samples,
+                    uptime_ratio, rtt_min, rtt_avg, rtt_max, loss_avg)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(host_id, bucket_start, bucket_size) DO UPDATE SET
+                    samples = metric_rollup.samples + excluded.samples,
+                    uptime_ratio = CASE
+                        WHEN metric_rollup.uptime_ratio IS NULL THEN excluded.uptime_ratio
+                        WHEN excluded.uptime_ratio IS NULL THEN metric_rollup.uptime_ratio
+                        ELSE (metric_rollup.uptime_ratio * metric_rollup.samples
+                              + excluded.uptime_ratio * excluded.samples)
+                             / (metric_rollup.samples + excluded.samples)
+                    END,
+                    rtt_min = CASE
+                        WHEN metric_rollup.rtt_min IS NULL THEN excluded.rtt_min
+                        WHEN excluded.rtt_min IS NULL THEN metric_rollup.rtt_min
+                        ELSE MIN(metric_rollup.rtt_min, excluded.rtt_min)
+                    END,
+                    rtt_max = CASE
+                        WHEN metric_rollup.rtt_max IS NULL THEN excluded.rtt_max
+                        WHEN excluded.rtt_max IS NULL THEN metric_rollup.rtt_max
+                        ELSE MAX(metric_rollup.rtt_max, excluded.rtt_max)
+                    END,
+                    rtt_avg = CASE
+                        WHEN metric_rollup.rtt_avg IS NULL THEN excluded.rtt_avg
+                        WHEN excluded.rtt_avg IS NULL THEN metric_rollup.rtt_avg
+                        ELSE (metric_rollup.rtt_avg * metric_rollup.samples
+                              + excluded.rtt_avg * excluded.samples)
+                             / (metric_rollup.samples + excluded.samples)
+                    END,
+                    loss_avg = CASE
+                        WHEN metric_rollup.loss_avg IS NULL THEN excluded.loss_avg
+                        WHEN excluded.loss_avg IS NULL THEN metric_rollup.loss_avg
+                        ELSE (metric_rollup.loss_avg * metric_rollup.samples
+                              + excluded.loss_avg * excluded.samples)
+                             / (metric_rollup.samples + excluded.samples)
+                    END
+                """)) {
+            ps.setLong(1, hostId);
+            ps.setString(2, startIso);
+            ps.setInt(3, bucketSizeSeconds);
+            ps.setInt(4, samples);
+            setNullableDouble(ps, 5, uptimeRatio);
+            setNullableDouble(ps, 6, rttMin);
+            setNullableDouble(ps, 7, rttAvg);
+            setNullableDouble(ps, 8, rttMax);
+            setNullableDouble(ps, 9, lossAvg);
+            ps.executeUpdate();
+            connection.commit();
+        } catch (SQLException ex) {
+            rollbackQuietly();
+            throw new PersistenceException("Failed to upsert metric_rollup for host_id=" + hostId, ex);
+        }
+    }
+
+    /** Rollups for {@code host} address and bucket size, newest bucket first. */
+    public synchronized List<MetricRollupRecord> listMetricRollups(String host, int bucketSizeSeconds, int limit) {
+        Objects.requireNonNull(host, "host");
+        if (bucketSizeSeconds < 1) {
+            throw new IllegalArgumentException("bucketSizeSeconds must be >= 1");
+        }
+        if (limit < 1) {
+            throw new IllegalArgumentException("limit must be >= 1");
+        }
+        try (PreparedStatement ps = connection.prepareStatement(
+                """
+                SELECT m.host_id, hs.address, m.bucket_start, m.bucket_size, m.samples,
+                       m.uptime_ratio, m.rtt_min, m.rtt_avg, m.rtt_max, m.loss_avg
+                FROM metric_rollup m
+                JOIN host_session hs ON hs.id = m.host_id
+                WHERE hs.address = ? AND m.bucket_size = ?
+                ORDER BY m.bucket_start DESC
+                LIMIT ?
+                """)) {
+            ps.setString(1, host);
+            ps.setInt(2, bucketSizeSeconds);
+            ps.setInt(3, limit);
+            return readMetricRollupRows(ps);
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to list metric_rollup for " + host, ex);
+        }
+    }
+
+    /** Rollups of {@code bucketSizeSeconds} with {@code bucket_start} strictly before {@code cutoff}. */
+    public synchronized List<MetricRollupRecord> listMetricRollupsBefore(int bucketSizeSeconds, Instant cutoff) {
+        Objects.requireNonNull(cutoff, "cutoff");
+        if (bucketSizeSeconds < 1) {
+            throw new IllegalArgumentException("bucketSizeSeconds must be >= 1");
+        }
+        String cutoffIso = ISO_UTC.format(cutoff);
+        try (PreparedStatement ps = connection.prepareStatement(
+                """
+                SELECT m.host_id, hs.address, m.bucket_start, m.bucket_size, m.samples,
+                       m.uptime_ratio, m.rtt_min, m.rtt_avg, m.rtt_max, m.loss_avg
+                FROM metric_rollup m
+                JOIN host_session hs ON hs.id = m.host_id
+                WHERE m.bucket_size = ? AND m.bucket_start < ?
+                ORDER BY m.bucket_start ASC
+                """)) {
+            ps.setInt(1, bucketSizeSeconds);
+            ps.setString(2, cutoffIso);
+            return readMetricRollupRows(ps);
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to list metric_rollup before " + cutoffIso, ex);
+        }
+    }
+
+    /** Deletes metric_rollup rows for {@code bucketSizeSeconds} with start strictly before cutoff. */
+    public synchronized int deleteMetricRollupsBefore(int bucketSizeSeconds, Instant cutoff) {
+        Objects.requireNonNull(cutoff, "cutoff");
+        if (bucketSizeSeconds < 1) {
+            throw new IllegalArgumentException("bucketSizeSeconds must be >= 1");
+        }
+        String cutoffIso = ISO_UTC.format(cutoff);
+        try (PreparedStatement ps = connection.prepareStatement(
+                """
+                DELETE FROM metric_rollup
+                WHERE bucket_size = ? AND bucket_start < ?
+                """)) {
+            ps.setInt(1, bucketSizeSeconds);
+            ps.setString(2, cutoffIso);
+            int deleted = ps.executeUpdate();
+            connection.commit();
+            return deleted;
+        } catch (SQLException ex) {
+            rollbackQuietly();
+            throw new PersistenceException("Failed to delete metric_rollup before " + cutoffIso, ex);
+        }
+    }
+
+    public synchronized int countMetricRollups() {
+        return countTable("metric_rollup");
+    }
+
     /**
      * Appends one telemetry sample row (P16-020 / P27-001). Columns are SSOT; dump rebuilds JSON.
      * Host remains the address string (no FK in v8).
@@ -1056,6 +1249,7 @@ public final class SessionDatabase implements AutoCloseable {
             createIncidentTable(statement);
             createRouteTable(statement);
             createPollResultTable(statement);
+            createMetricRollupTable(statement);
             createTelemetryTables(statement);
         }
         if (existingVersion == null) {
@@ -1408,6 +1602,50 @@ public final class SessionDatabase implements AutoCloseable {
                         rs.getString(8),
                         rs.getString(9),
                         Instant.parse(rs.getString(10))));
+            }
+            return List.copyOf(rows);
+        }
+    }
+
+    private static void createMetricRollupTable(Statement statement) throws SQLException {
+        statement.execute(
+                """
+                CREATE TABLE IF NOT EXISTS metric_rollup (
+                    host_id INTEGER NOT NULL,
+                    bucket_start TEXT NOT NULL,
+                    bucket_size INTEGER NOT NULL,
+                    samples INTEGER NOT NULL,
+                    uptime_ratio REAL,
+                    rtt_min REAL,
+                    rtt_avg REAL,
+                    rtt_max REAL,
+                    loss_avg REAL,
+                    PRIMARY KEY(host_id, bucket_start, bucket_size),
+                    FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
+                )
+                """);
+        statement.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_rollup_host_bucket
+                    ON metric_rollup(host_id, bucket_size, bucket_start DESC)
+                """);
+    }
+
+    private static List<MetricRollupRecord> readMetricRollupRows(PreparedStatement ps) throws SQLException {
+        try (ResultSet rs = ps.executeQuery()) {
+            List<MetricRollupRecord> rows = new ArrayList<>();
+            while (rs.next()) {
+                rows.add(new MetricRollupRecord(
+                        rs.getLong(1),
+                        rs.getString(2),
+                        Instant.parse(rs.getString(3)),
+                        rs.getInt(4),
+                        rs.getInt(5),
+                        nullableDouble(rs, 6),
+                        nullableDouble(rs, 7),
+                        nullableDouble(rs, 8),
+                        nullableDouble(rs, 9),
+                        nullableDouble(rs, 10)));
             }
             return List.copyOf(rows);
         }
