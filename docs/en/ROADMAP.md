@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **DONE** |
-| **Phase** | — linear queue exhausted |
-| **DoD (short)** | New work only after an explicit ID in NEXT |
+| **Current task** | **P29-001** |
+| **Phase** | 29 — diagnostic evolution (correlation / timeline / silence / DNS / TCP) |
+| **DoD (short)** | Multi-host problem correlation (shared hop / segment) |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -167,7 +167,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 121 | **P29-004** | [ ] | DNS control (resolve set / latency / change event) |
 | 122 | **P29-005** | [ ] | TCP Connect probe (`host:port`) |
 
-**Queue status:** **NEXT = DONE** (autopilot stops). Queue append **P29-001…005** (phase 29) — awaits an **explicit** NEXT=`P29-001`.
+**Queue status:** active — **NEXT = P29-001** (phase 29; P28 [x]; Java-first).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -929,7 +929,7 @@ flowchart TD
 
 **Context:** After hardening (P26–P28) — features on **existing** probe data (`RouteSnapshot`, RTT/loss, SQLite events), without a heavy NMS. Source: `pingui-evo-func.md`. **Java-first** (GUI/`beta`); Python parity — separate. SNMP / NetFlow / HTTP synthetic / auto-remediation — out of scope.
 
-**Queue:** append after P28; **NEXT stays DONE** until the user explicitly sets `P29-001`.
+**Queue:** after P28; **NEXT = P29-001** (activated).
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
@@ -1028,7 +1028,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **DONE**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P29-001**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

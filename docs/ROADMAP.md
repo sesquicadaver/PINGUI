@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **DONE** |
-| **Фаза** | — лінійна черга вичерпана |
-| **DoD (коротко)** | Нова робота лише після явного ID у NEXT |
+| **Поточна задача** | **P29-001** |
+| **Фаза** | 29 — diagnostic evolution (correlation / timeline / silence / DNS / TCP) |
+| **DoD (коротко)** | Multi-host problem correlation (спільний hop / сегмент) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -167,7 +167,7 @@
 | 121 | **P29-004** | [ ] | DNS control (resolve set / latency / change event) |
 | 122 | **P29-005** | [ ] | TCP Connect probe (`host:port`) |
 
-**Стан черги:** **NEXT = DONE** (автопілот зупиняється). У черзі append **P29-001…005** (фаза 29) — очікує **явного** NEXT=`P29-001`.
+**Стан черги:** активна — **NEXT = P29-001** (фаза 29; P28 [x]; Java-first).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -929,7 +929,7 @@ flowchart TD
 
 **Контекст:** Після hardening (P26–P28) — функції на **наявних** probe-даних (`RouteSnapshot`, RTT/loss, SQLite events), без важкого NMS. Джерело: `pingui-evo-func.md`. **Java-first** (GUI/`beta`); Python parity — окремо. SNMP / NetFlow / HTTP synthetic / auto-remediation — поза scope.
 
-**Черга:** append після P28; **NEXT лишається DONE**, доки користувач явно не поставить `P29-001`.
+**Черга:** після P28; **NEXT = P29-001** (активовано).
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
@@ -1028,7 +1028,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **DONE**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P29-001**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 
