@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **P28-001 — SinkRegistry hang isolation:** bounded pool (8) instead of `newCachedThreadPool`; per-sink busy gate; no sync re-dispatch of hung sink on interrupt; ADR_TELEMETRY §7; NEXT→**P28-002**.
 - **P26-009 — hardening phase close:** `ADR_HARDENING` (UK/EN); CHECKLIST § Hardening smoke; LIVING_SPEC/README/JAVA sync; NEXT→**P28-001**.
 - **P26-008 — latency_high EWMA baseline + UI ETA:** AVG = EWMA α=0.2 (bad samples excluded); `LatencyHighRuleConfig.approximateFiringEta`; Help/Settings copy; ADR §7; NEXT→**P26-009**.
 - **P26-007 — package JaCoCo thresholds:** separate PACKAGE minima (`config`/`probe`/`monitor` ≥85%, `telemetry` ≥80%, `persistence` ≥75%) + BUNDLE ≥80%; UI `io/pingui/ui/**` exclusion explicit; NEXT→**P26-008**.

@@ -31,7 +31,7 @@ A separate follow-up from audit `pimgui-5.md` lives in **phase 28** (queue after
 | Backpressure | Non-blocking bus offers; drop + `failureCount` / metric |
 | Shutdown | Documented flush; contract tests |
 
-Bus details — [ADR_TELEMETRY.md](ADR_TELEMETRY.md) §7. Full hang isolation with a bounded executor — **P28-001**.
+Bus details — [ADR_TELEMETRY.md](ADR_TELEMETRY.md) §7. Hang isolation with a bounded executor — **P28-001 ✅**.
 
 ### 3. SQLite reopen / corrupt (P26-003)
 
@@ -83,14 +83,14 @@ Rule contract — [ADR_ALERT_RULES.md](ADR_ALERT_RULES.md) §7.
 ## Consequences
 
 - Positive: poll more resilient to sink fail; launchers exercised; LOC/coverage gates in CI; latency AVG no longer unbounded mean.
-- Negative: hang isolation and PING_ONLY `inFlight` still in P28; Python session schema parity lags Java v7.
+- Negative: PING_ONLY `inFlight` still in P28-002; Python session schema parity lags Java v7.
 - UI package coverage is deliberately excluded from PACKAGE minima — manual CHECKLIST remains required.
 
 ## Follow-ups (phase 28+)
 
 | ID | Topic |
 |----|-------|
-| **P28-001** | `SinkRegistry` bounded executor + hang isolation |
+| **P28-001** | ✅ `SinkRegistry` bounded executor + hang isolation |
 | **P28-002** | Reserve `inFlight` before `probePool.execute` |
 | **P28-003** | Python `session_db` reject `version != SCHEMA_VERSION` |
 

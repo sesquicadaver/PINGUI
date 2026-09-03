@@ -31,7 +31,7 @@
 | Backpressure | Non-blocking bus offers; drop + `failureCount` / metric |
 | Shutdown | Documented flush; contract tests |
 
-Деталі шини — [ADR_TELEMETRY.md](ADR_TELEMETRY.md) §7. Повна hang-ізоляція bounded executor — **P28-001**.
+Деталі шини — [ADR_TELEMETRY.md](ADR_TELEMETRY.md) §7. Hang-ізоляція bounded executor — **P28-001 ✅**.
 
 ### 3. SQLite reopen / corrupt (P26-003)
 
@@ -83,14 +83,14 @@
 ## Наслідки
 
 - Позитив: poll стійкіший до sink fail; launchers перевірені; LOC/coverage gates у CI; latency AVG не роздувається unbounded mean.
-- Негатив: hang isolation і PING_ONLY `inFlight` ще в P28; Python session schema parity відстає від Java v7.
+- Негатив: PING_ONLY `inFlight` ще в P28-002; Python session schema parity відстає від Java v7.
 - UI package coverage свідомо виключена з PACKAGE minima — manual CHECKLIST лишається обов’язковим.
 
 ## Follow-ups (фаза 28+)
 
 | ID | Тема |
 |----|------|
-| **P28-001** | `SinkRegistry` bounded executor + hang isolation |
+| **P28-001** | ✅ `SinkRegistry` bounded executor + hang isolation |
 | **P28-002** | Reserve `inFlight` before `probePool.execute` |
 | **P28-003** | Python `session_db` reject `version != SCHEMA_VERSION` |
 

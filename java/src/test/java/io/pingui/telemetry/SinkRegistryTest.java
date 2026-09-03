@@ -10,6 +10,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
@@ -173,6 +175,89 @@ class SinkRegistryTest {
     }
 
     @Test
+    void rejectsInvalidSinkPoolSize() {
+        assertThrows(IllegalArgumentException.class, () -> new SinkRegistry(Duration.ofSeconds(1), 0));
+    }
+
+    @Test
+    void hangingSinkTimesOutAndSkipsWhileBusy() throws Exception {
+        SinkRegistry registry = new SinkRegistry(Duration.ofMillis(60));
+        AtomicInteger entered = new AtomicInteger();
+        CountDownLatch hold = new CountDownLatch(1);
+        registry.register(new TelemetrySink() {
+            @Override
+            public String id() {
+                return "hang";
+            }
+
+            @Override
+            public void onSample(MetricSample sample) {
+                entered.incrementAndGet();
+                while (hold.getCount() > 0) {
+                    try {
+                        hold.await(30, TimeUnit.SECONDS);
+                    } catch (InterruptedException ex) {
+                        // Keep hung until hold is released (interrupt from cancel/timeout must not clear busy).
+                    }
+                }
+            }
+
+            @Override
+            public void onEvent(TelemetryEvent event) {}
+        });
+        registry.emitSample(sample());
+        assertEquals(1, entered.get());
+        assertTrue(registry.failureCount() >= 1);
+        assertTrue(registry.isSinkBusy("hang"));
+        long failuresAfterTimeout = registry.failureCount();
+        registry.emitSample(sample());
+        assertEquals(1, entered.get(), "must not start a second call while hung");
+        assertTrue(registry.failureCount() > failuresAfterTimeout);
+        hold.countDown();
+        assertTrue(awaitBusyClear(registry, "hang", 2_000));
+        registry.close();
+    }
+
+    @Test
+    void interruptDuringHangDoesNotSyncRedispatch() throws Exception {
+        SinkRegistry registry = new SinkRegistry(Duration.ofMillis(80));
+        AtomicInteger entered = new AtomicInteger();
+        CountDownLatch inCall = new CountDownLatch(1);
+        CountDownLatch hold = new CountDownLatch(1);
+        registry.register(new TelemetrySink() {
+            @Override
+            public String id() {
+                return "hang";
+            }
+
+            @Override
+            public void onSample(MetricSample sample) {
+                entered.incrementAndGet();
+                inCall.countDown();
+                while (hold.getCount() > 0) {
+                    try {
+                        hold.await(30, TimeUnit.SECONDS);
+                    } catch (InterruptedException ex) {
+                        // Keep hung until hold is released — proves no sync re-dispatch on interrupt.
+                    }
+                }
+            }
+
+            @Override
+            public void onEvent(TelemetryEvent event) {}
+        });
+        Thread worker = new Thread(() -> registry.emitSample(sample()), "sink-interrupt-test");
+        worker.start();
+        assertTrue(inCall.await(2, TimeUnit.SECONDS));
+        worker.interrupt();
+        worker.join(1_000);
+        assertFalse(worker.isAlive(), "caller must not block on sync re-dispatch of hung sink");
+        assertEquals(1, entered.get());
+        hold.countDown();
+        registry.close();
+    }
+
+    @Test
     void sinkFailureDoesNotStopOthers() {
         SinkRegistry registry = new SinkRegistry();
         AtomicInteger calls = new AtomicInteger();
@@ -234,6 +319,18 @@ class SinkRegistryTest {
 
     private static TelemetryEvent event() {
         return TelemetryEvent.probeError("8.8.8.8", "timeout", Map.of("profile", "default"), TS);
+    }
+
+    private static boolean awaitBusyClear(SinkRegistry registry, String id, long timeoutMs)
+            throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMs);
+        while (System.nanoTime() < deadline) {
+            if (!registry.isSinkBusy(id)) {
+                return true;
+            }
+            Thread.sleep(5);
+        }
+        return !registry.isSinkBusy(id);
     }
 
     private static final class RecordingSink implements TelemetrySink {
