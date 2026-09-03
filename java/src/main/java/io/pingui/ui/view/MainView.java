@@ -61,10 +61,10 @@ public final class MainView {
      * cross-coordinator listeners.
      *
      * @param actions orchestration callbacks
-     * @param tagFilterBar host tag filter bar from {@code HostListPresenter}
+     * @param navigationChrome host list filter/sort chrome from {@code HostListPresenter}
      * @return root border pane (menu already set as top)
      */
-    public BorderPane assemble(MainViewActions actions, Node tagFilterBar) {
+    public BorderPane assemble(MainViewActions actions, Node navigationChrome) {
         this.actions = actions;
         profileToolbar.wire(actions);
         hostListPanel.wire(actions);
@@ -75,14 +75,14 @@ public final class MainView {
         hostListPanel.hostList().getStyleClass().add("pingui-host-list");
         statusPanel.statusLabel().getStyleClass().add("pingui-status");
         statusPanel.logArea().getStyleClass().add("pingui-log");
-        if (tagFilterBar != null) {
-            tagFilterBar.getStyleClass().add("pingui-toolbar");
+        if (navigationChrome != null) {
+            navigationChrome.getStyleClass().add("pingui-toolbar");
         }
 
         java.util.ArrayList<Node> leftChildren = new java.util.ArrayList<>();
         leftChildren.add(profileToolbar.bar());
         leftChildren.add(modeToolbar.bar());
-        for (Node node : hostListPanel.chromeWithTagFilter(tagFilterBar)) {
+        for (Node node : hostListPanel.chromeWithNavigation(navigationChrome)) {
             leftChildren.add(node);
         }
         leftChildren.add(statusPanel.statusLabel());

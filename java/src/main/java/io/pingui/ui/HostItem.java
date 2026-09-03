@@ -46,6 +46,9 @@ public final class HostItem {
     private RouteState routeState = RouteState.NOT_TRACED;
     private Severity severity = Severity.MUTED;
     private boolean routeChangedLatched;
+    private Double avgRttMs;
+    private Double lossPct;
+    private long lastRouteChangeEpochMs;
 
     public HostItem(String host, boolean enabled) {
         this(host, enabled, false, List.of());
@@ -151,6 +154,23 @@ public final class HostItem {
         return severity;
     }
 
+    /** Average RTT in ms when metrics are present; otherwise {@code null} (P31-005 sort). */
+    public Double avgRttMs() {
+        return avgRttMs;
+    }
+
+    /** Packet loss percent when metrics are present; otherwise {@code null} (P31-005 sort). */
+    public Double lossPct() {
+        return lossPct;
+    }
+
+    /**
+     * Epoch millis of the last latched route change; {@code 0} when never observed (P31-005 sort).
+     */
+    public long lastRouteChangeEpochMs() {
+        return lastRouteChangeEpochMs;
+    }
+
     /** Poll counters, RTT detail, tags — not shown inline (P31-001). */
     public StringProperty rowDetailsTooltipProperty() {
         return rowDetailsTooltip;
@@ -190,6 +210,7 @@ public final class HostItem {
     /** Latches CHANGED until the next poll snapshot (P31-002). */
     public void markRouteChanged() {
         routeChangedLatched = true;
+        lastRouteChangeEpochMs = System.currentTimeMillis();
         refreshNetworkStates(lastStats);
     }
 
@@ -241,6 +262,8 @@ public final class HostItem {
         rttColumnText.set(formatRttColumn(null));
         lossColumnText.set(formatLossColumn(null));
         lastStats = null;
+        avgRttMs = null;
+        lossPct = null;
         refreshNetworkStates(null);
         refreshRowDetailsTooltip("", "");
     }
@@ -266,6 +289,8 @@ public final class HostItem {
         rttColumnText.set(formatRttColumn(stats != null ? stats.avgMs() : null));
         lossColumnText.set(formatLossColumn(stats));
         lastStats = stats;
+        avgRttMs = stats != null ? stats.avgMs() : null;
+        lossPct = stats != null ? stats.lossPct() : null;
         refreshNetworkStates(stats);
         refreshRowDetailsTooltip(pollText, rttText);
     }

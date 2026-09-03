@@ -56,12 +56,12 @@ public final class HostListPanel {
     }
 
     /**
-     * Layout slot for presenter-owned tag filter bar plus host chrome (D5).
+     * Layout slot for presenter-owned navigation chrome plus host chrome (D5 / P31-005).
      *
      * @return ordered nodes for the left column middle section
      */
-    Node[] chromeWithTagFilter(Node tagFilterBar) {
-        return new Node[] {tagFilterBar, hostList, hostInput, buttons};
+    Node[] chromeWithNavigation(Node navigationChrome) {
+        return new Node[] {navigationChrome, hostList, hostInput, buttons};
     }
 
     ListView<HostItem> hostList() {

@@ -13,6 +13,7 @@
 
 ### Changed
 
+- **P31-005 — host list navigation:** text filter, sort (config/severity/RTT/loss/last change), problems-first, header counters, persisted prefs; NEXT→**P31-006**.
 - **P31-004 — severity model:** Critical/Warning/Notice/Info/Muted → row color, badge, timeline glyph, desktop alert title; red only for Critical; NEXT→**P31-005**.
 - **P31-003 — host inspector:** компактна панель у Extended (metrics/last poll/route/problem + copy/ack/diagnostics); NEXT→**P31-004**.
 - **P31-002 — endpoint vs route states:** незалежні Endpoint (UP/DEGRADED/DOWN/UNKNOWN) і Route (STABLE/CHANGED/INCOMPLETE/NOT TRACED); PING_ONLY/TCP → NOT TRACED без помилкового ✕; NEXT→**P31-003**.

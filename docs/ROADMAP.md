@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P31-005** |
+| **Поточна задача** | **P31-006** |
 | **Фаза** | 31 — GUI information hierarchy |
-| **DoD (коротко)** | filter, sort, problems-first |
+| **DoD (коротко)** | app status area |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -176,11 +176,11 @@
 | 130 | **P31-002** | [x] | Endpoint vs Route states |
 | 131 | **P31-003** | [x] | Selected-host inspector panel |
 | 132 | **P31-004** | [x] | Unified severity model |
-| 133 | **P31-005** | [ ] | Filter, sort, problems-first |
+| 133 | **P31-005** | [x] | Filter, sort, problems-first |
 | 134 | **P31-006** | [ ] | Centralized application status |
 | 135 | **P31-007** | [ ] | Accessibility pass |
 
-**Стан черги:** **NEXT = P31-005** (фаза 31; P31-004 [x]; Java-first; [pingui-evo-gui.md](pingui-evo-gui.md)).
+**Стан черги:** **NEXT = P31-006** (фаза 31; P31-005 [x]; Java-first; [pingui-evo-gui.md](pingui-evo-gui.md)).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -979,7 +979,7 @@ flowchart TD
 
 **Контекст:** [pingui-evo-gui.md](pingui-evo-gui.md). Не змінювати геометрію вікна (див. [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md)). Java-first.
 
-**Черга:** після P30; **NEXT = P31-005**.
+**Черга:** після P30; **NEXT = P31-006**.
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
@@ -987,7 +987,7 @@ flowchart TD
 | **P31-002** | [x] Endpoint/Route states | `HostItem`, presenters | Endpoint UP/DEGRADED/DOWN/UNKNOWN; Route STABLE/CHANGED/INCOMPLETE/NOT TRACED; PING_ONLY → NOT TRACED не як error |
 | **P31-003** | [x] Host inspector | Extended layout, `MainView` | Компактна панель: metrics, last poll, route change, problem, copy/ack/diagnostics |
 | **P31-004** | [x] Severity model | UI theme, timeline, alerts | Critical/Warning/Notice/Info/Muted → колір, іконка, sort, badge, timeline, alert |
-| **P31-005** | [ ] Host list navigation | `HostListPresenter` | Text filter; sort; problems-first; header counters; persist filter/sort |
+| **P31-005** | [x] Host list navigation | `HostListPresenter` | Text filter; sort; problems-first; header counters; persist filter/sort |
 | **P31-006** | [ ] App status area | `MainController`, coordinators | Monitoring summary + transient ops (profile, DB, export, MTU…) без зайвих popup |
 | **P31-007** | [ ] Accessibility | CSS, controls | Не лише колір; іконки станів; contrast; focus; a11y names |
 
@@ -1080,7 +1080,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P31-005**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P31-006**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 
