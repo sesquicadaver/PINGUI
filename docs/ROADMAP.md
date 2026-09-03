@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P28-002** |
+| **Поточна задача** | **P28-003** |
 | **Фаза** | 28 — runtime hardening follow-up (SinkRegistry / inFlight / Python schema) |
-| **DoD (коротко)** | MonitorService: reserve inFlight before probePool.execute |
+| **DoD (коротко)** | Python session_db: reject schema != SCHEMA_VERSION |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -159,10 +159,10 @@
 | 113 | **P27-002** | [x] | `persistence_event`: typed columns + `detail_json` (schema v6) |
 | 114 | **P27-003** | [x] | `host_session` normalize: hop/history tables (schema v7) |
 | 115 | **P28-001** | [x] | SinkRegistry: bounded executor + hang isolation (не re-dispatch) |
-| 116 | **P28-002** | [ ] | MonitorService: reserve `inFlight` before `probePool.execute` (PING_ONLY) |
+| 116 | **P28-002** | [x] | MonitorService: reserve `inFlight` before `probePool.execute` (PING_ONLY) |
 | 117 | **P28-003** | [ ] | Python `session_db`: reject schema `!= SCHEMA_VERSION` (forward-compat) |
 
-**Стан черги:** активна — **NEXT = P28-002** (фаза 28; P28-001 SinkRegistry hang [x]).
+**Стан черги:** активна — **NEXT = P28-003** (фаза 28; P28-002 inFlight-before-execute [x]).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -915,7 +915,7 @@ flowchart TD
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
 | **P28-001** | [x] SinkRegistry hang isolation | `SinkRegistry`, `TelemetryBus`, tests | bounded pool 8; per-sink busy gate; no sync re-dispatch on interrupt; timeout+hang tests |
-| **P28-002** | [ ] inFlight before queue | `MonitorService`, `HostRegistry`, tests | `compareAndSet(inFlight)` **до** `probePool.execute`; зняття при reject/complete; PING_ONLY не накопичує необмежену чергу дублів |
+| **P28-002** | [x] inFlight before queue | `MonitorService`, `HostRegistry`, tests | CAS `inFlight` до `execute`; clear on reject/complete; `doesNotQueueDuplicatePollsWhileHostInFlight` |
 | **P28-003** | [ ] Python schema version gate | `session_db.py`, unit tests | reject `version != SCHEMA_VERSION` (і `>`, і `<` без silent migrate-as-ok); fail-fast message; Java parity уже v7 |
 
 ---
@@ -1002,7 +1002,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P28-002**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P28-003**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

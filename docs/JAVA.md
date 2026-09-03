@@ -224,4 +224,4 @@ pingui-java.bat --package    REM .msi
 
 ## Майбутнє
 
-Лінійна черга ROADMAP: **NEXT = P28-002** (фаза 28 — runtime hardening). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT. Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
+Лінійна черга ROADMAP: **NEXT = P28-003** (фаза 28 — runtime hardening). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT. Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
