@@ -35,7 +35,7 @@ class AlertDispatchersTest {
     void desktopChannelUsesInjectedSink() {
         List<String> titles = new ArrayList<>();
         AlertConfig config = new AlertConfig(true, null, 10);
-        AlertDispatcher dispatcher = AlertDispatchers.build(config, (title, body) -> titles.add(title));
+        AlertDispatcher dispatcher = AlertDispatchers.build(config, (host, title, body) -> titles.add(title));
         RouteChangeEvent event = RouteChangeEvent.fromRouteChange(
                 "8.8.8.8", List.of("10.0.0.1"), List.of("10.0.0.2"), "default", Instant.now());
         dispatcher.dispatch(event);

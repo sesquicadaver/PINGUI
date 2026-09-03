@@ -26,7 +26,7 @@ Product constraint: PINGUI is a route-focused utility, not a full alert manager 
 | Channel | v1 | Implementation | Notes |
 |---------|----|----------------|-------|
 | **Webhook** | ✅ | `POST` JSON | Generic schema; Slack Incoming Webhooks accept JSON — generic body or consumer-side mapper |
-| **Desktop** | ✅ | In-app popup | Java: JavaFX `Alert` via `JavaFxDesktopAlertSink` (no `notify-send` / D-Bus / tray); Python: injectable popup or INFO log |
+| **Desktop** | ✅ | In-app popup | Java: JavaFX `Stage` via `JavaFxDesktopAlertSink` — **one window per host**, content updates (no `notify-send` / D-Bus / tray); Python: injectable popup or INFO log |
 | **Email** | ❌ | — | Out of scope v1 |
 | **SNMP trap** | ❌ | — | Out of scope v1 |
 | **PagerDuty/Opsgenie native** | ❌ | — | Via generic webhook |
