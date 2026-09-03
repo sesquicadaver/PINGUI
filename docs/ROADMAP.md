@@ -155,8 +155,14 @@
 | 109 | **P26-007** | [ ] | JaCoCo package-level thresholds (не один bundle) |
 | 110 | **P26-008** | [ ] | latency_high: EWMA/window baseline + UI ETA note |
 | 111 | **P26-009** | [ ] | ADR_HARDENING + LIVING_SPEC/CHECKLIST + phase close |
+| 112 | **P27-001** | [x] | SQLite telemetry: колонки SSOT, без `payload_json` (schema v5) |
+| 113 | **P27-002** | [x] | `persistence_event`: typed columns + `detail_json` (schema v6) |
+| 114 | **P27-003** | [x] | `host_session` normalize: hop/history tables (schema v7) |
+| 115 | **P28-001** | [ ] | SinkRegistry: bounded executor + hang isolation (не re-dispatch) |
+| 116 | **P28-002** | [ ] | MonitorService: reserve `inFlight` before `probePool.execute` (PING_ONLY) |
+| 117 | **P28-003** | [ ] | Python `session_db`: reject schema `!= SCHEMA_VERSION` (forward-compat) |
 
-**Стан черги:** активна — **NEXT = P26-007** (фаза 26 post-P25 hardening).
+**Стан черги:** активна — **NEXT = P26-007** (фаза 26; P27 [x]; P28 після P26-009 / P27).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -884,9 +890,33 @@ flowchart TD
 | **P26-006** | [x] MonitorService split | `PollResultEffects`, `TelemetryEmission`, `MonitorService` | poll ≠ effects; `PollResultEffectsTest` (9); MonitorService 467 LOC |
 | **P26-007** | [ ] Package JaCoCo thresholds | `java/build.gradle.kts` | Окремі мінімуми для `config`/`probe`/`monitor`/`persistence`/`telemetry`; UI exclusion явний |
 | **P26-008** | [ ] Latency baseline evolution | `monitor/*`, ADR_ALERT_RULES, UI copy | EWMA або bounded window; контракт + тест; Help/Settings показує орієнтовний час FIRING |
-| **P26-009** | [ ] Phase close | `ADR_HARDENING.md`, LIVING_SPEC, CHECKLIST, ROADMAP | NEXT=DONE або явний follow-up ID |
+| **P26-009** | [ ] Phase close | `ADR_HARDENING.md`, LIVING_SPEC, CHECKLIST, ROADMAP | NEXT→перший `[ ]` у черзі (P28-001 після P27 [x]) |
 
 **Поза цією чергою (свідомо):** DE/FR i18n; dark mode product; FXML rewrite; >10 hosts; BGP/NMS.
+
+---
+
+## Фаза 27 — SQLite record format normalize (`beta`, P1)
+
+**Контекст:** Гібрид «колонки + повний JSON blob» у session DB роздуває диск і дублює поля. Java-only спочатку; Python parity — окремо. **Немає міграції старих `.db`** — відкриття schema &lt; required → помилка; оператор видаляє файл і створює наново.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P27-001** | [x] Telemetry columns SSOT | `SessionDatabase`, `MetricSample`/`TelemetryEvent` helpers, tests | schema v5; `telemetry_*` без `payload_json`; `labels_json` (+ ips для events); dump/list збирають DTO з колонок; legacy DB rejected |
+| **P27-002** | [x] persistence_event typed | `SessionDatabase`, `PersistenceEventWriter`, `PersistenceEventRecord`, UI history | schema v6; колонки `state`/`message`/`old_ips_json`/`new_ips_json`/`detail_json`; без дубля host/profile/time у blob |
+| **P27-003** | [x] host_session normalize | `SessionDatabase`, `SessionJsonCodec`/tables, SessionStore tests | schema v7; мета в `host_session`; hops/history/stats у нормалізованих таблицях; roundtrip API `load`/`save` збережено |
+
+---
+
+## Фаза 28 — Runtime hardening follow-up (`beta`, P1)
+
+**Контекст:** Аудит `pimgui-5.md` (main @ `3de5cf85`, 2026-08-18). JaCoCo package gates уже **P26-007**. Java SQLite exact-version reject уже в P27. Залишок: telemetry hang isolation, poll queue, Python forward-compat.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P28-001** | [ ] SinkRegistry hang isolation | `SinkRegistry`, `TelemetryBus`, tests | bounded executor (не `newCachedThreadPool`); не запускати sink з активним/завислим викликом; shutdown без sync re-dispatch завислого sink; тест timeout+hang |
+| **P28-002** | [ ] inFlight before queue | `MonitorService`, `HostRegistry`, tests | `compareAndSet(inFlight)` **до** `probePool.execute`; зняття при reject/complete; PING_ONLY не накопичує необмежену чергу дублів |
+| **P28-003** | [ ] Python schema version gate | `session_db.py`, unit tests | reject `version != SCHEMA_VERSION` (і `>`, і `<` без silent migrate-as-ok); fail-fast message; Java parity уже v7 |
 
 ---
 

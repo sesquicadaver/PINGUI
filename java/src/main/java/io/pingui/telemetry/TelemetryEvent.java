@@ -57,6 +57,38 @@ public record TelemetryEvent(
         return new TelemetryEvent(RTT_AGGREGATE, host, labels, message, List.of(), List.of(), timestamp);
     }
 
+    /** Labels JSON for SQLite {@code labels_json} (P27-001). */
+    public String labelsJson() {
+        return TelemetryJson.labelsObject(labels);
+    }
+
+    public String oldIpsJson() {
+        return TelemetryJson.stringArray(oldIps);
+    }
+
+    public String newIpsJson() {
+        return TelemetryJson.stringArray(newIps);
+    }
+
+    /** Rebuilds an event from typed SQLite columns (P27-001). */
+    public static TelemetryEvent fromColumns(
+            String event,
+            String host,
+            String message,
+            String labelsJson,
+            String oldIpsJson,
+            String newIpsJson,
+            Instant timestamp) {
+        return new TelemetryEvent(
+                event,
+                host,
+                TelemetryJson.parseLabelsJson(labelsJson),
+                message,
+                TelemetryJson.parseStringArrayJson(oldIpsJson),
+                TelemetryJson.parseStringArrayJson(newIpsJson),
+                timestamp);
+    }
+
     public String toJson() {
         StringBuilder sb = new StringBuilder(192);
         sb.append("{\"kind\":").append(TelemetryJson.quote(KIND));

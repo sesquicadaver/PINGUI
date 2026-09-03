@@ -175,7 +175,7 @@ profiles:
 |-------|------|---------|-------------|
 | `events_only` | bool | `true` | Remote LOG sinks (syslog/GELF/Loki/OTLP logs) accept events only; no high-freq RTT samples |
 | `log_aggregates` | bool | `false` | Optional 5m avg/max RTT as `rtt_aggregate` events (P16-034) |
-| `sqlite` | Path | — (off) | Local `SqliteTelemetrySink` (schema v4) |
+| `sqlite` | Path | — (off) | Local `SqliteTelemetrySink` (schema v5, columns SSOT) |
 | `jsonl_dir` | Path | — (off) | `JsonlRotateSink` directory (`telemetry.jsonl.yyyy-MM-dd`) |
 | `syslog.host` | str | — | RFC 5424 TCP syslog |
 | `syslog.port` | int | `514` | 1…65535 |

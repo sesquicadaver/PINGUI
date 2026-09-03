@@ -45,13 +45,13 @@
 | Sink registry (P16-011) | `TelemetrySink`, `SinkRegistry`, `NoOpTelemetrySink` | `SinkRegistryTest` |
 | Telemetry bus (P16-012) | `TelemetryBus`, `DropPolicy` | `TelemetryBusTest` |
 | Telemetry failure isolation (P26-002) | `SinkRegistry.failureCount` + per-sink call timeout (default 5s); `TelemetryBus` non-blocking offer / close drain | `TelemetryBusTest` hang/timeout/peer/close; `SinkRegistryTest.sinkFailureDoesNotStopOthers` |
-| SQLite reopen/migration/corrupt (P26-003) | `SessionDatabase` migrateSchema v1/v3→v4; corrupt/truncated open | `SessionDatabaseHardeningTest`; `SessionStorePersistenceTest.appendPingSamplesAfterDbReopen` |
+| SQLite reopen/corrupt (P26-003 / P27-001) | `SessionDatabase` reject legacy schema; corrupt/truncated open | `SessionDatabaseHardeningTest`; `SessionStorePersistenceTest.appendPingSamplesAfterDbReopen` |
 | Launcher smoke matrix (P26-004) | `pingui-java.sh`/`.bat`, `PINGUI_SKIP_INSTALL_DIST`, `PINGUI_JAVAW` | `scripts/smoke_launcher.sh`/`.cmd`; `PinguiLauncherTest`; CI java.yml |
 | MainController ≤550 LOC (P26-005) | `StageGeometryCoordinator`, `SettingsDialogsCoordinator`, `EasterEggController`, `PersistenceSessionCoordinator`, … | `MainControllerLocGateTest` (≤550) |
 | MonitorService split (P26-006) | `PollResultEffects`, `TelemetryEmission`, `MonitorService` | `PollResultEffectsTest`; poll orchestration ≠ alert/telemetry |
 | Monitor → bus (P16-013) | `MonitorService.setTelemetryBus`; `telemetry_emit.py` | `MonitorServiceTelemetryTest`, `test_monitor_telemetry.py` |
 | Metric names (P16-014) | `MetricNames.java`; `metric_names.py` | `MetricNamesTest`, `test_metric_names.py` |
-| Sqlite telemetry sink (P16-020) | `SqliteTelemetrySink`; schema v4 | `SqliteTelemetrySinkTest` |
+| Sqlite telemetry sink (P16-020 / P27-001) | `SqliteTelemetrySink`; schema v5 columns SSOT | `SqliteTelemetrySinkTest` |
 | JSONL rotate sink (P16-021) | `JsonlRotateSink` | `JsonlRotateSinkTest` |
 | Telemetry retention (P16-022) | `TelemetryRetentionJob` | `TelemetryRetentionJobTest` |
 | Telemetry dump (P16-023) | `TelemetryDump` | `TelemetryDumpTest` |
@@ -114,6 +114,8 @@
 | ADR i18n (P25) | `docs/ADR_I18N.md`, `docs/en/ADR_I18N.md` | User-facing locales only: USER_GUIDE + HOWTO + `README.<lang>` |
 | Doc parity multi-locale (P25) | `scripts/check_doc_parity.py` | `test_doc_parity.py`; UK/EN full; stub locales = user docs |
 | Hardening queue (P26) | ROADMAP фаза 26: telemetry isolation, SQLite reopen, launchers, MainController/MonitorService split, JaCoCo packages, latency EWMA | NEXT=`P26-007`; P26-006 MonitorService split [x] (`PollResultEffects`/`TelemetryEmission`) |
+| SQLite format normalize (P27) | schema v5–v7: telemetry columns SSOT; typed `persistence_event`; normalized `host_session` | Java-only; no legacy migrate (delete `.db`); черга після P26-009 |
+| Runtime hardening follow-up (P28) | `SinkRegistry` hang isolation; `inFlight` before pool; Python schema `!=` gate | аудит `pimgui-5.md`; після P27 у черзі; NEXT лишається P26-007 |
 | YAML/GUI alerts.rules (P21-003) | `AlertConfig`, `EndpointDownRuleConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `ProfilesConfigTest`, `AlertsSettingsDialogTest`, `AppMenuDialogsTest` |
 | Host problem indicator ADR (P22-001) | `docs/ADR_HOST_PROBLEM_INDICATOR.md` | docs review / ROADMAP P22 |
 | HostProblemSummary (P22-002) | `AlertRuleEngine`, `HostProblemSummary`, `MonitorService` | `AlertRuleEngineTest`, `MonitorServiceTest` |
@@ -124,7 +126,7 @@
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `DesktopAlertDispatcher`, `DesktopAlertSink`, `JavaFxDesktopAlertSink`, `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `DesktopAlertDispatcherTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
-| SQLite session (P11-010) | `SessionDatabase`, `SessionJsonCodec` | `SessionDatabaseTest`, `SessionDatabaseHardeningTest` |
+| SQLite session (P11-010 / P27-003) | `SessionDatabase` schema v7 normalized tables; `SessionJsonCodec` (legacy shape tests) | `SessionDatabaseTest`, `SessionDatabaseHardeningTest` |
 | Persistence wire (P11-011) | `SessionStore`, `PersistenceEventWriter`, `MonitorService` | `SessionStorePersistenceTest`, `PersistenceEventWriterTest`, `MonitorServiceTest.persistsRouteChangeAndProbeErrorEvents` |
 | CLI `--session-db` (P11-012) | `PinguiApplication`, `AppOptions`, `MainController` | `PinguiApplicationTest.parseOptions_sessionDbPath` |
 | Persistence policy (P11-013) | `PersistencePolicy`, `PersistencePolicyHolder`, `PersistenceEventWriter`, `MonitorService` | `PersistencePolicyTest`, `PersistencePolicyHolderTest`, `PersistenceEventWriterTest`, `MonitorServiceTest.appliesPersistencePolicyAfterPollCycle` |

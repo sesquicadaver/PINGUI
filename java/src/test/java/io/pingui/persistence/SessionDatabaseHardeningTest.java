@@ -1,7 +1,6 @@
 package io.pingui.persistence;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -29,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * P26-003: reopen/migration/corrupt failure coverage and concurrent export smoke.
+ * P26-003 / P27-001: reopen/corrupt failure coverage, legacy schema rejection, concurrent export.
  *
  * <p>Complements {@link SessionDatabaseTest} (happy path) and
  * {@link io.pingui.monitor.SessionStorePersistenceTest} (append-after-reopen).
@@ -39,37 +38,36 @@ class SessionDatabaseHardeningTest {
     Path tempDir;
 
     @Test
-    void migratesLegacyV1HostSessionToSchemaV4PreservingRow() throws Exception {
+    void rejectsLegacyV1DatabaseWithoutMigration() throws Exception {
         Path dbPath = tempDir.resolve("legacy-v1.db");
         seedLegacyV1Database(dbPath, "legacy.example");
 
-        try (SessionDatabase db = new SessionDatabase(dbPath)) {
-            assertEquals(SessionDatabase.SCHEMA_VERSION, db.schemaVersion());
-            HostSessionData loaded = db.load("legacy.example");
-            assertNotNull(loaded);
-            assertTrue(loaded.isEnabled());
-            assertEquals("[]", SessionJsonCodec.routeToJson(loaded.getCurrentRoute()));
-            assertTrue(loaded.getHopStats().isEmpty());
-
-            MetricSample sample = new MetricSample(
-                    "rtt_ms", 12.5, "legacy.example", 1, Map.of(), Instant.parse("2026-08-05T12:00:00Z"));
-            db.insertTelemetrySample(sample);
-            assertEquals(1, db.countTelemetrySamples());
-            assertEquals(0, db.countTelemetryEvents());
-        }
+        PersistenceException ex = assertThrows(PersistenceException.class, () -> new SessionDatabase(dbPath));
+        assertTrue(ex.getMessage().contains("Unsupported session DB schema version"));
+        assertTrue(ex.getMessage().contains("required " + SessionDatabase.SCHEMA_VERSION));
     }
 
     @Test
-    void migratesSchemaV3ToV4AndAcceptsTelemetryInsert() throws Exception {
+    void rejectsLegacyV3DatabaseWithoutMigration() throws Exception {
         Path dbPath = tempDir.resolve("legacy-v3.db");
         seedLegacyV3Database(dbPath, "v3.example");
 
+        PersistenceException ex = assertThrows(PersistenceException.class, () -> new SessionDatabase(dbPath));
+        assertTrue(ex.getMessage().contains("Unsupported session DB schema version"));
+    }
+
+    @Test
+    void freshDatabaseAcceptsTelemetryInsert() {
+        Path dbPath = tempDir.resolve("fresh-v5.db");
         try (SessionDatabase db = new SessionDatabase(dbPath)) {
             assertEquals(SessionDatabase.SCHEMA_VERSION, db.schemaVersion());
-            assertNotNull(db.load("v3.example"));
-            db.insertTelemetrySample(new MetricSample(
-                    "rtt_ms", 1.0, "v3.example", null, Map.of(), Instant.parse("2026-08-05T13:00:00Z")));
+            MetricSample sample = new MetricSample(
+                    "rtt_ms", 12.5, "fresh.example", 1, Map.of(), Instant.parse("2026-08-05T12:00:00Z"));
+            db.insertTelemetrySample(sample);
             assertEquals(1, db.countTelemetrySamples());
+            assertEquals(0, db.countTelemetryEvents());
+            assertEquals(
+                    12.5, db.listTelemetrySamples("fresh.example", 1).get(0).value());
         }
     }
 

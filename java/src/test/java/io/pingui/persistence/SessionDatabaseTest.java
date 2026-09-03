@@ -77,9 +77,7 @@ class SessionDatabaseTest {
             db.save("old", data);
 
             Instant when = Instant.parse("2026-07-09T10:00:00Z");
-            RouteChangeEvent event = RouteChangeEvent.fromRouteChange(
-                    "old", List.of("10.0.0.1"), List.of("192.168.1.1"), "default", when);
-            db.insertEvent(PersistenceEventType.ROUTE_CHANGE, "old", "default", event.toJson(), when);
+            db.insertRouteChange("old", "default", List.of("10.0.0.1"), List.of("192.168.1.1"), when);
 
             db.rename("old", "new");
 
@@ -101,13 +99,8 @@ class SessionDatabaseTest {
             data.setEnabled(true);
             db.save("8.8.8.8", data);
 
-            RouteChangeEvent event = RouteChangeEvent.fromRouteChange(
-                    "8.8.8.8",
-                    List.of("1.1.1.1"),
-                    List.of("9.9.9.9"),
-                    "default",
-                    Instant.parse("2026-07-09T09:00:00Z"));
-            db.insertEvent(PersistenceEventType.ROUTE_CHANGE, "8.8.8.8", "default", event.toJson(), event.timestamp());
+            Instant when = Instant.parse("2026-07-09T09:00:00Z");
+            db.insertRouteChange("8.8.8.8", "default", List.of("1.1.1.1"), List.of("9.9.9.9"), when);
 
             assertEquals(1, db.deleteEventsByType(PersistenceEventType.ROUTE_CHANGE));
             assertEquals(0, db.deleteEventsByType(PersistenceEventType.ROUTE_CHANGE));
@@ -127,13 +120,9 @@ class SessionDatabaseTest {
             Instant old = Instant.parse("2026-07-08T10:00:00Z");
             RouteChangeEvent recentEvent = RouteChangeEvent.fromRouteChange(
                     "8.8.8.8", List.of("10.0.0.1"), List.of("192.168.1.1"), "default", recent);
-            RouteChangeEvent oldEvent =
-                    RouteChangeEvent.fromRouteChange("8.8.8.8", List.of("1.0.0.1"), List.of("2.0.0.1"), "default", old);
-            RouteChangeEvent otherHost = RouteChangeEvent.fromRouteChange(
-                    "1.1.1.1", List.of("9.9.9.9"), List.of("8.8.8.8"), "default", recent);
-            db.insertEvent(PersistenceEventType.ROUTE_CHANGE, "8.8.8.8", "default", recentEvent.toJson(), recent);
-            db.insertEvent(PersistenceEventType.ROUTE_CHANGE, "8.8.8.8", "default", oldEvent.toJson(), old);
-            db.insertEvent(PersistenceEventType.ROUTE_CHANGE, "1.1.1.1", "default", otherHost.toJson(), recent);
+            db.insertRouteChange("8.8.8.8", "default", List.of("10.0.0.1"), List.of("192.168.1.1"), recent);
+            db.insertRouteChange("8.8.8.8", "default", List.of("1.0.0.1"), List.of("2.0.0.1"), old);
+            db.insertRouteChange("1.1.1.1", "default", List.of("9.9.9.9"), List.of("8.8.8.8"), recent);
 
             Instant since = Instant.parse("2026-07-09T00:00:00Z");
             List<PersistenceEventRecord> rows = db.listEvents(PersistenceEventType.ROUTE_CHANGE, "8.8.8.8", since, 10);

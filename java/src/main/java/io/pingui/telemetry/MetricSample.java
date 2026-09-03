@@ -33,6 +33,17 @@ public record MetricSample(
         return new MetricSample(MetricNames.RTT_MS, rttMs, host, hop, labels, timestamp);
     }
 
+    /** Labels JSON for SQLite {@code labels_json} (P27-001); not the full wire payload. */
+    public String labelsJson() {
+        return TelemetryJson.labelsObject(labels);
+    }
+
+    /** Rebuilds a sample from typed SQLite columns (P27-001). */
+    public static MetricSample fromColumns(
+            String name, double value, String host, Integer hop, String labelsJson, Instant timestamp) {
+        return new MetricSample(name, value, host, hop, TelemetryJson.parseLabelsJson(labelsJson), timestamp);
+    }
+
     public String toJson() {
         StringBuilder sb = new StringBuilder(160);
         sb.append("{\"kind\":").append(TelemetryJson.quote(KIND));
