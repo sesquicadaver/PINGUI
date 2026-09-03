@@ -124,6 +124,37 @@ public final class PersistenceEventWriter {
                 event.observedAt());
     }
 
+    /**
+     * Persists one finished-poll aggregate (P30-003). Always written when DB is connected — not gated
+     * by {@code persistence.events} toggles (canonical history, not discrete event types).
+     */
+    public void writePollResult(
+            String host,
+            String probeMode,
+            Instant observedAt,
+            Boolean reachable,
+            Double terminalRttMs,
+            Double jitterMs,
+            Double lossPercent,
+            Double durationMs,
+            String errorCode) {
+        if (host == null || host.isBlank() || probeMode == null || probeMode.isBlank()) {
+            return;
+        }
+        ensureHostRow(host);
+        database.insertPollResult(
+                host,
+                observedAt,
+                probeMode,
+                reachable,
+                terminalRttMs,
+                jitterMs,
+                lossPercent,
+                durationMs,
+                null,
+                errorCode);
+    }
+
     private static PersistenceEventType qualityEventType(QualityAlertEvent event) {
         if (QualityAlertEvent.EVENT_LATENCY_HIGH.equals(event.event())) {
             return PersistenceEventType.LATENCY_HIGH;

@@ -27,7 +27,7 @@ Schema v7 нормалізувала hops/history у дочірні таблиц
 |------|-----|------|
 | 1 | **P30-001** | `host_session.id` INTEGER PK; `address` UNIQUE; діти/`persistence_event` → `host_id` |
 | 2 | **P30-002** | таблиця `incident` (FIRING/RESOLVED, duration, ack) — **done** (schema v9) |
-| 3 | **P30-003** | `poll_result` — канонічний агрегат завершеного poll |
+| 3 | **P30-003** | `poll_result` — канонічний агрегат завершеного poll — **done** (schema v10) |
 | 4 | **P30-004** | дедуплікована `route` (signature + hops_json) |
 | 5 | **P30-005** | `metric_rollup` + bounded retention |
 | 6 | **P30-006** | RO export connection / integrity_check CLI / backup-before-irreversible |
@@ -71,6 +71,29 @@ CREATE TABLE incident (
 - Quality FIRING/RESOLVED (`endpoint_down` / `latency_high`) синхронізує `incident` через `PersistenceEventWriter`.
 - Ack оновлює `acknowledged_at` на відкритих FIRING.
 - MTTR / duration — з `started_at`/`ended_at` (без розбору JSON).
+
+### P30-003 (зроблено)
+
+```sql
+CREATE TABLE poll_result (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    host_id INTEGER NOT NULL,
+    observed_at TEXT NOT NULL,
+    probe_mode TEXT NOT NULL,
+    reachable INTEGER,
+    terminal_rtt_ms REAL,
+    jitter_ms REAL,
+    loss_percent REAL,
+    duration_ms REAL,
+    route_id INTEGER,
+    error_code TEXT,
+    FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
+);
+```
+
+- Запис після кожного завершеного poll (`PollResultEffects` → `PersistenceEventWriter`).
+- Канон історії RTT/loss/uptime; `telemetry_*` лишається каналом експорту.
+- `route_id` nullable до P30-004.
 
 ### Не робимо
 

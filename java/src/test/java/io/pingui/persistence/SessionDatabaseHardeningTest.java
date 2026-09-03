@@ -77,6 +77,16 @@ class SessionDatabaseHardeningTest {
     }
 
     @Test
+    void rejectsLegacyV9DatabaseWithoutMigration() throws Exception {
+        Path dbPath = tempDir.resolve("legacy-v9.db");
+        seedLegacyV9Database(dbPath, "v9.example");
+
+        PersistenceException ex = assertThrows(PersistenceException.class, () -> new SessionDatabase(dbPath));
+        assertTrue(ex.getMessage().contains("Unsupported session DB schema version"));
+        assertTrue(ex.getMessage().contains("required " + SessionDatabase.SCHEMA_VERSION));
+    }
+
+    @Test
     void freshDatabaseAcceptsTelemetryInsert() {
         Path dbPath = tempDir.resolve("fresh-v5.db");
         try (SessionDatabase db = new SessionDatabase(dbPath)) {
@@ -319,6 +329,57 @@ class SessionDatabaseHardeningTest {
                     VALUES (?, 1, ?, ?)
                     """)) {
                 String at = Instant.parse("2026-09-01T00:00:00Z").toString();
+                ps.setString(1, host);
+                ps.setString(2, at);
+                ps.setString(3, at);
+                ps.executeUpdate();
+            }
+        }
+    }
+
+    /** v9 shape: host id + incident, no poll_result, schema_meta = 9. */
+    private static void seedLegacyV9Database(Path dbPath, String host) throws Exception {
+        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + dbPath.toAbsolutePath());
+                Statement statement = connection.createStatement()) {
+            statement.execute(
+                    """
+                    CREATE TABLE schema_meta (
+                        version INTEGER NOT NULL
+                    )
+                    """);
+            statement.execute(
+                    """
+                    CREATE TABLE host_session (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        address TEXT NOT NULL UNIQUE,
+                        enabled INTEGER NOT NULL,
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL
+                    )
+                    """);
+            statement.execute(
+                    """
+                    CREATE TABLE incident (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        host_id INTEGER NOT NULL,
+                        kind TEXT NOT NULL,
+                        severity TEXT NOT NULL,
+                        state TEXT NOT NULL,
+                        started_at TEXT NOT NULL,
+                        ended_at TEXT,
+                        acknowledged_at TEXT,
+                        occurrences INTEGER NOT NULL DEFAULT 1,
+                        peak_value REAL,
+                        details_json TEXT NOT NULL DEFAULT '{}'
+                    )
+                    """);
+            statement.execute("INSERT INTO schema_meta(version) VALUES (9)");
+            try (PreparedStatement ps = connection.prepareStatement(
+                    """
+                    INSERT INTO host_session(address, enabled, created_at, updated_at)
+                    VALUES (?, 1, ?, ?)
+                    """)) {
+                String at = Instant.parse("2026-09-03T00:00:00Z").toString();
                 ps.setString(1, host);
                 ps.setString(2, at);
                 ps.setString(3, at);

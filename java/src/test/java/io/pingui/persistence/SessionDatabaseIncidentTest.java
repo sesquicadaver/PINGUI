@@ -21,7 +21,7 @@ class SessionDatabaseIncidentTest {
     void openResolveAndMttrWithoutJsonParse() {
         Path dbPath = tempDir.resolve("incident.db");
         try (SessionDatabase db = new SessionDatabase(dbPath)) {
-            assertEquals(9, db.schemaVersion());
+            assertEquals(SessionDatabase.SCHEMA_VERSION, db.schemaVersion());
             HostSessionData data = new HostSessionData();
             data.setEnabled(true);
             db.save("8.8.8.8", data);

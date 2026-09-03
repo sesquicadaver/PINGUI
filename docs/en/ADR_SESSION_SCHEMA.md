@@ -27,7 +27,7 @@ Evolve **without migrating old `.db` files**: `schema_version != supported` → 
 |------|-----|--------|
 | 1 | **P30-001** | `host_session.id` INTEGER PK; `address` UNIQUE; children/`persistence_event` → `host_id` |
 | 2 | **P30-002** | `incident` table (FIRING/RESOLVED, duration, ack) — **done** (schema v9) |
-| 3 | **P30-003** | `poll_result` — canonical finished-poll aggregate |
+| 3 | **P30-003** | `poll_result` — canonical finished-poll aggregate — **done** (schema v10) |
 | 4 | **P30-004** | deduplicated `route` (signature + hops_json) |
 | 5 | **P30-005** | `metric_rollup` + bounded retention |
 | 6 | **P30-006** | RO export connection / integrity_check CLI / backup-before-irreversible |
@@ -71,6 +71,29 @@ CREATE TABLE incident (
 - Quality FIRING/RESOLVED (`endpoint_down` / `latency_high`) syncs `incident` via `PersistenceEventWriter`.
 - Ack sets `acknowledged_at` on open FIRING rows.
 - MTTR / duration from `started_at`/`ended_at` (no JSON parsing).
+
+### P30-003 (done)
+
+```sql
+CREATE TABLE poll_result (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    host_id INTEGER NOT NULL,
+    observed_at TEXT NOT NULL,
+    probe_mode TEXT NOT NULL,
+    reachable INTEGER,
+    terminal_rtt_ms REAL,
+    jitter_ms REAL,
+    loss_percent REAL,
+    duration_ms REAL,
+    route_id INTEGER,
+    error_code TEXT,
+    FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
+);
+```
+
+- Written after each finished poll (`PollResultEffects` → `PersistenceEventWriter`).
+- Canonical RTT/loss/uptime history; `telemetry_*` remains an export channel.
+- `route_id` nullable until P30-004.
 
 ### Out of scope
 
