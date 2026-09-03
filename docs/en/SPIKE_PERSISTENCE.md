@@ -29,7 +29,7 @@ What SQLite schema and API does Java need to:
 | Layer | Python | Java |
 |-------|--------|------|
 | In-memory | `SessionStore` | `SessionStore` |
-| SQLite | `persistence/session_db.py` (schema v4; reject `!=`) | `io.pingui.persistence.SessionDatabase` (schema v7) |
+| SQLite | `persistence/session_db.py` (schema v4; reject `!=`) | `io.pingui.persistence.SessionDatabase` (schema v8) |
 | CLI | `--session-db PATH` | `--session-db PATH` |
 | Route change / probe_error in SQLite | ✅ `persistence_event` (PY-P11) | ✅ `persistence_event` |
 | Event selection menu | YAML `persistence.events` | GUI “Database…” + YAML |

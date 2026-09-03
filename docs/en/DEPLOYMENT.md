@@ -356,10 +356,12 @@ Session persistence (`host_session` / `persistence_event`) is a separate layer; 
 | What | Where |
 |------|-------|
 | DB file | `--session-db PATH`, YAML `persistence.session_db`, or GUI **Settings → Database…** |
-| Route metrics | `host_session` table (JSON: routes, `ping_history`, `hop_stats`) |
-| Events | `persistence_event` table (`route_change`, `probe_error`) |
+| Route metrics | `host_session` table (schema v8: `id` + `address`) + child hop/history tables |
+| Events | `persistence_event` (`host_id` FK; `route_change`, `probe_error`, …) |
 
-**Writing to the DB:** after connecting SQLite, enable the target checkbox in the host list — legacy YAML defaults to `enabled: false`; without active monitoring, route and `hop_stats` are not updated. `host_session` rows appear on connect; `current_route_json` after the first trace; `ping_history_json` after the first poll (auto target `ping` when Expert ping is off). **Route history:** the first trace adds a «Початковий маршрут» row; later rows appear only when the IP chain changes.
+**Schema:** Java `SCHEMA_VERSION = 8`. Older `.db` files (v7 and below) are **not migrated** — delete the file and recreate ([ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md)).
+
+**Writing to the DB:** after connecting SQLite, enable the target checkbox in the host list — legacy YAML defaults to `enabled: false`; without active monitoring, route and `hop_stats` are not updated. `host_session` rows appear on connect; route after the first trace; ping history after the first poll (auto target `ping` when Expert ping is off). **Route history:** the first trace adds a «Початковий маршрут» row; later rows appear only when the IP chain changes.
 
 **Disk and retention (P11-050):**
 
@@ -375,7 +377,7 @@ Schema details: [SPIKE_PERSISTENCE.md](../SPIKE_PERSISTENCE.md).
 
 | Symptom | Solution |
 |---------|----------|
-| SQLite empty / no route data | Connect DB (CLI/YAML/GUI), **enable host checkbox**, wait for a poll; check: `sqlite3 data/ping.db "SELECT host, enabled, length(current_route_json) FROM host_session;"` |
+| SQLite empty / no route data | Connect DB (CLI/YAML/GUI), **enable host checkbox**, wait for a poll; check: `sqlite3 data/ping.db "SELECT id, address, enabled FROM host_session;"` |
 | Trace on Windows “hangs” / very long | Normal for `tracert`; enable **Ping only** or increase `interval` |
 | Gradle “What went wrong: 25.0.3” | JDK 21: `export PINGUI_JAVA_HOME=.../java-21-openjdk-*` |
 | “No hops parsed” | Install `traceroute`; on macOS — `/usr/sbin/traceroute` |

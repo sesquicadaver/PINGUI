@@ -7,12 +7,17 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **P30-001 — stable host id (schema v8):** `host_session.id` INTEGER PK + `address` UNIQUE; children/`persistence_event` → `host_id`; `rename` updates address without rewriting history; legacy `.db` → delete & recreate; ADR `ADR_SESSION_SCHEMA`; NEXT→**P30-002**.
+
 ### Fixed
 
 - **Desktop alerts — one window per host:** `JavaFxDesktopAlertSink` reuses/updates a single non-modal popup per endpoint instead of opening a new dialog for every alert.
 
 ### Added
 
+- **P30 — SQLite schema evolution (queue):** from `pingui-evo-db.md` — P30-001 stable host id; P30-002 incident; P30-003 poll_result; P30-004 deduped route; P30-005 rollup/retention; P30-006 export reliability. Java-first; no legacy `.db` migration.
 - **P29-005 — TCP Connect probe:** `host:port` / `[ipv6]:port` → DNS time + connect time + success/refused/timeout + resolved IP; `HostProbeMode.TCP_CONNECT`; YAML/GUI; NEXT→**DONE**.
 - **P29-004 — DNS control:** forward resolve (`DnsControl`/`DnsControlTracker`) — address set v4/v6, resolve time, distinct `dns_change` (ok/change/NXDOMAIN/timeout/SERVFAIL); wired in `MonitorService` + timeline; not an auto-incident; NEXT→**P29-005**.
 - **P29 NEXT activated:** ROADMAP **NEXT = P29-001** (multi-host problem correlation); P29-001…005 queue task statuses unchanged.

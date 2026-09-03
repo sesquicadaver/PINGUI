@@ -92,6 +92,28 @@ class SessionDatabaseTest {
     }
 
     @Test
+    void renameKeepsStableHostId() {
+        Path dbPath = tempDir.resolve("stable-id.db");
+        try (SessionDatabase db = new SessionDatabase(dbPath)) {
+            HostSessionData data = new HostSessionData();
+            data.setEnabled(true);
+            db.save("old.example", data);
+            long idBefore = db.hostId("old.example").orElseThrow();
+
+            Instant when = Instant.parse("2026-09-03T12:00:00Z");
+            db.insertRouteChange("old.example", "default", List.of("10.0.0.1"), List.of("8.8.8.8"), when);
+            db.rename("old.example", "new.example");
+
+            assertTrue(db.hostId("old.example").isEmpty());
+            assertEquals(idBefore, db.hostId("new.example").orElseThrow());
+            assertEquals(
+                    1,
+                    db.listEvents(PersistenceEventType.ROUTE_CHANGE, "new.example", when.minusSeconds(1), 5)
+                            .size());
+        }
+    }
+
+    @Test
     void insertAndPurgePersistenceEvent() {
         Path dbPath = tempDir.resolve("events.db");
         try (SessionDatabase db = new SessionDatabase(dbPath)) {
