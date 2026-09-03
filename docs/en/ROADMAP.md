@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P26-007** |
+| **Current task** | **P26-008** |
 | **Phase** | 26 — hardening post-audit (telemetry / launchers / split / coverage) |
-| **DoD (short)** | JaCoCo package-level thresholds (not one bundle) |
+| **DoD (short)** | latency_high: EWMA/window baseline + UI ETA note |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -152,7 +152,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 106 | **P26-004** | [x] | Launcher: quoting + detached GUI smoke matrix |
 | 107 | **P26-005** | [x] | MainController ≤550 LOC (dialogs/lifecycle extract) |
 | 108 | **P26-006** | [x] | MonitorService split (poll vs alert/telemetry wiring) |
-| 109 | **P26-007** | [ ] | JaCoCo package-level thresholds (not one bundle) |
+| 109 | **P26-007** | [x] | JaCoCo package-level thresholds (not one bundle) |
 | 110 | **P26-008** | [ ] | latency_high: EWMA/window baseline + UI ETA note |
 | 111 | **P26-009** | [ ] | ADR_HARDENING + LIVING_SPEC/CHECKLIST + phase close |
 | 112 | **P27-001** | [x] | SQLite telemetry: column SSOT, no `payload_json` (schema v5) |
@@ -162,7 +162,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 116 | **P28-002** | [ ] | MonitorService: reserve `inFlight` before `probePool.execute` (PING_ONLY) |
 | 117 | **P28-003** | [ ] | Python `session_db`: reject schema `!= SCHEMA_VERSION` (forward-compat) |
 
-**Queue status:** active — **NEXT = P26-007** (phase 26; P27 [x]; P28 after P26-009 / P27).
+**Queue status:** active — **NEXT = P26-008** (phase 26; P26-007 JaCoCo packages [x]; P28 after P27).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -888,7 +888,7 @@ flowchart TD
 | **P26-004** | [x] Launcher smoke matrix | `pingui-java.sh`, `.bat`, `scripts/smoke_launcher.*`, `PinguiLauncherTest`, CI | space quoting; detached/`--foreground`; `PINGUI_JAVAW`; fail → gui.log |
 | **P26-005** | [x] MainController ≤550 LOC | coordinators + `MainControllerLocGateTest` | 546 LOC; dialogs/geometry/lifecycle extracted; LocGate ≤550 |
 | **P26-006** | [x] MonitorService split | `PollResultEffects`, `TelemetryEmission`, `MonitorService` | poll ≠ effects; `PollResultEffectsTest` (9); MonitorService 467 LOC |
-| **P26-007** | [ ] Package JaCoCo thresholds | `java/build.gradle.kts` | Separate minima for `config`/`probe`/`monitor`/`persistence`/`telemetry`; UI exclusion explicit |
+| **P26-007** | [x] Package JaCoCo thresholds | `java/build.gradle.kts` | PACKAGE minima: config/probe/monitor ≥85%, telemetry ≥80%, persistence ≥75%; BUNDLE ≥80%; UI `io/pingui/ui/**` exclusion explicit |
 | **P26-008** | [ ] Latency baseline evolution | `monitor/*`, ADR_ALERT_RULES, UI copy | EWMA or bounded window; contract + test; Help/Settings shows approximate FIRING time |
 | **P26-009** | [ ] Phase close | `ADR_HARDENING.md`, LIVING_SPEC, CHECKLIST, ROADMAP | NEXT→first `[ ]` in queue (P28-001 after P27 [x]) |
 
@@ -1002,7 +1002,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P26-007**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P26-008**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **P26-007 — package JaCoCo thresholds:** separate PACKAGE minima (`config`/`probe`/`monitor` ≥85%, `telemetry` ≥80%, `persistence` ≥75%) + BUNDLE ≥80%; UI `io/pingui/ui/**` exclusion explicit; NEXT→**P26-008**.
 - **P28 — runtime hardening follow-up (queue after P27):** from audit `pimgui-5.md` — P28-001 SinkRegistry hang isolation; P28-002 `inFlight` before pool; P28-003 Python schema `!=` gate. NEXT stays **P26-007**.
 - **P27 — SQLite format normalize (queue after P26):** P27-001…003 — telemetry columns SSOT → typed `persistence_event` → normalized `host_session`; Java-only; no legacy `.db` migration.
 - **P27-003 — normalized host_session (schema v7):** `session_route_hop` / `session_ping_sample` / `session_hop_stats` / `session_hop_rtt_sample`; unchanged `load`/`save` API.
