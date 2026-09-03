@@ -7,7 +7,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Desktop alert channel via an in-app popup sink (P10-020 / ADR_ALERTS).
  *
- * <p>Does not call {@code notify-send}, D-Bus, tray toasts, or other OS notification APIs.
+ * <p>Does not call {@code notify-send}, D-Bus, tray toasts, or other OS notification APIs. Passes
+ * the monitored host so the GUI sink can keep one window per endpoint.
  */
 public final class DesktopAlertDispatcher implements AlertDispatcher {
     private static final Logger LOG = LoggerFactory.getLogger(DesktopAlertDispatcher.class);
@@ -30,7 +31,7 @@ public final class DesktopAlertDispatcher implements AlertDispatcher {
         String oldStr = event.oldIps().isEmpty() ? "(none)" : String.join(" -> ", event.oldIps());
         String newStr = event.newIps().isEmpty() ? "(none)" : String.join(" -> ", event.newIps());
         String body = event.host() + ": " + oldStr + " → " + newStr;
-        show("PINGUI route change", body);
+        show(event.host(), "PINGUI route change", body);
     }
 
     @Override
@@ -38,12 +39,12 @@ public final class DesktopAlertDispatcher implements AlertDispatcher {
         if (event == null) {
             return;
         }
-        show(event.desktopTitle(), event.desktopBody());
+        show(event.host(), event.desktopTitle(), event.desktopBody());
     }
 
-    private void show(String title, String body) {
+    private void show(String host, String title, String body) {
         try {
-            sink.show(title, body);
+            sink.show(host, title, body);
         } catch (RuntimeException ex) {
             LOG.warn("Desktop alert popup failed: {}", ex.getMessage());
         }

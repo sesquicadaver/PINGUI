@@ -7,6 +7,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **Desktop alerts — one window per host:** `JavaFxDesktopAlertSink` reuses/updates a single non-modal popup per endpoint instead of opening a new dialog for every alert.
+
 ### Added
 
 - **P29-005 — TCP Connect probe:** `host:port` / `[ipv6]:port` → DNS time + connect time + success/refused/timeout + resolved IP; `HostProbeMode.TCP_CONNECT`; YAML/GUI; NEXT→**DONE**.

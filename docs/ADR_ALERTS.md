@@ -26,7 +26,7 @@ Python містить референсну реалізацію (`alert_dispatch
 | Канал | v1 | Реалізація | Примітка |
 |-------|----|------------|----------|
 | **Webhook** | ✅ | `POST` JSON | Generic schema; Slack Incoming Webhook приймає JSON — достатньо generic body або тонкий mapper у споживача |
-| **Desktop** | ✅ | In-app popup | Java: JavaFX `Alert` via `JavaFxDesktopAlertSink` (без `notify-send` / D-Bus / tray); Python: injectable popup або INFO log |
+| **Desktop** | ✅ | In-app popup | Java: JavaFX `Stage` via `JavaFxDesktopAlertSink` — **одне вікно на host**, оновлення тексту (без `notify-send` / D-Bus / tray); Python: injectable popup або INFO log |
 | **Email** | ❌ | — | Out of scope v1 |
 | **SNMP trap** | ❌ | — | Out of scope v1 |
 | **PagerDuty/Opsgenie native** | ❌ | — | Через generic webhook |
