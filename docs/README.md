@@ -2,7 +2,7 @@
 
 # Документація PINGUI
 
-На **`main`** і **`beta`** — повний пакет (Java Pro + Python) після merge; **`beta`** — гілка розробки, **`main`** — останній стабільний зріз. Лінійна черга ROADMAP: **NEXT = P26-007** (фаза 26 — [ROADMAP.md § NEXT](ROADMAP.md#next--єдине-джерело-правди)). «Гілки» — [README.md](../README.md).
+На **`main`** і **`beta`** — повний пакет (Java Pro + Python) після merge; **`beta`** — гілка розробки, **`main`** — останній стабільний зріз. Лінійна черга ROADMAP: **NEXT = P28-001** (фаза 28 — [ROADMAP.md § NEXT](ROADMAP.md#next--єдине-джерело-правди)). «Гілки» — [README.md](../README.md).
 
 ## Навігація
 
@@ -11,10 +11,11 @@
 | [CHECKLIST.md](CHECKLIST.md) | Адмін / DevOps | Checklist Linux / Windows / macOS |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Адмін / DevOps | JDK 21, venv, cap_net_raw, systemd |
 | [JAVA.md](JAVA.md) | Розробник | Probe, monitor, UI, YAML |
-| [ROADMAP.md](ROADMAP.md) | Розробник | Офіційний план: фази 0–26; NEXT=P26-007 |
+| [ROADMAP.md](ROADMAP.md) | Розробник | Офіційний план: фази 0–28; NEXT=P28-001 |
 | [LIVING_SPEC.md](LIVING_SPEC.md) | Розробник | Матриця модуль → тести |
 | [ADR_IPV6.md](ADR_IPV6.md) | Розробник | Dual-stack config ADR (V6-002) |
 | [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md) | Розробник | GUI paint / geometry ADR (P24-010) |
+| [ADR_HARDENING.md](ADR_HARDENING.md) | Розробник | Hardening post-audit ADR (P26-009) |
 | [ADR_ALERT_RULES.md](ADR_ALERT_RULES.md) | Розробник | Quality alert rules ADR (P21-001): endpoint_down lifecycle |
 | [ADR_HOST_PROBLEM_INDICATOR.md](ADR_HOST_PROBLEM_INDICATOR.md) | Розробник | Host-row problem badge / ack / auto session DB (P22-001) |
 | [ADR_ALERTS.md](ADR_ALERTS.md) | Розробник | Route-change alerts ADR (P10-001) |

@@ -97,6 +97,15 @@ telemetry:
 - [ ] У `/tmp/pingui-syslog.log` — рядок RFC 5424 з JSON `"event":"route_change"` (або `probe_error`); **немає** потоку hop-RTT samples при `events_only: true`
 - [ ] `./pingui-java.sh -- --stop --pid-file /tmp/pingui-java.pid`
 
+### Java hardening smoke (P26-009)
+
+Політика: [ADR_HARDENING.md](ADR_HARDENING.md). CI: `cd java && ./gradlew check` (JaCoCo package gates P26-007).
+
+- [ ] CI: `./gradlew test --tests io.pingui.persistence.SessionDatabaseHardeningTest --tests io.pingui.PinguiLauncherTest --tests io.pingui.monitor.AlertRuleEngineTest --tests io.pingui.ui.MainControllerLocGateTest --tests io.pingui.monitor.PollResultEffectsTest` — green
+- [ ] Launcher: `scripts/smoke_launcher.sh` (Linux) або `scripts/smoke_launcher.cmd` (Windows) — quoting пробілів + detach/`--foreground`
+- [ ] GUI: Налаштування → Сповіщення… — latency_high підказка EWMA + ETA ≈ fail_after × interval (P26-008)
+- [ ] F1 / Довідка — рядок Сповіщення згадує latency_high (EWMA) і FIRING ≈ fail_after × interval
+
 ### Java GUI telemetry smoke (P16-094)
 
 - [ ] CI: `cd java && ./gradlew test --tests io.pingui.ui.AppMenuDialogsTest --tests io.pingui.TelemetryAttachmentTest --tests io.pingui.ui.TelemetrySettingsDialogTest` — green

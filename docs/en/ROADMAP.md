@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P26-009** |
-| **Phase** | 26 — hardening post-audit (telemetry / launchers / split / coverage) |
-| **DoD (short)** | ADR_HARDENING + LIVING_SPEC/CHECKLIST + phase close |
+| **Current task** | **P28-001** |
+| **Phase** | 28 — runtime hardening follow-up (SinkRegistry / inFlight / Python schema) |
+| **DoD (short)** | SinkRegistry: bounded executor + hang isolation |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -154,7 +154,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 108 | **P26-006** | [x] | MonitorService split (poll vs alert/telemetry wiring) |
 | 109 | **P26-007** | [x] | JaCoCo package-level thresholds (not one bundle) |
 | 110 | **P26-008** | [x] | latency_high: EWMA/window baseline + UI ETA note |
-| 111 | **P26-009** | [ ] | ADR_HARDENING + LIVING_SPEC/CHECKLIST + phase close |
+| 111 | **P26-009** | [x] | ADR_HARDENING + LIVING_SPEC/CHECKLIST + phase close |
 | 112 | **P27-001** | [x] | SQLite telemetry: column SSOT, no `payload_json` (schema v5) |
 | 113 | **P27-002** | [x] | `persistence_event`: typed columns + `detail_json` (schema v6) |
 | 114 | **P27-003** | [x] | `host_session` normalize: hop/history tables (schema v7) |
@@ -162,7 +162,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 116 | **P28-002** | [ ] | MonitorService: reserve `inFlight` before `probePool.execute` (PING_ONLY) |
 | 117 | **P28-003** | [ ] | Python `session_db`: reject schema `!= SCHEMA_VERSION` (forward-compat) |
 
-**Queue status:** active — **NEXT = P26-009** (phase 26; P26-008 EWMA latency [x]; P28 after P27).
+**Queue status:** active — **NEXT = P28-001** (phase 28; P26 closed [x]; P27 [x]).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -890,7 +890,7 @@ flowchart TD
 | **P26-006** | [x] MonitorService split | `PollResultEffects`, `TelemetryEmission`, `MonitorService` | poll ≠ effects; `PollResultEffectsTest` (9); MonitorService 467 LOC |
 | **P26-007** | [x] Package JaCoCo thresholds | `java/build.gradle.kts` | PACKAGE minima: config/probe/monitor ≥85%, telemetry ≥80%, persistence ≥75%; BUNDLE ≥80%; UI `io/pingui/ui/**` exclusion explicit |
 | **P26-008** | [x] Latency baseline evolution | `AlertRuleEngine`, `LatencyHighRuleConfig`, ADR_ALERT_RULES, i18n | EWMA α=0.2; test vs unbounded mean; Help/Settings ETA ≈ fail_after×interval |
-| **P26-009** | [ ] Phase close | `ADR_HARDENING.md`, LIVING_SPEC, CHECKLIST, ROADMAP | NEXT→first `[ ]` in queue (P28-001 after P27 [x]) |
+| **P26-009** | [x] Phase close | `ADR_HARDENING.md`, LIVING_SPEC, CHECKLIST, ROADMAP | NEXT→**P28-001**; phase 26 closed |
 
 **Out of this queue (intentional):** DE/FR i18n; dark mode product; FXML rewrite; >10 hosts; BGP/NMS.
 
@@ -1002,7 +1002,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P26-009**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P28-001**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

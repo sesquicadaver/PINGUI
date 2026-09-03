@@ -9,6 +9,8 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **P26-009 — hardening phase close:** `ADR_HARDENING` (UK/EN); CHECKLIST § Hardening smoke; LIVING_SPEC/README/JAVA sync; NEXT→**P28-001**.
+- **P26-008 — latency_high EWMA baseline + UI ETA:** AVG = EWMA α=0.2 (bad samples excluded); `LatencyHighRuleConfig.approximateFiringEta`; Help/Settings copy; ADR §7; NEXT→**P26-009**.
 - **P26-007 — package JaCoCo thresholds:** separate PACKAGE minima (`config`/`probe`/`monitor` ≥85%, `telemetry` ≥80%, `persistence` ≥75%) + BUNDLE ≥80%; UI `io/pingui/ui/**` exclusion explicit; NEXT→**P26-008**.
 - **P28 — runtime hardening follow-up (queue after P27):** from audit `pimgui-5.md` — P28-001 SinkRegistry hang isolation; P28-002 `inFlight` before pool; P28-003 Python schema `!=` gate. NEXT stays **P26-007**.
 - **P27 — SQLite format normalize (queue after P26):** P27-001…003 — telemetry columns SSOT → typed `persistence_event` → normalized `host_session`; Java-only; no legacy `.db` migration.
