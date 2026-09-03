@@ -113,7 +113,7 @@ Module → unit test matrix. Update when adding features.
 | UI i18n runtime (P25) | `UiI18n`, `UiLocale`, `UiLocaleStore`, `messages_*.properties`, `MainView` Language menu | `UiI18nTest`; UI tests with UK locale |
 | ADR i18n (P25) | `docs/ADR_I18N.md`, `docs/en/ADR_I18N.md` | User-facing locales only: USER_GUIDE + HOWTO + `README.<lang>` |
 | Doc parity multi-locale (P25) | `scripts/check_doc_parity.py` | `test_doc_parity.py`; UK/EN full; stub locales = user docs |
-| Hardening queue (P26) | ROADMAP phase 26: telemetry isolation, SQLite reopen, launchers, MainController/MonitorService split, JaCoCo packages, latency EWMA | NEXT=`P26-007`; P26-006 MonitorService split [x] (`PollResultEffects`/`TelemetryEmission`) |
+| Hardening queue (P26) | ROADMAP phase 26: telemetry isolation, SQLite reopen, launchers, MainController/MonitorService split, JaCoCo packages, latency EWMA | NEXT=`P26-008`; P26-007 package JaCoCo [x] |
 | SQLite format normalize (P27) | schema v5–v7: telemetry columns SSOT; typed `persistence_event`; normalized `host_session` | Java-only; no legacy migrate (delete `.db`); queue after P26-009 |
 | Runtime hardening follow-up (P28) | `SinkRegistry` hang isolation; `inFlight` before pool; Python schema `!=` gate | audit `pimgui-5.md`; after P27 in queue; NEXT stays P26-007 |
 | YAML/GUI alerts.rules (P21-003) | `AlertConfig`, `EndpointDownRuleConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `ProfilesConfigTest`, `AlertsSettingsDialogTest`, `AppMenuDialogsTest` |
@@ -141,7 +141,7 @@ Module → unit test matrix. Update when adding features.
 | CI gate | `.github/workflows/java.yml` | `./gradlew check` (ubuntu + windows jobs block merge; Monocle headless for FX UI tests) |
 | Windows CI blocking (P19-002) | `.github/workflows/java.yml` `check-windows` | No `continue-on-error`; both matrix jobs required on `main`/`beta` |
 | Doc parity UK/EN | `scripts/check_doc_parity.py` | `python3 scripts/check_doc_parity.py` (CI + `./scripts/ci_venv.sh`) |
-| JaCoCo coverage | `build.gradle.kts` `jacocoTestCoverageVerification` | `./gradlew check` (≥80%; parsers + command builders included P19-003) |
+| JaCoCo coverage | `build.gradle.kts` `jacocoTestCoverageVerification` | PACKAGE gates config/probe/monitor ≥85%, telemetry ≥80%, persistence ≥75%; BUNDLE ≥80%; UI excluded |
 | Static imports | `config/checkstyle/checkstyle.xml` | `./gradlew checkstyleMain` / `checkstyleTest` |
 
 **Run locally:** `cd java && ./gradlew check`

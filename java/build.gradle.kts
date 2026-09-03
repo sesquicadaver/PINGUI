@@ -77,11 +77,51 @@ tasks.jacocoTestReport {
 
 tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.jacocoTestReport)
-    // Bundle includes IPv6 config/geoip/probe parsers + command builders (P19-003).
-    // JavaFX canvas/dialogs and subprocess runners stay excluded — CHECKLIST smoke.
+    // P26-007: package gates for critical layers + bundle floor.
+    // UI (`io/pingui/ui/**`) and process/raw ICMP runners stay excluded — CHECKLIST smoke, not unit %.
     violationRules {
         rule {
             element = "BUNDLE"
+            limit {
+                counter = "INSTRUCTION"
+                minimum = "0.80".toBigDecimal()
+            }
+        }
+        rule {
+            element = "PACKAGE"
+            includes = listOf("io.pingui.config")
+            limit {
+                counter = "INSTRUCTION"
+                minimum = "0.85".toBigDecimal()
+            }
+        }
+        rule {
+            element = "PACKAGE"
+            includes = listOf("io.pingui.probe")
+            limit {
+                counter = "INSTRUCTION"
+                minimum = "0.85".toBigDecimal()
+            }
+        }
+        rule {
+            element = "PACKAGE"
+            includes = listOf("io.pingui.monitor")
+            limit {
+                counter = "INSTRUCTION"
+                minimum = "0.85".toBigDecimal()
+            }
+        }
+        rule {
+            element = "PACKAGE"
+            includes = listOf("io.pingui.persistence")
+            limit {
+                counter = "INSTRUCTION"
+                minimum = "0.75".toBigDecimal()
+            }
+        }
+        rule {
+            element = "PACKAGE"
+            includes = listOf("io.pingui.telemetry")
             limit {
                 counter = "INSTRUCTION"
                 minimum = "0.80".toBigDecimal()
@@ -110,34 +150,8 @@ tasks.jacocoTestCoverageVerification {
                         "io/pingui/probe/icmp/LinuxJnaIcmpTransport*.class",
                         "io/pingui/probe/icmp/LinuxCLibrary*.class",
                         "io/pingui/probe/icmp/RawIcmpPermission.class",
-                        "io/pingui/ui/MainController*.class",
-                        "io/pingui/ui/MainCoordinators*.class",
-                        "io/pingui/ui/MainViewActionsBinder*.class",
-                        "io/pingui/ui/StageGeometryCoordinator*.class",
-                        "io/pingui/ui/SettingsDialogsCoordinator*.class",
-                        "io/pingui/ui/EasterEggController*.class",
-                        "io/pingui/ui/PersistenceSessionCoordinator*.class",
-                        "io/pingui/ui/MonitorServiceFactory*.class",
-                        "io/pingui/ui/MonitorUiHandler*.class",
-                        "io/pingui/ui/HistoryPanelWiring*.class",
-                        "io/pingui/ui/PingExpertDialog*.class",
-                        "io/pingui/ui/GraphCanvas*.class",
-                        "io/pingui/ui/HostItem*.class",
-                        "io/pingui/ui/HostListCell*.class",
-                        "io/pingui/ui/ProfileUiCoordinator*.class",
-                        "io/pingui/ui/HostListPresenter*.class",
-                        "io/pingui/ui/MonitorLifecycle*.class",
-                        "io/pingui/ui/ViewModeController*.class",
-                        "io/pingui/ui/RouteGraphPresenter*.class",
-                        "io/pingui/ui/AppMenuDialogs*.class",
-                        "io/pingui/ui/MtuDiscoveryDialog*.class",
-                        "io/pingui/ui/AlertsSettingsDialog*.class",
-                        "io/pingui/ui/ProblemDetailsDialog*.class",
-                        "io/pingui/ui/PersistenceSettingsDialog*.class",
-                        "io/pingui/ui/PresetSelfCheckUi*.class",
-                        "io/pingui/ui/TelemetrySettingsDialog*.class",
-                        "io/pingui/ui/ProfileParamsSettingsDialog*.class",
-                        "io/pingui/ui/view/**",
+                        // Explicit UI exclusion (P26-007): JavaFX presenters/dialogs — not package-gated.
+                        "io/pingui/ui/**",
                     )
                 }
             },
