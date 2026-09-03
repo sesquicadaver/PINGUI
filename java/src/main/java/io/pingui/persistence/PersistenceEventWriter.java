@@ -137,6 +137,7 @@ public final class PersistenceEventWriter {
             Double jitterMs,
             Double lossPercent,
             Double durationMs,
+            Long routeId,
             String errorCode) {
         if (host == null || host.isBlank() || probeMode == null || probeMode.isBlank()) {
             return;
@@ -151,8 +152,25 @@ public final class PersistenceEventWriter {
                 jitterMs,
                 lossPercent,
                 durationMs,
-                null,
+                routeId,
                 errorCode);
+    }
+
+    /**
+     * Upserts deduplicated {@code route} for hop chain (P30-004). Returns route id, or {@code null}
+     * when hops are empty.
+     */
+    public Long observeRoute(String host, java.util.List<io.pingui.model.Models.HopNode> hops, Instant when) {
+        if (host == null || host.isBlank() || hops == null || hops.isEmpty()) {
+            return null;
+        }
+        String signature = RouteSignature.fromHops(hops);
+        if (signature.isBlank()) {
+            return null;
+        }
+        ensureHostRow(host);
+        Instant at = when != null ? when : Instant.now();
+        return database.upsertRoute(host, signature, SessionJsonCodec.routeToJson(hops), at);
     }
 
     private static PersistenceEventType qualityEventType(QualityAlertEvent event) {

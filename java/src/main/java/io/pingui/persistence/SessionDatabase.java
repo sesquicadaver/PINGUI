@@ -30,13 +30,13 @@ import java.util.OptionalLong;
 /**
  * SQLite persistence for per-host session metrics (P11-010 / P27 / P30) and telemetry archive (P16).
  *
- * <p>Schema v10: stable {@code host_session.id}; {@code incident}; {@code poll_result} (canonical
- * finished-poll aggregate). Public API remains address-keyed. Legacy schema versions are rejected
- * (delete and recreate the DB file).
+ * <p>Schema v11: stable {@code host_session.id}; {@code incident}; {@code poll_result}; deduplicated
+ * {@code route} (signature + hops_json). Public API remains address-keyed. Legacy schema versions
+ * are rejected (delete and recreate the DB file).
  */
 public final class SessionDatabase implements AutoCloseable {
-    /** Current Java session DB schema (v10 = poll_result, P30-003). */
-    public static final int SCHEMA_VERSION = 10;
+    /** Current Java session DB schema (v11 = deduped route, P30-004). */
+    public static final int SCHEMA_VERSION = 11;
 
     private static final String ROUTE_CURRENT = "current";
     private static final String ROUTE_PREVIOUS = "previous";
@@ -695,6 +695,89 @@ public final class SessionDatabase implements AutoCloseable {
     }
 
     /**
+     * Inserts or refreshes a deduplicated route for {@code host} (P30-004). Same signature bumps
+     * {@code seen_count} and {@code last_seen}.
+     *
+     * @return route row id
+     */
+    public synchronized long upsertRoute(String host, String signature, String hopsJson, Instant seenAt) {
+        Objects.requireNonNull(host, "host");
+        Objects.requireNonNull(signature, "signature");
+        Objects.requireNonNull(hopsJson, "hopsJson");
+        if (signature.isBlank()) {
+            throw new IllegalArgumentException("signature must be non-blank");
+        }
+        Instant when = seenAt != null ? seenAt : Instant.now();
+        String whenIso = ISO_UTC.format(when);
+        try {
+            long hostId = requireHostId(host);
+            try (PreparedStatement ps = connection.prepareStatement(
+                    """
+                    INSERT INTO route(host_id, signature, hops_json, first_seen, last_seen, seen_count)
+                    VALUES (?, ?, ?, ?, ?, 1)
+                    ON CONFLICT(host_id, signature) DO UPDATE SET
+                        last_seen = excluded.last_seen,
+                        seen_count = seen_count + 1,
+                        hops_json = excluded.hops_json
+                    """)) {
+                ps.setLong(1, hostId);
+                ps.setString(2, signature);
+                ps.setString(3, hopsJson);
+                ps.setString(4, whenIso);
+                ps.setString(5, whenIso);
+                ps.executeUpdate();
+            }
+            long id;
+            try (PreparedStatement ps = connection.prepareStatement(
+                    """
+                    SELECT id FROM route WHERE host_id = ? AND signature = ?
+                    """)) {
+                ps.setLong(1, hostId);
+                ps.setString(2, signature);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (!rs.next()) {
+                        throw new PersistenceException("Failed to resolve route id after upsert for " + host);
+                    }
+                    id = rs.getLong(1);
+                }
+            }
+            connection.commit();
+            return id;
+        } catch (SQLException ex) {
+            rollbackQuietly();
+            throw new PersistenceException("Failed to upsert route for " + host, ex);
+        }
+    }
+
+    /** Routes for {@code host}, newest {@code last_seen} first. */
+    public synchronized List<RouteRecord> listRoutes(String host, int limit) {
+        Objects.requireNonNull(host, "host");
+        if (limit < 1) {
+            throw new IllegalArgumentException("limit must be >= 1");
+        }
+        try (PreparedStatement ps = connection.prepareStatement(
+                """
+                SELECT r.id, r.host_id, hs.address, r.signature, r.hops_json,
+                       r.first_seen, r.last_seen, r.seen_count
+                FROM route r
+                JOIN host_session hs ON hs.id = r.host_id
+                WHERE hs.address = ?
+                ORDER BY r.last_seen DESC, r.id DESC
+                LIMIT ?
+                """)) {
+            ps.setString(1, host);
+            ps.setInt(2, limit);
+            return readRouteRows(ps);
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to list routes for " + host, ex);
+        }
+    }
+
+    public synchronized int countRoutes() {
+        return countTable("route");
+    }
+
+    /**
      * Appends one telemetry sample row (P16-020 / P27-001). Columns are SSOT; dump rebuilds JSON.
      * Host remains the address string (no FK in v8).
      */
@@ -971,6 +1054,7 @@ public final class SessionDatabase implements AutoCloseable {
                         ON persistence_event(host_id, event_type, observed_at)
                     """);
             createIncidentTable(statement);
+            createRouteTable(statement);
             createPollResultTable(statement);
             createTelemetryTables(statement);
         }
@@ -1324,6 +1408,46 @@ public final class SessionDatabase implements AutoCloseable {
                         rs.getString(8),
                         rs.getString(9),
                         Instant.parse(rs.getString(10))));
+            }
+            return List.copyOf(rows);
+        }
+    }
+
+    private static void createRouteTable(Statement statement) throws SQLException {
+        statement.execute(
+                """
+                CREATE TABLE IF NOT EXISTS route (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    host_id INTEGER NOT NULL,
+                    signature TEXT NOT NULL,
+                    hops_json TEXT NOT NULL,
+                    first_seen TEXT NOT NULL,
+                    last_seen TEXT NOT NULL,
+                    seen_count INTEGER NOT NULL DEFAULT 1,
+                    FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE,
+                    UNIQUE(host_id, signature)
+                )
+                """);
+        statement.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_route_host_last_seen
+                    ON route(host_id, last_seen DESC)
+                """);
+    }
+
+    private static List<RouteRecord> readRouteRows(PreparedStatement ps) throws SQLException {
+        try (ResultSet rs = ps.executeQuery()) {
+            List<RouteRecord> rows = new ArrayList<>();
+            while (rs.next()) {
+                rows.add(new RouteRecord(
+                        rs.getLong(1),
+                        rs.getLong(2),
+                        rs.getString(3),
+                        rs.getString(4),
+                        rs.getString(5),
+                        Instant.parse(rs.getString(6)),
+                        Instant.parse(rs.getString(7)),
+                        rs.getInt(8)));
             }
             return List.copyOf(rows);
         }

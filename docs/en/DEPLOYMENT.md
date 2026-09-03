@@ -360,8 +360,9 @@ Session persistence (`host_session` / `persistence_event`) is a separate layer; 
 | Events | `persistence_event` (`host_id` FK; `route_change`, `probe_error`, …) |
 | Incidents | `incident` (`host_id`; FIRING/RESOLVED/ack; P30-002) |
 | Poll history | `poll_result` (canonical poll aggregate; P30-003) |
+| Routes | `route` (deduped signature + hops_json; P30-004) |
 
-**Schema:** Java `SCHEMA_VERSION = 10`. Older `.db` files (v9 and below) are **not migrated** — delete the file and recreate ([ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md)).
+**Schema:** Java `SCHEMA_VERSION = 11`. Older `.db` files (v10 and below) are **not migrated** — delete the file and recreate ([ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md)).
 
 **Writing to the DB:** after connecting SQLite, enable the target checkbox in the host list — legacy YAML defaults to `enabled: false`; without active monitoring, route and `hop_stats` are not updated. `host_session` rows appear on connect; route after the first trace; ping history after the first poll (auto target `ping` when Expert ping is off). **Route history:** the first trace adds a «Початковий маршрут» row; later rows appear only when the IP chain changes.
 

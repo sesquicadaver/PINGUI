@@ -45,7 +45,7 @@ class SessionDatabasePollResultTest {
         try (SessionDatabase database = new SessionDatabase(dbPath)) {
             PersistenceEventWriter writer = new PersistenceEventWriter(database);
             writer.writePollResult(
-                    "1.1.1.1", "trace", Instant.parse("2026-09-03T13:10:00Z"), true, 8.0, null, 0.0, 120.0, null);
+                    "1.1.1.1", "trace", Instant.parse("2026-09-03T13:10:00Z"), true, 8.0, null, 0.0, 120.0, null, null);
             writer.writePollResult(
                     "1.1.1.1",
                     "trace",
@@ -55,6 +55,7 @@ class SessionDatabasePollResultTest {
                     null,
                     null,
                     50.0,
+                    null,
                     "timeout");
             List<PollResultRecord> rows = database.listPollResults("1.1.1.1", 10);
             assertEquals(2, rows.size());

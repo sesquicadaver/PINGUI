@@ -28,7 +28,7 @@ Evolve **without migrating old `.db` files**: `schema_version != supported` → 
 | 1 | **P30-001** | `host_session.id` INTEGER PK; `address` UNIQUE; children/`persistence_event` → `host_id` |
 | 2 | **P30-002** | `incident` table (FIRING/RESOLVED, duration, ack) — **done** (schema v9) |
 | 3 | **P30-003** | `poll_result` — canonical finished-poll aggregate — **done** (schema v10) |
-| 4 | **P30-004** | deduplicated `route` (signature + hops_json) |
+| 4 | **P30-004** | deduplicated `route` (signature + hops_json) — **done** (schema v11) |
 | 5 | **P30-005** | `metric_rollup` + bounded retention |
 | 6 | **P30-006** | RO export connection / integrity_check CLI / backup-before-irreversible |
 
@@ -94,6 +94,25 @@ CREATE TABLE poll_result (
 - Written after each finished poll (`PollResultEffects` → `PersistenceEventWriter`).
 - Canonical RTT/loss/uptime history; `telemetry_*` remains an export channel.
 - `route_id` nullable until P30-004.
+
+### P30-004 (done)
+
+```sql
+CREATE TABLE route (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    host_id INTEGER NOT NULL,
+    signature TEXT NOT NULL,
+    hops_json TEXT NOT NULL,
+    first_seen TEXT NOT NULL,
+    last_seen TEXT NOT NULL,
+    seen_count INTEGER NOT NULL DEFAULT 1,
+    FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE,
+    UNIQUE(host_id, signature)
+);
+```
+
+- Signature: `ip|ip|*|ip` (`*` = timeout).
+- Successful poll upserts route and sets `poll_result.route_id`.
 
 ### Out of scope
 
