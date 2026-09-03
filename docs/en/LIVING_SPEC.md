@@ -115,6 +115,7 @@ Module → unit test matrix. Update when adding features.
 | Doc parity multi-locale (P25) | `scripts/check_doc_parity.py` | `test_doc_parity.py`; UK/EN full; stub locales = user docs |
 | Hardening queue (P26) | ROADMAP phase 26: telemetry isolation, SQLite reopen, launchers, MainController/MonitorService split, JaCoCo packages, latency EWMA | NEXT=`P26-007`; P26-006 MonitorService split [x] (`PollResultEffects`/`TelemetryEmission`) |
 | SQLite format normalize (P27) | schema v5–v7: telemetry columns SSOT; typed `persistence_event`; normalized `host_session` | Java-only; no legacy migrate (delete `.db`); queue after P26-009 |
+| Runtime hardening follow-up (P28) | `SinkRegistry` hang isolation; `inFlight` before pool; Python schema `!=` gate | audit `pimgui-5.md`; after P27 in queue; NEXT stays P26-007 |
 | YAML/GUI alerts.rules (P21-003) | `AlertConfig`, `EndpointDownRuleConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `ProfilesConfigTest`, `AlertsSettingsDialogTest`, `AppMenuDialogsTest` |
 | Host problem indicator ADR (P22-001) | `docs/ADR_HOST_PROBLEM_INDICATOR.md` | docs review / ROADMAP P22 |
 | HostProblemSummary (P22-002) | `AlertRuleEngine`, `HostProblemSummary`, `MonitorService` | `AlertRuleEngineTest`, `MonitorServiceTest` |

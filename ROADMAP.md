@@ -11,7 +11,7 @@
 | **Поточна задача** | **[P26-007](docs/ROADMAP.md#next--єдине-джерело-правди)** |
 | **Правило** | якщо не `DONE` — `/autopilot` = цей ID; якщо `DONE` — зупинитись / чекати явного нового ID. **Не питати** «який пункт?». |
 
-Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна) (фаза 26–27, #103–114).
+Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна) (фази 26–28, #103–117).
 
 **Статус MVP:** ✅ реалізовано (2026-06-26)
 
@@ -48,7 +48,8 @@
 | **24** | GUI architecture & paint | ✅ **DONE** |
 | **25** | i18n UI + user-facing docs | ✅ **DONE** |
 | **26** | Hardening post-audit (telemetry / launchers / split) | 🔄 **P26-007** |
-| **27** | SQLite record format normalize (Java) | ⏳ після P26 |
+| **27** | SQLite record format normalize (Java) | ✅ P27-001…003 (черга після P26-009) |
+| **28** | Runtime hardening follow-up (audit pimgui-5) | ⏳ після P27 |
 
 ---
 

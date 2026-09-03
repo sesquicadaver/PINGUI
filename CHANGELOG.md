@@ -9,6 +9,7 @@
 
 ### Added
 
+- **P28 — runtime hardening follow-up (черга після P27):** з аудиту `pimgui-5.md` — P28-001 SinkRegistry hang isolation; P28-002 `inFlight` before pool; P28-003 Python schema `!=` gate. NEXT лишається **P26-007**.
 - **P27 — SQLite format normalize (черга після P26):** P27-001…003 — telemetry columns SSOT → typed `persistence_event` → normalized `host_session`; Java-only; без міграції старих `.db`.
 - **P27-003 — normalized host_session (schema v7):** `session_route_hop` / `session_ping_sample` / `session_hop_stats` / `session_hop_rtt_sample`; `load`/`save` API без змін.
 - **P27-002 — typed persistence_event (schema v6):** колонки `state`/`message`/`old_ips_json`/`new_ips_json`/`detail_json`; без `payload_json`; `payloadJson()` лише для UI rebuild.

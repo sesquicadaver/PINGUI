@@ -158,8 +158,11 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 112 | **P27-001** | [x] | SQLite telemetry: column SSOT, no `payload_json` (schema v5) |
 | 113 | **P27-002** | [x] | `persistence_event`: typed columns + `detail_json` (schema v6) |
 | 114 | **P27-003** | [x] | `host_session` normalize: hop/history tables (schema v7) |
+| 115 | **P28-001** | [ ] | SinkRegistry: bounded executor + hang isolation (no re-dispatch) |
+| 116 | **P28-002** | [ ] | MonitorService: reserve `inFlight` before `probePool.execute` (PING_ONLY) |
+| 117 | **P28-003** | [ ] | Python `session_db`: reject schema `!= SCHEMA_VERSION` (forward-compat) |
 
-**Queue status:** active — **NEXT = P26-007** (phase 26 post-P25 hardening; P27 after P26-009).
+**Queue status:** active — **NEXT = P26-007** (phase 26; P27 [x]; P28 after P26-009 / P27).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -887,7 +890,7 @@ flowchart TD
 | **P26-006** | [x] MonitorService split | `PollResultEffects`, `TelemetryEmission`, `MonitorService` | poll ≠ effects; `PollResultEffectsTest` (9); MonitorService 467 LOC |
 | **P26-007** | [ ] Package JaCoCo thresholds | `java/build.gradle.kts` | Separate minima for `config`/`probe`/`monitor`/`persistence`/`telemetry`; UI exclusion explicit |
 | **P26-008** | [ ] Latency baseline evolution | `monitor/*`, ADR_ALERT_RULES, UI copy | EWMA or bounded window; contract + test; Help/Settings shows approximate FIRING time |
-| **P26-009** | [ ] Phase close | `ADR_HARDENING.md`, LIVING_SPEC, CHECKLIST, ROADMAP | NEXT→P27-001 (queue below) |
+| **P26-009** | [ ] Phase close | `ADR_HARDENING.md`, LIVING_SPEC, CHECKLIST, ROADMAP | NEXT→first `[ ]` in queue (P28-001 after P27 [x]) |
 
 **Out of this queue (intentional):** DE/FR i18n; dark mode product; FXML rewrite; >10 hosts; BGP/NMS.
 
@@ -902,6 +905,18 @@ flowchart TD
 | **P27-001** | [x] Telemetry columns SSOT | `SessionDatabase`, `MetricSample`/`TelemetryEvent` helpers, tests | schema v5; `telemetry_*` without `payload_json`; `labels_json` (+ ips for events); dump/list rebuild DTOs from columns; legacy DB rejected |
 | **P27-002** | [x] persistence_event typed | `SessionDatabase`, `PersistenceEventWriter`, `PersistenceEventRecord`, UI history | schema v6; `state`/`message`/`old_ips_json`/`new_ips_json`/`detail_json`; no host/profile/time duplication in blob |
 | **P27-003** | [x] host_session normalize | `SessionDatabase`, tables / SessionStore tests | schema v7; meta in `host_session`; hops/history/stats in normalized tables; `load`/`save` API preserved |
+
+---
+
+## Phase 28 — Runtime hardening follow-up (`beta`, P1)
+
+**Context:** Audit `pimgui-5.md` (main @ `3de5cf85`, 2026-08-18). JaCoCo package gates are already **P26-007**. Java SQLite exact-version reject is in P27. Remaining: telemetry hang isolation, poll queue, Python forward-compat.
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **P28-001** | [ ] SinkRegistry hang isolation | `SinkRegistry`, `TelemetryBus`, tests | bounded executor (not `newCachedThreadPool`); do not start a sink with an active/hung call; shutdown without sync re-dispatch of a hung sink; timeout+hang test |
+| **P28-002** | [ ] inFlight before queue | `MonitorService`, `HostRegistry`, tests | `compareAndSet(inFlight)` **before** `probePool.execute`; clear on reject/complete; PING_ONLY must not grow an unbounded duplicate queue |
+| **P28-003** | [ ] Python schema version gate | `session_db.py`, unit tests | reject `version != SCHEMA_VERSION` (both `>` and `<` without silent migrate-as-ok); fail-fast message; Java parity already v7 |
 
 ---
 
