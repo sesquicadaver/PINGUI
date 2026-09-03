@@ -143,15 +143,7 @@ class SessionDatabaseTest {
             Instant t2 = Instant.parse("2026-09-03T10:01:00Z");
             db.insertRouteChange("8.8.8.8", "default", List.of("10.0.0.1"), List.of("8.8.8.8"), t1);
             db.insertEvent(
-                    PersistenceEventType.ENDPOINT_DOWN,
-                    "8.8.8.8",
-                    "default",
-                    "firing",
-                    null,
-                    null,
-                    null,
-                    "{}",
-                    t2);
+                    PersistenceEventType.ENDPOINT_DOWN, "8.8.8.8", "default", "firing", null, null, null, "{}", t2);
             List<PersistenceEventRecord> rows = db.listHostEvents("8.8.8.8", Instant.EPOCH, 10);
             assertEquals(2, rows.size());
             assertEquals(PersistenceEventType.ENDPOINT_DOWN, rows.get(0).eventType());
