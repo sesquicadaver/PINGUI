@@ -23,8 +23,11 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
@@ -34,9 +37,11 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.stage.Window;
+import javafx.util.StringConverter;
 
-/** Host list CRUD, tag filter chips, toggles, and row metrics in the main window. */
+/** Host list CRUD, tag/text filter, sort, toggles, and row metrics in the main window. */
 final class HostListPresenter {
     private static final double HOST_ROW_HEIGHT = 36.0;
     private static final double HOST_LIST_INSET = 4.0;
@@ -47,6 +52,7 @@ final class HostListPresenter {
 
     private final ObservableList<HostItem> hostItems;
     private final FilteredList<HostItem> filteredHosts;
+    private final SortedList<HostItem> sortedHosts;
     private final ListView<HostItem> hostList;
     private final TextField hostInput;
     private final Supplier<SessionStore> store;
@@ -62,9 +68,16 @@ final class HostListPresenter {
     private final FlowPane tagChipPane = new FlowPane(6, 6);
     private final ToggleGroup tagFilterGroup = new ToggleGroup();
     private final HBox tagFilterBar = new HBox(8);
+    private final TextField textFilterField = new TextField();
+    private final ComboBox<HostListSortMode> sortCombo = new ComboBox<>();
+    private final CheckBox problemsFirstCheck = new CheckBox();
+    private final Label hostCountersLabel = new Label();
+    private final VBox navigationChrome = new VBox(6);
+    private HostListNavStore navStore = HostListNavStore.userDefault();
     private String activeFilterTag;
     private boolean updatingList;
     private boolean refreshingChips;
+    private boolean applyingNavPrefs;
     private BiFunction<String, List<String>, Optional<List<String>>> tagsEditor = HostTagsDialog::show;
     private Function<String, Boolean> confirmDeleteHost = this::confirmDeleteHostDialog;
     private Runnable markDirty = () -> {};
@@ -86,6 +99,7 @@ final class HostListPresenter {
             Consumer<Runnable> runWithoutHistoryFilterSync) {
         this.hostItems = hostItems;
         this.filteredHosts = new FilteredList<>(hostItems, item -> true);
+        this.sortedHosts = new SortedList<>(filteredHosts);
         this.hostList = hostList;
         this.hostInput = hostInput;
         this.store = store;
@@ -116,24 +130,78 @@ final class HostListPresenter {
             }
             Object data = newToggle.getUserData();
             activeFilterTag = data instanceof String tag && !tag.isBlank() ? tag : null;
-            applyTagFilter();
+            applyFilters();
+        });
+        buildNavigationChrome();
+        HostListNavPrefs prefs = navStore.load();
+        applyNavPrefs(prefs);
+    }
+
+    private void buildNavigationChrome() {
+        textFilterField.setPromptText(UiI18n.get("host.filter_prompt"));
+        textFilterField.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(textFilterField, Priority.ALWAYS);
+        sortCombo.getItems().setAll(HostListSortMode.values());
+        sortCombo.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(HostListSortMode mode) {
+                return mode != null ? mode.label() : "";
+            }
+
+            @Override
+            public HostListSortMode fromString(String string) {
+                return HostListSortMode.CONFIG;
+            }
+        });
+        sortCombo.setPrefWidth(140);
+        problemsFirstCheck.setText(UiI18n.get("host.problems_first"));
+        problemsFirstCheck.setFocusTraversable(false);
+        hostCountersLabel.getStyleClass().add("pingui-muted");
+        HBox controls = new HBox(8, textFilterField, sortCombo, problemsFirstCheck);
+        controls.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        navigationChrome.getChildren().setAll(controls, hostCountersLabel, tagFilterBar);
+        textFilterField.textProperty().addListener((obs, oldText, newText) -> {
+            if (applyingNavPrefs) {
+                return;
+            }
+            applyFilters();
+            persistNavPrefs();
+        });
+        sortCombo.valueProperty().addListener((obs, oldMode, newMode) -> {
+            if (applyingNavPrefs || newMode == null) {
+                return;
+            }
+            refreshSort();
+            persistNavPrefs();
+        });
+        problemsFirstCheck.selectedProperty().addListener((obs, was, on) -> {
+            if (applyingNavPrefs) {
+                return;
+            }
+            refreshSort();
+            persistNavPrefs();
         });
     }
 
-    Node tagFilterBar() {
-        return tagFilterBar;
+    /** Tag chips + text filter / sort / counters (P31-005). */
+    Node navigationChrome() {
+        return navigationChrome;
     }
 
     void configure() {
-        hostList.setItems(filteredHosts);
+        hostList.setItems(sortedHosts);
         hostList.setFixedCellSize(HOST_ROW_HEIGHT);
         hostList.setMaxHeight(listHeightForRows(HostsConfig.MAX_HOSTS));
         hostItems.addListener((ListChangeListener.Change<? extends HostItem> change) -> {
             syncListHeight();
             refreshTagChips();
+            refreshSort();
+            refreshCounters();
         });
         syncListHeight();
         refreshTagChips();
+        refreshSort();
+        refreshCounters();
         hostList.setCellFactory(list -> new HostListCell(
                 this::onToggleEnabled,
                 this::onTogglePingOnly,
@@ -179,7 +247,7 @@ final class HostListPresenter {
         Object data = selected.getUserData();
         activeFilterTag = data instanceof String tag && !tag.isBlank() ? tag : null;
         refreshingChips = false;
-        applyTagFilter();
+        applyFilters();
     }
 
     /** Clears tag filter when history selects a host hidden by the current chip. */
@@ -211,9 +279,44 @@ final class HostListPresenter {
         this.markDirty = markDirty != null ? markDirty : () -> {};
     }
 
+    /** Package-visible for tests: inject nav prefs store without user config dir. */
+    void setNavStore(HostListNavStore navStore) {
+        this.navStore = navStore != null ? navStore : HostListNavStore.userDefault();
+        applyNavPrefs(this.navStore.load());
+    }
+
     /** Wires selected-host inspector refresh after metrics sync (P31-003). */
     void setHostInspector(HostInspectorPresenter hostInspector) {
         this.hostInspector = hostInspector;
+    }
+
+    String textFilter() {
+        return textFilterField.getText() != null ? textFilterField.getText() : "";
+    }
+
+    void setTextFilter(String query) {
+        textFilterField.setText(query != null ? query : "");
+    }
+
+    HostListSortMode sortMode() {
+        HostListSortMode mode = sortCombo.getValue();
+        return mode != null ? mode : HostListSortMode.CONFIG;
+    }
+
+    void setSortMode(HostListSortMode mode) {
+        sortCombo.setValue(mode != null ? mode : HostListSortMode.CONFIG);
+    }
+
+    boolean problemsFirst() {
+        return problemsFirstCheck.isSelected();
+    }
+
+    void setProblemsFirst(boolean problemsFirst) {
+        problemsFirstCheck.setSelected(problemsFirst);
+    }
+
+    String hostCountersText() {
+        return hostCountersLabel.getText();
     }
 
     String activeFilterTag() {
@@ -281,6 +384,8 @@ final class HostListPresenter {
             if (hostInspector != null) {
                 hostInspector.refreshIfHost(item.getHost());
             }
+            refreshSort();
+            refreshCounters();
             return;
         }
         HostTargetStats stats = store.get().targetStats(item.getHost());
@@ -294,10 +399,14 @@ final class HostListPresenter {
         if (hostInspector != null) {
             hostInspector.refreshIfHost(item.getHost());
         }
+        refreshSort();
+        refreshCounters();
     }
 
     void syncRouteState(HostItem item) {
         applyRouteHops(item);
+        refreshSort();
+        refreshCounters();
     }
 
     private void applyRouteHops(HostItem item) {
@@ -314,9 +423,13 @@ final class HostListPresenter {
         MonitorService service = monitor.get();
         if (service == null) {
             item.clearProblem();
+            refreshSort();
+            refreshCounters();
             return;
         }
         item.applyProblem(service.hostProblemSummary(item.getHost()).orElse(null));
+        refreshSort();
+        refreshCounters();
     }
 
     HostItem findItem(String host) {
@@ -446,8 +559,33 @@ final class HostListPresenter {
         }
     }
 
-    private void applyTagFilter() {
-        filteredHosts.setPredicate(item -> item.hasTag(activeFilterTag));
+    private void applyFilters() {
+        String query = textFilter();
+        filteredHosts.setPredicate(item -> item.hasTag(activeFilterTag) && HostListNavRules.matchesText(item, query));
+        refreshCounters();
+    }
+
+    private void refreshSort() {
+        sortedHosts.setComparator(HostListNavRules.comparator(sortMode(), problemsFirst(), hostItems::indexOf));
+    }
+
+    private void refreshCounters() {
+        hostCountersLabel.setText(HostListNavRules.formatCounters(HostListNavRules.countEndpoints(hostItems)));
+    }
+
+    private void applyNavPrefs(HostListNavPrefs prefs) {
+        HostListNavPrefs safe = prefs != null ? prefs : HostListNavPrefs.defaults();
+        applyingNavPrefs = true;
+        textFilterField.setText(safe.textFilter());
+        sortCombo.setValue(safe.sortMode());
+        problemsFirstCheck.setSelected(safe.problemsFirst());
+        applyingNavPrefs = false;
+        applyFilters();
+        refreshSort();
+    }
+
+    private void persistNavPrefs() {
+        navStore.save(new HostListNavPrefs(textFilter(), sortMode(), problemsFirst()));
     }
 
     private void selectAllChip() {
@@ -456,7 +594,7 @@ final class HostListPresenter {
             tagFilterGroup.selectToggle(all);
         } else {
             activeFilterTag = null;
-            applyTagFilter();
+            applyFilters();
         }
     }
 

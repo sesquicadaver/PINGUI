@@ -9,6 +9,7 @@ import io.pingui.config.PingExpertEntry;
 import io.pingui.monitor.MonitorFixtures;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +23,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import org.junit.jupiter.api.Test;
 
 class HostListPresenterTest {
@@ -168,6 +170,60 @@ class HostListPresenterTest {
         });
     }
 
+    @Test
+    void textFilterHidesNonMatchingHosts() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            Harness harness = new Harness(List.of(tagged("8.8.8.8", "dc"), tagged("1.1.1.1", "vpn")));
+            harness.presenter.configure();
+            harness.presenter.rebuild(harness.entries);
+
+            harness.presenter.setTextFilter("1.1");
+            assertEquals(1, harness.presenter.visibleHostCount());
+            assertEquals("1.1.1.1", harness.hostList.getItems().get(0).getHost());
+        });
+    }
+
+    @Test
+    void problemsFirstSortMovesDownHostAboveConfigOrder() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            Harness harness = new Harness(List.of(tagged("ok.host"), tagged("down.host")));
+            harness.presenter.configure();
+            harness.presenter.rebuild(harness.entries);
+            HostItem ok = harness.presenter.findItem("ok.host");
+            HostItem down = harness.presenter.findItem("down.host");
+            ok.applyMetrics(
+                    new io.pingui.monitor.HostTargetStats(0.0, 1.0, 2.0, 3.0, false),
+                    new io.pingui.monitor.HostPollCounters(1, 0));
+            down.applyMetrics(
+                    new io.pingui.monitor.HostTargetStats(100.0, null, null, null, true),
+                    io.pingui.monitor.HostPollCounters.ZERO);
+            harness.presenter.setProblemsFirst(true);
+            harness.presenter.setSortMode(HostListSortMode.CONFIG);
+
+            assertEquals("down.host", harness.hostList.getItems().get(0).getHost());
+            assertTrue(harness.presenter.hostCountersText().contains("2"));
+        });
+    }
+
+    @Test
+    void navPrefsPersistAcrossStoreReload() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            Harness harness = new Harness(List.of(tagged("8.8.8.8")));
+            Path prefsFile = java.nio.file.Files.createTempFile("pingui-nav", ".properties");
+            harness.presenter.setNavStore(new HostListNavStore(prefsFile));
+            harness.presenter.configure();
+            harness.presenter.rebuild(harness.entries);
+            harness.presenter.setTextFilter("8.8");
+            harness.presenter.setSortMode(HostListSortMode.RTT);
+            harness.presenter.setProblemsFirst(true);
+
+            HostListNavPrefs loaded = new HostListNavStore(prefsFile).load();
+            assertEquals("8.8", loaded.textFilter());
+            assertEquals(HostListSortMode.RTT, loaded.sortMode());
+            assertTrue(loaded.problemsFirst());
+        });
+    }
+
     private static HostEntry tagged(String host, String... tags) {
         return new HostEntry(host, true, false, PingExpertEntry.empty(), null, null, List.of(tags));
     }
@@ -217,12 +273,19 @@ class HostListPresenterTest {
                     (oldHost, newHost) -> {},
                     () -> {},
                     Runnable::run);
+            try {
+                Path prefsFile = java.nio.file.Files.createTempFile("pingui-host-nav-test", ".properties");
+                this.presenter.setNavStore(new HostListNavStore(prefsFile));
+            } catch (java.io.IOException ex) {
+                throw new IllegalStateException(ex);
+            }
             this.presenter.setMarkDirty(dirtyMarks::incrementAndGet);
         }
 
         FlowPane chipPane() {
-            HBox bar = (HBox) presenter.tagFilterBar();
-            return (FlowPane) bar.getChildren().get(1);
+            VBox chrome = (VBox) presenter.navigationChrome();
+            HBox tagBar = (HBox) chrome.getChildren().get(2);
+            return (FlowPane) tagBar.getChildren().get(1);
         }
     }
 }

@@ -144,7 +144,7 @@ public final class MainController {
                 settingsDialogs,
                 this::onSaveConfig,
                 this::applyUiLocale);
-        mainView.assemble(actionsBinder.bind(), hostListPresenter.tagFilterBar());
+        mainView.assemble(actionsBinder.bind(), hostListPresenter.navigationChrome());
         updateDirtyUi();
 
         mainView.modeGroup().selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
