@@ -984,8 +984,7 @@ class MonitorServiceTest {
                         new HopNode(1, "198.51.100.1", 5.0, false),
                         new HopNode(2, "198.51.100.10", 9.0, false),
                         new HopNode(3, "*", null, true)));
-        RouteProbe probe = (targetHost, maxHops, timeoutSeconds) ->
-                "1.1.1.1".equals(targetHost) ? downA : downB;
+        RouteProbe probe = (targetHost, maxHops, timeoutSeconds) -> "1.1.1.1".equals(targetHost) ? downA : downB;
         MonitorService service = new MonitorService(0.05, 20, 0.5, probe);
         service.setEndpointDownRule(new EndpointDownRuleConfig(true, 1, 1, 15));
         service.setNotifyResolved(false);

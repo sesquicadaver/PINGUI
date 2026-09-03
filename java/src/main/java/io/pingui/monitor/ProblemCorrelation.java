@@ -31,8 +31,7 @@ public record ProblemCorrelation(
             throw new IllegalArgumentException("hosts size must equal degradedHostCount");
         }
         lastSharedStableHop = lastSharedStableHop == null ? Optional.empty() : lastSharedStableHop;
-        lastSharedStableHopNumber =
-                lastSharedStableHopNumber == null ? Optional.empty() : lastSharedStableHopNumber;
+        lastSharedStableHopNumber = lastSharedStableHopNumber == null ? Optional.empty() : lastSharedStableHopNumber;
         firstSharedProblemHop = firstSharedProblemHop == null ? Optional.empty() : firstSharedProblemHop;
         firstSharedProblemHopNumber =
                 firstSharedProblemHopNumber == null ? Optional.empty() : firstSharedProblemHopNumber;

@@ -107,10 +107,10 @@ public final class ProblemDetailsDialog {
                             correlation.totalHostCount()))
                     .append('\n');
         }
-        correlation
-                .firstSharedProblemHop()
-                .ifPresent(ip -> sb.append(UiI18n.get("alerts.correlation.problem_hop", ip)).append('\n'));
-        sb.append(UiI18n.get("alerts.correlation.scope", scopeLabel(correlation.scope()))).append('\n');
+        correlation.firstSharedProblemHop().ifPresent(ip -> sb.append(UiI18n.get("alerts.correlation.problem_hop", ip))
+                .append('\n'));
+        sb.append(UiI18n.get("alerts.correlation.scope", scopeLabel(correlation.scope())))
+                .append('\n');
         if (correlation.timeOverlap()) {
             sb.append(UiI18n.get("alerts.correlation.time_overlap", formatDuration(correlation.startSpread())));
         } else {

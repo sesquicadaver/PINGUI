@@ -48,12 +48,11 @@ public final class ProblemCorrelator {
         if (usable.size() < 2) {
             return Optional.empty();
         }
-        Duration window = overlapWindow == null || overlapWindow.isNegative()
-                ? DEFAULT_OVERLAP_WINDOW
-                : overlapWindow;
+        Duration window = overlapWindow == null || overlapWindow.isNegative() ? DEFAULT_OVERLAP_WINDOW : overlapWindow;
         int total = Math.max(totalHostCount, usable.size());
 
-        List<List<String>> stablePrefixes = usable.stream().map(ProblemCorrelator::stablePrefixIps).toList();
+        List<List<String>> stablePrefixes =
+                usable.stream().map(ProblemCorrelator::stablePrefixIps).toList();
         List<String> commonPrefix = longestCommonPrefix(stablePrefixes);
         Optional<String> lastStable =
                 commonPrefix.isEmpty() ? Optional.empty() : Optional.of(commonPrefix.get(commonPrefix.size() - 1));
@@ -69,7 +68,8 @@ public final class ProblemCorrelator {
         Duration spread = startSpread(usable);
         boolean overlap = !spread.isNegative() && spread.compareTo(window) <= 0;
 
-        List<String> hosts = usable.stream().map(ProblemHostObservation::host).sorted().toList();
+        List<String> hosts =
+                usable.stream().map(ProblemHostObservation::host).sorted().toList();
         return Optional.of(new ProblemCorrelation(
                 usable.size(),
                 total,

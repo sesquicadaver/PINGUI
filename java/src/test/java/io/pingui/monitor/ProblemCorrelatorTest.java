@@ -19,35 +19,24 @@ class ProblemCorrelatorTest {
     @Test
     void emptyWhenFewerThanTwoHosts() {
         assertTrue(ProblemCorrelator.correlate(List.of(), 0).isEmpty());
-        assertTrue(ProblemCorrelator.correlate(
-                        List.of(obs("a", List.of(hop(1, "10.0.0.1")), T0)), 1)
+        assertTrue(ProblemCorrelator.correlate(List.of(obs("a", List.of(hop(1, "10.0.0.1")), T0)), 1)
                 .isEmpty());
     }
 
     @Test
     void emptyWhenRoutesMissing() {
-        assertTrue(ProblemCorrelator.correlate(
-                        List.of(obs("a", List.of(), T0), obs("b", List.of(), T0)), 2)
+        assertTrue(ProblemCorrelator.correlate(List.of(obs("a", List.of(), T0), obs("b", List.of(), T0)), 2)
                 .isEmpty());
     }
 
     @Test
     void findsLastSharedStableAndIspScope() {
-        List<HopNode> routeA = List.of(
-                hop(1, "198.51.100.1"),
-                hop(2, "198.51.100.10"),
-                Models.timeout(3),
-                Models.timeout(4));
-        List<HopNode> routeB = List.of(
-                hop(1, "198.51.100.1"),
-                hop(2, "198.51.100.10"),
-                Models.timeout(3),
-                Models.timeout(4));
-        List<HopNode> routeC = List.of(
-                hop(1, "198.51.100.1"),
-                hop(2, "198.51.100.10"),
-                hop(3, "203.0.113.5"),
-                Models.timeout(4));
+        List<HopNode> routeA =
+                List.of(hop(1, "198.51.100.1"), hop(2, "198.51.100.10"), Models.timeout(3), Models.timeout(4));
+        List<HopNode> routeB =
+                List.of(hop(1, "198.51.100.1"), hop(2, "198.51.100.10"), Models.timeout(3), Models.timeout(4));
+        List<HopNode> routeC =
+                List.of(hop(1, "198.51.100.1"), hop(2, "198.51.100.10"), hop(3, "203.0.113.5"), Models.timeout(4));
 
         ProblemCorrelation result = ProblemCorrelator.correlate(
                         List.of(
@@ -88,8 +77,7 @@ class ProblemCorrelatorTest {
         List<HopNode> routeA = List.of(hop(1, "192.168.0.1"), Models.timeout(2));
         List<HopNode> routeB = List.of(hop(1, "192.168.0.1"), Models.timeout(2));
 
-        ProblemCorrelation result = ProblemCorrelator.correlate(
-                        List.of(obs("a", routeA, T0), obs("b", routeB, T0)), 2)
+        ProblemCorrelation result = ProblemCorrelator.correlate(List.of(obs("a", routeA, T0), obs("b", routeB, T0)), 2)
                 .orElseThrow();
 
         assertEquals(ProblemCorrelationScope.LOCAL, result.scope());
@@ -104,8 +92,7 @@ class ProblemCorrelatorTest {
                 hop(3, "203.0.113.3"),
                 hop(4, "203.0.113.4"),
                 Models.timeout(5));
-        ProblemCorrelation result = ProblemCorrelator.correlate(
-                        List.of(obs("a", deep, T0), obs("b", deep, T0)), 2)
+        ProblemCorrelation result = ProblemCorrelator.correlate(List.of(obs("a", deep, T0), obs("b", deep, T0)), 2)
                 .orElseThrow();
 
         assertEquals(ProblemCorrelationScope.EDGE, result.scope());
@@ -116,9 +103,7 @@ class ProblemCorrelatorTest {
     void timeOverlapFalseWhenSpreadExceedsWindow() {
         List<HopNode> route = List.of(hop(1, "10.0.0.1"), Models.timeout(2));
         ProblemCorrelation result = ProblemCorrelator.correlate(
-                        List.of(obs("a", route, T0), obs("b", route, T0.plusSeconds(180))),
-                        2,
-                        Duration.ofSeconds(120))
+                        List.of(obs("a", route, T0), obs("b", route, T0.plusSeconds(180))), 2, Duration.ofSeconds(120))
                 .orElseThrow();
 
         assertFalse(result.timeOverlap());
@@ -130,8 +115,7 @@ class ProblemCorrelatorTest {
         List<HopNode> routeA = List.of(hop(1, "10.0.0.1"), hop(2, "198.51.100.1"), hop(3, "8.8.8.8"));
         List<HopNode> routeB = List.of(hop(1, "10.0.0.1"), hop(2, "198.51.100.1"), hop(3, "1.1.1.1"));
 
-        ProblemCorrelation result = ProblemCorrelator.correlate(
-                        List.of(obs("a", routeA, T0), obs("b", routeB, T0)), 2)
+        ProblemCorrelation result = ProblemCorrelator.correlate(List.of(obs("a", routeA, T0), obs("b", routeB, T0)), 2)
                 .orElseThrow();
 
         assertEquals(Optional.of("198.51.100.1"), result.lastSharedStableHop());

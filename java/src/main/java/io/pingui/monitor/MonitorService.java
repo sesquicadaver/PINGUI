@@ -203,7 +203,8 @@ public final class MonitorService implements AutoCloseable {
         ArrayList<ProblemHostObservation> observations = new ArrayList<>();
         for (String host : store.hosts()) {
             Optional<HostProblemSummary> summary = alertRuleEngine.problemSummary(host, at);
-            if (summary.isEmpty() || !HostProblemSummary.STATE_FIRING.equals(summary.get().lastState())) {
+            if (summary.isEmpty()
+                    || !HostProblemSummary.STATE_FIRING.equals(summary.get().lastState())) {
                 continue;
             }
             Instant started = summary.get().lastStartedAt();
