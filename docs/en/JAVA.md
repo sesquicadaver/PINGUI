@@ -224,4 +224,4 @@ Tests and CI — on **`main`** and **`beta`** (ROADMAP development on `beta`).
 
 ## Future
 
-The linear ROADMAP queue: **NEXT = P28-003** (phase 28 — runtime hardening). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT. Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
+The linear ROADMAP queue: **NEXT = DONE** (phase 28 — runtime hardening). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT. Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).

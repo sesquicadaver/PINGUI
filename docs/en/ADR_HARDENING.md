@@ -83,7 +83,7 @@ Rule contract — [ADR_ALERT_RULES.md](ADR_ALERT_RULES.md) §7.
 ## Consequences
 
 - Positive: poll more resilient to sink fail; launchers exercised; LOC/coverage gates in CI; latency AVG no longer unbounded mean.
-- Negative: Python session schema parity still in P28-003; lags Java v7.
+- Negative: Python session schema stays **v4** (Java **v7**); full format parity is a separate phase if needed.
 - UI package coverage is deliberately excluded from PACKAGE minima — manual CHECKLIST remains required.
 
 ## Follow-ups (phase 28+)
@@ -92,7 +92,7 @@ Rule contract — [ADR_ALERT_RULES.md](ADR_ALERT_RULES.md) §7.
 |----|-------|
 | **P28-001** | ✅ `SinkRegistry` bounded executor + hang isolation |
 | **P28-002** | ✅ Reserve `inFlight` before `probePool.execute` |
-| **P28-003** | Python `session_db` reject `version != SCHEMA_VERSION` |
+| **P28-003** | ✅ Python `session_db` reject `version != SCHEMA_VERSION` |
 
 ## References
 

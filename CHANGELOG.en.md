@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **P28-003 — Python session_db schema gate:** reject `version != SCHEMA_VERSION` (v4) with `SessionDatabaseError`; no silent migrate; NEXT→**DONE**.
 - **P28-002 — inFlight before probePool.execute:** CAS `inFlight` before queue; clear on reject/complete; no unbounded duplicate runnables; NEXT→**P28-003**.
 - **P28-001 — SinkRegistry hang isolation:** bounded pool (8) instead of `newCachedThreadPool`; per-sink busy gate; no sync re-dispatch of hung sink on interrupt; ADR_TELEMETRY §7; NEXT→**P28-002**.
 - **P26-009 — hardening phase close:** `ADR_HARDENING` (UK/EN); CHECKLIST § Hardening smoke; LIVING_SPEC/README/JAVA sync; NEXT→**P28-001**.

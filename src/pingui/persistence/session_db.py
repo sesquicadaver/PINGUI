@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import sqlite3
 import threading
-from contextlib import suppress
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -13,6 +12,10 @@ from typing import Any
 from pingui.models import HopNode, HopProbeStats, HostSessionData
 
 SCHEMA_VERSION = 4
+
+
+class SessionDatabaseError(RuntimeError):
+    """Raised when the SQLite session file cannot be opened safely."""
 
 
 def _hop_to_json(node: HopNode) -> dict[str, Any]:
@@ -111,7 +114,11 @@ class SessionDatabase:
         self._conn = sqlite3.connect(self._path, check_same_thread=False)
         self._lock = threading.RLock()
         self._conn.execute("PRAGMA foreign_keys = ON")
-        self._init_schema()
+        try:
+            self._init_schema()
+        except Exception:
+            self._conn.close()
+            raise
 
     @property
     def path(self) -> Path:
@@ -175,62 +182,14 @@ class SessionDatabase:
             )
             self._conn.commit()
             return
-        self._migrate_schema(int(row[0]))
+        current_version = int(row[0])
+        if current_version != SCHEMA_VERSION:
+            msg = (
+                f"Unsupported session DB schema version {current_version} "
+                f"(required {SCHEMA_VERSION}). Delete the database file and recreate."
+            )
+            raise SessionDatabaseError(msg)
         self._conn.commit()
-
-    def _migrate_schema(self, current_version: int) -> None:
-        if current_version < 2:
-            with suppress(sqlite3.OperationalError):
-                self._conn.execute(
-                    "ALTER TABLE host_session ADD COLUMN hop_stats_json TEXT NOT NULL DEFAULT '{}'"
-                )
-            self._conn.execute("UPDATE schema_meta SET version = ?", (2,))
-            current_version = 2
-        if current_version < 3:
-            self._conn.executescript(
-                """
-                CREATE TABLE IF NOT EXISTS persistence_event (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    event_type TEXT NOT NULL,
-                    host TEXT NOT NULL,
-                    profile TEXT,
-                    payload_json TEXT NOT NULL,
-                    observed_at TEXT NOT NULL,
-                    FOREIGN KEY (host) REFERENCES host_session(host) ON DELETE CASCADE
-                );
-                CREATE INDEX IF NOT EXISTS idx_pe_host_type_time
-                    ON persistence_event(host, event_type, observed_at);
-                """
-            )
-            self._conn.execute("UPDATE schema_meta SET version = ?", (3,))
-            current_version = 3
-        if current_version < 4:
-            self._conn.executescript(
-                """
-                CREATE TABLE IF NOT EXISTS telemetry_sample (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
-                    value REAL NOT NULL,
-                    host TEXT NOT NULL,
-                    hop INTEGER,
-                    payload_json TEXT NOT NULL,
-                    observed_at TEXT NOT NULL
-                );
-                CREATE INDEX IF NOT EXISTS idx_ts_host_time
-                    ON telemetry_sample(host, observed_at);
-                CREATE TABLE IF NOT EXISTS telemetry_event (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    event TEXT NOT NULL,
-                    host TEXT NOT NULL,
-                    message TEXT,
-                    payload_json TEXT NOT NULL,
-                    observed_at TEXT NOT NULL
-                );
-                CREATE INDEX IF NOT EXISTS idx_te_host_time
-                    ON telemetry_event(host, observed_at);
-                """
-            )
-            self._conn.execute("UPDATE schema_meta SET version = ?", (4,))
 
     def insert_event(
         self,
