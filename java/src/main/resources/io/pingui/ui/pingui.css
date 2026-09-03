@@ -74,6 +74,19 @@
     -fx-text-fill: -pingui-text;
 }
 
+.pingui-host-state {
+    -fx-font-size: 12px;
+    -fx-text-fill: -pingui-text;
+}
+
+.pingui-host-col-rtt,
+.pingui-host-col-loss,
+.pingui-host-col-mode {
+    -fx-font-family: monospace;
+    -fx-font-size: 11px;
+    -fx-text-fill: -pingui-text;
+}
+
 .pingui-poll-counters {
     -fx-font-family: monospace;
     -fx-font-size: 11px;

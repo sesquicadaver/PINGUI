@@ -17,23 +17,30 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
-/** Host list row: enable, Ping only, optional Exten./MTU, problem badge, name, metrics. */
+/**
+ * Unified host list row (P31-001): {@code [state] name RTT loss mode [problem]} with fixed columns;
+ * poll/RTT detail and tags in tooltip.
+ */
 final class HostListCell extends ListCell<HostItem> {
+    private static final double COL_RTT = 36.0;
+    private static final double COL_LOSS = 40.0;
+    private static final double COL_MODE = 44.0;
+
     private final CheckBox checkBox = new CheckBox();
     private final CheckBox pingOnlyCheck = new CheckBox(UiI18n.get("host.ping_only"));
     private final Button extenButton = new Button(UiI18n.get("host.exten"));
     private final Button mtuButton = new Button(UiI18n.get("host.mtu"));
     private final Button problemButton = new Button(UiI18n.get("host.problem_badge"));
+    private final Label stateLabel = new Label();
     private final Label hostLabel = new Label();
-    private final Label tagsLabel = new Label();
-    private final Label pollCountersLabel = new Label();
-    private final Label metricsLabel = new Label();
-    private final HBox hostRow = new HBox(6, extenButton, mtuButton, problemButton, hostLabel);
-    private final VBox textBox = new VBox(2, hostRow, tagsLabel, pollCountersLabel, metricsLabel);
-    private final HBox root = new HBox(8, checkBox, textBox, pingOnlyCheck);
+    private final Label rttLabel = new Label();
+    private final Label lossLabel = new Label();
+    private final Label modeLabel = new Label();
+    private final HBox mainRow =
+            new HBox(6, stateLabel, hostLabel, rttLabel, lossLabel, modeLabel, problemButton, extenButton, mtuButton);
+    private final HBox root = new HBox(8, checkBox, mainRow, pingOnlyCheck);
     private final BiConsumer<HostItem, Boolean> onEnabledChanged;
     private final BiConsumer<HostItem, Boolean> onPingOnlyChanged;
     private final BooleanProperty expertMode;
@@ -42,6 +49,11 @@ final class HostListCell extends ListCell<HostItem> {
     private final BiConsumer<HostItem, Void> onProblemOpen;
     private HostItem boundItem;
     private ChangeListener<String> rowColorListener;
+    private ChangeListener<String> stateGlyphListener;
+    private ChangeListener<String> rttColumnListener;
+    private ChangeListener<String> lossColumnListener;
+    private ChangeListener<String> modeColumnListener;
+    private ChangeListener<String> rowTooltipListener;
     private ChangeListener<Boolean> expertConfiguredListener;
     private ChangeListener<Boolean> expertModeListener;
     private ChangeListener<Boolean> problemUnreadListener;
@@ -60,6 +72,10 @@ final class HostListCell extends ListCell<HostItem> {
         this.onExpertOpen = onExpertOpen;
         this.onMtuWizardOpen = onMtuWizardOpen;
         this.onProblemOpen = onProblemOpen;
+        configureColumn(stateLabel, 14.0, "pingui-host-state", Pos.CENTER);
+        configureColumn(rttLabel, COL_RTT, "pingui-host-col-rtt", Pos.CENTER_RIGHT);
+        configureColumn(lossLabel, COL_LOSS, "pingui-host-col-loss", Pos.CENTER_RIGHT);
+        configureColumn(modeLabel, COL_MODE, "pingui-host-col-mode", Pos.CENTER);
         extenButton.setMinWidth(Region.USE_PREF_SIZE);
         mtuButton.setMinWidth(Region.USE_PREF_SIZE);
         mtuButton.setTooltip(new Tooltip(UiI18n.get("host.mtu_tooltip")));
@@ -87,10 +103,7 @@ final class HostListCell extends ListCell<HostItem> {
             }
         });
         hostLabel.getStyleClass().add("pingui-host-name");
-        pollCountersLabel.getStyleClass().add("pingui-poll-counters");
-        metricsLabel.getStyleClass().add("pingui-metrics");
-        tagsLabel.getStyleClass().add("pingui-muted");
-        HBox.setHgrow(textBox, Priority.ALWAYS);
+        HBox.setHgrow(mainRow, Priority.ALWAYS);
         HBox.setHgrow(hostLabel, Priority.ALWAYS);
         root.getStyleClass().add("pingui-host-row");
         root.setAlignment(Pos.CENTER_LEFT);
@@ -119,6 +132,7 @@ final class HostListCell extends ListCell<HostItem> {
         if (empty || item == null) {
             setGraphic(null);
             setBackground(null);
+            setTooltip(null);
             return;
         }
         boundItem = item;
@@ -135,15 +149,21 @@ final class HostListCell extends ListCell<HostItem> {
             pingOnlyCheck.setTooltip(null);
         }
         hostLabel.textProperty().bind(item.hostProperty());
-        tagsLabel.textProperty().bind(item.tagsTextProperty());
-        tagsLabel.visibleProperty().bind(item.tagsTextProperty().isNotEmpty());
-        tagsLabel.managedProperty().bind(item.tagsTextProperty().isNotEmpty());
-        pollCountersLabel.textProperty().bind(item.pollCountersTextProperty());
-        pollCountersLabel.visibleProperty().bind(item.showPollCountersProperty());
-        pollCountersLabel.managedProperty().bind(item.showPollCountersProperty());
-        metricsLabel.textProperty().bind(item.metricsTextProperty());
-        metricsLabel.visibleProperty().bind(item.showMetricsProperty());
-        metricsLabel.managedProperty().bind(item.showMetricsProperty());
+        stateGlyphListener = (obs, was, glyph) -> stateLabel.setText(glyph);
+        item.stateGlyphProperty().addListener(stateGlyphListener);
+        stateLabel.setText(item.stateGlyphProperty().get());
+        rttColumnListener = (obs, was, text) -> rttLabel.setText(text);
+        item.rttColumnTextProperty().addListener(rttColumnListener);
+        rttLabel.setText(item.rttColumnTextProperty().get());
+        lossColumnListener = (obs, was, text) -> lossLabel.setText(text);
+        item.lossColumnTextProperty().addListener(lossColumnListener);
+        lossLabel.setText(item.lossColumnTextProperty().get());
+        modeColumnListener = (obs, was, text) -> modeLabel.setText(text);
+        item.modeColumnTextProperty().addListener(modeColumnListener);
+        modeLabel.setText(item.modeColumnTextProperty().get());
+        rowTooltipListener = (obs, was, text) -> applyRowTooltip(text);
+        item.rowDetailsTooltipProperty().addListener(rowTooltipListener);
+        applyRowTooltip(item.rowDetailsTooltipProperty().get());
         rowColorListener = (obs, was, color) -> applyBackground(color);
         item.rowColorProperty().addListener(rowColorListener);
         expertConfiguredListener = (obs, was, configured) -> styleExtenButton(configured);
@@ -156,6 +176,22 @@ final class HostListCell extends ListCell<HostItem> {
         refreshProblemBadge(item.isProblemUnread());
         updating = false;
         setGraphic(root);
+    }
+
+    private static void configureColumn(Label label, double width, String styleClass, Pos alignment) {
+        label.setMinWidth(width);
+        label.setPrefWidth(width);
+        label.setMaxWidth(width);
+        label.setAlignment(alignment);
+        label.getStyleClass().add(styleClass);
+    }
+
+    private void applyRowTooltip(String text) {
+        if (text == null || text.isBlank()) {
+            setTooltip(null);
+        } else {
+            setTooltip(new Tooltip(text));
+        }
     }
 
     private void refreshExpertControls(HostItem item) {
@@ -184,15 +220,26 @@ final class HostListCell extends ListCell<HostItem> {
             return;
         }
         hostLabel.textProperty().unbind();
-        tagsLabel.textProperty().unbind();
-        tagsLabel.visibleProperty().unbind();
-        tagsLabel.managedProperty().unbind();
-        pollCountersLabel.textProperty().unbind();
-        pollCountersLabel.visibleProperty().unbind();
-        pollCountersLabel.managedProperty().unbind();
-        metricsLabel.textProperty().unbind();
-        metricsLabel.visibleProperty().unbind();
-        metricsLabel.managedProperty().unbind();
+        if (stateGlyphListener != null) {
+            boundItem.stateGlyphProperty().removeListener(stateGlyphListener);
+            stateGlyphListener = null;
+        }
+        if (rttColumnListener != null) {
+            boundItem.rttColumnTextProperty().removeListener(rttColumnListener);
+            rttColumnListener = null;
+        }
+        if (lossColumnListener != null) {
+            boundItem.lossColumnTextProperty().removeListener(lossColumnListener);
+            lossColumnListener = null;
+        }
+        if (modeColumnListener != null) {
+            boundItem.modeColumnTextProperty().removeListener(modeColumnListener);
+            modeColumnListener = null;
+        }
+        if (rowTooltipListener != null) {
+            boundItem.rowDetailsTooltipProperty().removeListener(rowTooltipListener);
+            rowTooltipListener = null;
+        }
         if (rowColorListener != null) {
             boundItem.rowColorProperty().removeListener(rowColorListener);
             rowColorListener = null;
