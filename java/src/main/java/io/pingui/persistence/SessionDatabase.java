@@ -35,6 +35,14 @@ import java.util.OptionalLong;
  * Legacy schema versions are rejected (delete and recreate the DB file).
  */
 public final class SessionDatabase implements AutoCloseable {
+    /** How the SQLite file is opened (P30-006). */
+    public enum OpenMode {
+        /** Normal monitor / GUI / retention writes. */
+        READ_WRITE,
+        /** Long export or integrity_check — no DDL or mutations. */
+        READ_ONLY
+    }
+
     /** Current Java session DB schema (v12 = metric_rollup + poll retention, P30-005). */
     public static final int SCHEMA_VERSION = 12;
 
@@ -45,21 +53,41 @@ public final class SessionDatabase implements AutoCloseable {
     private static final DateTimeFormatter ISO_UTC = DateTimeFormatter.ISO_INSTANT.withZone(ZoneOffset.UTC);
 
     private final Path path;
+    private final OpenMode openMode;
     private final Connection connection;
 
+    /** Opens {@code path} for read/write (creates schema when missing). */
     public SessionDatabase(Path path) {
+        this(path, OpenMode.READ_WRITE);
+    }
+
+    public SessionDatabase(String path) {
+        this(Path.of(path));
+    }
+
+    /** Read-only open for export / integrity_check while daemon holds the write lock (P30-006). */
+    public static SessionDatabase readOnly(Path path) {
+        return new SessionDatabase(path, OpenMode.READ_ONLY);
+    }
+
+    public SessionDatabase(Path path, OpenMode openMode) {
         this.path = Objects.requireNonNull(path, "path");
-        try {
-            Path parent = path.getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
+        this.openMode = Objects.requireNonNull(openMode, "openMode");
+        if (openMode == OpenMode.READ_WRITE) {
+            try {
+                Path parent = path.getParent();
+                if (parent != null) {
+                    Files.createDirectories(parent);
+                }
+            } catch (java.io.IOException ex) {
+                throw new PersistenceException("Failed to create database directory: " + path, ex);
             }
-        } catch (java.io.IOException ex) {
-            throw new PersistenceException("Failed to create database directory: " + path, ex);
+        } else if (!Files.isRegularFile(path)) {
+            throw new PersistenceException("Session database file not found (read-only): " + path);
         }
         Connection opened;
         try {
-            opened = DriverManager.getConnection("jdbc:sqlite:" + path.toAbsolutePath());
+            opened = DriverManager.getConnection(jdbcUrl(path, openMode));
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to open session database: " + path, ex);
         }
@@ -80,12 +108,39 @@ public final class SessionDatabase implements AutoCloseable {
         }
     }
 
-    public SessionDatabase(String path) {
-        this(Path.of(path));
+    private static String jdbcUrl(Path path, OpenMode mode) {
+        String absolute = path.toAbsolutePath().toString();
+        if (mode == OpenMode.READ_ONLY) {
+            return "jdbc:sqlite:file:" + absolute + "?mode=ro";
+        }
+        return "jdbc:sqlite:" + absolute;
     }
 
     public Path path() {
         return path;
+    }
+
+    public OpenMode openMode() {
+        return openMode;
+    }
+
+    /**
+     * Runs {@code PRAGMA integrity_check} (P30-006). Safe on read-only connections.
+     *
+     * @return {@code ok=true} when SQLite reports a single {@code ok} row
+     */
+    public synchronized IntegrityCheckResult integrityCheck() {
+        try (Statement statement = connection.createStatement();
+                ResultSet rs = statement.executeQuery("PRAGMA integrity_check")) {
+            List<String> messages = new ArrayList<>();
+            while (rs.next()) {
+                messages.add(rs.getString(1));
+            }
+            boolean ok = messages.size() == 1 && "ok".equalsIgnoreCase(messages.get(0));
+            return new IntegrityCheckResult(ok, messages);
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to run integrity_check on " + path, ex);
+        }
     }
 
     public synchronized int schemaVersion() {
@@ -1197,6 +1252,10 @@ public final class SessionDatabase implements AutoCloseable {
     }
 
     private void initSchema() throws SQLException {
+        if (openMode == OpenMode.READ_ONLY) {
+            initSchemaReadOnly(readSchemaVersionOrNull());
+            return;
+        }
         try (Statement statement = connection.createStatement()) {
             statement.execute(
                     """
@@ -1256,6 +1315,19 @@ public final class SessionDatabase implements AutoCloseable {
             seedSchemaVersion();
         }
         connection.commit();
+    }
+
+    private void initSchemaReadOnly(Integer existingVersion) {
+        if (existingVersion == null) {
+            throw new PersistenceException("Session database has no schema version: " + path);
+        }
+        if (existingVersion != SCHEMA_VERSION) {
+            throw new PersistenceException("Unsupported session DB schema version "
+                    + existingVersion
+                    + " (required "
+                    + SCHEMA_VERSION
+                    + "). Delete the database file and recreate.");
+        }
     }
 
     private static void createSessionChildTables(Statement statement) throws SQLException {

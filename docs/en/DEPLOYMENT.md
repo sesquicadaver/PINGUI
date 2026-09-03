@@ -363,7 +363,16 @@ Session persistence (`host_session` / `persistence_event`) is a separate layer; 
 | Routes | `route` (deduped signature + hops_json; P30-004) |
 | Rollups | `metric_rollup` (5m/1h; retention `--poll-retention`; P30-005) |
 
-**Schema:** Java `SCHEMA_VERSION = 11`. Older `.db` files (v10 and below) are **not migrated** — delete the file and recreate ([ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md)).
+**Schema:** Java `SCHEMA_VERSION = 12`. Older `.db` files (v11 and below) are **not migrated** — delete the file and recreate ([ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md)).
+
+**Backup / integrity (P30-006):** before `--poll-retention`, `--telemetry-retention`, GUI purge, or delete/recreate after a schema bump — copy the file:
+
+```bash
+cp data/ping.db "data/ping.db.bak-$(date -u +%Y%m%dT%H%M%SZ)"
+cd java && ./pingui-java.sh -- --session-db ../data/ping.db --integrity-check
+```
+
+Export/dump (`--export-report`, `--export-schedule`, `--telemetry-dump`) open the DB **read-only** (`SessionDatabase.readOnly`) — safe alongside daemon/GUI writers.
 
 **Writing to the DB:** after connecting SQLite, enable the target checkbox in the host list — legacy YAML defaults to `enabled: false`; without active monitoring, route and `hop_stats` are not updated. `host_session` rows appear on connect; route after the first trace; ping history after the first poll (auto target `ping` when Expert ping is off). **Route history:** the first trace adds a «Початковий маршрут» row; later rows appear only when the IP chain changes.
 

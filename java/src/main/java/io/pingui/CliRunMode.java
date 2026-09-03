@@ -7,6 +7,7 @@ public enum CliRunMode {
     TELEMETRY_RETENTION,
     TELEMETRY_DUMP,
     POLL_RETENTION,
+    INTEGRITY_CHECK,
     DAEMON,
     STOP,
     STATUS

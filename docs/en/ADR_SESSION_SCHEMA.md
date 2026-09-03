@@ -30,7 +30,7 @@ Evolve **without migrating old `.db` files**: `schema_version != supported` → 
 | 3 | **P30-003** | `poll_result` — canonical finished-poll aggregate — **done** (schema v10) |
 | 4 | **P30-004** | deduplicated `route` (signature + hops_json) — **done** (schema v11) |
 | 5 | **P30-005** | `metric_rollup` + bounded retention — **done** (schema v12) |
-| 6 | **P30-006** | RO export connection / integrity_check CLI / backup-before-irreversible |
+| 6 | **P30-006** | RO export connection / integrity_check CLI / backup-before-irreversible — **done** |
 
 ### P30-001 (done)
 
@@ -134,6 +134,12 @@ CREATE TABLE metric_rollup (
 
 - Bounded retention (`PollResultRetentionJob` / `--poll-retention`): raw `poll_result` 7 days; 5-minute rollup (300s) through 90 days; hourly (3600s) beyond; incidents and deduped `route` are not purged.
 - Legacy v11 `.db` → fail-fast (delete & recreate).
+
+### P30-006 (done)
+
+- **`SessionDatabase.readOnly(path)`** — `mode=ro` for long export/dump without competing for the daemon write lock.
+- CLI **`--integrity-check`** (+ `--session-db`) — `PRAGMA integrity_check`; non-zero exit on failure.
+- **Backup note:** copy `.db` before retention/purge/delete-recreate (see DEPLOYMENT § SQLite session).
 
 ### Out of scope
 
