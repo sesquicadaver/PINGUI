@@ -26,7 +26,7 @@ Evolve **without migrating old `.db` files**: `schema_version != supported` → 
 | Step | ID | Intent |
 |------|-----|--------|
 | 1 | **P30-001** | `host_session.id` INTEGER PK; `address` UNIQUE; children/`persistence_event` → `host_id` |
-| 2 | **P30-002** | `incident` table (FIRING/RESOLVED, duration, ack) |
+| 2 | **P30-002** | `incident` table (FIRING/RESOLVED, duration, ack) — **done** (schema v9) |
 | 3 | **P30-003** | `poll_result` — canonical finished-poll aggregate |
 | 4 | **P30-004** | deduplicated `route` (signature + hops_json) |
 | 5 | **P30-005** | `metric_rollup` + bounded retention |
@@ -48,6 +48,29 @@ CREATE TABLE host_session (
 - `rename` = `UPDATE address` on the same `id` (events are not rewritten).
 - `PRAGMA busy_timeout = 5000` on open.
 - `telemetry_*` still store address TEXT (no FK); historical canon comes in later steps.
+
+### P30-002 (done)
+
+```sql
+CREATE TABLE incident (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    host_id INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    severity TEXT NOT NULL,
+    state TEXT NOT NULL,
+    started_at TEXT NOT NULL,
+    ended_at TEXT,
+    acknowledged_at TEXT,
+    occurrences INTEGER NOT NULL DEFAULT 1,
+    peak_value REAL,
+    details_json TEXT NOT NULL DEFAULT '{}',
+    FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
+);
+```
+
+- Quality FIRING/RESOLVED (`endpoint_down` / `latency_high`) syncs `incident` via `PersistenceEventWriter`.
+- Ack sets `acknowledged_at` on open FIRING rows.
+- MTTR / duration from `started_at`/`ended_at` (no JSON parsing).
 
 ### Out of scope
 

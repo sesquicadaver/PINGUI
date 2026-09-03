@@ -29,7 +29,7 @@
 | Шар | Python | Java |
 |-----|--------|------|
 | In-memory | `SessionStore` | `SessionStore` |
-| SQLite | `persistence/session_db.py` (schema v4; reject `!=`) | `io.pingui.persistence.SessionDatabase` (schema v8) |
+| SQLite | `persistence/session_db.py` (schema v4; reject `!=`) | `io.pingui.persistence.SessionDatabase` (schema v9) |
 | CLI | `--session-db PATH` | `--session-db PATH` |
 | Route change / probe_error у SQLite | ✅ `persistence_event` (PY-P11) | ✅ `persistence_event` |
 | Меню вибору подій | YAML `persistence.events` | GUI «База даних…» + YAML |

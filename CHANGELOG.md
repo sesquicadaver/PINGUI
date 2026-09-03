@@ -9,6 +9,7 @@
 
 ### Changed
 
+- **P30-002 — incident table (schema v9):** `incident` на `host_id` (FIRING/RESOLVED/ack/occurrences); wire у `PersistenceEventWriter`; MTTR з колонок; NEXT→**P30-003**.
 - **P30-001 — stable host id (schema v8):** `host_session.id` INTEGER PK + `address` UNIQUE; діти/`persistence_event` → `host_id`; `rename` оновлює адресу без переписування історії; legacy `.db` → delete & recreate; ADR `ADR_SESSION_SCHEMA`; NEXT→**P30-002**.
 
 ### Fixed

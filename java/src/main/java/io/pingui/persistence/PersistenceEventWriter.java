@@ -89,9 +89,10 @@ public final class PersistenceEventWriter {
                 null,
                 event.detailJson(),
                 event.timestamp());
+        syncIncident(event, type);
     }
 
-    /** Persists administrator problem acknowledgment (P29-002 timeline). */
+    /** Persists administrator problem acknowledgment (P29-002 timeline / P30-002 incident ack). */
     public void writeProblemAck(String host, Instant when) {
         if (host == null || host.isBlank() || !policyHolder.active().allows(PersistenceEventType.PROBLEM_ACK)) {
             return;
@@ -99,6 +100,7 @@ public final class PersistenceEventWriter {
         Instant at = when != null ? when : Instant.now();
         ensureHostRow(host);
         database.insertEvent(PersistenceEventType.PROBLEM_ACK, host, null, null, null, null, null, null, at);
+        database.acknowledgeOpenIncidents(host, at);
     }
 
     /**
@@ -127,6 +129,31 @@ public final class PersistenceEventWriter {
             return PersistenceEventType.LATENCY_HIGH;
         }
         return PersistenceEventType.ENDPOINT_DOWN;
+    }
+
+    private void syncIncident(QualityAlertEvent event, PersistenceEventType type) {
+        String kind = type.id();
+        String severity = IncidentRecord.severityForKind(kind);
+        if (QualityAlertEvent.STATE_FIRING.equals(event.state())) {
+            database.openOrRefreshIncident(
+                    event.host(), kind, severity, event.timestamp(), peakFromDetail(event), event.detailJson());
+            return;
+        }
+        if (QualityAlertEvent.STATE_RESOLVED.equals(event.state())) {
+            database.resolveIncident(event.host(), kind, event.timestamp());
+        }
+    }
+
+    private static Double peakFromDetail(QualityAlertEvent event) {
+        Object rtt = event.detail().get("rtt_ms");
+        if (rtt instanceof Number number) {
+            return number.doubleValue();
+        }
+        Object loss = event.detail().get("loss_percent");
+        if (loss instanceof Number number) {
+            return number.doubleValue();
+        }
+        return null;
     }
 
     private void ensureHostRow(String host) {

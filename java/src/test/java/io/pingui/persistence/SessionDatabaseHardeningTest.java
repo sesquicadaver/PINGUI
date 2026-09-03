@@ -67,6 +67,16 @@ class SessionDatabaseHardeningTest {
     }
 
     @Test
+    void rejectsLegacyV8DatabaseWithoutMigration() throws Exception {
+        Path dbPath = tempDir.resolve("legacy-v8.db");
+        seedLegacyV8Database(dbPath, "v8.example");
+
+        PersistenceException ex = assertThrows(PersistenceException.class, () -> new SessionDatabase(dbPath));
+        assertTrue(ex.getMessage().contains("Unsupported session DB schema version"));
+        assertTrue(ex.getMessage().contains("required " + SessionDatabase.SCHEMA_VERSION));
+    }
+
+    @Test
     void freshDatabaseAcceptsTelemetryInsert() {
         Path dbPath = tempDir.resolve("fresh-v5.db");
         try (SessionDatabase db = new SessionDatabase(dbPath)) {
@@ -277,6 +287,41 @@ class SessionDatabaseHardeningTest {
                     """)) {
                 ps.setString(1, host);
                 ps.setString(2, Instant.parse("2026-08-01T00:00:00Z").toString());
+                ps.executeUpdate();
+            }
+        }
+    }
+
+    /** v8 shape: stable host id, no incident table, schema_meta = 8. */
+    private static void seedLegacyV8Database(Path dbPath, String host) throws Exception {
+        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + dbPath.toAbsolutePath());
+                Statement statement = connection.createStatement()) {
+            statement.execute(
+                    """
+                    CREATE TABLE schema_meta (
+                        version INTEGER NOT NULL
+                    )
+                    """);
+            statement.execute(
+                    """
+                    CREATE TABLE host_session (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        address TEXT NOT NULL UNIQUE,
+                        enabled INTEGER NOT NULL,
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL
+                    )
+                    """);
+            statement.execute("INSERT INTO schema_meta(version) VALUES (8)");
+            try (PreparedStatement ps = connection.prepareStatement(
+                    """
+                    INSERT INTO host_session(address, enabled, created_at, updated_at)
+                    VALUES (?, 1, ?, ?)
+                    """)) {
+                String at = Instant.parse("2026-09-01T00:00:00Z").toString();
+                ps.setString(1, host);
+                ps.setString(2, at);
+                ps.setString(3, at);
                 ps.executeUpdate();
             }
         }

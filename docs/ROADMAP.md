@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P30-002** |
+| **Поточна задача** | **P30-003** |
 | **Фаза** | 30 — SQLite schema evolution (stable host id / incident / poll / route) |
-| **DoD (коротко)** | таблиця `incident` (FIRING/RESOLVED, duration, ack) на `host_id` |
+| **DoD (коротко)** | `poll_result` — канонічний агрегат завершеного poll |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -167,13 +167,13 @@
 | 121 | **P29-004** | [x] | DNS control (resolve set / latency / change event) |
 | 122 | **P29-005** | [x] | TCP Connect probe (`host:port`) |
 | 123 | **P30-001** | [x] | Stable `host_session.id` + `host_id` FKs (schema v8) |
-| 124 | **P30-002** | [ ] | `incident` table (FIRING/RESOLVED, duration, ack) |
+| 124 | **P30-002** | [x] | `incident` table (FIRING/RESOLVED, duration, ack) |
 | 125 | **P30-003** | [ ] | `poll_result` canonical poll aggregate |
 | 126 | **P30-004** | [ ] | Deduped `route` (signature + hops_json) |
 | 127 | **P30-005** | [ ] | `metric_rollup` + bounded retention |
 | 128 | **P30-006** | [ ] | RO export conn / integrity_check / backup note |
 
-**Стан черги:** **NEXT = P30-002** (фаза 30; P30-001 [x]; Java-first; delete/recreate `.db`).
+**Стан черги:** **NEXT = P30-003** (фаза 30; P30-002 [x]; Java-first; delete/recreate `.db`).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -953,12 +953,12 @@ flowchart TD
 
 **Контекст:** `pingui-evo-db.md`. Schema v7 нормалізувала hops, але адреса лишалась PK. Еволюція для історичного аналізу **без** заміни SQLite/ORM. **Немає міграції старих `.db`** — delete & recreate (як P27). ADR: [ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md).
 
-**Черга:** після P29; **NEXT = P30-002**.
+**Черга:** після P29; **NEXT = P30-003**.
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
 | **P30-001** | [x] Stable host id | `SessionDatabase`, tests, ADR | schema v8; `host_session.id` + `address` UNIQUE; діти/`persistence_event` → `host_id`; `rename` = UPDATE address; public API address-keyed; legacy reject before DDL |
-| **P30-002** | [ ] Incident table | `SessionDatabase`, writers, tests | `incident` на `host_id`; kind/severity/state/started/ended/ack; без розбору JSON для MTTR |
+| **P30-002** | [x] Incident table | `SessionDatabase`, `IncidentRecord`, `PersistenceEventWriter`, tests | schema v9; `incident` на `host_id`; FIRING/RESOLVED/ack; MTTR з колонок; wire quality+ack |
 | **P30-003** | [ ] poll_result | `SessionDatabase`, MonitorService wire | канонічний агрегат poll (RTT/loss/reachable); не дублювати telemetry_sample |
 | **P30-004** | [ ] Deduped route | `SessionDatabase` | `route(signature, hops_json, seen_count)`; UNIQUE(host_id, signature) |
 | **P30-005** | [ ] Rollup + retention | `SessionDatabase`, policy | `metric_rollup` + bounded retention рівнів |
@@ -1053,7 +1053,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P30-002**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P30-003**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

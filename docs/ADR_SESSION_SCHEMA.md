@@ -26,7 +26,7 @@ Schema v7 нормалізувала hops/history у дочірні таблиц
 | Крок | ID | Суть |
 |------|-----|------|
 | 1 | **P30-001** | `host_session.id` INTEGER PK; `address` UNIQUE; діти/`persistence_event` → `host_id` |
-| 2 | **P30-002** | таблиця `incident` (FIRING/RESOLVED, duration, ack) |
+| 2 | **P30-002** | таблиця `incident` (FIRING/RESOLVED, duration, ack) — **done** (schema v9) |
 | 3 | **P30-003** | `poll_result` — канонічний агрегат завершеного poll |
 | 4 | **P30-004** | дедуплікована `route` (signature + hops_json) |
 | 5 | **P30-005** | `metric_rollup` + bounded retention |
@@ -48,6 +48,29 @@ CREATE TABLE host_session (
 - `rename` = `UPDATE address` на тому ж `id` (події не переписуються).
 - `PRAGMA busy_timeout = 5000` при відкритті.
 - `telemetry_*` поки зберігають address TEXT (без FK); канон історії — наступні кроки.
+
+### P30-002 (зроблено)
+
+```sql
+CREATE TABLE incident (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    host_id INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    severity TEXT NOT NULL,
+    state TEXT NOT NULL,
+    started_at TEXT NOT NULL,
+    ended_at TEXT,
+    acknowledged_at TEXT,
+    occurrences INTEGER NOT NULL DEFAULT 1,
+    peak_value REAL,
+    details_json TEXT NOT NULL DEFAULT '{}',
+    FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
+);
+```
+
+- Quality FIRING/RESOLVED (`endpoint_down` / `latency_high`) синхронізує `incident` через `PersistenceEventWriter`.
+- Ack оновлює `acknowledged_at` на відкритих FIRING.
+- MTTR / duration — з `started_at`/`ended_at` (без розбору JSON).
 
 ### Не робимо
 

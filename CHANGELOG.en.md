@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P30-002 — incident table (schema v9):** `incident` on `host_id` (FIRING/RESOLVED/ack/occurrences); wired in `PersistenceEventWriter`; MTTR from columns; NEXT→**P30-003**.
 - **P30-001 — stable host id (schema v8):** `host_session.id` INTEGER PK + `address` UNIQUE; children/`persistence_event` → `host_id`; `rename` updates address without rewriting history; legacy `.db` → delete & recreate; ADR `ADR_SESSION_SCHEMA`; NEXT→**P30-002**.
 
 ### Fixed
