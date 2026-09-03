@@ -112,7 +112,19 @@ final class RouteHistoryPresenter {
             @Override
             protected void updateItem(RouteHistoryItem item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.summary());
+                getStyleClass()
+                        .removeAll(
+                                "pingui-severity-critical",
+                                "pingui-severity-warning",
+                                "pingui-severity-notice",
+                                "pingui-severity-info",
+                                "pingui-severity-muted");
+                if (empty || item == null) {
+                    setText(null);
+                    return;
+                }
+                setText(item.summary());
+                getStyleClass().add(SeverityTheme.styleClass(item.severity()));
             }
         });
         historyList.getSelectionModel().selectedItemProperty().addListener((obs, oldItem, newItem) -> {

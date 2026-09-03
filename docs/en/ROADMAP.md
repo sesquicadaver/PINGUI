@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P31-004** |
+| **Current task** | **P31-005** |
 | **Phase** | 31 — GUI information hierarchy |
-| **DoD (short)** | unified severity model |
+| **DoD (short)** | filter, sort, problems-first |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -175,12 +175,12 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 129 | **P31-001** | [x] | Unified host row (RTT/Loss/Mode columns) |
 | 130 | **P31-002** | [x] | Endpoint vs Route states |
 | 131 | **P31-003** | [x] | Selected-host inspector panel |
-| 132 | **P31-004** | [ ] | Unified severity model |
+| 132 | **P31-004** | [x] | Unified severity model |
 | 133 | **P31-005** | [ ] | Filter, sort, problems-first |
 | 134 | **P31-006** | [ ] | Centralized application status |
 | 135 | **P31-007** | [ ] | Accessibility pass |
 
-**Queue status:** **NEXT = P31-004** (phase 31; P31-003 [x]; Java-first; [pingui-evo-gui.md](pingui-evo-gui.md)).
+**Queue status:** **NEXT = P31-005** (phase 31; P31-004 [x]; Java-first; [pingui-evo-gui.md](pingui-evo-gui.md)).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -979,14 +979,14 @@ flowchart TD
 
 **Context:** [pingui-evo-gui.md](pingui-evo-gui.md). Do not change window geometry ([ADR_GUI_PAINT.md](ADR_GUI_PAINT.md)). Java-first.
 
-**Queue:** after P30; **NEXT = P31-004**.
+**Queue:** after P30; **NEXT = P31-005**.
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
 | **P31-001** | [x] Unified host row | `HostListCell`, `HostListPresenter`, `HostItem` | `[state] name RTT loss mode [problem]`; columns; short mode labels; fixed row height; details in tooltip/inspector |
 | **P31-002** | [x] Endpoint/Route states | `HostItem`, presenters | Endpoint UP/DEGRADED/DOWN/UNKNOWN; Route STABLE/CHANGED/INCOMPLETE/NOT TRACED; PING_ONLY → NOT TRACED not shown as error |
 | **P31-003** | [x] Host inspector | Extended layout, `MainView` | Compact panel: metrics, last poll, route change, problem, copy/ack/diagnostics |
-| **P31-004** | [ ] Severity model | UI theme, timeline, alerts | Critical/Warning/Notice/Info/Muted → color, icon, sort, badge, timeline, alert |
+| **P31-004** | [x] Severity model | UI theme, timeline, alerts | Critical/Warning/Notice/Info/Muted → color, icon, sort, badge, timeline, alert |
 | **P31-005** | [ ] Host list navigation | `HostListPresenter` | Text filter; sort; problems-first; header counters; persist filter/sort |
 | **P31-006** | [ ] App status area | `MainController`, coordinators | Monitoring summary + transient ops (profile, DB, export, MTU…) without extra popups |
 | **P31-007** | [ ] Accessibility pass | CSS, controls | Not color-only; state icons; contrast; focus; a11y names |
@@ -1080,7 +1080,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P31-004**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P31-005**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

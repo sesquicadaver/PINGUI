@@ -9,6 +9,8 @@ import io.pingui.monitor.HostProbeMode;
 import io.pingui.monitor.HostProblemSummary;
 import io.pingui.monitor.HostTargetStats;
 import io.pingui.monitor.RouteState;
+import io.pingui.monitor.Severity;
+import io.pingui.monitor.SeverityClassifier;
 import java.util.List;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -17,9 +19,6 @@ import javafx.beans.property.StringProperty;
 
 /** Observable host row for the JavaFX list. */
 public final class HostItem {
-    private static final String DISABLED_ROW = "#f5f5f5";
-    private static final String WAITING_ROW = "#d3d3d3";
-
     private final StringProperty host = new SimpleStringProperty();
     private final BooleanProperty enabled = new SimpleBooleanProperty(false);
     private final BooleanProperty pingOnly = new SimpleBooleanProperty(false);
@@ -30,12 +29,13 @@ public final class HostItem {
     private final StringProperty pollCountersText = new SimpleStringProperty("");
     private final StringProperty metricsText = new SimpleStringProperty("");
     private final StringProperty tagsText = new SimpleStringProperty("");
-    private final StringProperty rowColor = new SimpleStringProperty(DISABLED_ROW);
+    private final StringProperty rowColor = new SimpleStringProperty(SeverityTheme.rowColor(Severity.MUTED));
     private final StringProperty stateGlyph = new SimpleStringProperty("");
     private final StringProperty rttColumnText = new SimpleStringProperty("");
     private final StringProperty lossColumnText = new SimpleStringProperty("");
     private final StringProperty modeColumnText = new SimpleStringProperty("");
     private final StringProperty routeGlyph = new SimpleStringProperty("");
+    private final StringProperty severityGlyph = new SimpleStringProperty("");
     private final StringProperty rowDetailsTooltip = new SimpleStringProperty("");
     private List<String> tags = List.of();
     private List<HopNode> lastHops = List.of();
@@ -44,6 +44,7 @@ public final class HostItem {
     private HostTargetStats lastStats;
     private EndpointState endpointState = EndpointState.UNKNOWN;
     private RouteState routeState = RouteState.NOT_TRACED;
+    private Severity severity = Severity.MUTED;
     private boolean routeChangedLatched;
 
     public HostItem(String host, boolean enabled) {
@@ -67,7 +68,7 @@ public final class HostItem {
         if (!enabled) {
             clearMetrics();
         } else {
-            rowColor.set(WAITING_ROW);
+            refreshSeverity();
         }
     }
 
@@ -139,6 +140,15 @@ public final class HostItem {
     /** Muted route glyph; never uses the endpoint-down mark (P31-002). */
     public StringProperty routeGlyphProperty() {
         return routeGlyph;
+    }
+
+    /** Severity accent glyph for badge / tooltip (P31-004). */
+    public StringProperty severityGlyphProperty() {
+        return severityGlyph;
+    }
+
+    public Severity severity() {
+        return severity;
     }
 
     /** Poll counters, RTT detail, tags — not shown inline (P31-001). */
@@ -233,13 +243,13 @@ public final class HostItem {
         lastStats = null;
         refreshNetworkStates(null);
         refreshRowDetailsTooltip("", "");
-        rowColor.set(isEnabled() ? WAITING_ROW : DISABLED_ROW);
     }
 
     /**
      * Applies poll liveness and RTT aggregates; updates unified row columns (P31-001).
      *
      * <p>Poll/RTT detail strings feed the row tooltip; columns show state, avg RTT, loss %, mode.
+     * Row background follows {@link Severity} (P31-004) — not raw RTT pastel.
      */
     public void applyMetrics(HostTargetStats stats, HostPollCounters counters) {
         HostPollCounters safeCounters = counters != null ? counters : HostPollCounters.ZERO;
@@ -247,9 +257,6 @@ public final class HostItem {
         String rttText = formatRttMetrics(stats);
         if (pollText.isEmpty() && rttText.isEmpty()) {
             clearMetrics();
-            if (isEnabled()) {
-                rowColor.set(WAITING_ROW);
-            }
             return;
         }
         showPollCounters.set(!pollText.isEmpty());
@@ -261,17 +268,13 @@ public final class HostItem {
         lastStats = stats;
         refreshNetworkStates(stats);
         refreshRowDetailsTooltip(pollText, rttText);
-        if (stats != null) {
-            rowColor.set(PingColor.pingColor(stats.avgMs(), stats.timeout() && stats.avgMs() == null));
-        } else if (isEnabled()) {
-            rowColor.set(WAITING_ROW);
-        }
     }
 
     /** Updates the unread badge from engine summary (null clears). */
     public void applyProblem(HostProblemSummary summary) {
         this.problemSummary = summary;
         problemUnread.set(summary != null && summary.showBadge());
+        refreshSeverity();
     }
 
     public void clearProblem() {
@@ -363,10 +366,16 @@ public final class HostItem {
     }
 
     static String formatRowDetailsTooltip(
-            String endpointLine, String routeLine, String tagsLine, String pollLine, String rttLine) {
+            String endpointLine,
+            String routeLine,
+            String severityLine,
+            String tagsLine,
+            String pollLine,
+            String rttLine) {
         StringBuilder sb = new StringBuilder();
         appendLine(sb, endpointLine);
         appendLine(sb, routeLine);
+        appendLine(sb, severityLine);
         appendLine(sb, tagsLine);
         appendLine(sb, pollLine);
         appendLine(sb, rttLine);
@@ -382,7 +391,14 @@ public final class HostItem {
         routeState = HostNetworkStateClassifier.route(probeMode, lastHops, routeChangedLatched);
         stateGlyph.set(formatEndpointGlyph(isEnabled(), endpointState));
         routeGlyph.set(formatRouteGlyph(routeState));
+        refreshSeverity();
         refreshRowDetailsTooltip(pollCountersText.get(), metricsText.get());
+    }
+
+    private void refreshSeverity() {
+        severity = SeverityClassifier.forHost(isEnabled(), endpointState, routeState, problemSummary);
+        severityGlyph.set(SeverityTheme.glyph(severity));
+        rowColor.set(SeverityTheme.rowColor(severity));
     }
 
     private void refreshRowDetailsTooltip(String pollLine, String rttLine) {
@@ -390,6 +406,7 @@ public final class HostItem {
         rowDetailsTooltip.set(formatRowDetailsTooltip(
                 UiI18n.get("host.row_endpoint", formatEndpointLabel(endpointState)),
                 UiI18n.get("host.row_route", formatRouteLabel(routeState)),
+                UiI18n.get("host.row_severity", SeverityTheme.label(severity)),
                 tagsLine,
                 pollLine,
                 rttLine));

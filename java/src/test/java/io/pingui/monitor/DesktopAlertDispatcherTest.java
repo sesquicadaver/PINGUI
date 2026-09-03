@@ -25,7 +25,7 @@ class DesktopAlertDispatcherTest {
                 "8.8.8.8", List.of("10.0.0.1"), List.of("10.0.0.2"), "default", Instant.parse("2026-07-23T12:00:00Z"));
         dispatcher.dispatch(event);
         assertEquals(List.of("8.8.8.8"), hosts);
-        assertEquals(List.of("PINGUI route change"), titles);
+        assertEquals(List.of("NOTICE · PINGUI route change"), titles);
         assertEquals(1, bodies.size());
         assertTrue(bodies.get(0).contains("8.8.8.8"));
         assertTrue(bodies.get(0).contains("10.0.0.1"));
@@ -40,7 +40,7 @@ class DesktopAlertDispatcherTest {
         QualityAlertEvent event = QualityAlertEvent.endpointDownFiring(
                 "1.1.1.1", "lab", Instant.parse("2026-07-23T12:00:00Z"), Map.of("fail_streak", 3));
         dispatcher.dispatchQuality(event);
-        assertEquals(List.of("1.1.1.1|PINGUI endpoint_down|1.1.1.1: firing"), seen);
+        assertEquals(List.of("1.1.1.1|CRITICAL · PINGUI endpoint_down|1.1.1.1: firing"), seen);
     }
 
     @Test

@@ -64,8 +64,11 @@ class HostItemMetricsTest {
         assertEquals("TRACE", item.modeColumnTextProperty().get());
         assertEquals(io.pingui.monitor.EndpointState.UP, item.endpointState());
         assertEquals(io.pingui.monitor.RouteState.NOT_TRACED, item.routeState());
+        assertEquals(io.pingui.monitor.Severity.INFO, item.severity());
+        assertEquals("#e8f5e9", item.rowColorProperty().get());
         assertTrue(item.rowDetailsTooltipProperty().get().contains("Endpoint: UP"));
         assertTrue(item.rowDetailsTooltipProperty().get().contains("Route: NOT TRACED"));
+        assertTrue(item.rowDetailsTooltipProperty().get().contains("Severity:"));
         assertTrue(item.rowDetailsTooltipProperty().get().contains("спроб 4"));
         assertTrue(item.rowDetailsTooltipProperty().get().contains("avg 12"));
     }
