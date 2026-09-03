@@ -83,7 +83,7 @@
 ## Наслідки
 
 - Позитив: poll стійкіший до sink fail; launchers перевірені; LOC/coverage gates у CI; latency AVG не роздувається unbounded mean.
-- Негатив: Python session schema parity ще в P28-003; відстає від Java v7.
+- Негатив: Python session schema лишається **v4** (Java **v7**); повний format parity — окрема фаза за потреби.
 - UI package coverage свідомо виключена з PACKAGE minima — manual CHECKLIST лишається обов’язковим.
 
 ## Follow-ups (фаза 28+)
@@ -92,7 +92,7 @@
 |----|------|
 | **P28-001** | ✅ `SinkRegistry` bounded executor + hang isolation |
 | **P28-002** | ✅ Reserve `inFlight` before `probePool.execute` |
-| **P28-003** | Python `session_db` reject `version != SCHEMA_VERSION` |
+| **P28-003** | ✅ Python `session_db` reject `version != SCHEMA_VERSION` |
 
 ## Посилання
 

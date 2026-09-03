@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import sqlite3
 from pathlib import Path
 
 import pytest
 
 from pingui.models import HopNode, HostSessionData, RouteSnapshot
 from pingui.monitor.session_store import SessionStore
-from pingui.persistence.session_db import SessionDatabase
+from pingui.persistence.session_db import SCHEMA_VERSION, SessionDatabase, SessionDatabaseError
 
 
 @pytest.fixture
@@ -65,3 +66,28 @@ def test_session_store_persists_updates(db_path: Path) -> None:
     assert data.current_route[0].ip == "10.0.0.1"
     assert data.ping_history["10.0.0.1"] == [4.0]
     restored.close()
+
+
+def test_new_database_seeds_schema_version(db_path: Path) -> None:
+    db = SessionDatabase(db_path)
+    db.close()
+    with sqlite3.connect(db_path) as conn:
+        row = conn.execute("SELECT version FROM schema_meta LIMIT 1").fetchone()
+    assert row is not None
+    assert int(row[0]) == SCHEMA_VERSION
+
+
+@pytest.mark.parametrize("wrong_version", [SCHEMA_VERSION - 1, SCHEMA_VERSION + 1])
+def test_rejects_schema_version_mismatch(db_path: Path, wrong_version: int) -> None:
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("CREATE TABLE schema_meta (version INTEGER NOT NULL)")
+        conn.execute("INSERT INTO schema_meta(version) VALUES (?)", (wrong_version,))
+        conn.commit()
+    with pytest.raises(
+        SessionDatabaseError,
+        match=(
+            rf"Unsupported session DB schema version {wrong_version} "
+            rf"\(required {SCHEMA_VERSION}\)"
+        ),
+    ):
+        SessionDatabase(db_path)

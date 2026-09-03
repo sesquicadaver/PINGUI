@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P28-003** |
-| **Phase** | 28 — runtime hardening follow-up (SinkRegistry / inFlight / Python schema) |
-| **DoD (short)** | Python session_db: reject schema != SCHEMA_VERSION |
+| **Current task** | **DONE** |
+| **Phase** | — linear queue exhausted |
+| **DoD (short)** | New work only after an explicit ID in NEXT |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -160,9 +160,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 114 | **P27-003** | [x] | `host_session` normalize: hop/history tables (schema v7) |
 | 115 | **P28-001** | [x] | SinkRegistry: bounded executor + hang isolation (no re-dispatch) |
 | 116 | **P28-002** | [x] | MonitorService: reserve `inFlight` before `probePool.execute` (PING_ONLY) |
-| 117 | **P28-003** | [ ] | Python `session_db`: reject schema `!= SCHEMA_VERSION` (forward-compat) |
+| 117 | **P28-003** | [x] | Python `session_db`: reject schema `!= SCHEMA_VERSION` (forward-compat) |
 
-**Queue status:** active — **NEXT = P28-003** (phase 28; P28-002 inFlight-before-execute [x]).
+**Queue status:** **DONE** — P28-001…003 [x]; linear queue exhausted.
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -916,7 +916,7 @@ flowchart TD
 |----|------|-------|-----|
 | **P28-001** | [x] SinkRegistry hang isolation | `SinkRegistry`, `TelemetryBus`, tests | bounded pool 8; per-sink busy gate; no sync re-dispatch on interrupt; timeout+hang tests |
 | **P28-002** | [x] inFlight before queue | `MonitorService`, `HostRegistry`, tests | CAS `inFlight` before `execute`; clear on reject/complete; `doesNotQueueDuplicatePollsWhileHostInFlight` |
-| **P28-003** | [ ] Python schema version gate | `session_db.py`, unit tests | reject `version != SCHEMA_VERSION` (both `>` and `<` without silent migrate-as-ok); fail-fast message; Java parity already v7 |
+| **P28-003** | [x] Python schema version gate | `session_db.py`, unit tests | `SessionDatabaseError` when `version != 4`; no silent migrate; older/newer tests |
 
 ---
 
@@ -1002,7 +1002,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P28-003**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **DONE**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

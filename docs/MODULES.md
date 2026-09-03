@@ -160,7 +160,7 @@ SQLite persistence для `SessionStore` (опційно `--session-db`).
 | `save(host, data)` | Запис snapshot + ping history |
 | `close()` | Flush і закрити з'єднання |
 
-Schema v2: JSON для hops, routes, `hop_stats`.
+Schema **v4** (`SCHEMA_VERSION`): JSON hops/routes/`hop_stats` + `persistence_event` + telemetry tables. **P28-003:** `version != SCHEMA_VERSION` → `SessionDatabaseError` (без silent migrate; видалити `.db` і створити наново). Java session schema — окремо **v7**.
 
 ---
 
