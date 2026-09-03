@@ -79,6 +79,11 @@
     -fx-text-fill: -pingui-text;
 }
 
+.pingui-host-route {
+    -fx-font-size: 11px;
+    -fx-text-fill: -pingui-muted;
+}
+
 .pingui-host-col-rtt,
 .pingui-host-col-loss,
 .pingui-host-col-mode {

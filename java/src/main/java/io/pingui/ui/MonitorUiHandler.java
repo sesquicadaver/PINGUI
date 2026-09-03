@@ -55,6 +55,7 @@ final class MonitorUiHandler {
         sessionStore.appendPingSamples(host, snapshot);
         HostItem item = hostListPresenter.findItem(host);
         if (item != null) {
+            item.clearRouteChangedLatch();
             hostListPresenter.syncMetrics(item);
             hostListPresenter.syncProblem(item);
         }
@@ -72,6 +73,11 @@ final class MonitorUiHandler {
     void handleRouteChanged(String host, List<String> oldIps, List<String> newIps) {
         if (!store.get().containsHost(host)) {
             return;
+        }
+        HostItem item = hostListPresenter.findItem(host);
+        if (item != null && !oldIps.isEmpty()) {
+            item.markRouteChanged();
+            hostListPresenter.syncRouteState(item);
         }
         ViewModeController mode = viewModeController.get();
         if (mode.isExtended() && !easterEggActive.getAsBoolean()) {

@@ -1,10 +1,14 @@
 package io.pingui.ui;
 
 import io.pingui.i18n.UiI18n;
+import io.pingui.model.Models.HopNode;
+import io.pingui.monitor.EndpointState;
+import io.pingui.monitor.HostNetworkStateClassifier;
 import io.pingui.monitor.HostPollCounters;
 import io.pingui.monitor.HostProbeMode;
 import io.pingui.monitor.HostProblemSummary;
 import io.pingui.monitor.HostTargetStats;
+import io.pingui.monitor.RouteState;
 import java.util.List;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -31,10 +35,16 @@ public final class HostItem {
     private final StringProperty rttColumnText = new SimpleStringProperty("");
     private final StringProperty lossColumnText = new SimpleStringProperty("");
     private final StringProperty modeColumnText = new SimpleStringProperty("");
+    private final StringProperty routeGlyph = new SimpleStringProperty("");
     private final StringProperty rowDetailsTooltip = new SimpleStringProperty("");
     private List<String> tags = List.of();
+    private List<HopNode> lastHops = List.of();
     private HostProbeMode probeMode = HostProbeMode.TRACE;
     private HostProblemSummary problemSummary;
+    private HostTargetStats lastStats;
+    private EndpointState endpointState = EndpointState.UNKNOWN;
+    private RouteState routeState = RouteState.NOT_TRACED;
+    private boolean routeChangedLatched;
 
     public HostItem(String host, boolean enabled) {
         this(host, enabled, false, List.of());
@@ -48,9 +58,12 @@ public final class HostItem {
         this.host.set(host);
         this.enabled.set(enabled);
         this.pingOnly.set(pingOnly);
+        if (pingOnly) {
+            this.probeMode = HostProbeMode.PING_ONLY;
+        }
         setTags(tags);
         refreshModeColumn();
-        refreshStateGlyph(null);
+        refreshNetworkStates(null);
         if (!enabled) {
             clearMetrics();
         } else {
@@ -123,6 +136,11 @@ public final class HostItem {
         return modeColumnText;
     }
 
+    /** Muted route glyph; never uses the endpoint-down mark (P31-002). */
+    public StringProperty routeGlyphProperty() {
+        return routeGlyph;
+    }
+
     /** Poll counters, RTT detail, tags — not shown inline (P31-001). */
     public StringProperty rowDetailsTooltipProperty() {
         return rowDetailsTooltip;
@@ -148,6 +166,31 @@ public final class HostItem {
         probeMode = mode != null ? mode : HostProbeMode.TRACE;
         pingOnly.set(probeMode == HostProbeMode.PING_ONLY);
         refreshModeColumn();
+        refreshNetworkStates(lastStats);
+    }
+
+    public EndpointState endpointState() {
+        return endpointState;
+    }
+
+    public RouteState routeState() {
+        return routeState;
+    }
+
+    /** Latches CHANGED until the next poll snapshot (P31-002). */
+    public void markRouteChanged() {
+        routeChangedLatched = true;
+        refreshNetworkStates(lastStats);
+    }
+
+    /** Clears a previous poll's CHANGED latch before applying a new snapshot. */
+    public void clearRouteChangedLatch() {
+        routeChangedLatched = false;
+    }
+
+    public void applyRouteHops(List<HopNode> hops) {
+        lastHops = hops != null ? List.copyOf(hops) : List.of();
+        refreshNetworkStates(lastStats);
     }
 
     public boolean isExpertConfigured() {
@@ -187,7 +230,8 @@ public final class HostItem {
         metricsText.set("");
         rttColumnText.set(formatRttColumn(null));
         lossColumnText.set(formatLossColumn(null));
-        refreshStateGlyph(null);
+        lastStats = null;
+        refreshNetworkStates(null);
         refreshRowDetailsTooltip("", "");
         rowColor.set(isEnabled() ? WAITING_ROW : DISABLED_ROW);
     }
@@ -214,7 +258,8 @@ public final class HostItem {
         metricsText.set(rttText);
         rttColumnText.set(formatRttColumn(stats != null ? stats.avgMs() : null));
         lossColumnText.set(formatLossColumn(stats));
-        refreshStateGlyph(stats);
+        lastStats = stats;
+        refreshNetworkStates(stats);
         refreshRowDetailsTooltip(pollText, rttText);
         if (stats != null) {
             rowColor.set(PingColor.pingColor(stats.avgMs(), stats.timeout() && stats.avgMs() == null));
@@ -255,25 +300,46 @@ public final class HostItem {
     }
 
     static String formatStateGlyph(boolean enabled, HostTargetStats stats) {
+        return formatEndpointGlyph(enabled, HostNetworkStateClassifier.endpoint(enabled, stats));
+    }
+
+    static String formatEndpointGlyph(boolean enabled, EndpointState state) {
         if (!enabled) {
             return UiI18n.get("host.state.disabled");
         }
-        if (stats == null) {
-            return UiI18n.get("host.state.waiting");
-        }
-        if (stats.timeout() && stats.avgMs() == null) {
-            return UiI18n.get("host.state.down");
-        }
-        if (stats.avgMs() == null) {
-            return UiI18n.get("host.state.waiting");
-        }
-        if (stats.lossPct() >= 50.0) {
-            return UiI18n.get("host.state.down");
-        }
-        if (stats.lossPct() >= 10.0) {
-            return UiI18n.get("host.state.degraded");
-        }
-        return UiI18n.get("host.state.up");
+        return switch (state != null ? state : EndpointState.UNKNOWN) {
+            case UP -> UiI18n.get("host.state.up");
+            case DEGRADED -> UiI18n.get("host.state.degraded");
+            case DOWN -> UiI18n.get("host.state.down");
+            case UNKNOWN -> UiI18n.get("host.state.waiting");
+        };
+    }
+
+    static String formatRouteGlyph(RouteState state) {
+        return switch (state != null ? state : RouteState.NOT_TRACED) {
+            case STABLE -> UiI18n.get("host.route.glyph.stable");
+            case CHANGED -> UiI18n.get("host.route.glyph.changed");
+            case INCOMPLETE -> UiI18n.get("host.route.glyph.incomplete");
+            case NOT_TRACED -> UiI18n.get("host.route.glyph.not_traced");
+        };
+    }
+
+    static String formatEndpointLabel(EndpointState state) {
+        return switch (state != null ? state : EndpointState.UNKNOWN) {
+            case UP -> UiI18n.get("host.endpoint.up");
+            case DEGRADED -> UiI18n.get("host.endpoint.degraded");
+            case DOWN -> UiI18n.get("host.endpoint.down");
+            case UNKNOWN -> UiI18n.get("host.endpoint.unknown");
+        };
+    }
+
+    static String formatRouteLabel(RouteState state) {
+        return switch (state != null ? state : RouteState.NOT_TRACED) {
+            case STABLE -> UiI18n.get("host.route.stable");
+            case CHANGED -> UiI18n.get("host.route.changed");
+            case INCOMPLETE -> UiI18n.get("host.route.incomplete");
+            case NOT_TRACED -> UiI18n.get("host.route.not_traced");
+        };
     }
 
     static String formatPollCounters(HostPollCounters counters) {
@@ -296,23 +362,14 @@ public final class HostItem {
                 formatMs(stats.maxMs()));
     }
 
-    static String formatRowDetailsTooltip(String tagsLine, String pollLine, String rttLine) {
+    static String formatRowDetailsTooltip(
+            String endpointLine, String routeLine, String tagsLine, String pollLine, String rttLine) {
         StringBuilder sb = new StringBuilder();
-        if (tagsLine != null && !tagsLine.isBlank()) {
-            sb.append(tagsLine);
-        }
-        if (pollLine != null && !pollLine.isBlank()) {
-            if (!sb.isEmpty()) {
-                sb.append('\n');
-            }
-            sb.append(pollLine);
-        }
-        if (rttLine != null && !rttLine.isBlank()) {
-            if (!sb.isEmpty()) {
-                sb.append('\n');
-            }
-            sb.append(rttLine);
-        }
+        appendLine(sb, endpointLine);
+        appendLine(sb, routeLine);
+        appendLine(sb, tagsLine);
+        appendLine(sb, pollLine);
+        appendLine(sb, rttLine);
         return sb.toString();
     }
 
@@ -320,13 +377,32 @@ public final class HostItem {
         modeColumnText.set(formatModeLabel(probeMode));
     }
 
-    private void refreshStateGlyph(HostTargetStats stats) {
-        stateGlyph.set(formatStateGlyph(isEnabled(), stats));
+    private void refreshNetworkStates(HostTargetStats stats) {
+        endpointState = HostNetworkStateClassifier.endpoint(isEnabled(), stats);
+        routeState = HostNetworkStateClassifier.route(probeMode, lastHops, routeChangedLatched);
+        stateGlyph.set(formatEndpointGlyph(isEnabled(), endpointState));
+        routeGlyph.set(formatRouteGlyph(routeState));
+        refreshRowDetailsTooltip(pollCountersText.get(), metricsText.get());
     }
 
     private void refreshRowDetailsTooltip(String pollLine, String rttLine) {
         String tagsLine = tags.isEmpty() ? "" : UiI18n.get("host.row_tags", tagsText.get());
-        rowDetailsTooltip.set(formatRowDetailsTooltip(tagsLine, pollLine, rttLine));
+        rowDetailsTooltip.set(formatRowDetailsTooltip(
+                UiI18n.get("host.row_endpoint", formatEndpointLabel(endpointState)),
+                UiI18n.get("host.row_route", formatRouteLabel(routeState)),
+                tagsLine,
+                pollLine,
+                rttLine));
+    }
+
+    private static void appendLine(StringBuilder sb, String line) {
+        if (line == null || line.isBlank()) {
+            return;
+        }
+        if (!sb.isEmpty()) {
+            sb.append('\n');
+        }
+        sb.append(line);
     }
 
     private static String formatMs(Double value) {
