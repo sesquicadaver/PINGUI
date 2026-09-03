@@ -391,7 +391,7 @@ YAML `persistence.events` + CLI `--no-persist-route-change` / `--no-persist-prob
 
 ### `latency_high` (P23)
 
-Quality-правило окремо від `endpoint_down`: `rtt ≥ multiplier × AVG` (default 2.0), `fail_after=3` поспіль без часового вікна; YAML `alerts.rules.latency_high`; GUI «Сповіщення…»; badge/ack через `HostProblemSummary`; SQLite `persistence_event.latency_high`.
+Quality-правило окремо від `endpoint_down`: `rtt ≥ multiplier × AVG` (default 2.0; AVG = EWMA α=0.2), `fail_after=3` поспіль без часового вікна; YAML `alerts.rules.latency_high`; GUI «Сповіщення…» з ETA ≈ fail_after×interval; badge/ack через `HostProblemSummary`; SQLite `persistence_event.latency_high`.
 
 ### `PersistenceSettingsDialog` (P11-014)
 

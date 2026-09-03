@@ -16,6 +16,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * HostProblemSummary}) survive channel suppressions and {@link #ack}.
  */
 public final class AlertRuleEngine {
+    /**
+     * EWMA smoothing for {@code latency_high} baseline (P26-008). First good sample seeds AVG;
+     * later good samples: {@code α·rtt + (1−α)·AVG}.
+     */
+    public static final double LATENCY_EWMA_ALPHA = 0.2;
+
     private enum Phase {
         OK,
         PENDING,
@@ -68,8 +74,9 @@ public final class AlertRuleEngine {
     /**
      * Observes one successful terminal RTT for {@code latency_high}.
      *
-     * <p>Compares {@code rttMs} to {@code multiplier × AVG} using AVG from samples <em>before</em>
-     * this probe. Updates the running mean after the comparison. Call only for reachable targets.
+     * <p>Compares {@code rttMs} to {@code multiplier × AVG} using EWMA baseline from good samples
+     * <em>before</em> this probe ({@link #LATENCY_EWMA_ALPHA}). Updates EWMA after the comparison
+     * only when the sample is not high. Call only for reachable targets.
      *
      * @return FIRING or RESOLVED when a lifecycle edge occurs
      */
@@ -90,7 +97,7 @@ public final class AlertRuleEngine {
             boolean high = isLatencyHigh(state, rttMs, rule);
             // Do not fold bad samples into AVG — otherwise ×2 baseline climbs and fail_after never completes.
             if (!high) {
-                updateLatencyAvg(state, rttMs);
+                updateLatencyEwma(state, rttMs);
             }
             if (high) {
                 return onConditionTrue(
@@ -197,40 +204,45 @@ public final class AlertRuleEngine {
         latencyStates.clear();
     }
 
-    /** Package-visible for tests — running AVG before next sample, if any. */
+    /** Package-visible for tests — EWMA AVG before next sample, if any. */
     Optional<Double> latencyAvg(String host) {
         LatencyState state = latencyStates.get(host);
         if (state == null) {
             return Optional.empty();
         }
         synchronized (state) {
-            return state.sampleCount > 0 ? Optional.of(state.sumMs / state.sampleCount) : Optional.empty();
+            return state.hasBaseline ? Optional.of(state.ewmaMs) : Optional.empty();
         }
     }
 
     private static boolean isLatencyHigh(LatencyState state, double rttMs, LatencyHighRuleConfig rule) {
-        if (state.sampleCount < 1) {
+        if (!state.hasBaseline) {
             return false;
         }
-        double avg = state.sumMs / state.sampleCount;
+        double avg = state.ewmaMs;
         boolean relative = rttMs >= rule.multiplier() * avg;
         boolean absolute = rule.hasAbsoluteThreshold() && rttMs >= rule.thresholdMs();
         return relative || absolute;
     }
 
-    private static void updateLatencyAvg(LatencyState state, double rttMs) {
-        state.sumMs += rttMs;
-        state.sampleCount++;
+    private static void updateLatencyEwma(LatencyState state, double rttMs) {
+        if (!state.hasBaseline) {
+            state.ewmaMs = rttMs;
+            state.hasBaseline = true;
+            return;
+        }
+        state.ewmaMs = LATENCY_EWMA_ALPHA * rttMs + (1.0 - LATENCY_EWMA_ALPHA) * state.ewmaMs;
     }
 
     private static Map<String, Object> withLatencyDetail(
             Map<String, Object> base, double rttMs, LatencyState state, LatencyHighRuleConfig rule) {
         Map<String, Object> map = new java.util.LinkedHashMap<>(base);
         map.put("rtt_ms", rttMs);
-        if (state.sampleCount > 0) {
-            map.put("avg_ms", state.sumMs / state.sampleCount);
+        if (state.hasBaseline) {
+            map.put("avg_ms", state.ewmaMs);
         }
         map.put("multiplier", rule.multiplier());
+        map.put("ewma_alpha", LATENCY_EWMA_ALPHA);
         if (rule.hasAbsoluteThreshold()) {
             map.put("threshold_ms", rule.thresholdMs());
         }
@@ -378,7 +390,7 @@ public final class AlertRuleEngine {
     }
 
     private static final class LatencyState extends HostState {
-        private double sumMs;
-        private int sampleCount;
+        private boolean hasBaseline;
+        private double ewmaMs;
     }
 }

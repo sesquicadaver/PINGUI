@@ -192,6 +192,10 @@ public final class AlertsSettingsDialog {
         grid.add(latencyClearField, 1, row++);
         grid.add(formLabel(UiI18n.get("alerts.lat_cooldown")), 0, row);
         grid.add(latencyCooldownField, 1, row++);
+        Label latencyEtaHint = new Label(UiI18n.get("alerts.latency_eta_hint"));
+        latencyEtaHint.setWrapText(true);
+        latencyEtaHint.setMaxWidth(Double.MAX_VALUE);
+        grid.add(latencyEtaHint, 0, row++, 2, 1);
         grid.add(formLabel(UiI18n.get("dialog.status")), 0, row);
         grid.add(statusArea, 1, row);
         GridPane.setHgrow(webhookField, Priority.ALWAYS);

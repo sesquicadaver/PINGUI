@@ -98,7 +98,7 @@
 | Alerts settings GUI (P20-011) | `AlertsSettingsDialog`, `AlertConfig`, `MainController`, `AlertDispatchers` | `AlertsSettingsDialogTest`, `AppMenuDialogsTest` |
 | ADR якісних алертів (P21-001) | `docs/ADR_ALERT_RULES.md`, `docs/en/ADR_ALERT_RULES.md`; related `ADR_ALERTS` | Doc parity; контракт lifecycle `endpoint_down` |
 | AlertRuleEngine endpoint_down (P21-002) | `AlertRuleEngine`, `QualityAlertEvent`, `EndpointDownRuleConfig`, `MonitorService` | `AlertRuleEngineTest`, `MonitorServiceTest.dispatchesEndpointDownAfterConsecutiveUnreachablePolls` |
-| latency_high (P23) | `LatencyHighRuleConfig`, `AlertRuleEngine`, `MonitorService`, `AlertsSettingsDialog`, `PersistenceEventType.LATENCY_HIGH` | `AlertRuleEngineTest.latencyHigh*`, `ProfilesConfigTest.saveAndReloadLatencyHighRules`, `AlertsSettingsDialogTest.buildConfigEnablesLatencyHighCriticalDefaults` |
+| latency_high (P23/P26-008) | `LatencyHighRuleConfig`, `AlertRuleEngine` (EWMA α=0.2), `MonitorService`, `AlertsSettingsDialog`, `PersistenceEventType.LATENCY_HIGH` | `AlertRuleEngineTest.latencyHigh*` / `latencyBaselineUsesEwma*`, `ProfilesConfigTest.saveAndReloadLatencyHighRules`, `AlertsSettingsDialogTest.buildConfigEnablesLatencyHighCriticalDefaults` |
 | GUI paint baseline (P24-000) | `docs/ROADMAP.md` фаза 24; `.omx/plans/gui-architecture-perf-plan.md` | Doc parity; черга P24 відкрита |
 | GraphCanvas invalidate (P24-001) | `GraphCanvas` | `GraphCanvasTest` (call-count resize); CHECKLIST native Windows smoke |
 | GraphCanvas coalesce (P24-002) | `GraphCanvas` | `GraphCanvasTest` paint≤1 / pulse |
@@ -113,7 +113,7 @@
 | UI i18n runtime (P25) | `UiI18n`, `UiLocale`, `UiLocaleStore`, `messages_*.properties`, `MainView` Language menu | `UiI18nTest`; UI tests з UK locale |
 | ADR i18n (P25) | `docs/ADR_I18N.md`, `docs/en/ADR_I18N.md` | User-facing locales only: USER_GUIDE + HOWTO + `README.<lang>` |
 | Doc parity multi-locale (P25) | `scripts/check_doc_parity.py` | `test_doc_parity.py`; UK/EN full; stub locales = user docs |
-| Hardening queue (P26) | ROADMAP фаза 26: telemetry isolation, SQLite reopen, launchers, MainController/MonitorService split, JaCoCo packages, latency EWMA | NEXT=`P26-008`; P26-007 package JaCoCo [x] |
+| Hardening queue (P26) | ROADMAP фаза 26: telemetry isolation, SQLite reopen, launchers, MainController/MonitorService split, JaCoCo packages, latency EWMA | NEXT=`P26-009`; P26-008 EWMA α=0.2 + ETA [x] |
 | SQLite format normalize (P27) | schema v5–v7: telemetry columns SSOT; typed `persistence_event`; normalized `host_session` | Java-only; no legacy migrate (delete `.db`); черга після P26-009 |
 | Runtime hardening follow-up (P28) | `SinkRegistry` hang isolation; `inFlight` before pool; Python schema `!=` gate | аудит `pimgui-5.md`; після P27 у черзі; NEXT лишається P26-007 |
 | YAML/GUI alerts.rules (P21-003) | `AlertConfig`, `EndpointDownRuleConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `ProfilesConfigTest`, `AlertsSettingsDialogTest`, `AppMenuDialogsTest` |

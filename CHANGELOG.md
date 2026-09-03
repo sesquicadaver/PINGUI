@@ -9,6 +9,7 @@
 
 ### Added
 
+- **P26-008 — latency_high EWMA baseline + UI ETA:** AVG = EWMA α=0.2 (bad samples excluded); `LatencyHighRuleConfig.approximateFiringEta`; Help/Settings copy; ADR §7; NEXT→**P26-009**.
 - **P26-007 — package JaCoCo thresholds:** окремі PACKAGE minima (`config`/`probe`/`monitor` ≥85%, `telemetry` ≥80%, `persistence` ≥75%) + BUNDLE ≥80%; UI `io/pingui/ui/**` exclusion явний; NEXT→**P26-008**.
 - **P28 — runtime hardening follow-up (черга після P27):** з аудиту `pimgui-5.md` — P28-001 SinkRegistry hang isolation; P28-002 `inFlight` before pool; P28-003 Python schema `!=` gate. NEXT лишається **P26-007**.
 - **P27 — SQLite format normalize (черга після P26):** P27-001…003 — telemetry columns SSOT → typed `persistence_event` → normalized `host_session`; Java-only; без міграції старих `.db`.

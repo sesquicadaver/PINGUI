@@ -15,7 +15,7 @@ User decisions (2026-07-22):
 |-------|----------|
 | v1 scope | **`endpoint_down` only**; `loss_high` / `latency_high` → **v2** |
 | RESOLVED | User option (`notify_resolved`, default **false**) |
-| Latency (v2) | Default: `rtt ≥ 2×AVG`; FIRING after **3** consecutive bad pings (**no** time window); absolute/other multiplier only when set |
+| Latency (v2) | Default: `rtt ≥ 2×AVG` (AVG = **EWMA** α=0.2); FIRING after **3** consecutive bad pings (**no** time window); absolute/other multiplier only when set |
 | Per-host overrides | **Not in v1** (reserved; see below) |
 | ADR shape | Separate **ADR_ALERT_RULES**; ADR_ALERTS remains SSOT for channels |
 
@@ -119,20 +119,22 @@ alerts:
 Priority: CLI (future flags) > profile YAML > defaults.  
 **Per-host `alerts:` — not in v1.**
 
-### 7. `latency_high` (v2 — accepted decisions 2026-07-22)
+### 7. `latency_high` (v2 — accepted decisions 2026-07-22; baseline EWMA P26-008)
 
 Distinct from `endpoint_down`: a successful reply with high RTT is **not** down.
 
 | Parameter | Default (critical) | Description |
 |-----------|-------------------|-------------|
 | `enabled` | `false` | default off |
-| `multiplier` | `2.0` | signal: `rtt ≥ multiplier × AVG` (AVG = running mean of successful terminal RTTs **before** the current sample) |
+| `multiplier` | `2.0` | signal: `rtt ≥ multiplier × AVG` (AVG = **EWMA** of successful terminal RTTs **before** the current sample; α=`0.2` in `AlertRuleEngine`) |
 | `fail_after` | `3` | consecutive bad pings → FIRING (**no** time window) |
 | `clear_after` | `2` | consecutive ok → RESOLVED/OK |
 | `cooldown_minutes` | `15` | between repeat FIRING emits |
 | `threshold_ms` | omit | optional absolute OR with relative when set in YAML/GUI |
 
-Warm-up: until AVG exists (0 successful samples) relative does not fire. Unreachable poll → **does not** update latency state (only `endpoint_down`). Bad samples are **not** folded into AVG (anti-poison during spikes).
+Warm-up: until AVG exists (0 successful samples) relative does not fire; the first good sample seeds EWMA. Unreachable poll → **does not** update latency state (only `endpoint_down`). Bad samples are **not** folded into AVG (anti-poison during spikes).
+
+**ETA (UI/Help):** approximate time to FIRING after warm-up ≈ `fail_after ×` profile `interval` (`LatencyHighRuleConfig.approximateFiringEta`); cooldown between repeat FIRING is separate.
 
 YAML:
 
