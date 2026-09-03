@@ -8,7 +8,7 @@
 
 | Field | Value |
 |------|----------|
-| **Current task** | **[P26-008](docs/en/ROADMAP.md#next--single-source-of-truth)** |
+| **Current task** | **[P28-001](docs/en/ROADMAP.md#next--single-source-of-truth)** |
 | **Rule** | if not `DONE` — `/autopilot` = this ID; if `DONE` — stop / wait for an explicit new ID. **Do not ask** “which item?”. |
 
 Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (phases 26–28, #103–117).
@@ -47,9 +47,9 @@ Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#e
 | **23** | `latency_high` alert rule | ✅ **DONE** |
 | **24** | GUI architecture & paint | ✅ **DONE** |
 | **25** | i18n UI + user-facing docs | ✅ **DONE** |
-| **26** | Hardening post-audit (telemetry / launchers / split) | 🔄 **P26-008** |
-| **27** | SQLite record format normalize (Java) | ✅ P27-001…003 (queue after P26-009) |
-| **28** | Runtime hardening follow-up (audit pimgui-5) | ⏳ after P27 |
+| **26** | Hardening post-audit (telemetry / launchers / split) | ✅ **DONE** ([ADR_HARDENING](docs/en/ADR_HARDENING.md)) |
+| **27** | SQLite record format normalize (Java) | ✅ P27-001…003 |
+| **28** | Runtime hardening follow-up (audit pimgui-5) | 🔄 **P28-001** |
 
 ---
 
