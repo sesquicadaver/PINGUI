@@ -28,7 +28,7 @@ Schema v7 нормалізувала hops/history у дочірні таблиц
 | 1 | **P30-001** | `host_session.id` INTEGER PK; `address` UNIQUE; діти/`persistence_event` → `host_id` |
 | 2 | **P30-002** | таблиця `incident` (FIRING/RESOLVED, duration, ack) — **done** (schema v9) |
 | 3 | **P30-003** | `poll_result` — канонічний агрегат завершеного poll — **done** (schema v10) |
-| 4 | **P30-004** | дедуплікована `route` (signature + hops_json) |
+| 4 | **P30-004** | дедуплікована `route` (signature + hops_json) — **done** (schema v11) |
 | 5 | **P30-005** | `metric_rollup` + bounded retention |
 | 6 | **P30-006** | RO export connection / integrity_check CLI / backup-before-irreversible |
 
@@ -94,6 +94,25 @@ CREATE TABLE poll_result (
 - Запис після кожного завершеного poll (`PollResultEffects` → `PersistenceEventWriter`).
 - Канон історії RTT/loss/uptime; `telemetry_*` лишається каналом експорту.
 - `route_id` nullable до P30-004.
+
+### P30-004 (зроблено)
+
+```sql
+CREATE TABLE route (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    host_id INTEGER NOT NULL,
+    signature TEXT NOT NULL,
+    hops_json TEXT NOT NULL,
+    first_seen TEXT NOT NULL,
+    last_seen TEXT NOT NULL,
+    seen_count INTEGER NOT NULL DEFAULT 1,
+    FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE,
+    UNIQUE(host_id, signature)
+);
+```
+
+- Signature: `ip|ip|*|ip` (`*` = timeout).
+- Успішний poll upsert-ить route і пише `poll_result.route_id`.
 
 ### Не робимо
 

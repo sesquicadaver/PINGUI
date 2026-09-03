@@ -9,6 +9,7 @@
 
 ### Changed
 
+- **P30-004 — deduped route (schema v11):** `route(signature, hops_json, seen_count)`; `poll_result.route_id`; NEXT→**P30-005**.
 - **P30-003 — poll_result (schema v10):** канонічний агрегат завершеного poll (`reachable`/`terminal_rtt_ms`/`loss`/`duration`/`error`); wire у `MonitorService`/`PollResultEffects`; NEXT→**P30-004**.
 - **P30-002 — incident table (schema v9):** `incident` на `host_id` (FIRING/RESOLVED/ack/occurrences); wire у `PersistenceEventWriter`; MTTR з колонок; NEXT→**P30-003**.
 - **P30-001 — stable host id (schema v8):** `host_session.id` INTEGER PK + `address` UNIQUE; діти/`persistence_event` → `host_id`; `rename` оновлює адресу без переписування історії; legacy `.db` → delete & recreate; ADR `ADR_SESSION_SCHEMA`; NEXT→**P30-002**.

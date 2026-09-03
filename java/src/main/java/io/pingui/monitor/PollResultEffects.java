@@ -104,6 +104,7 @@ final class PollResultEffects {
         Boolean reachable = null;
         Double terminalRtt = null;
         Double lossPercent = null;
+        Long routeId = null;
         if (error != null) {
             reachable = false;
         } else if (snapshot != null) {
@@ -113,6 +114,11 @@ final class PollResultEffects {
                 terminalRtt = rtt.getAsDouble();
             }
             lossPercent = reachable ? 0.0 : 100.0;
+            try {
+                routeId = events.observeRoute(host, snapshot.nodes(), Instant.now());
+            } catch (RuntimeException ex) {
+                LOG.warn("Persistence route upsert failed for {}: {}", host, ex.getMessage());
+            }
         }
         try {
             events.writePollResult(
@@ -124,6 +130,7 @@ final class PollResultEffects {
                     null,
                     lossPercent,
                     durationMs,
+                    routeId,
                     error);
         } catch (RuntimeException ex) {
             LOG.warn("Persistence poll_result failed for {}: {}", host, ex.getMessage());
