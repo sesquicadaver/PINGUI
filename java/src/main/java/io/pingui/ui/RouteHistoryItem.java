@@ -4,6 +4,8 @@ import io.pingui.i18n.UiI18n;
 import io.pingui.monitor.IncidentTimelineEntry;
 import io.pingui.monitor.IncidentTimelineKind;
 import io.pingui.monitor.RouteChangeEvent;
+import io.pingui.monitor.Severity;
+import io.pingui.monitor.SeverityClassifier;
 import java.time.Duration;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -40,6 +42,8 @@ public record RouteHistoryItem(long id, IncidentTimelineEntry entry) {
 
     public String summary() {
         StringBuilder sb = new StringBuilder();
+        Severity severity = severity();
+        sb.append(SeverityTheme.glyph(severity)).append(' ');
         if (entry.kind() == IncidentTimelineKind.ROUTE_CHANGE
                 && entry.routeReplay().map(ev -> ev.oldIps().isEmpty()).orElse(false)) {
             sb.append(UiI18n.get("history.initial_route")).append(' ');
@@ -55,6 +59,11 @@ public record RouteHistoryItem(long id, IncidentTimelineEntry entry) {
             sb.append("  ").append(entry.detail());
         }
         return sb.toString();
+    }
+
+    /** Unified severity for this timeline row (P31-004). */
+    public Severity severity() {
+        return SeverityClassifier.forTimeline(entry.kind(), entry.state());
     }
 
     static String kindLabel(IncidentTimelineKind kind) {

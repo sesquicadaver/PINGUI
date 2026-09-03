@@ -31,7 +31,8 @@ public final class DesktopAlertDispatcher implements AlertDispatcher {
         String oldStr = event.oldIps().isEmpty() ? "(none)" : String.join(" -> ", event.oldIps());
         String newStr = event.newIps().isEmpty() ? "(none)" : String.join(" -> ", event.newIps());
         String body = event.host() + ": " + oldStr + " → " + newStr;
-        show(event.host(), "PINGUI route change", body);
+        Severity severity = SeverityClassifier.forAlertEventType(RouteChangeEvent.EVENT_TYPE);
+        show(event.host(), severity.name() + " · PINGUI route change", body);
     }
 
     @Override
@@ -39,7 +40,8 @@ public final class DesktopAlertDispatcher implements AlertDispatcher {
         if (event == null) {
             return;
         }
-        show(event.host(), event.desktopTitle(), event.desktopBody());
+        Severity severity = SeverityClassifier.forAlertEventType(event.event());
+        show(event.host(), severity.name() + " · " + event.desktopTitle(), event.desktopBody());
     }
 
     private void show(String host, String title, String body) {

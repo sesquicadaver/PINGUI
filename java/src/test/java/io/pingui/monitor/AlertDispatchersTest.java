@@ -39,7 +39,7 @@ class AlertDispatchersTest {
         RouteChangeEvent event = RouteChangeEvent.fromRouteChange(
                 "8.8.8.8", List.of("10.0.0.1"), List.of("10.0.0.2"), "default", Instant.now());
         dispatcher.dispatch(event);
-        assertEquals(List.of("PINGUI route change"), titles);
+        assertEquals(List.of("NOTICE · PINGUI route change"), titles);
     }
 
     @Test

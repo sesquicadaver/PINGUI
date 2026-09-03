@@ -65,6 +65,27 @@
     -fx-font-weight: bold;
 }
 
+.pingui-severity-critical {
+    -fx-text-fill: -pingui-danger;
+    -fx-font-weight: bold;
+}
+
+.pingui-severity-warning {
+    -fx-text-fill: #e65100;
+}
+
+.pingui-severity-notice {
+    -fx-text-fill: #f9a825;
+}
+
+.pingui-severity-info {
+    -fx-text-fill: -pingui-text;
+}
+
+.pingui-severity-muted {
+    -fx-text-fill: -pingui-muted;
+}
+
 .pingui-chip {
     -fx-font-size: 11px;
 }

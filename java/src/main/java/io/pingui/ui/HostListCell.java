@@ -92,7 +92,6 @@ final class HostListCell extends ListCell<HostItem> {
         mtuButton.setMinWidth(Region.USE_PREF_SIZE);
         mtuButton.setTooltip(new Tooltip(UiI18n.get("host.mtu_tooltip")));
         problemButton.setMinWidth(Region.USE_PREF_SIZE);
-        problemButton.getStyleClass().add("pingui-danger");
         problemButton.setTooltip(new Tooltip(UiI18n.get("host.problem_tooltip")));
         pingOnlyCheck.getStyleClass().add("pingui-muted");
         pingOnlyCheck.setMinWidth(Region.USE_PREF_SIZE);
@@ -134,7 +133,7 @@ final class HostListCell extends ListCell<HostItem> {
         });
         expertModeListener = (obs, was, on) -> refreshExpertControls(getItem());
         expertMode.addListener(expertModeListener);
-        refreshProblemBadge(false);
+        refreshProblemBadge(null, false);
     }
 
     @Override
@@ -183,12 +182,12 @@ final class HostListCell extends ListCell<HostItem> {
         item.rowColorProperty().addListener(rowColorListener);
         expertConfiguredListener = (obs, was, configured) -> styleExtenButton(configured);
         item.expertConfiguredProperty().addListener(expertConfiguredListener);
-        problemUnreadListener = (obs, was, unread) -> refreshProblemBadge(unread);
+        problemUnreadListener = (obs, was, unread) -> refreshProblemBadge(getItem(), unread);
         item.problemUnreadProperty().addListener(problemUnreadListener);
         applyBackground(item.rowColorProperty().get());
         styleExtenButton(item.isExpertConfigured());
         refreshExpertControls(item);
-        refreshProblemBadge(item.isProblemUnread());
+        refreshProblemBadge(item, item.isProblemUnread());
         updating = false;
         setGraphic(root);
     }
@@ -217,9 +216,28 @@ final class HostListCell extends ListCell<HostItem> {
         mtuButton.setManaged(show);
     }
 
-    private void refreshProblemBadge(boolean unread) {
+    private void refreshProblemBadge(HostItem item, boolean unread) {
         problemButton.setVisible(unread);
         problemButton.setManaged(unread);
+        problemButton
+                .getStyleClass()
+                .removeAll(
+                        "pingui-danger",
+                        "pingui-severity-critical",
+                        "pingui-severity-warning",
+                        "pingui-severity-notice",
+                        "pingui-severity-info",
+                        "pingui-severity-muted");
+        if (unread && item != null) {
+            String style = SeverityTheme.styleClass(item.severity());
+            problemButton.getStyleClass().add(style);
+            if (item.severity() == io.pingui.monitor.Severity.CRITICAL) {
+                problemButton.getStyleClass().add("pingui-danger");
+            }
+            problemButton.setText(SeverityTheme.glyph(item.severity()));
+        } else {
+            problemButton.setText(UiI18n.get("host.problem_badge"));
+        }
     }
 
     private void styleExtenButton(boolean configured) {
