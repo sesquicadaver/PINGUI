@@ -17,7 +17,7 @@ public record PersistencePolicy(boolean routeChange, boolean probeError) {
             case PROBE_ERROR -> probeError;
                 // ADR_HOST_PROBLEM_INDICATOR / P29-002: quality + ack default on when session DB connected.
             case ENDPOINT_DOWN, LATENCY_HIGH, PROBLEM_ACK -> true;
-                // P29-004 will write DNS_CHANGE; allow persistence when DB is connected.
+                // P29-004 writes DNS_CHANGE as distinct events (not auto-incidents).
             case DNS_CHANGE -> true;
         };
     }

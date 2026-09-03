@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **P29-004 — DNS control:** forward resolve (`DnsControl`/`DnsControlTracker`) — address set v4/v6, resolve time, distinct `dns_change` (ok/change/NXDOMAIN/timeout/SERVFAIL); wired in `MonitorService` + timeline; not an auto-incident; NEXT→**P29-005**.
 - **P29 NEXT activated:** ROADMAP **NEXT = P29-001** (multi-host problem correlation); P29-001…005 queue task statuses unchanged.
 - **P29 — diagnostic evolution (queued, NEXT stays DONE):** from `pingui-evo-func.md` — P29-001 multi-host correlation; P29-002 incident timeline; P29-003 alert silence; P29-004 DNS control; P29-005 TCP connect. Java-first; backlog: snapshot/SLA/baseline. Activate with explicit NEXT=`P29-001`.
 - **P28-003 — Python session_db schema gate:** reject `version != SCHEMA_VERSION` (v4) with `SessionDatabaseError`; no silent migrate; NEXT→**DONE**.

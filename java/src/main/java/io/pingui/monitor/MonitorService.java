@@ -4,6 +4,8 @@ import io.pingui.config.AlertSilenceConfig;
 import io.pingui.config.EndpointDownRuleConfig;
 import io.pingui.config.LatencyHighRuleConfig;
 import io.pingui.config.PingExpertEntry;
+import io.pingui.dns.DnsControlTracker;
+import io.pingui.dns.ForwardDnsLookup;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.persistence.PersistenceEventWriter;
 import io.pingui.persistence.PersistencePolicy;
@@ -87,6 +89,7 @@ public final class MonitorService implements AutoCloseable {
     private final PersistencePolicyHolder persistencePolicy = new PersistencePolicyHolder();
     private final BurstSchedulePolicy burstPolicy = new BurstSchedulePolicy();
     private final TraceConcurrencyLimiter traceLimiter;
+    private volatile DnsControlTracker dnsControl = new DnsControlTracker();
 
     public MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds) {
         this(intervalSeconds, maxHops, timeoutSeconds, ProbeMode.AUTO);
@@ -274,6 +277,11 @@ public final class MonitorService implements AutoCloseable {
         pollEffects.setPersistenceEventWriter(persistenceEvents);
     }
 
+    /** Test hook: replace forward-DNS lookup used by hostname DNS control (P29-004). */
+    void setForwardDnsLookupForTests(ForwardDnsLookup lookup) {
+        dnsControl = lookup == null ? new DnsControlTracker() : new DnsControlTracker(lookup);
+    }
+
     /** Optional telemetry bus (P16-013); null disables offers. Must not block poll. */
     public void setTelemetryBus(TelemetryBus telemetryBus) {
         pollEffects.setTelemetryBus(telemetryBus);
@@ -404,6 +412,7 @@ public final class MonitorService implements AutoCloseable {
         if (!running.get()) {
             return;
         }
+        observeDnsControl(host);
         HostRegistry.PollStart start = registry.beginPoll(host, profileProbeMode, Instant.now());
         if (start == null) {
             return;
@@ -477,6 +486,25 @@ public final class MonitorService implements AutoCloseable {
         }
         if (!deliveredSnapshot) {
             current.onPollFinished(host);
+        }
+    }
+
+    /**
+     * Forward-DNS control for hostname targets (P29-004). Persists distinct dns_change events only —
+     * never opens quality incidents or alert dispatch.
+     */
+    private void observeDnsControl(String host) {
+        try {
+            var event = dnsControl.observe(host);
+            if (event.isEmpty()) {
+                return;
+            }
+            PersistenceEventWriter events = persistenceEvents;
+            if (events != null) {
+                events.writeDnsChange(event.get());
+            }
+        } catch (RuntimeException ex) {
+            LOG.warn("DNS control failed for {}: {}", host, ex.getMessage());
         }
     }
 

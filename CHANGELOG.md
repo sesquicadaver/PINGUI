@@ -9,6 +9,7 @@
 
 ### Added
 
+- **P29-004 — DNS control:** forward resolve (`DnsControl`/`DnsControlTracker`) — address set v4/v6, resolve time, distinct `dns_change` (ok/change/NXDOMAIN/timeout/SERVFAIL); wire у `MonitorService` + timeline; не auto-incident; NEXT→**P29-005**.
 - **P29-003 — alert silence / maintenance:** `AlertSilenceConfig` (host/tag/profile until+reason); gate in `PollResultEffects` (persist keeps, dispatch skips); YAML/GUI; NEXT→**P29-004**.
 - **P29-002 — incident timeline:** `IncidentTimelineBuilder` + `listHostEvents`; Extended history shows down/latency/route/ack (+ DNS kind reserved); `PROBLEM_ACK` on ack; NEXT→**P29-003**.
 - **P29-001 — multi-host problem correlation:** `ProblemCorrelator` на FIRING + `RouteSnapshot` (last shared stable hop, first shared problem hop, scope local/ISP/edge, count + start overlap); UI summary у `ProblemDetailsDialog`; NEXT→**P29-002**.

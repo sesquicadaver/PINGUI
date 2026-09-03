@@ -1,5 +1,6 @@
 package io.pingui.persistence;
 
+import io.pingui.dns.DnsControlEvent;
 import io.pingui.monitor.QualityAlertEvent;
 import io.pingui.monitor.RouteChangeEvent;
 import java.time.Instant;
@@ -98,6 +99,27 @@ public final class PersistenceEventWriter {
         Instant at = when != null ? when : Instant.now();
         ensureHostRow(host);
         database.insertEvent(PersistenceEventType.PROBLEM_ACK, host, null, null, null, null, null, null, at);
+    }
+
+    /**
+     * Persists forward-DNS control observation (P29-004). Distinct event only — never opens a quality
+     * incident or alert dispatch.
+     */
+    public void writeDnsChange(DnsControlEvent event) {
+        if (event == null || !policyHolder.active().allows(PersistenceEventType.DNS_CHANGE)) {
+            return;
+        }
+        ensureHostRow(event.host());
+        database.insertEvent(
+                PersistenceEventType.DNS_CHANGE,
+                event.host(),
+                null,
+                event.state(),
+                event.message(),
+                PersistenceJson.stringArray(event.previousAddresses()),
+                PersistenceJson.stringArray(event.addresses()),
+                event.detailJson(),
+                event.observedAt());
     }
 
     private static PersistenceEventType qualityEventType(QualityAlertEvent event) {
