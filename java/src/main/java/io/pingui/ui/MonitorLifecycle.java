@@ -69,6 +69,7 @@ public final class MonitorLifecycle {
         service.setProfileProbeMode(profile.hostProbeMode());
         service.setHostProbeModeResolver(store::getProbeMode);
         service.setHostPollIntervalResolver(store::getIntervalOverride);
+        service.setHostTagsResolver(store::getTags);
         if (sessionDatabase != null) {
             service.setPersistenceEventWriter(new PersistenceEventWriter(sessionDatabase, service.persistencePolicy()));
         }
@@ -89,12 +90,13 @@ public final class MonitorLifecycle {
         service.setAlertDispatcher(AlertDispatchers.build(alerts, desktopSink));
     }
 
-    /** Applies {@code endpoint_down} / {@code latency_high} + {@code notify_resolved} from profile alerts. */
+    /** Applies {@code endpoint_down} / {@code latency_high} / silence + {@code notify_resolved}. */
     public static void applyAlertRules(MonitorService service, AlertConfig alerts) {
         AlertConfig effective = alerts != null ? alerts : AlertConfig.disabled();
         service.setNotifyResolved(effective.notifyResolved());
         service.setEndpointDownRule(effective.endpointDown());
         service.setLatencyHighRule(effective.latencyHigh());
+        service.setAlertSilence(effective.silence());
     }
 
     /** JavaFX popup sink; {@code ownerSupplier} may return null until the scene exists. */

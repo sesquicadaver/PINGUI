@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P29-003** |
+| **Поточна задача** | **P29-004** |
 | **Фаза** | 29 — diagnostic evolution (correlation / timeline / silence / DNS / TCP) |
-| **DoD (коротко)** | Maintenance / alert silence (host / tag / profile) |
+| **DoD (коротко)** | DNS control (resolve set / latency / change event) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -163,11 +163,11 @@
 | 117 | **P28-003** | [x] | Python `session_db`: reject schema `!= SCHEMA_VERSION` (forward-compat) |
 | 118 | **P29-001** | [x] | Multi-host problem correlation (спільний hop / сегмент) |
 | 119 | **P29-002** | [x] | Per-host incident timeline (компактний список подій) |
-| 120 | **P29-003** | [ ] | Maintenance / alert silence (host / tag / profile) |
+| 120 | **P29-003** | [x] | Maintenance / alert silence (host / tag / profile) |
 | 121 | **P29-004** | [ ] | DNS control (resolve set / latency / change event) |
 | 122 | **P29-005** | [ ] | TCP Connect probe (`host:port`) |
 
-**Стан черги:** активна — **NEXT = P29-003** (фаза 29; P29-002 [x]; Java-first).
+**Стан черги:** активна — **NEXT = P29-004** (фаза 29; P29-003 [x]; Java-first).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -929,13 +929,13 @@ flowchart TD
 
 **Контекст:** Після hardening (P26–P28) — функції на **наявних** probe-даних (`RouteSnapshot`, RTT/loss, SQLite events), без важкого NMS. Джерело: `pingui-evo-func.md`. **Java-first** (GUI/`beta`); Python parity — окремо. SNMP / NetFlow / HTTP synthetic / auto-remediation — поза scope.
 
-**Черга:** після P28; **NEXT = P29-003** (P29-002 [x]).
+**Черга:** після P28; **NEXT = P29-004** (P29-003 [x]).
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
 | **P29-001** | [x] Multi-host problem correlation | `ProblemCorrelator`, `MonitorService.correlateActiveProblems`, `ProblemDetailsDialog`, tests | FIRING hosts + RouteSnapshot: last shared stable hop, first shared problem hop, scope local/ISP/edge, count + start overlap; UI summary у problem dialog; без нових probes |
 | **P29-002** | [x] Incident timeline | `IncidentTimelineBuilder`, `SessionDatabase.listHostEvents`, `PROBLEM_ACK`, Extended history UI, tests | Компактний per-host список: down/latency/route/ack (+ DNS kind reserved); duration FIRING→RESOLVED; дані SQLite/engine |
-| **P29-003** | [ ] Alert silence / maintenance | alerts config + MonitorService gate, YAML/GUI | Monitoring continues; silence host/tag/profile until timestamp + reason; alerts suppressed independently of enabled |
+| **P29-003** | [x] Alert silence / maintenance | `AlertSilenceConfig`, `PollResultEffects` gate, YAML/GUI | Monitoring continues; silence host/tag/profile until + reason; dispatch suppressed, persistence kept |
 | **P29-004** | [ ] DNS control | resolve path + event/optional alert | Hostname: address set (v4/v6), resolve time, change/NXDOMAIN/timeout/SERVFAIL as distinct event (not auto-incident) |
 | **P29-005** | [ ] TCP Connect probe | `HostProbeMode` / poller, YAML/GUI | `host:port` → DNS time + connect time + success/refused/timeout + resolved IP; alternate/complement to PING_ONLY, not ICMP replacement |
 
@@ -1028,7 +1028,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P29-003**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P29-004**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

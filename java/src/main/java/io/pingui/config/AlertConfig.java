@@ -1,22 +1,24 @@
 package io.pingui.config;
 
-/** Per-profile alert channels + quality rules (P10-021 / P21-003 / P23 / ADR_ALERTS + ADR_ALERT_RULES). */
+/** Per-profile alert channels + quality rules + silence (P10-021 / P21-003 / P23 / P29-003). */
 public record AlertConfig(
         boolean desktopAlerts,
         String webhookUrl,
         int maxAlertsPerHour,
         boolean notifyResolved,
         EndpointDownRuleConfig endpointDown,
-        LatencyHighRuleConfig latencyHigh) {
+        LatencyHighRuleConfig latencyHigh,
+        AlertSilenceConfig silence) {
     public AlertConfig {
         if (maxAlertsPerHour < 1) {
             throw new IllegalArgumentException("maxAlertsPerHour must be >= 1");
         }
         endpointDown = endpointDown != null ? endpointDown : EndpointDownRuleConfig.disabled();
         latencyHigh = latencyHigh != null ? latencyHigh : LatencyHighRuleConfig.disabled();
+        silence = silence != null ? silence : AlertSilenceConfig.none();
     }
 
-    /** Channel-only constructor (rules default off). */
+    /** Channel-only constructor (rules/silence default off). */
     public AlertConfig(boolean desktopAlerts, String webhookUrl, int maxAlertsPerHour) {
         this(
                 desktopAlerts,
@@ -24,10 +26,11 @@ public record AlertConfig(
                 maxAlertsPerHour,
                 false,
                 EndpointDownRuleConfig.disabled(),
-                LatencyHighRuleConfig.disabled());
+                LatencyHighRuleConfig.disabled(),
+                AlertSilenceConfig.none());
     }
 
-    /** Channels + endpoint_down (latency defaults off). */
+    /** Channels + endpoint_down (latency/silence defaults off). */
     public AlertConfig(
             boolean desktopAlerts,
             String webhookUrl,
@@ -40,12 +43,37 @@ public record AlertConfig(
                 maxAlertsPerHour,
                 notifyResolved,
                 endpointDown,
-                LatencyHighRuleConfig.disabled());
+                LatencyHighRuleConfig.disabled(),
+                AlertSilenceConfig.none());
+    }
+
+    /** Channels + rules without silence. */
+    public AlertConfig(
+            boolean desktopAlerts,
+            String webhookUrl,
+            int maxAlertsPerHour,
+            boolean notifyResolved,
+            EndpointDownRuleConfig endpointDown,
+            LatencyHighRuleConfig latencyHigh) {
+        this(
+                desktopAlerts,
+                webhookUrl,
+                maxAlertsPerHour,
+                notifyResolved,
+                endpointDown,
+                latencyHigh,
+                AlertSilenceConfig.none());
     }
 
     public static AlertConfig disabled() {
         return new AlertConfig(
-                false, null, 10, false, EndpointDownRuleConfig.disabled(), LatencyHighRuleConfig.disabled());
+                false,
+                null,
+                10,
+                false,
+                EndpointDownRuleConfig.disabled(),
+                LatencyHighRuleConfig.disabled(),
+                AlertSilenceConfig.none());
     }
 
     public boolean isEnabled() {
@@ -58,7 +86,8 @@ public record AlertConfig(
                 || maxAlertsPerHour != 10
                 || notifyResolved
                 || !endpointDown.isDefaultDisabled()
-                || !latencyHigh.isDefaultDisabled();
+                || !latencyHigh.isDefaultDisabled()
+                || !silence.isEmpty();
     }
 
     public String normalizedWebhook() {
@@ -84,6 +113,8 @@ public record AlertConfig(
                 + (endpointDown.enabled() ? "on" : "off")
                 + ", latency_high="
                 + (latencyHigh.enabled() ? "on" : "off")
+                + ", silence="
+                + silence.entries().size()
                 + "}";
     }
 }

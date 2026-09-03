@@ -445,3 +445,7 @@ Multi-host FIRING correlation from session routes: last shared stable hop, first
 ### Java: IncidentTimelineBuilder (P29-002)
 
 Compact per-host timeline from SQLite (`endpoint_down` / `latency_high` / `route_change` / `problem_ack`; DNS kind reserved for P29-004) with FIRING→RESOLVED duration. Extended history list + route replay for route rows.
+
+### Java: AlertSilenceConfig (P29-003)
+
+Maintenance windows: silence host/tag/profile until ISO timestamp with reason. Monitoring continues; alert dispatch suppressed independently of host enabled. YAML `alerts.silence` + Alerts settings lines.

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -249,6 +250,7 @@ public final class ProfilesConfig {
         boolean notifyResolved = false;
         EndpointDownRuleConfig endpointDown = EndpointDownRuleConfig.disabled();
         LatencyHighRuleConfig latencyHigh = LatencyHighRuleConfig.disabled();
+        AlertSilenceConfig silence = AlertSilenceConfig.none();
         Object topWebhook = map.get("alert_webhook");
         if (topWebhook instanceof String topStr && !topStr.isBlank()) {
             webhook = topStr.strip();
@@ -265,8 +267,66 @@ public final class ProfilesConfig {
             Object rulesObj = alertsMap.get("rules");
             endpointDown = parseEndpointDownRule(rulesObj, profileName);
             latencyHigh = parseLatencyHighRule(rulesObj, profileName);
+            silence = parseAlertSilence(alertsMap.get("silence"), profileName);
         }
-        return new AlertConfig(desktop, webhook, rateLimit, notifyResolved, endpointDown, latencyHigh);
+        return new AlertConfig(desktop, webhook, rateLimit, notifyResolved, endpointDown, latencyHigh, silence);
+    }
+
+    private static AlertSilenceConfig parseAlertSilence(Object silenceObj, String profileName) {
+        if (silenceObj == null) {
+            return AlertSilenceConfig.none();
+        }
+        if (!(silenceObj instanceof List<?> silenceList)) {
+            throw new ConfigError("Profile '" + profileName + "' alerts.silence must be a list");
+        }
+        List<AlertSilenceEntry> entries = new ArrayList<>();
+        int index = 0;
+        for (Object item : silenceList) {
+            index++;
+            if (!(item instanceof Map<?, ?> entryMap)) {
+                throw new ConfigError("Profile '" + profileName + "' alerts.silence[" + index + "] must be a mapping");
+            }
+            Object scopeObj = entryMap.get("scope");
+            if (!(scopeObj instanceof String scopeStr) || scopeStr.isBlank()) {
+                throw new ConfigError("Profile '" + profileName + "' alerts.silence[" + index + "].scope required");
+            }
+            AlertSilenceScope scope;
+            try {
+                scope = AlertSilenceScope.fromId(scopeStr);
+            } catch (IllegalArgumentException ex) {
+                throw new ConfigError(
+                        "Profile '" + profileName + "' alerts.silence[" + index + "].scope: " + ex.getMessage());
+            }
+            String match = "";
+            Object matchObj = entryMap.get("match");
+            if (matchObj instanceof String matchStr) {
+                match = matchStr;
+            }
+            Object untilObj = entryMap.get("until");
+            if (!(untilObj instanceof String untilStr) || untilStr.isBlank()) {
+                throw new ConfigError(
+                        "Profile '" + profileName + "' alerts.silence[" + index + "].until required (ISO-8601)");
+            }
+            Instant until;
+            try {
+                until = Instant.parse(untilStr.strip());
+            } catch (RuntimeException ex) {
+                throw new ConfigError(
+                        "Profile '" + profileName + "' alerts.silence[" + index + "].until must be ISO-8601 instant");
+            }
+            String reason = "";
+            Object reasonObj = entryMap.get("reason");
+            if (reasonObj instanceof String reasonStr) {
+                reason = reasonStr;
+            }
+            try {
+                entries.add(new AlertSilenceEntry(scope, match, until, reason));
+            } catch (IllegalArgumentException ex) {
+                throw new ConfigError(
+                        "Profile '" + profileName + "' alerts.silence[" + index + "]: " + ex.getMessage());
+            }
+        }
+        return new AlertSilenceConfig(entries);
     }
 
     private static EndpointDownRuleConfig parseEndpointDownRule(Object rulesObj, String profileName) {
@@ -488,6 +548,22 @@ public final class ProfilesConfig {
             }
             if (profile.alerts().notifyResolved()) {
                 alertsOut.put("notify_resolved", true);
+            }
+            if (!profile.alerts().silence().isEmpty()) {
+                List<Object> silenceOut = new ArrayList<>();
+                for (AlertSilenceEntry entry : profile.alerts().silence().entries()) {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("scope", entry.scope().id());
+                    if (entry.scope() != AlertSilenceScope.PROFILE || !"*".equals(entry.match())) {
+                        row.put("match", entry.match());
+                    }
+                    row.put("until", entry.until().toString());
+                    if (entry.reason() != null && !entry.reason().isBlank()) {
+                        row.put("reason", entry.reason());
+                    }
+                    silenceOut.add(row);
+                }
+                alertsOut.put("silence", silenceOut);
             }
             EndpointDownRuleConfig endpointDown = profile.alerts().endpointDown();
             LatencyHighRuleConfig latencyHigh = profile.alerts().latencyHigh();
