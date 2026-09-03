@@ -37,6 +37,7 @@ public final class MainView {
     private final HostListPanel hostListPanel = new HostListPanel();
     private final StatusPanel statusPanel = new StatusPanel();
     private final RouteGraphPanel routeGraphPanel = new RouteGraphPanel();
+    private final HostInspectorPanel hostInspectorPanel = new HostInspectorPanel();
     private final HistoryPanel historyPanel = new HistoryPanel();
     private final VBox leftPanel = new VBox(8);
     private final VBox graphPanel = new VBox(8);
@@ -89,6 +90,7 @@ public final class MainView {
         leftPanel.getChildren().setAll(leftChildren);
 
         routeGraphPanel.installInto(graphPanel);
+        hostInspectorPanel.installInto(graphPanel);
         historyPanel.installInto(graphPanel);
 
         root.setTop(createMenuBar(actions));
@@ -151,6 +153,7 @@ public final class MainView {
         modeToolbar.retranslate();
         hostListPanel.retranslate();
         routeGraphPanel.retranslate();
+        hostInspectorPanel.retranslate();
         historyPanel.retranslate();
         if (actions != null) {
             root.setTop(createMenuBar(actions));
@@ -192,6 +195,10 @@ public final class MainView {
 
     public RouteGraphPanel routeGraphPanel() {
         return routeGraphPanel;
+    }
+
+    public HostInspectorPanel hostInspectorPanel() {
+        return hostInspectorPanel;
     }
 
     public HistoryPanel historyPanel() {

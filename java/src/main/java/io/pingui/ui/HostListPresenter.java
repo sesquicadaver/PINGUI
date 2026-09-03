@@ -68,6 +68,7 @@ final class HostListPresenter {
     private BiFunction<String, List<String>, Optional<List<String>>> tagsEditor = HostTagsDialog::show;
     private Function<String, Boolean> confirmDeleteHost = this::confirmDeleteHostDialog;
     private Runnable markDirty = () -> {};
+    private HostInspectorPresenter hostInspector;
 
     HostListPresenter(
             ObservableList<HostItem> hostItems,
@@ -210,6 +211,11 @@ final class HostListPresenter {
         this.markDirty = markDirty != null ? markDirty : () -> {};
     }
 
+    /** Wires selected-host inspector refresh after metrics sync (P31-003). */
+    void setHostInspector(HostInspectorPresenter hostInspector) {
+        this.hostInspector = hostInspector;
+    }
+
     String activeFilterTag() {
         return activeFilterTag;
     }
@@ -272,6 +278,9 @@ final class HostListPresenter {
         if (!item.isEnabled()) {
             item.clearMetrics();
             applyRouteHops(item);
+            if (hostInspector != null) {
+                hostInspector.refreshIfHost(item.getHost());
+            }
             return;
         }
         HostTargetStats stats = store.get().targetStats(item.getHost());
@@ -282,6 +291,9 @@ final class HostListPresenter {
         }
         item.applyMetrics(stats, counters);
         applyRouteHops(item);
+        if (hostInspector != null) {
+            hostInspector.refreshIfHost(item.getHost());
+        }
     }
 
     void syncRouteState(HostItem item) {

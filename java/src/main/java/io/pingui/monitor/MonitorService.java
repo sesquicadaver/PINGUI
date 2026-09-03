@@ -346,6 +346,11 @@ public final class MonitorService implements AutoCloseable {
         return registry.pollCounters(host);
     }
 
+    /** Time of the last started poll for {@code host}, if any (P31-003). */
+    public Optional<Instant> lastPollAt(String host) {
+        return Optional.ofNullable(registry.lastPollAt(host));
+    }
+
     private void cycle() {
         if (!running.get()) {
             return;

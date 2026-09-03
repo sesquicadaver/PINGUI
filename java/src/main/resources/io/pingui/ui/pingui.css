@@ -92,6 +92,20 @@
     -fx-text-fill: -pingui-text;
 }
 
+.pingui-inspector {
+    -fx-spacing: 4px;
+}
+
+.pingui-inspector-title {
+    -fx-font-weight: bold;
+    -fx-text-fill: -pingui-text;
+}
+
+.pingui-inspector-line {
+    -fx-font-size: 11px;
+    -fx-text-fill: -pingui-text;
+}
+
 .pingui-poll-counters {
     -fx-font-family: monospace;
     -fx-font-size: 11px;
