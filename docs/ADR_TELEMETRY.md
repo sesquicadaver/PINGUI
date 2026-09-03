@@ -120,8 +120,8 @@ flowchart LR
 |----------|-----------|
 | Sink write fail | `WARNING` + `SinkRegistry.failureCount++`; інші sinks і poll **не** зупиняються (P26-002) |
 | Bus overflow | drop oldest/newest за політикою P16-012; `TelemetryBus.droppedCount` |
-| Hang у sink | per-call timeout (`SinkRegistry` default 5s) → `failureCount++`; інші sinks у тому ж fan-out продовжують; `offer*` лишається non-blocking |
-| Shutdown | `TelemetryBus.close()` drain queue + `AggregateTelemetryJob.flushAll()` (shutdown flush) |
+| Hang у sink | per-call timeout (`SinkRegistry` default 5s) → `failureCount++`; sink лишається **busy** до завершення hung-виклику (нові emit skip); bounded pool (не `newCachedThreadPool`); `offer*` non-blocking (P28-001) |
+| Shutdown | `TelemetryBus.close()` drain queue + `AggregateTelemetryJob.flushAll()`; interrupt під час flush чекає timeout async-виклику, **без** sync re-dispatch завислого sink (P28-001) |
 | Sink misconfigured | fail-fast на старті daemon **або** disable sink + WARN (вибір у ticket sink) |
 
 **Контракт P26-002:** monitoring must continue even if every telemetry sink fails or hangs behind the bus queue.

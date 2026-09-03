@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P28-001** |
+| **Current task** | **P28-002** |
 | **Phase** | 28 — runtime hardening follow-up (SinkRegistry / inFlight / Python schema) |
-| **DoD (short)** | SinkRegistry: bounded executor + hang isolation |
+| **DoD (short)** | MonitorService: reserve inFlight before probePool.execute |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -158,11 +158,11 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 112 | **P27-001** | [x] | SQLite telemetry: column SSOT, no `payload_json` (schema v5) |
 | 113 | **P27-002** | [x] | `persistence_event`: typed columns + `detail_json` (schema v6) |
 | 114 | **P27-003** | [x] | `host_session` normalize: hop/history tables (schema v7) |
-| 115 | **P28-001** | [ ] | SinkRegistry: bounded executor + hang isolation (no re-dispatch) |
+| 115 | **P28-001** | [x] | SinkRegistry: bounded executor + hang isolation (no re-dispatch) |
 | 116 | **P28-002** | [ ] | MonitorService: reserve `inFlight` before `probePool.execute` (PING_ONLY) |
 | 117 | **P28-003** | [ ] | Python `session_db`: reject schema `!= SCHEMA_VERSION` (forward-compat) |
 
-**Queue status:** active — **NEXT = P28-001** (phase 28; P26 closed [x]; P27 [x]).
+**Queue status:** active — **NEXT = P28-002** (phase 28; P28-001 SinkRegistry hang [x]).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -914,7 +914,7 @@ flowchart TD
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **P28-001** | [ ] SinkRegistry hang isolation | `SinkRegistry`, `TelemetryBus`, tests | bounded executor (not `newCachedThreadPool`); do not start a sink with an active/hung call; shutdown without sync re-dispatch of a hung sink; timeout+hang test |
+| **P28-001** | [x] SinkRegistry hang isolation | `SinkRegistry`, `TelemetryBus`, tests | bounded pool 8; per-sink busy gate; no sync re-dispatch on interrupt; timeout+hang tests |
 | **P28-002** | [ ] inFlight before queue | `MonitorService`, `HostRegistry`, tests | `compareAndSet(inFlight)` **before** `probePool.execute`; clear on reject/complete; PING_ONLY must not grow an unbounded duplicate queue |
 | **P28-003** | [ ] Python schema version gate | `session_db.py`, unit tests | reject `version != SCHEMA_VERSION` (both `>` and `<` without silent migrate-as-ok); fail-fast message; Java parity already v7 |
 
@@ -1002,7 +1002,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P28-001**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P28-002**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 
