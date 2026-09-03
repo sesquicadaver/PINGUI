@@ -330,6 +330,21 @@ class PinguiApplicationTest {
     }
 
     @Test
+    void parseOptions_integrityCheckWithSessionDb() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of(
+                "session-db", "data/ping.db",
+                "integrity-check", ""));
+        assertEquals(CliRunMode.INTEGRITY_CHECK, options.runMode());
+        assertEquals(Path.of("data/ping.db"), options.sessionDbPath().orElseThrow());
+    }
+
+    @Test
+    void parseOptions_integrityCheckRequiresSessionDb() {
+        assertThrows(
+                IllegalArgumentException.class, () -> PinguiApplication.parseOptions(Map.of("integrity-check", "")));
+    }
+
+    @Test
     void parseOptions_asnTimeoutMustBePositive() {
         assertThrows(
                 IllegalArgumentException.class, () -> PinguiApplication.parseOptions(Map.of("asn-timeout-ms", "0")));

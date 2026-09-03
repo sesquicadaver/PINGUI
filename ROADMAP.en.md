@@ -8,10 +8,10 @@
 
 | Field | Value |
 |------|----------|
-| **Current task** | **[P30-006](docs/en/ROADMAP.md#next--single-source-of-truth)** |
+| **Current task** | **DONE** ([docs/en/ROADMAP.md § NEXT](docs/en/ROADMAP.md#next--single-source-of-truth)) |
 | **Rule** | if not `DONE` — `/autopilot` = this ID; if `DONE` — stop / wait for an explicit new ID. **Do not ask** “which item?”. |
 
-Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (phase 30; NEXT=P30-006).
+Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (phase 30 closed; NEXT=**DONE**).
 
 **MVP status:** ✅ implemented (2026-06-26)
 

@@ -7,6 +7,7 @@ import io.pingui.export.ExportSchedulePeriod;
 import io.pingui.export.ScheduledExport;
 import io.pingui.export.SessionReportExporter;
 import io.pingui.export.TelemetryDump;
+import io.pingui.persistence.IntegrityCheckResult;
 import io.pingui.persistence.PollResultRetentionJob;
 import io.pingui.persistence.SessionDatabase;
 import io.pingui.probe.ProbeMode;
@@ -237,6 +238,19 @@ public final class PinguiApplication extends Application {
                         || exportSchedule.isPresent())) {
             throw new IllegalArgumentException("Use either --poll-retention or other retention/export flags, not both");
         }
+        boolean integrityCheck = params.containsKey("integrity-check");
+        if (integrityCheck && sessionDb.isEmpty()) {
+            throw new IllegalArgumentException("--integrity-check requires --session-db PATH");
+        }
+        if (integrityCheck
+                && (pollRetention
+                        || telemetryRetention.isPresent()
+                        || telemetryDump.isPresent()
+                        || exportReport.isPresent()
+                        || exportSchedule.isPresent())) {
+            throw new IllegalArgumentException(
+                    "Use either --integrity-check or other session-db maintenance flags, not both");
+        }
         Optional<String> uiLang = Optional.empty();
         if (params.containsKey("lang")) {
             String value = params.get("lang");
@@ -258,6 +272,8 @@ public final class PinguiApplication extends Application {
             runMode = CliRunMode.STATUS;
         } else if (pollRetention) {
             runMode = CliRunMode.POLL_RETENTION;
+        } else if (integrityCheck) {
+            runMode = CliRunMode.INTEGRITY_CHECK;
         } else if (telemetryRetention.isPresent()) {
             runMode = CliRunMode.TELEMETRY_RETENTION;
         } else if (telemetryDump.isPresent()) {
@@ -467,6 +483,10 @@ public final class PinguiApplication extends Application {
                 runPollRetention(options);
                 return;
             }
+            case INTEGRITY_CHECK -> {
+                runIntegrityCheck(options);
+                return;
+            }
             case DAEMON -> {
                 runDaemon(options);
                 return;
@@ -523,7 +543,7 @@ public final class PinguiApplication extends Application {
         }
         Path reportPath = options.exportReportPath().orElseThrow();
         try (SessionDatabase database =
-                new SessionDatabase(options.sessionDbPath().orElseThrow())) {
+                SessionDatabase.readOnly(options.sessionDbPath().orElseThrow())) {
             SessionReportExporter.export(database, reportPath);
             System.out.println("Session report written: " + reportPath.toAbsolutePath());
         } catch (IOException | RuntimeException ex) {
@@ -538,7 +558,7 @@ public final class PinguiApplication extends Application {
         Path exportDir = options.exportDir().orElseThrow();
         ExportSchedulePeriod period = options.exportSchedule().orElseThrow();
         try (SessionDatabase database =
-                new SessionDatabase(options.sessionDbPath().orElseThrow())) {
+                SessionDatabase.readOnly(options.sessionDbPath().orElseThrow())) {
             ScheduledExport.Result result = ScheduledExport.run(database, exportDir, period, Clock.systemUTC());
             System.out.println("Scheduled CSV written: " + result.csvPath().toAbsolutePath());
             System.out.println("Scheduled HTML written: " + result.htmlPath().toAbsolutePath());
@@ -589,6 +609,27 @@ public final class PinguiApplication extends Application {
         }
     }
 
+    private static void runIntegrityCheck(AppOptions options) {
+        if (options.sessionDbPath().isEmpty()) {
+            failCli("--integrity-check requires --session-db PATH");
+            return;
+        }
+        try (SessionDatabase database =
+                SessionDatabase.readOnly(options.sessionDbPath().orElseThrow())) {
+            IntegrityCheckResult result = database.integrityCheck();
+            if (result.ok()) {
+                System.out.println("integrity_check: ok (schema v" + database.schemaVersion() + ")");
+                return;
+            }
+            for (String message : result.messages()) {
+                System.out.println("integrity_check: " + message);
+            }
+            failCli("Session database integrity check failed");
+        } catch (RuntimeException ex) {
+            failCli("Integrity check failed: " + ex.getMessage());
+        }
+    }
+
     private static void printRetentionResult(TelemetryRetentionJob.Result result) {
         System.out.println("Telemetry retention: samples="
                 + result.samplesDeleted()
@@ -604,7 +645,7 @@ public final class PinguiApplication extends Application {
         }
         Path dumpPath = options.telemetryDumpPath().orElseThrow();
         try (SessionDatabase database =
-                new SessionDatabase(options.sessionDbPath().orElseThrow())) {
+                SessionDatabase.readOnly(options.sessionDbPath().orElseThrow())) {
             TelemetryDump.export(database, dumpPath);
             System.out.println("Telemetry dump written: " + dumpPath.toAbsolutePath());
         } catch (IOException | RuntimeException ex) {
@@ -681,6 +722,7 @@ public final class PinguiApplication extends Application {
                   --telemetry-jsonl-dir DIR  Optional JSONL dir for --telemetry-retention
                   --telemetry-dump PATH     Dump SQLite telemetry to .csv/.json and exit
                   --poll-retention         Roll up/purge old poll_result (needs --session-db; cron)
+                  --integrity-check        PRAGMA integrity_check and exit (needs --session-db)
                   --export-report PATH  Export CSV/HTML from --session-db and exit (no GUI)
                   --export-schedule P   Cron one-shot: hourly|daily|weekly (with --export-dir)
                   --export-dir DIR      Output directory for --export-schedule (CSV+HTML stamped)

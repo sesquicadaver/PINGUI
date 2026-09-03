@@ -9,6 +9,7 @@
 
 ### Changed
 
+- **P30-006 — export reliability:** `SessionDatabase.readOnly` for export/dump; CLI `--integrity-check`; backup note in DEPLOYMENT; NEXT→**DONE**.
 - **P30-005 — metric_rollup + retention (schema v12):** `metric_rollup`; `PollResultRetentionJob` (7d raw / 5m→90d / 1h); CLI `--poll-retention`; NEXT→**P30-006**.
 - **P30-004 — deduped route (schema v11):** `route(signature, hops_json, seen_count)`; `poll_result.route_id`; NEXT→**P30-005**.
 - **P30-003 — poll_result (schema v10):** канонічний агрегат завершеного poll (`reachable`/`terminal_rtt_ms`/`loss`/`duration`/`error`); wire у `MonitorService`/`PollResultEffects`; NEXT→**P30-004**.

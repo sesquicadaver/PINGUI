@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P30-006** |
+| **Поточна задача** | **DONE** |
 | **Фаза** | 30 — SQLite schema evolution (stable host id / incident / poll / route) |
-| **DoD (коротко)** | RO export conn / integrity_check / backup note |
+| **DoD (коротко)** | лінійна черга фази 30 вичерпана |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -171,9 +171,9 @@
 | 125 | **P30-003** | [x] | `poll_result` canonical poll aggregate |
 | 126 | **P30-004** | [x] | Deduped `route` (signature + hops_json) |
 | 127 | **P30-005** | [x] | `metric_rollup` + bounded retention |
-| 128 | **P30-006** | [ ] | RO export conn / integrity_check / backup note |
+| 128 | **P30-006** | [x] | RO export conn / integrity_check / backup note |
 
-**Стан черги:** **NEXT = P30-006** (фаза 30; P30-005 [x]; Java-first; delete/recreate `.db`).
+**Стан черги:** **NEXT = DONE** (фаза 30 закрита; P30-006 [x]; Java-first; delete/recreate `.db`).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -953,7 +953,7 @@ flowchart TD
 
 **Контекст:** `pingui-evo-db.md`. Schema v7 нормалізувала hops, але адреса лишалась PK. Еволюція для історичного аналізу **без** заміни SQLite/ORM. **Немає міграції старих `.db`** — delete & recreate (як P27). ADR: [ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md).
 
-**Черга:** після P29; **NEXT = P30-006**.
+**Черга:** після P29; **NEXT = DONE** (фаза 30 закрита).
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
@@ -962,7 +962,7 @@ flowchart TD
 | **P30-003** | [x] poll_result | `SessionDatabase`, `PollResultRecord`, `PollResultEffects`, `MonitorService`, tests | schema v10; канонічний агрегат poll (RTT/loss/reachable/duration/error); wire після poll; не дублювати telemetry_sample |
 | **P30-004** | [x] Deduped route | `SessionDatabase`, `RouteSignature`, `RouteRecord`, `PollResultEffects`, tests | schema v11; `route(signature, hops_json, seen_count)`; UNIQUE(host_id, signature); `poll_result.route_id` |
 | **P30-005** | [x] Rollup + retention | `SessionDatabase`, `PollResultRetentionJob`, CLI `--poll-retention` | schema v12; `metric_rollup` + bounded retention (7d raw / 5m→90d / 1h beyond) |
-| **P30-006** | [ ] Export reliability | `SessionDatabase`, export | RO connection для довгого export; integrity_check CLI; busy_timeout уже в P30-001 |
+| **P30-006** | [x] Export reliability | `SessionDatabase.readOnly`, export, CLI | RO connection для export/dump; `--integrity-check`; backup note; `busy_timeout` уже в P30-001 |
 
 **Поза scope:** Postgres desktop; ORM; повна нормалізація hops/ASN/DNS IP; silent migrate.
 
@@ -1053,7 +1053,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P30-006**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **DONE**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

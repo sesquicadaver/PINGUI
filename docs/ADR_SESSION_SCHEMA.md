@@ -30,7 +30,7 @@ Schema v7 нормалізувала hops/history у дочірні таблиц
 | 3 | **P30-003** | `poll_result` — канонічний агрегат завершеного poll — **done** (schema v10) |
 | 4 | **P30-004** | дедуплікована `route` (signature + hops_json) — **done** (schema v11) |
 | 5 | **P30-005** | `metric_rollup` + bounded retention — **done** (schema v12) |
-| 6 | **P30-006** | RO export connection / integrity_check CLI / backup-before-irreversible |
+| 6 | **P30-006** | RO export connection / integrity_check CLI / backup-before-irreversible — **done** |
 
 ### P30-001 (зроблено)
 
@@ -134,6 +134,12 @@ CREATE TABLE metric_rollup (
 
 - Bounded retention (`PollResultRetentionJob` / `--poll-retention`): raw `poll_result` 7 днів; 5-хв rollup (300s) до 90 днів; далі годинні (3600s); інциденти й дедуп `route` не чистяться.
 - Legacy v11 `.db` → fail-fast (delete & recreate).
+
+### P30-006 (зроблено)
+
+- **`SessionDatabase.readOnly(path)`** — `mode=ro` для довгого export/dump без write-lock на daemon.
+- CLI **`--integrity-check`** (+ `--session-db`) — `PRAGMA integrity_check`; exit non-zero при помилці.
+- **Backup note:** перед retention/purge/delete-recreate — копія `.db` (див. DEPLOYMENT § SQLite session).
 
 ### Не робимо
 
