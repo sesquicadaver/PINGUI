@@ -453,6 +453,7 @@ public final class MonitorService implements AutoCloseable {
                     }
                 }
                 pollEffects.offerTelemetryFailure(host, outcome.error(), probeMode, durationMs);
+                pollEffects.recordPollResult(host, probeMode, null, durationMs, outcome.error());
                 current.onProbeError(host, outcome.error());
                 return;
             }
@@ -471,6 +472,7 @@ public final class MonitorService implements AutoCloseable {
                 pollEffects.offerTelemetrySuccess(host, probeMode, snapshot, durationMs);
                 current.onDataReceived(host, snapshot);
                 deliveredSnapshot = true;
+                pollEffects.recordPollResult(host, probeMode, snapshot, durationMs, null);
                 pollEffects.evaluateEndpointDown(host, snapshot);
                 pollEffects.evaluateLatencyHigh(host, snapshot);
             }

@@ -28,16 +28,15 @@ import java.util.OptionalDouble;
 import java.util.OptionalLong;
 
 /**
- * SQLite persistence for per-host session metrics (P11-010 / P27-003 / P30-001 / P30-002) and
- * telemetry archive (P16 / P27).
+ * SQLite persistence for per-host session metrics (P11-010 / P27 / P30) and telemetry archive (P16).
  *
- * <p>Schema v9: stable {@code host_session.id}; {@code incident} table for quality FIRING/RESOLVED;
- * child tables and {@code persistence_event} use {@code host_id}. Public API remains address-keyed.
- * Legacy schema versions are rejected (delete and recreate the DB file).
+ * <p>Schema v10: stable {@code host_session.id}; {@code incident}; {@code poll_result} (canonical
+ * finished-poll aggregate). Public API remains address-keyed. Legacy schema versions are rejected
+ * (delete and recreate the DB file).
  */
 public final class SessionDatabase implements AutoCloseable {
-    /** Current Java session DB schema (v9 = incident table, P30-002). */
-    public static final int SCHEMA_VERSION = 9;
+    /** Current Java session DB schema (v10 = poll_result, P30-003). */
+    public static final int SCHEMA_VERSION = 10;
 
     private static final String ROUTE_CURRENT = "current";
     private static final String ROUTE_PREVIOUS = "previous";
@@ -604,6 +603,98 @@ public final class SessionDatabase implements AutoCloseable {
     }
 
     /**
+     * Inserts one finished-poll aggregate (P30-003). {@code route_id} reserved for P30-004 (nullable).
+     *
+     * @return row id
+     */
+    public synchronized long insertPollResult(
+            String host,
+            Instant observedAt,
+            String probeMode,
+            Boolean reachable,
+            Double terminalRttMs,
+            Double jitterMs,
+            Double lossPercent,
+            Double durationMs,
+            Long routeId,
+            String errorCode) {
+        Objects.requireNonNull(host, "host");
+        Objects.requireNonNull(probeMode, "probeMode");
+        Instant when = observedAt != null ? observedAt : Instant.now();
+        try {
+            long hostId = requireHostId(host);
+            try (PreparedStatement ps = connection.prepareStatement(
+                    """
+                    INSERT INTO poll_result(
+                        host_id, observed_at, probe_mode, reachable, terminal_rtt_ms,
+                        jitter_ms, loss_percent, duration_ms, route_id, error_code)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """)) {
+                ps.setLong(1, hostId);
+                ps.setString(2, ISO_UTC.format(when));
+                ps.setString(3, probeMode);
+                if (reachable == null) {
+                    ps.setObject(4, null);
+                } else {
+                    ps.setInt(4, reachable ? 1 : 0);
+                }
+                setNullableDouble(ps, 5, terminalRttMs);
+                setNullableDouble(ps, 6, jitterMs);
+                setNullableDouble(ps, 7, lossPercent);
+                setNullableDouble(ps, 8, durationMs);
+                if (routeId == null) {
+                    ps.setObject(9, null);
+                } else {
+                    ps.setLong(9, routeId);
+                }
+                ps.setString(10, errorCode);
+                ps.executeUpdate();
+            }
+            long id;
+            try (PreparedStatement ps = connection.prepareStatement("SELECT last_insert_rowid()");
+                    ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                id = rs.getLong(1);
+            }
+            connection.commit();
+            return id;
+        } catch (SQLException ex) {
+            rollbackQuietly();
+            throw new PersistenceException("Failed to insert poll_result for " + host, ex);
+        }
+    }
+
+    /** Newest-first poll aggregates for {@code host} address. */
+    public synchronized List<PollResultRecord> listPollResults(String host, int limit) {
+        Objects.requireNonNull(host, "host");
+        if (limit < 1) {
+            throw new IllegalArgumentException("limit must be >= 1");
+        }
+        try (PreparedStatement ps = connection.prepareStatement(
+                """
+                SELECT p.id, p.host_id, hs.address, p.observed_at, p.probe_mode, p.reachable,
+                       p.terminal_rtt_ms, p.jitter_ms, p.loss_percent, p.duration_ms,
+                       p.route_id, p.error_code
+                FROM poll_result p
+                JOIN host_session hs ON hs.id = p.host_id
+                WHERE hs.address = ?
+                ORDER BY p.observed_at DESC, p.id DESC
+                LIMIT ?
+                """)) {
+            ps.setString(1, host);
+            ps.setInt(2, limit);
+            return readPollResultRows(ps);
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to list poll_result for " + host, ex);
+        }
+    }
+
+    /** Count of poll_result rows (tests / diagnostics). */
+    public synchronized int countPollResults() {
+        return countTable("poll_result");
+    }
+
+    /**
      * Appends one telemetry sample row (P16-020 / P27-001). Columns are SSOT; dump rebuilds JSON.
      * Host remains the address string (no FK in v8).
      */
@@ -880,6 +971,7 @@ public final class SessionDatabase implements AutoCloseable {
                         ON persistence_event(host_id, event_type, observed_at)
                     """);
             createIncidentTable(statement);
+            createPollResultTable(statement);
             createTelemetryTables(statement);
         }
         if (existingVersion == null) {
@@ -1234,6 +1326,74 @@ public final class SessionDatabase implements AutoCloseable {
                         Instant.parse(rs.getString(10))));
             }
             return List.copyOf(rows);
+        }
+    }
+
+    private static void createPollResultTable(Statement statement) throws SQLException {
+        statement.execute(
+                """
+                CREATE TABLE IF NOT EXISTS poll_result (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    host_id INTEGER NOT NULL,
+                    observed_at TEXT NOT NULL,
+                    probe_mode TEXT NOT NULL,
+                    reachable INTEGER,
+                    terminal_rtt_ms REAL,
+                    jitter_ms REAL,
+                    loss_percent REAL,
+                    duration_ms REAL,
+                    route_id INTEGER,
+                    error_code TEXT,
+                    FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
+                )
+                """);
+        statement.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_poll_host_time
+                    ON poll_result(host_id, observed_at DESC)
+                """);
+        statement.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_poll_reachable_time
+                    ON poll_result(reachable, observed_at DESC)
+                """);
+    }
+
+    private static List<PollResultRecord> readPollResultRows(PreparedStatement ps) throws SQLException {
+        try (ResultSet rs = ps.executeQuery()) {
+            List<PollResultRecord> rows = new ArrayList<>();
+            while (rs.next()) {
+                Object reachableObj = rs.getObject(6);
+                Boolean reachable = reachableObj == null ? null : rs.getInt(6) != 0;
+                Object routeObj = rs.getObject(11);
+                rows.add(new PollResultRecord(
+                        rs.getLong(1),
+                        rs.getLong(2),
+                        rs.getString(3),
+                        Instant.parse(rs.getString(4)),
+                        rs.getString(5),
+                        reachable,
+                        nullableDouble(rs, 7),
+                        nullableDouble(rs, 8),
+                        nullableDouble(rs, 9),
+                        nullableDouble(rs, 10),
+                        routeObj == null ? null : rs.getLong(11),
+                        rs.getString(12)));
+            }
+            return List.copyOf(rows);
+        }
+    }
+
+    private static Double nullableDouble(ResultSet rs, int column) throws SQLException {
+        Object value = rs.getObject(column);
+        return value == null ? null : rs.getDouble(column);
+    }
+
+    private static void setNullableDouble(PreparedStatement ps, int index, Double value) throws SQLException {
+        if (value == null) {
+            ps.setObject(index, null);
+        } else {
+            ps.setDouble(index, value);
         }
     }
 

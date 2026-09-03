@@ -92,6 +92,44 @@ final class PollResultEffects {
         telemetry.offerRouteChange(host, oldIps, newIps, probeMode);
     }
 
+    /**
+     * Writes canonical {@code poll_result} for a finished poll (P30-003). Safe no-op without DB.
+     */
+    void recordPollResult(
+            String host, HostProbeMode probeMode, RouteSnapshot snapshot, double durationMs, String error) {
+        PersistenceEventWriter events = persistenceEvents;
+        if (events == null || host == null || host.isBlank() || probeMode == null) {
+            return;
+        }
+        Boolean reachable = null;
+        Double terminalRtt = null;
+        Double lossPercent = null;
+        if (error != null) {
+            reachable = false;
+        } else if (snapshot != null) {
+            reachable = TelemetryEmission.isTargetReachable(snapshot);
+            OptionalDouble rtt = terminalRttMs(snapshot);
+            if (rtt.isPresent()) {
+                terminalRtt = rtt.getAsDouble();
+            }
+            lossPercent = reachable ? 0.0 : 100.0;
+        }
+        try {
+            events.writePollResult(
+                    host,
+                    probeMode.yamlValue(),
+                    Instant.now(),
+                    reachable,
+                    terminalRtt,
+                    null,
+                    lossPercent,
+                    durationMs,
+                    error);
+        } catch (RuntimeException ex) {
+            LOG.warn("Persistence poll_result failed for {}: {}", host, ex.getMessage());
+        }
+    }
+
     void evaluateEndpointDown(String host, RouteSnapshot snapshot) {
         EndpointDownRuleConfig rule = endpointDownRule;
         if (rule == null || !rule.enabled() || snapshot == null) {
