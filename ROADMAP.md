@@ -11,7 +11,7 @@
 | **Поточна задача** | **[DONE](docs/ROADMAP.md#next--єдине-джерело-правди)** |
 | **Правило** | якщо не `DONE` — `/autopilot` = цей ID; якщо `DONE` — зупинитись / чекати явного нового ID. **Не питати** «який пункт?». |
 
-Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна) (фази 26–28, #103–117).
+Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна) (фази 26–29; P29 append, NEXT=DONE).
 
 **Статус MVP:** ✅ реалізовано (2026-06-26)
 
@@ -50,6 +50,7 @@
 | **26** | Hardening post-audit (telemetry / launchers / split) | ✅ **DONE** ([ADR_HARDENING](docs/ADR_HARDENING.md)) |
 | **27** | SQLite record format normalize (Java) | ✅ P27-001…003 |
 | **28** | Runtime hardening follow-up (audit pimgui-5) | ✅ **DONE** |
+| **29** | Diagnostic evolution (correlation / timeline / silence / DNS / TCP) | ⏳ queued (NEXT=DONE; activate `P29-001`) |
 
 ---
 

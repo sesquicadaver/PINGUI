@@ -9,6 +9,7 @@
 
 ### Added
 
+- **P29 — diagnostic evolution (черга, NEXT лишається DONE):** з `pingui-evo-func.md` — P29-001 multi-host correlation; P29-002 incident timeline; P29-003 alert silence; P29-004 DNS control; P29-005 TCP connect. Java-first; backlog: snapshot/SLA/baseline. Активація — явний NEXT=`P29-001`.
 - **P28-003 — Python session_db schema gate:** reject `version != SCHEMA_VERSION` (v4) with `SessionDatabaseError`; no silent migrate; NEXT→**DONE**.
 - **P28-002 — inFlight before probePool.execute:** CAS `inFlight` до queue; clear on reject/complete; без unbounded duplicate runnables; NEXT→**P28-003**.
 - **P28-001 — SinkRegistry hang isolation:** bounded pool (8) замість `newCachedThreadPool`; per-sink busy gate; no sync re-dispatch hung sink on interrupt; ADR_TELEMETRY §7; NEXT→**P28-002**.

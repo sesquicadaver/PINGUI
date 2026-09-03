@@ -161,8 +161,13 @@
 | 115 | **P28-001** | [x] | SinkRegistry: bounded executor + hang isolation (не re-dispatch) |
 | 116 | **P28-002** | [x] | MonitorService: reserve `inFlight` before `probePool.execute` (PING_ONLY) |
 | 117 | **P28-003** | [x] | Python `session_db`: reject schema `!= SCHEMA_VERSION` (forward-compat) |
+| 118 | **P29-001** | [ ] | Multi-host problem correlation (спільний hop / сегмент) |
+| 119 | **P29-002** | [ ] | Per-host incident timeline (компактний список подій) |
+| 120 | **P29-003** | [ ] | Maintenance / alert silence (host / tag / profile) |
+| 121 | **P29-004** | [ ] | DNS control (resolve set / latency / change event) |
+| 122 | **P29-005** | [ ] | TCP Connect probe (`host:port`) |
 
-**Стан черги:** **DONE** — P28-001…003 [x]; лінійна черга вичерпана.
+**Стан черги:** **NEXT = DONE** (автопілот зупиняється). У черзі append **P29-001…005** (фаза 29) — очікує **явного** NEXT=`P29-001`.
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -920,6 +925,24 @@ flowchart TD
 
 ---
 
+## Фаза 29 — Diagnostic evolution (`beta`, P1)
+
+**Контекст:** Після hardening (P26–P28) — функції на **наявних** probe-даних (`RouteSnapshot`, RTT/loss, SQLite events), без важкого NMS. Джерело: `pingui-evo-func.md`. **Java-first** (GUI/`beta`); Python parity — окремо. SNMP / NetFlow / HTTP synthetic / auto-remediation — поза scope.
+
+**Черга:** append після P28; **NEXT лишається DONE**, доки користувач явно не поставить `P29-001`.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P29-001** | [ ] Multi-host problem correlation | `monitor/*`, UI summary, tests | При одночасній деградації N хостів: останній спільний стабільний hop, перший спільний проблемний, scope (local/ISP/edge), count + time overlap; без нових probes |
+| **P29-002** | [ ] Incident timeline | persistence/events UI, tests | Компактний per-host список: down/latency/route/DNS/ack + duration; дані з наявного SQLite/engine |
+| **P29-003** | [ ] Alert silence / maintenance | alerts config + MonitorService gate, YAML/GUI | Monitoring continues; silence host/tag/profile until timestamp + reason; alerts suppressed independently of enabled |
+| **P29-004** | [ ] DNS control | resolve path + event/optional alert | Hostname: address set (v4/v6), resolve time, change/NXDOMAIN/timeout/SERVFAIL as distinct event (not auto-incident) |
+| **P29-005** | [ ] TCP Connect probe | `HostProbeMode` / poller, YAML/GUI | `host:port` → DNS time + connect time + success/refused/timeout + resolved IP; alternate/complement to PING_ONLY, not ICMP replacement |
+
+**Backlog (після P29, не в черзі):** діагностичний snapshot; SLA table/export; еталонний маршрут (baseline + sustain).
+
+---
+
 ## Поза scope (опційно, в перспективі)
 
 | ID | Ідея | Чому ні |
@@ -927,6 +950,9 @@ flowchart TD
 | **X-001** | BGP looking glass | Інший клас продукту |
 | **X-002** | >10 цілей без redesign worker | MVP-обмеження свідоме |
 | **X-003** | Повноцінний NMS/alert manager | PINGUI — route-focused utility |
+| **X-004** | SNMP / NetFlow / config mgmt | Важкий NMS; поза легким probe-utility |
+| **X-005** | Full HTTP/TLS synthetic monitoring | Інший клас продукту (не TCP connect) |
+| **X-006** | Auto-remediation | Поза scope діагностичного монітора |
 
 ---
 
