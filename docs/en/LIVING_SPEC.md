@@ -115,7 +115,7 @@ Module → unit test matrix. Update when adding features.
 | Doc parity multi-locale (P25) | `scripts/check_doc_parity.py` | `test_doc_parity.py`; UK/EN full; stub locales = user docs |
 | Hardening queue (P26) | ROADMAP phase 26 closed: telemetry isolation, SQLite reopen, launchers, MainController/MonitorService split, JaCoCo packages, latency EWMA; [ADR_HARDENING.md](ADR_HARDENING.md) | P26-001…009 [x]; CHECKLIST § Hardening smoke |
 | SQLite format normalize (P27) | schema v5–v7: telemetry columns SSOT; typed `persistence_event`; normalized `host_session` | Java-only; no legacy migrate (delete `.db`); [x] in queue |
-| Runtime hardening follow-up (P28) | `SinkRegistry` hang isolation [x]; `inFlight` before pool; Python schema `!=` gate | NEXT=`P28-002` |
+| Runtime hardening follow-up (P28) | `SinkRegistry` hang isolation [x]; `inFlight` before pool [x]; Python schema `!=` gate | NEXT=`P28-003` |
 | YAML/GUI alerts.rules (P21-003) | `AlertConfig`, `EndpointDownRuleConfig`, `ProfilesConfig`, `AlertsSettingsDialog`, `MonitorLifecycle` | `ProfilesConfigTest`, `AlertsSettingsDialogTest`, `AppMenuDialogsTest` |
 | Host problem indicator ADR (P22-001) | `docs/ADR_HOST_PROBLEM_INDICATOR.md` | docs review / ROADMAP P22 |
 | HostProblemSummary (P22-002) | `AlertRuleEngine`, `HostProblemSummary`, `MonitorService` | `AlertRuleEngineTest`, `MonitorServiceTest` |

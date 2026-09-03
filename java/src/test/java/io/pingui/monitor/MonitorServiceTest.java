@@ -427,6 +427,34 @@ class MonitorServiceTest {
     }
 
     @Test
+    void doesNotQueueDuplicatePollsWhileHostInFlight() throws Exception {
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        AtomicInteger started = new AtomicInteger();
+        RouteProbe blockingProbe = (targetHost, maxHops, timeoutSeconds) -> {
+            started.incrementAndGet();
+            entered.countDown();
+            try {
+                if (!release.await(5, TimeUnit.SECONDS)) {
+                    throw new java.io.IOException("release wait timed out");
+                }
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new java.io.IOException("interrupted", ex);
+            }
+            return new RouteSnapshot(targetHost, targetHost, List.of(new HopNode(1, "10.0.0.1", 1.0, false)));
+        };
+        // Fast scheduler tick; without pre-execute inFlight, cycles would enqueue duplicate runnables.
+        MonitorService service = new MonitorService(0.05, 20, 0.5, blockingProbe);
+        service.addHost("8.8.8.8", true, HostProbeMode.TRACE);
+        assertTrue(entered.await(3, TimeUnit.SECONDS));
+        Thread.sleep(400);
+        assertEquals(1, started.get(), "inFlight reserved before execute — no duplicate queued polls");
+        release.countDown();
+        service.close();
+    }
+
+    @Test
     void defaultConcurrencyAllowsFullSessionOfTraces() throws Exception {
         int hostCount = TraceConcurrencyLimiter.DEFAULT_MAX;
         AtomicInteger concurrent = new AtomicInteger();

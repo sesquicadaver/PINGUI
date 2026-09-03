@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -305,35 +306,40 @@ public final class MonitorService implements AutoCloseable {
         persistencePolicy.applyPendingAfterCycle();
     }
 
+    /**
+     * Queues one poll for {@code host}. Reserves {@code inFlight} <em>before</em> {@code
+     * probePool.execute} so PING_ONLY / TRACE cannot accumulate unbounded duplicate runnables while a
+     * slow poll is still queued or running (P28-002).
+     */
     private void dispatchDueHost(String host, HostProbeMode mode) {
-        if (!TraceConcurrencyLimiter.limitsConcurrency(mode)) {
-            probePool.execute(() -> pollHost(host));
-            return;
-        }
-        if (!traceLimiter.tryAcquire()) {
-            return;
-        }
-        probePool.execute(() -> {
-            try {
-                pollHost(host);
-            } finally {
-                traceLimiter.release();
-            }
-        });
-    }
-
-    private void pollHost(String host) {
-        if (!running.get()) {
-            return;
-        }
         AtomicBoolean inFlight = registry.inFlightFlag(host);
         if (!inFlight.compareAndSet(false, true)) {
             return;
         }
-        try {
-            pollHostOnce(host);
-        } finally {
+        boolean holdTracePermit = TraceConcurrencyLimiter.limitsConcurrency(mode);
+        if (holdTracePermit && !traceLimiter.tryAcquire()) {
             inFlight.set(false);
+            return;
+        }
+        try {
+            probePool.execute(() -> {
+                try {
+                    if (running.get()) {
+                        pollHostOnce(host);
+                    }
+                } finally {
+                    if (holdTracePermit) {
+                        traceLimiter.release();
+                    }
+                    inFlight.set(false);
+                }
+            });
+        } catch (RejectedExecutionException ex) {
+            if (holdTracePermit) {
+                traceLimiter.release();
+            }
+            inFlight.set(false);
+            LOG.warn("Probe pool rejected poll for {}: {}", host, ex.getMessage());
         }
     }
 

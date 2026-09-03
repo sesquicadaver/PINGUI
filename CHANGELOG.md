@@ -9,6 +9,7 @@
 
 ### Added
 
+- **P28-002 — inFlight before probePool.execute:** CAS `inFlight` до queue; clear on reject/complete; без unbounded duplicate runnables; NEXT→**P28-003**.
 - **P28-001 — SinkRegistry hang isolation:** bounded pool (8) замість `newCachedThreadPool`; per-sink busy gate; no sync re-dispatch hung sink on interrupt; ADR_TELEMETRY §7; NEXT→**P28-002**.
 - **P26-009 — hardening phase close:** `ADR_HARDENING` (UK/EN); CHECKLIST § Hardening smoke; LIVING_SPEC/README/JAVA sync; NEXT→**P28-001**.
 - **P26-008 — latency_high EWMA baseline + UI ETA:** AVG = EWMA α=0.2 (bad samples excluded); `LatencyHighRuleConfig.approximateFiringEta`; Help/Settings copy; ADR §7; NEXT→**P26-009**.
