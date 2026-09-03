@@ -23,6 +23,7 @@
 | [ADR_PROBE_MODES.md](ADR_PROBE_MODES.md) | Розробник | Probe modes trace/mtr/ping_only ADR (P13-001) |
 | [ADR_OBSERVABILITY.md](ADR_OBSERVABILITY.md) | Розробник | Prometheus vs TS backend ADR (P15-001) |
 | [ADR_TELEMETRY.md](ADR_TELEMETRY.md) | Розробник | Telemetry bus / events vs samples ADR (P16-001) |
+| [ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md) | Розробник | Еволюція SQLite session schema (P30) |
 | [SPIKE_IPV6.md](SPIKE_IPV6.md) | Розробник | IPv6 scope (**implemented**, фаза 9 V6-*) |
 | [SPIKE_PERSISTENCE.md](SPIKE_PERSISTENCE.md) | Розробник | SQLite session schema (фаза 11 P11-*) |
 | [SPIKE_LOG_SINKS.md](SPIKE_LOG_SINKS.md) | Розробник | LOG-server protocols SPIKE (P16-002) |

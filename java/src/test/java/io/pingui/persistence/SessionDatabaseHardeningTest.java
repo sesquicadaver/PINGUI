@@ -57,6 +57,16 @@ class SessionDatabaseHardeningTest {
     }
 
     @Test
+    void rejectsLegacyV7DatabaseWithoutMigration() throws Exception {
+        Path dbPath = tempDir.resolve("legacy-v7.db");
+        seedLegacyV7Database(dbPath, "v7.example");
+
+        PersistenceException ex = assertThrows(PersistenceException.class, () -> new SessionDatabase(dbPath));
+        assertTrue(ex.getMessage().contains("Unsupported session DB schema version"));
+        assertTrue(ex.getMessage().contains("required " + SessionDatabase.SCHEMA_VERSION));
+    }
+
+    @Test
     void freshDatabaseAcceptsTelemetryInsert() {
         Path dbPath = tempDir.resolve("fresh-v5.db");
         try (SessionDatabase db = new SessionDatabase(dbPath)) {
@@ -225,6 +235,48 @@ class SessionDatabaseHardeningTest {
                     """)) {
                 ps.setString(1, host);
                 ps.setString(2, Instant.parse("2026-06-01T00:00:00Z").toString());
+                ps.executeUpdate();
+            }
+        }
+    }
+
+    /** v7 shape: address as TEXT PK + child tables keyed by host text, schema_meta = 7. */
+    private static void seedLegacyV7Database(Path dbPath, String host) throws Exception {
+        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + dbPath.toAbsolutePath());
+                Statement statement = connection.createStatement()) {
+            statement.execute(
+                    """
+                    CREATE TABLE schema_meta (
+                        version INTEGER NOT NULL
+                    )
+                    """);
+            statement.execute(
+                    """
+                    CREATE TABLE host_session (
+                        host TEXT PRIMARY KEY,
+                        enabled INTEGER NOT NULL,
+                        updated_at TEXT NOT NULL
+                    )
+                    """);
+            statement.execute(
+                    """
+                    CREATE TABLE session_route_hop (
+                        host TEXT NOT NULL,
+                        route_kind TEXT NOT NULL,
+                        hop INTEGER NOT NULL,
+                        ip TEXT,
+                        ping_ms REAL,
+                        is_timeout INTEGER NOT NULL,
+                        PRIMARY KEY (host, route_kind, hop)
+                    )
+                    """);
+            statement.execute("INSERT INTO schema_meta(version) VALUES (7)");
+            try (PreparedStatement ps = connection.prepareStatement(
+                    """
+                    INSERT INTO host_session(host, enabled, updated_at) VALUES (?, 1, ?)
+                    """)) {
+                ps.setString(1, host);
+                ps.setString(2, Instant.parse("2026-08-01T00:00:00Z").toString());
                 ps.executeUpdate();
             }
         }

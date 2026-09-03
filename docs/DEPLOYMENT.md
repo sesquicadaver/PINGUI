@@ -356,10 +356,12 @@ Session persistence (`host_session` / `persistence_event`) — окремий ш
 | Що | Де |
 |----|-----|
 | Файл БД | `--session-db PATH`, YAML `persistence.session_db`, або GUI **Налаштування → База даних…** |
-| Метрики маршруту | Таблиця `host_session` (JSON: routes, `ping_history`, `hop_stats`) |
-| Події | Таблиця `persistence_event` (`route_change`, `probe_error`) |
+| Метрики маршруту | Таблиця `host_session` (schema v8: `id` + `address`) + дочірні hop/history таблиці |
+| Події | `persistence_event` (`host_id` FK; `route_change`, `probe_error`, …) |
 
-**Запис у БД:** після підключення SQLite увімкніть чекбокс цілі в списку хостів — legacy YAML за замовчуванням має `enabled: false`, без активного моніторингу маршрут і `hop_stats` не оновлюються. Рядки `host_session` з’являються одразу при connect; `current_route_json` — після першого trace; `ping_history_json` — після першого poll (авто-`ping` цілі, якщо Expert ping вимкнено). **Історія змін:** перший trace дає рядок «Початковий маршрут»; наступні — лише при зміні IP-ланцюга.
+**Схема:** Java `SCHEMA_VERSION = 8`. Старі `.db` (v7 і нижче) **не мігруються** — видаліть файл і створіть наново ([ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md)).
+
+**Запис у БД:** після підключення SQLite увімкніть чекбокс цілі в списку хостів — legacy YAML за замовчуванням має `enabled: false`, без активного моніторингу маршрут і `hop_stats` не оновлюються. Рядки `host_session` з’являються одразу при connect; маршрут — після першого trace; ping history — після першого poll (авто-`ping` цілі, якщо Expert ping вимкнено). **Історія змін:** перший trace дає рядок «Початковий маршрут»; наступні — лише при зміні IP-ланцюга.
 
 **Диск і retention (P11-050):**
 
@@ -375,7 +377,7 @@ Session persistence (`host_session` / `persistence_event`) — окремий ш
 
 | Симптом | Рішення |
 |---------|---------|
-| SQLite порожня / немає маршруту | Підключити БД (CLI/YAML/GUI), **увімкнути чекбокс хоста**, дочекатись poll; перевірка: `sqlite3 data/ping.db "SELECT host, enabled, length(current_route_json) FROM host_session;"` |
+| SQLite порожня / немає маршруту | Підключити БД (CLI/YAML/GUI), **увімкнути чекбокс хоста**, дочекатись poll; перевірка: `sqlite3 data/ping.db "SELECT id, address, enabled FROM host_session;"` |
 | Trace на Windows «зависає» / дуже довгий | Нормально для `tracert`; увімкніть **Ping only** або збільште `interval` |
 | Gradle «What went wrong: 25.0.3» | JDK 21: `export PINGUI_JAVA_HOME=.../java-21-openjdk-*` |
 | «No hops parsed» | Встановити `traceroute`; на macOS — `/usr/sbin/traceroute` |

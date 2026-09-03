@@ -7,12 +7,17 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **P30-001 — stable host id (schema v8):** `host_session.id` INTEGER PK + `address` UNIQUE; діти/`persistence_event` → `host_id`; `rename` оновлює адресу без переписування історії; legacy `.db` → delete & recreate; ADR `ADR_SESSION_SCHEMA`; NEXT→**P30-002**.
+
 ### Fixed
 
 - **Desktop alerts — one window per host:** `JavaFxDesktopAlertSink` reuses/updates a single non-modal popup per endpoint instead of opening a new dialog for every alert.
 
 ### Added
 
+- **P30 — SQLite schema evolution (черга):** з `pingui-evo-db.md` — P30-001 stable host id; P30-002 incident; P30-003 poll_result; P30-004 deduped route; P30-005 rollup/retention; P30-006 export reliability. Java-first; без міграції старих `.db`.
 - **P29-005 — TCP Connect probe:** `host:port` / `[ipv6]:port` → DNS time + connect time + success/refused/timeout + resolved IP; `HostProbeMode.TCP_CONNECT`; YAML/GUI; NEXT→**DONE**.
 - **P29-004 — DNS control:** forward resolve (`DnsControl`/`DnsControlTracker`) — address set v4/v6, resolve time, distinct `dns_change` (ok/change/NXDOMAIN/timeout/SERVFAIL); wire у `MonitorService` + timeline; не auto-incident; NEXT→**P29-005**.
 - **P29-003 — alert silence / maintenance:** `AlertSilenceConfig` (host/tag/profile until+reason); gate in `PollResultEffects` (persist keeps, dispatch skips); YAML/GUI; NEXT→**P29-004**.
