@@ -9,6 +9,7 @@ import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
 import io.pingui.ui.view.MainView;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -139,7 +140,11 @@ final class MainCoordinators {
                 wiring.mainView.historyRange7d(),
                 () -> viewMode.isExtended(),
                 routeGraph::replayRouteChange,
-                routeGraph::clearReplay);
+                routeGraph::clearReplay,
+                host -> {
+                    MonitorService service = wiring.monitor.get();
+                    return service == null ? Optional.empty() : service.hostProblemSummary(host);
+                });
         routeHistory.configure();
         MonitorUiHandler monitorUi = new MonitorUiHandler(
                 wiring.store,

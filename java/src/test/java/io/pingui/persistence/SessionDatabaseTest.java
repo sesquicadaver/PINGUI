@@ -133,6 +133,25 @@ class SessionDatabaseTest {
     }
 
     @Test
+    void listHostEventsReturnsMixedTypesNewestFirst() {
+        Path dbPath = tempDir.resolve("host-events.db");
+        try (SessionDatabase db = new SessionDatabase(dbPath)) {
+            HostSessionData data = new HostSessionData();
+            data.setEnabled(true);
+            db.save("8.8.8.8", data);
+            Instant t1 = Instant.parse("2026-09-03T10:00:00Z");
+            Instant t2 = Instant.parse("2026-09-03T10:01:00Z");
+            db.insertRouteChange("8.8.8.8", "default", List.of("10.0.0.1"), List.of("8.8.8.8"), t1);
+            db.insertEvent(
+                    PersistenceEventType.ENDPOINT_DOWN, "8.8.8.8", "default", "firing", null, null, null, "{}", t2);
+            List<PersistenceEventRecord> rows = db.listHostEvents("8.8.8.8", Instant.EPOCH, 10);
+            assertEquals(2, rows.size());
+            assertEquals(PersistenceEventType.ENDPOINT_DOWN, rows.get(0).eventType());
+            assertEquals(PersistenceEventType.ROUTE_CHANGE, rows.get(1).eventType());
+        }
+    }
+
+    @Test
     void codecMatchesPythonShape() {
         HopNode hop = new HopNode(1, "10.0.0.1", 5.0, false);
         String json = SessionJsonCodec.routeToJson(List.of(hop));

@@ -114,14 +114,26 @@ class RouteHistoryPresenterTest {
                 harness.presenter.refresh();
                 assertEquals(1, harness.historyList.getItems().size());
                 assertEquals(
-                        "8.8.8.8", harness.historyList.getItems().get(0).event().host());
+                        "8.8.8.8",
+                        harness.historyList
+                                .getItems()
+                                .get(0)
+                                .routeEvent()
+                                .orElseThrow()
+                                .host());
 
                 harness.presenter.rebuildHostFilter(List.of("8.8.8.8", "1.1.1.1"));
 
                 assertEquals("8.8.8.8", harness.filter.getValue());
                 assertEquals(1, harness.historyList.getItems().size());
                 assertEquals(
-                        "8.8.8.8", harness.historyList.getItems().get(0).event().host());
+                        "8.8.8.8",
+                        harness.historyList
+                                .getItems()
+                                .get(0)
+                                .routeEvent()
+                                .orElseThrow()
+                                .host());
             }
         });
     }

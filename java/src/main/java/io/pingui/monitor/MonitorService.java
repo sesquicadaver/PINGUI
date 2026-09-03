@@ -217,12 +217,24 @@ public final class MonitorService implements AutoCloseable {
     }
 
     /**
-     * Acknowledges the host problem (badge off until next FIRING). Counters preserved.
+     * Acknowledges the host problem (badge off until next FIRING). Counters preserved. Persists
+     * {@code problem_ack} when a session DB writer is attached (P29-002).
      *
      * @return {@code true} when engine had state for the host
      */
     public boolean ackHostProblem(String host) {
-        return alertRuleEngine.ack(host);
+        boolean acked = alertRuleEngine.ack(host);
+        if (acked) {
+            PersistenceEventWriter writer = persistenceEvents;
+            if (writer != null) {
+                try {
+                    writer.writeProblemAck(host, Instant.now());
+                } catch (RuntimeException ex) {
+                    LOG.warn("problem_ack persistence failed for {}: {}", host, ex.getMessage());
+                }
+            }
+        }
+        return acked;
     }
 
     public void setAlertProfileName(String alertProfileName) {

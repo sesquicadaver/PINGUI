@@ -61,4 +61,18 @@ class PersistenceEventWriterTest {
                     .contains("\"state\":\"firing\""));
         }
     }
+
+    @Test
+    void writesProblemAck() {
+        Path dbPath = tempDir.resolve("ack.db");
+        try (SessionDatabase database = new SessionDatabase(dbPath)) {
+            PersistenceEventWriter writer = new PersistenceEventWriter(database);
+            writer.writeProblemAck("8.8.8.8", Instant.parse("2026-09-03T10:00:00Z"));
+            assertEquals(1, database.countEvents(PersistenceEventType.PROBLEM_ACK));
+            assertTrue(database.listHostEvents("8.8.8.8", Instant.EPOCH, 10)
+                    .get(0)
+                    .payloadJson()
+                    .contains("problem_ack"));
+        }
+    }
 }

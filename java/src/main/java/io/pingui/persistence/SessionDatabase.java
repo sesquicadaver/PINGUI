@@ -340,6 +340,52 @@ public final class SessionDatabase implements AutoCloseable {
     }
 
     /**
+     * Lists all discrete event types for {@code host} since {@code since} (P29-002). Newest first.
+     *
+     * @param limit max rows (must be &gt;= 1)
+     */
+    public synchronized List<PersistenceEventRecord> listHostEvents(String host, Instant since, int limit) {
+        Objects.requireNonNull(host, "host");
+        Objects.requireNonNull(since, "since");
+        if (limit < 1) {
+            throw new IllegalArgumentException("limit must be >= 1");
+        }
+        String sinceIso = ISO_UTC.format(since);
+        try (PreparedStatement ps = connection.prepareStatement(
+                """
+                SELECT id, event_type, host, profile, state, message,
+                       old_ips_json, new_ips_json, detail_json, observed_at
+                FROM persistence_event
+                WHERE host = ? AND observed_at >= ?
+                ORDER BY observed_at DESC
+                LIMIT ?
+                """)) {
+            ps.setString(1, host);
+            ps.setString(2, sinceIso);
+            ps.setInt(3, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                List<PersistenceEventRecord> rows = new ArrayList<>();
+                while (rs.next()) {
+                    rows.add(new PersistenceEventRecord(
+                            rs.getLong(1),
+                            PersistenceEventType.fromId(rs.getString(2)),
+                            rs.getString(3),
+                            rs.getString(4),
+                            rs.getString(5),
+                            rs.getString(6),
+                            rs.getString(7),
+                            rs.getString(8),
+                            rs.getString(9),
+                            Instant.parse(rs.getString(10))));
+                }
+                return List.copyOf(rows);
+            }
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to list host events for " + host, ex);
+        }
+    }
+
+    /**
      * Appends one telemetry sample row (P16-020 / P27-001). Columns are SSOT; dump rebuilds JSON.
      */
     public synchronized void insertTelemetrySample(MetricSample sample) {

@@ -441,3 +441,7 @@ CLI: `--session-db PATH --export-report PATH` (`.html`/`.htm` → HTML, інак
 ### Java: ProblemCorrelator (P29-001)
 
 Multi-host FIRING correlation from session routes: last shared stable hop, first shared problem hop, scope (`LOCAL`/`ISP`/`EDGE`), host count + start-time overlap. Wired via `MonitorService.correlateActiveProblems` → `ProblemDetailsDialog`.
+
+### Java: IncidentTimelineBuilder (P29-002)
+
+Compact per-host timeline from SQLite (`endpoint_down` / `latency_high` / `route_change` / `problem_ack`; DNS kind reserved for P29-004) with FIRING→RESOLVED duration. Extended history list + route replay for route rows.

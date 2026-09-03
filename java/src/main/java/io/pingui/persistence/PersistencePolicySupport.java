@@ -25,6 +25,8 @@ public final class PersistencePolicySupport {
             case PROBE_ERROR -> "помилки probe";
             case ENDPOINT_DOWN -> "недоступність цілі";
             case LATENCY_HIGH -> "висока затримка (latency_high)";
+            case PROBLEM_ACK -> "підтвердження проблеми";
+            case DNS_CHANGE -> "зміна DNS";
         };
     }
 }
