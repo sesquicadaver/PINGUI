@@ -8,6 +8,7 @@ import io.pingui.monitor.HostProbeMode;
 import io.pingui.probe.ProbeMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -168,6 +169,45 @@ class ProfilesConfigTest {
         assertEquals(5, profile.alerts().endpointDown().failAfter());
         assertEquals(3, profile.alerts().endpointDown().clearAfter());
         assertEquals(30, profile.alerts().endpointDown().cooldownMinutes());
+    }
+
+    @Test
+    void loadAndSaveAlertSilence() throws Exception {
+        Path path = tempDir.resolve("alerts-silence.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: noc
+                profiles:
+                  noc:
+                    hosts:
+                      - address: "8.8.8.8"
+                        tags: [lab]
+                    alerts:
+                      silence:
+                        - scope: host
+                          match: 8.8.8.8
+                          until: "2026-09-03T18:00:00Z"
+                          reason: swap
+                        - scope: tag
+                          match: lab
+                          until: "2026-09-04T00:00:00Z"
+                        - scope: profile
+                          until: "2026-09-03T20:00:00Z"
+                          reason: global
+                """);
+        TracingProfile profile = ProfilesConfig.load(path).active();
+        assertEquals(3, profile.alerts().silence().entries().size());
+        assertTrue(profile.alerts()
+                .silence()
+                .isSilenced("8.8.8.8", List.of("lab"), Instant.parse("2026-09-03T12:00:00Z")));
+
+        ProfilesConfig.save(path, ProfileDocument.singleDefault(profile));
+        String yaml = Files.readString(path);
+        assertTrue(yaml.contains("silence:"));
+        assertTrue(yaml.contains("scope: host"));
+        TracingProfile reloaded = ProfilesConfig.load(path).active();
+        assertEquals(3, reloaded.alerts().silence().entries().size());
     }
 
     @Test

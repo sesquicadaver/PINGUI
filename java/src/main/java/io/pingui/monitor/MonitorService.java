@@ -1,5 +1,6 @@
 package io.pingui.monitor;
 
+import io.pingui.config.AlertSilenceConfig;
 import io.pingui.config.EndpointDownRuleConfig;
 import io.pingui.config.LatencyHighRuleConfig;
 import io.pingui.config.PingExpertEntry;
@@ -24,6 +25,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -177,6 +179,16 @@ public final class MonitorService implements AutoCloseable {
     /** When true, emit quality RESOLVED after clear_after successes (ADR). */
     public void setNotifyResolved(boolean notifyResolved) {
         pollEffects.setNotifyResolved(notifyResolved);
+    }
+
+    /** Alert silence / maintenance windows (P29-003). Does not stop probing. */
+    public void setAlertSilence(AlertSilenceConfig silence) {
+        pollEffects.setAlertSilence(silence);
+    }
+
+    /** Supplies per-host tags for silence matching (P29-003). */
+    public void setHostTagsResolver(Function<String, List<String>> hostTagsResolver) {
+        pollEffects.setHostTagsResolver(hostTagsResolver);
     }
 
     /** Session quality problem summary for host-row badge (P22-002 / P23). */

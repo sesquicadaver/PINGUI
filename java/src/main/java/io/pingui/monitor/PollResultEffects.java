@@ -1,5 +1,6 @@
 package io.pingui.monitor;
 
+import io.pingui.config.AlertSilenceConfig;
 import io.pingui.config.EndpointDownRuleConfig;
 import io.pingui.config.LatencyHighRuleConfig;
 import io.pingui.model.Models.HopNode;
@@ -8,6 +9,7 @@ import io.pingui.persistence.PersistenceEventWriter;
 import java.time.Instant;
 import java.util.List;
 import java.util.OptionalDouble;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +28,8 @@ final class PollResultEffects {
     private volatile LatencyHighRuleConfig latencyHighRule = LatencyHighRuleConfig.disabled();
     private volatile boolean notifyResolved;
     private volatile String alertProfileName = "default";
+    private volatile AlertSilenceConfig alertSilence = AlertSilenceConfig.none();
+    private volatile Function<String, List<String>> hostTagsResolver = host -> List.of();
 
     PollResultEffects(AlertRuleEngine alertRuleEngine) {
         this.alertRuleEngine = alertRuleEngine;
@@ -45,6 +49,14 @@ final class PollResultEffects {
 
     void setNotifyResolved(boolean notifyResolved) {
         this.notifyResolved = notifyResolved;
+    }
+
+    void setAlertSilence(AlertSilenceConfig alertSilence) {
+        this.alertSilence = alertSilence != null ? alertSilence : AlertSilenceConfig.none();
+    }
+
+    void setHostTagsResolver(Function<String, List<String>> hostTagsResolver) {
+        this.hostTagsResolver = hostTagsResolver != null ? hostTagsResolver : host -> List.of();
     }
 
     void setAlertProfileName(String alertProfileName) {
@@ -143,6 +155,9 @@ final class PollResultEffects {
                 LOG.warn("Persistence route_change failed for {}: {}", host, ex.getMessage());
             }
         }
+        if (isSilenced(host)) {
+            return;
+        }
         AlertDispatcher dispatcher = alertDispatcher;
         if (dispatcher == null) {
             return;
@@ -186,7 +201,25 @@ final class PollResultEffects {
         if (QualityAlertEvent.STATE_RESOLVED.equals(event.state()) && !notifyResolved) {
             return;
         }
+        if (isSilenced(event.host())) {
+            return;
+        }
         dispatchQualityAlert(event);
+    }
+
+    private boolean isSilenced(String host) {
+        AlertSilenceConfig silence = alertSilence;
+        if (silence == null || silence.isEmpty()) {
+            return false;
+        }
+        List<String> tags;
+        try {
+            tags = hostTagsResolver.apply(host);
+        } catch (RuntimeException ex) {
+            LOG.warn("host tags resolve failed for {}: {}", host, ex.getMessage());
+            tags = List.of();
+        }
+        return silence.isSilenced(host, tags, Instant.now());
     }
 
     private void persistQualityAlert(QualityAlertEvent event) {

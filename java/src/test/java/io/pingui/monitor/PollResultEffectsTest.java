@@ -66,6 +66,29 @@ class PollResultEffectsTest {
     }
 
     @Test
+    void silenceSuppressesDispatchButStillPersists() throws Exception {
+        Path dbPath = Files.createTempDirectory("pingui-silence").resolve("silence.db");
+        AlertRuleEngine engine = new AlertRuleEngine();
+        PollResultEffects effects = new PollResultEffects(engine);
+        RecordingAlertDispatcher alerts = new RecordingAlertDispatcher();
+        effects.setAlertDispatcher(alerts);
+        effects.setAlertSilence(new io.pingui.config.AlertSilenceConfig(List.of(new io.pingui.config.AlertSilenceEntry(
+                io.pingui.config.AlertSilenceScope.HOST,
+                "8.8.8.8",
+                java.time.Instant.now().plusSeconds(3600),
+                "maint"))));
+        try (SessionDatabase database = new SessionDatabase(dbPath)) {
+            PersistencePolicyHolder policy = new PersistencePolicyHolder();
+            effects.setPersistenceEventWriter(new PersistenceEventWriter(database, policy));
+            effects.dispatchRouteChangeAlert("8.8.8.8", List.of("10.0.0.1"), List.of("192.168.1.1"));
+            assertEquals(0, alerts.events().size());
+            assertEquals(1, database.countEvents(PersistenceEventType.ROUTE_CHANGE));
+            effects.dispatchRouteChangeAlert("1.1.1.1", List.of("10.0.0.1"), List.of("9.9.9.9"));
+            assertEquals(1, alerts.events().size());
+        }
+    }
+
+    @Test
     void persistBaselineRouteChangeWritesOnce() throws Exception {
         Path dbPath = Files.createTempDirectory("pingui-baseline-fx").resolve("baseline.db");
         AlertRuleEngine engine = new AlertRuleEngine();

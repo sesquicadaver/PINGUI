@@ -124,3 +124,7 @@ The Java GUI keeps journal/route graph as-is; desktop alert is an optional chann
 - [ROADMAP.md](ROADMAP.md) — phase 10 (P10-*), phase 16 (P16-050), phase 21 (P21-*)  
 - Python: `src/pingui/models.py` (`RouteChangeEvent`), `src/pingui/monitor/alert_dispatcher.py`  
 - Java (shipped): `monitor/AlertDispatcher.java`, `monitor/WebhookAlertDispatcher.java`, …
+
+### Alert silence (P29-003)
+
+Optional `alerts.silence` list: `scope` host|tag|profile, `match`, `until` (ISO-8601), `reason`. Suppresses webhook/desktop dispatch only; SQLite persistence and probing continue.

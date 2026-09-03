@@ -29,6 +29,19 @@ class AlertConfigTest {
                         false, null, 10, false, EndpointDownRuleConfig.disabled(), LatencyHighRuleConfig.critical(true))
                 .hasYamlContent());
         assertTrue(new AlertConfig(false, null, 11, false, EndpointDownRuleConfig.disabled()).hasYamlContent());
+        assertTrue(new AlertConfig(
+                        false,
+                        null,
+                        10,
+                        false,
+                        EndpointDownRuleConfig.disabled(),
+                        LatencyHighRuleConfig.disabled(),
+                        new AlertSilenceConfig(java.util.List.of(new AlertSilenceEntry(
+                                AlertSilenceScope.PROFILE,
+                                "*",
+                                java.time.Instant.parse("2099-01-01T00:00:00Z"),
+                                "maint"))))
+                .hasYamlContent());
     }
 
     @Test

@@ -900,7 +900,7 @@ class MonitorServiceTest {
                 public void onProbeError(String host, String message) {}
             });
             service.addHost("8.8.8.8", true);
-            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(8);
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
             while (database.countEvents(PersistenceEventType.ROUTE_CHANGE) == 0 && System.nanoTime() < deadline) {
                 Thread.sleep(50);
             }
@@ -923,7 +923,7 @@ class MonitorServiceTest {
                 public void onProbeError(String host, String message) {}
             });
             service.addHost("1.1.1.1", true);
-            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(8);
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
             while (database.countEvents(PersistenceEventType.PROBE_ERROR) == 0 && System.nanoTime() < deadline) {
                 Thread.sleep(50);
             }

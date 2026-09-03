@@ -2,6 +2,7 @@ package io.pingui.ui;
 
 import io.pingui.CliAlertOverrides;
 import io.pingui.config.AlertConfig;
+import io.pingui.config.AlertSilenceConfig;
 import io.pingui.config.EndpointDownRuleConfig;
 import io.pingui.config.LatencyHighRuleConfig;
 import io.pingui.i18n.UiI18n;
@@ -66,7 +67,39 @@ public final class AlertsSettingsDialog {
             String latencyMultiplierText,
             String latencyFailAfterText,
             String latencyClearAfterText,
-            String latencyCooldownText) {}
+            String latencyCooldownText,
+            String silenceText) {
+        public FormInput(
+                boolean desktop,
+                String webhookText,
+                String rateLimitText,
+                boolean notifyResolved,
+                boolean endpointDownEnabled,
+                String failAfterText,
+                String clearAfterText,
+                String cooldownText,
+                boolean latencyHighEnabled,
+                String latencyMultiplierText,
+                String latencyFailAfterText,
+                String latencyClearAfterText,
+                String latencyCooldownText) {
+            this(
+                    desktop,
+                    webhookText,
+                    rateLimitText,
+                    notifyResolved,
+                    endpointDownEnabled,
+                    failAfterText,
+                    clearAfterText,
+                    cooldownText,
+                    latencyHighEnabled,
+                    latencyMultiplierText,
+                    latencyFailAfterText,
+                    latencyClearAfterText,
+                    latencyCooldownText,
+                    "");
+        }
+    }
 
     /**
      * Shows alert settings and invokes {@code onApply} on successful Apply.
@@ -196,10 +229,22 @@ public final class AlertsSettingsDialog {
         latencyEtaHint.setWrapText(true);
         latencyEtaHint.setMaxWidth(Double.MAX_VALUE);
         grid.add(latencyEtaHint, 0, row++, 2, 1);
+        TextArea silenceArea = new TextArea(current.silence().toLines());
+        silenceArea.setPromptText(UiI18n.get("alerts.silence_prompt"));
+        silenceArea.setPrefRowCount(4);
+        silenceArea.setWrapText(true);
+        silenceArea.setMaxWidth(Double.MAX_VALUE);
+        Label silenceHint = new Label(UiI18n.get("alerts.silence_hint"));
+        silenceHint.setWrapText(true);
+        silenceHint.setMaxWidth(Double.MAX_VALUE);
+        grid.add(formLabel(UiI18n.get("alerts.silence")), 0, row);
+        grid.add(silenceArea, 1, row++);
+        grid.add(silenceHint, 0, row++, 2, 1);
         grid.add(formLabel(UiI18n.get("dialog.status")), 0, row);
         grid.add(statusArea, 1, row);
         GridPane.setHgrow(webhookField, Priority.ALWAYS);
         GridPane.setHgrow(statusArea, Priority.ALWAYS);
+        GridPane.setHgrow(silenceArea, Priority.ALWAYS);
 
         VBox content = new VBox(10, grid, hint);
         content.setPrefWidth(580);
@@ -223,7 +268,8 @@ public final class AlertsSettingsDialog {
                     latencyMultiplierField.getText(),
                     latencyFailField.getText(),
                     latencyClearField.getText(),
-                    latencyCooldownField.getText());
+                    latencyCooldownField.getText(),
+                    silenceArea.getText());
             AlertConfig next = buildConfig(current, form, locks);
             onApply.accept(new Result(next));
         } catch (IllegalArgumentException ex) {
@@ -268,7 +314,8 @@ public final class AlertsSettingsDialog {
                 parsePositiveInt(form.latencyClearAfterText(), "lat clear_after"),
                 parseNonNegativeInt(form.latencyCooldownText(), "lat cooldown"),
                 baseline.latencyHigh().thresholdMs());
-        return new AlertConfig(desktop, webhook, rate, form.notifyResolved(), endpointDown, latencyHigh);
+        AlertSilenceConfig silence = AlertSilenceConfig.parseLines(form.silenceText());
+        return new AlertConfig(desktop, webhook, rate, form.notifyResolved(), endpointDown, latencyHigh, silence);
     }
 
     static String presetKey(String uiLabel) {
