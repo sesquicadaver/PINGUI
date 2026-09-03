@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **DONE** |
-| **Фаза** | 30 — SQLite schema evolution (stable host id / incident / poll / route) |
-| **DoD (коротко)** | лінійна черга фази 30 вичерпана |
+| **Поточна задача** | **P31-002** |
+| **Фаза** | 31 — GUI information hierarchy |
+| **DoD (коротко)** | endpoint vs route states |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -172,8 +172,15 @@
 | 126 | **P30-004** | [x] | Deduped `route` (signature + hops_json) |
 | 127 | **P30-005** | [x] | `metric_rollup` + bounded retention |
 | 128 | **P30-006** | [x] | RO export conn / integrity_check / backup note |
+| 129 | **P31-001** | [x] | Unified host row (RTT/Loss/Mode columns) |
+| 130 | **P31-002** | [ ] | Endpoint vs Route states |
+| 131 | **P31-003** | [ ] | Selected-host inspector panel |
+| 132 | **P31-004** | [ ] | Unified severity model |
+| 133 | **P31-005** | [ ] | Filter, sort, problems-first |
+| 134 | **P31-006** | [ ] | Centralized application status |
+| 135 | **P31-007** | [ ] | Accessibility pass |
 
-**Стан черги:** **NEXT = DONE** (фаза 30 закрита; P30-006 [x]; Java-first; delete/recreate `.db`).
+**Стан черги:** **NEXT = P31-002** (фаза 31; P31-001 [x]; Java-first; [pingui-evo-gui.md](pingui-evo-gui.md)).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -968,6 +975,26 @@ flowchart TD
 
 ---
 
+## Фаза 31 — GUI information hierarchy (`beta`, P1)
+
+**Контекст:** [pingui-evo-gui.md](pingui-evo-gui.md). Не змінювати геометрію вікна (див. [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md)). Java-first.
+
+**Черга:** після P30; **NEXT = P31-002**.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P31-001** | [x] Unified host row | `HostListCell`, `HostListPresenter`, `HostItem` | `[state] name RTT loss mode [problem]`; колонки; короткі mode labels; фіксована висота; деталі в tooltip/inspector |
+| **P31-002** | [ ] Endpoint/Route states | `HostItem`, presenters | Endpoint UP/DEGRADED/DOWN/UNKNOWN; Route STABLE/CHANGED/INCOMPLETE/NOT TRACED; PING_ONLY → NOT TRACED не як error |
+| **P31-003** | [ ] Host inspector | Extended layout, `MainView` | Компактна панель: metrics, last poll, route change, problem, copy/ack/diagnostics |
+| **P31-004** | [ ] Severity model | UI theme, timeline, alerts | Critical/Warning/Notice/Info/Muted → колір, іконка, sort, badge, timeline, alert |
+| **P31-005** | [ ] Host list navigation | `HostListPresenter` | Text filter; sort; problems-first; header counters; persist filter/sort |
+| **P31-006** | [ ] App status area | `MainController`, coordinators | Monitoring summary + transient ops (profile, DB, export, MTU…) без зайвих popup |
+| **P31-007** | [ ] Accessibility | CSS, controls | Не лише колір; іконки станів; contrast; focus; a11y names |
+
+**Backlog (поза чергою):** групування settings (§7 evo-gui); graph legend/tweaks (§8); structured errors (§9).
+
+---
+
 ## Поза scope (опційно, в перспективі)
 
 | ID | Ідея | Чому ні |
@@ -1053,7 +1080,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **DONE**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P31-002**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

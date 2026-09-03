@@ -38,7 +38,7 @@ import javafx.stage.Window;
 
 /** Host list CRUD, tag filter chips, toggles, and row metrics in the main window. */
 final class HostListPresenter {
-    private static final double HOST_ROW_HEIGHT = 56.0;
+    private static final double HOST_ROW_HEIGHT = 36.0;
     private static final double HOST_LIST_INSET = 4.0;
 
     static String tagFilterAllLabel() {
@@ -144,9 +144,13 @@ final class HostListPresenter {
 
     void rebuild(List<HostEntry> entries) {
         hostItems.clear();
+        SessionStore session = store.get();
         for (HostEntry entry : HostViewRules.sessionEntries(entries)) {
             HostItem item = new HostItem(entry.address(), entry.enabled(), entry.pingOnly(), entry.tags());
             item.setExpertConfigured(entry.pingExpert().isConfigured());
+            if (session != null) {
+                item.setProbeMode(session.getProbeMode(entry.address()));
+            }
             hostItems.add(item);
         }
     }
@@ -261,6 +265,10 @@ final class HostListPresenter {
     }
 
     void syncMetrics(HostItem item) {
+        SessionStore session = store.get();
+        if (session != null) {
+            item.setProbeMode(session.getProbeMode(item.getHost()));
+        }
         if (!item.isEnabled()) {
             item.clearMetrics();
             return;
@@ -310,6 +318,7 @@ final class HostListPresenter {
             monitor.get().addHost(host, false, mode);
             session.addHost(host, false, mode, PingExpertEntry.empty());
             HostItem item = new HostItem(host, false);
+            item.setProbeMode(mode);
             if (mode == HostProbeMode.TCP_CONNECT) {
                 item.pingOnlyProperty().set(false);
             }
@@ -504,6 +513,7 @@ final class HostListPresenter {
             }
             updatingList = true;
             item.pingOnlyProperty().set(pingOnly);
+            item.setProbeMode(mode);
             updatingList = false;
             syncMetrics(item);
             hostList.refresh();

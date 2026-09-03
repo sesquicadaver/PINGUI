@@ -7,9 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **P31 NEXT activated:** ROADMAP **NEXT = P31-001** (GUI information hierarchy); queue P31-001…007; evo [pingui-evo-gui.md](docs/en/pingui-evo-gui.md).
+
 ### Changed
 
-- **P30-006 — export reliability:** `SessionDatabase.readOnly` for export/dump; CLI `--integrity-check`; backup note in DEPLOYMENT; NEXT→**DONE**.
+- **P31-001 — unified host row:** `[state] name RTT loss mode [problem]` columns; fixed 36px row height; poll/RTT/tags in tooltip; NEXT→**P31-002**. `SessionDatabase.readOnly` for export/dump; CLI `--integrity-check`; backup note in DEPLOYMENT; NEXT→**DONE**.
 - **P30-005 — metric_rollup + retention (schema v12):** `metric_rollup`; `PollResultRetentionJob` (7d raw / 5m→90d / 1h); CLI `--poll-retention`; NEXT→**P30-006**.
 - **P30-004 — deduped route (schema v11):** `route(signature, hops_json, seen_count)`; `poll_result.route_id`; NEXT→**P30-005**.
 - **P30-003 — poll_result (schema v10):** canonical finished-poll aggregate (`reachable`/`terminal_rtt_ms`/`loss`/`duration`/`error`); wired in `MonitorService`/`PollResultEffects`; NEXT→**P30-004**.

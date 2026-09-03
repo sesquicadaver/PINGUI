@@ -115,7 +115,8 @@ Module → unit test matrix. Update when adding features.
 | Doc parity multi-locale (P25) | `scripts/check_doc_parity.py` | `test_doc_parity.py`; UK/EN full; stub locales = user docs |
 | Hardening queue (P26) | ROADMAP phase 26 closed: telemetry isolation, SQLite reopen, launchers, MainController/MonitorService split, JaCoCo packages, latency EWMA; [ADR_HARDENING.md](ADR_HARDENING.md) | P26-001…009 [x]; CHECKLIST § Hardening smoke |
 | SQLite format normalize (P27) | schema v5–v7: telemetry columns SSOT; typed `persistence_event`; normalized `host_session` | Java-only; no legacy migrate (delete `.db`); [x] in queue |
-| SQLite schema evolution (P30) | schema v8–v12 complete; RO export + integrity_check | [ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md); P30-006 [x]; NEXT=**DONE** |
+| SQLite schema evolution (P30) | schema v8–v12 complete | P30-006 [x]; NEXT→**P31-001** |
+| GUI information hierarchy (P31) | unified host row [x] → a11y pass | [pingui-evo-gui.md](pingui-evo-gui.md); P31-001 [x]; NEXT=P31-002 |
 | Runtime hardening follow-up (P28) | SinkRegistry hang [x]; inFlight before pool [x]; Python schema `!=` gate [x] | phase 28 closed |
 | Diagnostic evolution (P29) | multi-host correlation [x]; incident timeline [x]; alert silence [x]; DNS control [x]; TCP connect [x] | NEXT=`DONE`; Java-first |
 | TCP connect (P29-005) | `TcpEndpoint`, `TcpConnectProbe`, `HostProbeMode.TCP_CONNECT`, `RoutePoller.pollHostTcpConnect` | `TcpEndpointTest`, `TcpConnectProbeTest`, `RoutePollerTcpConnectTest`, `ProfilesConfigTest.loadTcpConnect*` |
