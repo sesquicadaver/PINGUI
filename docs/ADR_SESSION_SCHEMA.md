@@ -29,7 +29,7 @@ Schema v7 нормалізувала hops/history у дочірні таблиц
 | 2 | **P30-002** | таблиця `incident` (FIRING/RESOLVED, duration, ack) — **done** (schema v9) |
 | 3 | **P30-003** | `poll_result` — канонічний агрегат завершеного poll — **done** (schema v10) |
 | 4 | **P30-004** | дедуплікована `route` (signature + hops_json) — **done** (schema v11) |
-| 5 | **P30-005** | `metric_rollup` + bounded retention |
+| 5 | **P30-005** | `metric_rollup` + bounded retention — **done** (schema v12) |
 | 6 | **P30-006** | RO export connection / integrity_check CLI / backup-before-irreversible |
 
 ### P30-001 (зроблено)
@@ -113,6 +113,27 @@ CREATE TABLE route (
 
 - Signature: `ip|ip|*|ip` (`*` = timeout).
 - Успішний poll upsert-ить route і пише `poll_result.route_id`.
+
+### P30-005 (зроблено)
+
+```sql
+CREATE TABLE metric_rollup (
+    host_id INTEGER NOT NULL,
+    bucket_start TEXT NOT NULL,
+    bucket_size INTEGER NOT NULL,
+    samples INTEGER NOT NULL,
+    uptime_ratio REAL,
+    rtt_min REAL,
+    rtt_avg REAL,
+    rtt_max REAL,
+    loss_avg REAL,
+    PRIMARY KEY(host_id, bucket_start, bucket_size),
+    FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
+);
+```
+
+- Bounded retention (`PollResultRetentionJob` / `--poll-retention`): raw `poll_result` 7 днів; 5-хв rollup (300s) до 90 днів; далі годинні (3600s); інциденти й дедуп `route` не чистяться.
+- Legacy v11 `.db` → fail-fast (delete & recreate).
 
 ### Не робимо
 

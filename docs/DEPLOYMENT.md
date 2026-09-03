@@ -361,6 +361,7 @@ Session persistence (`host_session` / `persistence_event`) — окремий ш
 | Інциденти | `incident` (`host_id`; FIRING/RESOLVED/ack; P30-002) |
 | Poll history | `poll_result` (канонічний агрегат poll; P30-003) |
 | Routes | `route` (дедуп signature + hops_json; P30-004) |
+| Rollups | `metric_rollup` (5m/1h; retention `--poll-retention`; P30-005) |
 
 **Схема:** Java `SCHEMA_VERSION = 11`. Старі `.db` (v10 і нижче) **не мігруються** — видаліть файл і створіть наново ([ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md)).
 

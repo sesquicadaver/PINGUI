@@ -7,6 +7,7 @@ import io.pingui.export.ExportSchedulePeriod;
 import io.pingui.export.ScheduledExport;
 import io.pingui.export.SessionReportExporter;
 import io.pingui.export.TelemetryDump;
+import io.pingui.persistence.PollResultRetentionJob;
 import io.pingui.persistence.SessionDatabase;
 import io.pingui.probe.ProbeMode;
 import io.pingui.telemetry.TelemetryRetentionJob;
@@ -225,6 +226,17 @@ public final class PinguiApplication extends Application {
                 && (telemetryRetention.isPresent() || exportReport.isPresent() || exportSchedule.isPresent())) {
             throw new IllegalArgumentException("Use either --telemetry-dump or retention/export flags, not both");
         }
+        boolean pollRetention = params.containsKey("poll-retention");
+        if (pollRetention && sessionDb.isEmpty()) {
+            throw new IllegalArgumentException("--poll-retention requires --session-db PATH");
+        }
+        if (pollRetention
+                && (telemetryRetention.isPresent()
+                        || telemetryDump.isPresent()
+                        || exportReport.isPresent()
+                        || exportSchedule.isPresent())) {
+            throw new IllegalArgumentException("Use either --poll-retention or other retention/export flags, not both");
+        }
         Optional<String> uiLang = Optional.empty();
         if (params.containsKey("lang")) {
             String value = params.get("lang");
@@ -244,6 +256,8 @@ public final class PinguiApplication extends Application {
             runMode = CliRunMode.STOP;
         } else if (params.containsKey("status")) {
             runMode = CliRunMode.STATUS;
+        } else if (pollRetention) {
+            runMode = CliRunMode.POLL_RETENTION;
         } else if (telemetryRetention.isPresent()) {
             runMode = CliRunMode.TELEMETRY_RETENTION;
         } else if (telemetryDump.isPresent()) {
@@ -449,6 +463,10 @@ public final class PinguiApplication extends Application {
                 runTelemetryDump(options);
                 return;
             }
+            case POLL_RETENTION -> {
+                runPollRetention(options);
+                return;
+            }
             case DAEMON -> {
                 runDaemon(options);
                 return;
@@ -550,6 +568,27 @@ public final class PinguiApplication extends Application {
         }
     }
 
+    private static void runPollRetention(AppOptions options) {
+        if (options.sessionDbPath().isEmpty()) {
+            failCli("--poll-retention requires --session-db PATH");
+            return;
+        }
+        try (SessionDatabase database =
+                new SessionDatabase(options.sessionDbPath().orElseThrow())) {
+            PollResultRetentionJob.Result result = PollResultRetentionJob.run(database, Clock.systemUTC());
+            System.out.println("Poll retention: five_min="
+                    + result.rolledFiveMinBuckets()
+                    + " hourly="
+                    + result.rolledHourlyBuckets()
+                    + " deleted_raw="
+                    + result.deletedRawPolls()
+                    + " deleted_5m_rollups="
+                    + result.deletedFiveMinRollups());
+        } catch (RuntimeException ex) {
+            failCli("Poll retention failed: " + ex.getMessage());
+        }
+    }
+
     private static void printRetentionResult(TelemetryRetentionJob.Result result) {
         System.out.println("Telemetry retention: samples="
                 + result.samplesDeleted()
@@ -641,6 +680,7 @@ public final class PinguiApplication extends Application {
                   --telemetry-retention N  Purge telemetry older than N days and exit (cron)
                   --telemetry-jsonl-dir DIR  Optional JSONL dir for --telemetry-retention
                   --telemetry-dump PATH     Dump SQLite telemetry to .csv/.json and exit
+                  --poll-retention         Roll up/purge old poll_result (needs --session-db; cron)
                   --export-report PATH  Export CSV/HTML from --session-db and exit (no GUI)
                   --export-schedule P   Cron one-shot: hourly|daily|weekly (with --export-dir)
                   --export-dir DIR      Output directory for --export-schedule (CSV+HTML stamped)

@@ -224,4 +224,4 @@ Tests and CI — on **`main`** and **`beta`** (ROADMAP development on `beta`).
 
 ## Future
 
-The linear ROADMAP queue: **NEXT = DONE** (phase 29 — diagnostic evolution). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT. Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
+The linear ROADMAP queue: **NEXT = P30-006** (phase 30 — SQLite schema evolution). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT. Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).

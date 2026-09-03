@@ -6,6 +6,7 @@ public enum CliRunMode {
     EXPORT,
     TELEMETRY_RETENTION,
     TELEMETRY_DUMP,
+    POLL_RETENTION,
     DAEMON,
     STOP,
     STATUS

@@ -29,7 +29,7 @@ Evolve **without migrating old `.db` files**: `schema_version != supported` → 
 | 2 | **P30-002** | `incident` table (FIRING/RESOLVED, duration, ack) — **done** (schema v9) |
 | 3 | **P30-003** | `poll_result` — canonical finished-poll aggregate — **done** (schema v10) |
 | 4 | **P30-004** | deduplicated `route` (signature + hops_json) — **done** (schema v11) |
-| 5 | **P30-005** | `metric_rollup` + bounded retention |
+| 5 | **P30-005** | `metric_rollup` + bounded retention — **done** (schema v12) |
 | 6 | **P30-006** | RO export connection / integrity_check CLI / backup-before-irreversible |
 
 ### P30-001 (done)
@@ -113,6 +113,27 @@ CREATE TABLE route (
 
 - Signature: `ip|ip|*|ip` (`*` = timeout).
 - Successful poll upserts route and sets `poll_result.route_id`.
+
+### P30-005 (done)
+
+```sql
+CREATE TABLE metric_rollup (
+    host_id INTEGER NOT NULL,
+    bucket_start TEXT NOT NULL,
+    bucket_size INTEGER NOT NULL,
+    samples INTEGER NOT NULL,
+    uptime_ratio REAL,
+    rtt_min REAL,
+    rtt_avg REAL,
+    rtt_max REAL,
+    loss_avg REAL,
+    PRIMARY KEY(host_id, bucket_start, bucket_size),
+    FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
+);
+```
+
+- Bounded retention (`PollResultRetentionJob` / `--poll-retention`): raw `poll_result` 7 days; 5-minute rollup (300s) through 90 days; hourly (3600s) beyond; incidents and deduped `route` are not purged.
+- Legacy v11 `.db` → fail-fast (delete & recreate).
 
 ### Out of scope
 

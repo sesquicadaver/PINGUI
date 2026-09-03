@@ -315,6 +315,21 @@ class PinguiApplicationTest {
     }
 
     @Test
+    void parseOptions_pollRetentionWithSessionDb() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of(
+                "session-db", "data/ping.db",
+                "poll-retention", ""));
+        assertEquals(CliRunMode.POLL_RETENTION, options.runMode());
+        assertEquals(Path.of("data/ping.db"), options.sessionDbPath().orElseThrow());
+    }
+
+    @Test
+    void parseOptions_pollRetentionRequiresSessionDb() {
+        assertThrows(
+                IllegalArgumentException.class, () -> PinguiApplication.parseOptions(Map.of("poll-retention", "")));
+    }
+
+    @Test
     void parseOptions_asnTimeoutMustBePositive() {
         assertThrows(
                 IllegalArgumentException.class, () -> PinguiApplication.parseOptions(Map.of("asn-timeout-ms", "0")));

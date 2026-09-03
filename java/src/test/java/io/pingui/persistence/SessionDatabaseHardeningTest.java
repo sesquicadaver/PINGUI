@@ -97,6 +97,16 @@ class SessionDatabaseHardeningTest {
     }
 
     @Test
+    void rejectsLegacyV11DatabaseWithoutMigration() throws Exception {
+        Path dbPath = tempDir.resolve("legacy-v11.db");
+        seedLegacyV11Database(dbPath, "v11.example");
+
+        PersistenceException ex = assertThrows(PersistenceException.class, () -> new SessionDatabase(dbPath));
+        assertTrue(ex.getMessage().contains("Unsupported session DB schema version"));
+        assertTrue(ex.getMessage().contains("required " + SessionDatabase.SCHEMA_VERSION));
+    }
+
+    @Test
     void freshDatabaseAcceptsTelemetryInsert() {
         Path dbPath = tempDir.resolve("fresh-v5.db");
         try (SessionDatabase db = new SessionDatabase(dbPath)) {
@@ -441,6 +451,70 @@ class SessionDatabaseHardeningTest {
                     VALUES (?, 1, ?, ?)
                     """)) {
                 String at = Instant.parse("2026-09-03T12:00:00Z").toString();
+                ps.setString(1, host);
+                ps.setString(2, at);
+                ps.setString(3, at);
+                ps.executeUpdate();
+            }
+        }
+    }
+
+    /** v11 shape: host id + route + poll_result, no metric_rollup, schema_meta = 11. */
+    private static void seedLegacyV11Database(Path dbPath, String host) throws Exception {
+        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + dbPath.toAbsolutePath());
+                Statement statement = connection.createStatement()) {
+            statement.execute(
+                    """
+                    CREATE TABLE schema_meta (
+                        version INTEGER NOT NULL
+                    )
+                    """);
+            statement.execute(
+                    """
+                    CREATE TABLE host_session (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        address TEXT NOT NULL UNIQUE,
+                        enabled INTEGER NOT NULL,
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL
+                    )
+                    """);
+            statement.execute(
+                    """
+                    CREATE TABLE route (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        host_id INTEGER NOT NULL,
+                        signature TEXT NOT NULL,
+                        hops_json TEXT NOT NULL,
+                        first_seen TEXT NOT NULL,
+                        last_seen TEXT NOT NULL,
+                        seen_count INTEGER NOT NULL DEFAULT 1,
+                        UNIQUE(host_id, signature)
+                    )
+                    """);
+            statement.execute(
+                    """
+                    CREATE TABLE poll_result (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        host_id INTEGER NOT NULL,
+                        observed_at TEXT NOT NULL,
+                        probe_mode TEXT NOT NULL,
+                        reachable INTEGER,
+                        terminal_rtt_ms REAL,
+                        jitter_ms REAL,
+                        loss_percent REAL,
+                        duration_ms REAL,
+                        route_id INTEGER,
+                        error_code TEXT
+                    )
+                    """);
+            statement.execute("INSERT INTO schema_meta(version) VALUES (11)");
+            try (PreparedStatement ps = connection.prepareStatement(
+                    """
+                    INSERT INTO host_session(address, enabled, created_at, updated_at)
+                    VALUES (?, 1, ?, ?)
+                    """)) {
+                String at = Instant.parse("2026-09-03T14:00:00Z").toString();
                 ps.setString(1, host);
                 ps.setString(2, at);
                 ps.setString(3, at);
