@@ -271,6 +271,7 @@ final class HostListPresenter {
         }
         if (!item.isEnabled()) {
             item.clearMetrics();
+            applyRouteHops(item);
             return;
         }
         HostTargetStats stats = store.get().targetStats(item.getHost());
@@ -280,6 +281,20 @@ final class HostListPresenter {
             counters = service.pollCounters(item.getHost());
         }
         item.applyMetrics(stats, counters);
+        applyRouteHops(item);
+    }
+
+    void syncRouteState(HostItem item) {
+        applyRouteHops(item);
+    }
+
+    private void applyRouteHops(HostItem item) {
+        SessionStore session = store.get();
+        if (session == null || !session.containsHost(item.getHost())) {
+            item.applyRouteHops(List.of());
+            return;
+        }
+        item.applyRouteHops(session.get(item.getHost()).getCurrentRoute());
     }
 
     /** Syncs unread endpoint_down badge from {@link MonitorService} (P22-004). */

@@ -34,12 +34,22 @@ final class HostListCell extends ListCell<HostItem> {
     private final Button mtuButton = new Button(UiI18n.get("host.mtu"));
     private final Button problemButton = new Button(UiI18n.get("host.problem_badge"));
     private final Label stateLabel = new Label();
+    private final Label routeLabel = new Label();
     private final Label hostLabel = new Label();
     private final Label rttLabel = new Label();
     private final Label lossLabel = new Label();
     private final Label modeLabel = new Label();
-    private final HBox mainRow =
-            new HBox(6, stateLabel, hostLabel, rttLabel, lossLabel, modeLabel, problemButton, extenButton, mtuButton);
+    private final HBox mainRow = new HBox(
+            6,
+            stateLabel,
+            routeLabel,
+            hostLabel,
+            rttLabel,
+            lossLabel,
+            modeLabel,
+            problemButton,
+            extenButton,
+            mtuButton);
     private final HBox root = new HBox(8, checkBox, mainRow, pingOnlyCheck);
     private final BiConsumer<HostItem, Boolean> onEnabledChanged;
     private final BiConsumer<HostItem, Boolean> onPingOnlyChanged;
@@ -50,6 +60,7 @@ final class HostListCell extends ListCell<HostItem> {
     private HostItem boundItem;
     private ChangeListener<String> rowColorListener;
     private ChangeListener<String> stateGlyphListener;
+    private ChangeListener<String> routeGlyphListener;
     private ChangeListener<String> rttColumnListener;
     private ChangeListener<String> lossColumnListener;
     private ChangeListener<String> modeColumnListener;
@@ -73,6 +84,7 @@ final class HostListCell extends ListCell<HostItem> {
         this.onMtuWizardOpen = onMtuWizardOpen;
         this.onProblemOpen = onProblemOpen;
         configureColumn(stateLabel, 14.0, "pingui-host-state", Pos.CENTER);
+        configureColumn(routeLabel, 14.0, "pingui-host-route", Pos.CENTER);
         configureColumn(rttLabel, COL_RTT, "pingui-host-col-rtt", Pos.CENTER_RIGHT);
         configureColumn(lossLabel, COL_LOSS, "pingui-host-col-loss", Pos.CENTER_RIGHT);
         configureColumn(modeLabel, COL_MODE, "pingui-host-col-mode", Pos.CENTER);
@@ -152,6 +164,9 @@ final class HostListCell extends ListCell<HostItem> {
         stateGlyphListener = (obs, was, glyph) -> stateLabel.setText(glyph);
         item.stateGlyphProperty().addListener(stateGlyphListener);
         stateLabel.setText(item.stateGlyphProperty().get());
+        routeGlyphListener = (obs, was, glyph) -> routeLabel.setText(glyph);
+        item.routeGlyphProperty().addListener(routeGlyphListener);
+        routeLabel.setText(item.routeGlyphProperty().get());
         rttColumnListener = (obs, was, text) -> rttLabel.setText(text);
         item.rttColumnTextProperty().addListener(rttColumnListener);
         rttLabel.setText(item.rttColumnTextProperty().get());
@@ -223,6 +238,10 @@ final class HostListCell extends ListCell<HostItem> {
         if (stateGlyphListener != null) {
             boundItem.stateGlyphProperty().removeListener(stateGlyphListener);
             stateGlyphListener = null;
+        }
+        if (routeGlyphListener != null) {
+            boundItem.routeGlyphProperty().removeListener(routeGlyphListener);
+            routeGlyphListener = null;
         }
         if (rttColumnListener != null) {
             boundItem.rttColumnTextProperty().removeListener(rttColumnListener);

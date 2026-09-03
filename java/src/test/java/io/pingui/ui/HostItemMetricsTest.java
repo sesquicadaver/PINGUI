@@ -62,6 +62,10 @@ class HostItemMetricsTest {
         assertEquals("12", item.rttColumnTextProperty().get());
         assertEquals("0%", item.lossColumnTextProperty().get());
         assertEquals("TRACE", item.modeColumnTextProperty().get());
+        assertEquals(io.pingui.monitor.EndpointState.UP, item.endpointState());
+        assertEquals(io.pingui.monitor.RouteState.NOT_TRACED, item.routeState());
+        assertTrue(item.rowDetailsTooltipProperty().get().contains("Endpoint: UP"));
+        assertTrue(item.rowDetailsTooltipProperty().get().contains("Route: NOT TRACED"));
         assertTrue(item.rowDetailsTooltipProperty().get().contains("спроб 4"));
         assertTrue(item.rowDetailsTooltipProperty().get().contains("avg 12"));
     }
@@ -94,5 +98,27 @@ class HostItemMetricsTest {
         HostItem item = new HostItem("8.8.8.8", true, false, java.util.List.of("dc", "vpn"));
         item.applyMetrics(new HostTargetStats(0.0, 10.0, 12.0, 15.0, false), HostPollCounters.ZERO);
         assertTrue(item.rowDetailsTooltipProperty().get().contains("dc, vpn"));
+    }
+
+    @Test
+    void pingOnlyRouteIsNotTracedAndNotDownGlyph() {
+        HostItem item = new HostItem("8.8.8.8", true, true);
+        item.applyMetrics(new HostTargetStats(0.0, 10.0, 12.0, 15.0, false), HostPollCounters.ZERO);
+        item.applyRouteHops(java.util.List.of(new io.pingui.model.Models.HopNode(1, "8.8.8.8", 12.0, false)));
+        assertEquals(io.pingui.monitor.RouteState.NOT_TRACED, item.routeState());
+        assertEquals("–", item.routeGlyphProperty().get());
+        assertEquals("●", item.stateGlyphProperty().get());
+        assertTrue(item.rowDetailsTooltipProperty().get().contains("NOT TRACED"));
+        assertFalse(item.routeGlyphProperty().get().contains("✕"));
+    }
+
+    @Test
+    void routeChangedLatchDoesNotOverrideIncomplete() {
+        HostItem item = new HostItem("8.8.8.8", true);
+        item.setProbeMode(HostProbeMode.TRACE);
+        item.markRouteChanged();
+        item.applyRouteHops(java.util.List.of(io.pingui.model.Models.timeout(1)));
+        assertEquals(io.pingui.monitor.RouteState.INCOMPLETE, item.routeState());
+        assertEquals("…", item.routeGlyphProperty().get());
     }
 }
