@@ -36,12 +36,13 @@ class PollResultEffectsPollResultTest {
             effects.recordPollResult(
                     "8.8.8.8", HostProbeMode.PING_ONLY, snapshot, 33.0, null, ProbeOutcome.SUCCESS, true);
             effects.recordPollResult(
-                    "8.8.8.8", HostProbeMode.TRACE, null, 10.0, "no hops", ProbeOutcome.NETWORK_ERROR, true);
+                    "8.8.8.8", HostProbeMode.TRACE, null, 10.0, "no hops", ProbeOutcome.NETWORK_ERROR, false);
 
             List<PollResultRecord> rows = database.listPollResults("8.8.8.8", 10);
             assertEquals(2, rows.size());
             assertEquals("no hops", rows.get(0).errorCode());
-            assertEquals(false, rows.get(0).reachable());
+            assertNull(rows.get(0).reachable());
+            assertEquals(false, rows.get(0).targetSampled());
             assertEquals(ProbeOutcome.NETWORK_ERROR, rows.get(0).probeOutcome());
             assertNull(rows.get(0).lossPercent());
             assertEquals("ping_only", rows.get(1).probeMode());
@@ -51,6 +52,44 @@ class PollResultEffectsPollResultTest {
             assertNull(rows.get(1).jitterMs());
             assertEquals(ProbeOutcome.SUCCESS, rows.get(1).probeOutcome());
             assertEquals(true, rows.get(1).targetSampled());
+        }
+    }
+
+    @Test
+    void monitorErrorDoesNotCountAsDowntimeEvenIfCallerMarksSampled() {
+        Path dbPath = tempDir.resolve("effects-tri-state.db");
+        try (SessionDatabase database = new SessionDatabase(dbPath)) {
+            PersistenceEventWriter writer = new PersistenceEventWriter(database);
+            PollResultEffects effects = new PollResultEffects(new AlertRuleEngine());
+            effects.setPersistenceEventWriter(writer);
+
+            effects.recordPollResult(
+                    "8.8.8.8", HostProbeMode.TRACE, null, 5.0, "permission denied", ProbeOutcome.NETWORK_ERROR, true);
+
+            PollResultRecord row = database.listPollResults("8.8.8.8", 1).get(0);
+            assertNull(row.reachable());
+            assertEquals(false, row.targetSampled());
+            assertEquals("permission denied", row.errorCode());
+        }
+    }
+
+    @Test
+    void targetTimeoutIsSampledUnreachable() {
+        Path dbPath = tempDir.resolve("effects-timeout.db");
+        try (SessionDatabase database = new SessionDatabase(dbPath)) {
+            PersistenceEventWriter writer = new PersistenceEventWriter(database);
+            PollResultEffects effects = new PollResultEffects(new AlertRuleEngine());
+            effects.setPersistenceEventWriter(writer);
+
+            RouteSnapshot down =
+                    new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(io.pingui.model.Models.timeout(1)), Instant.now());
+            effects.recordPollResult("8.8.8.8", HostProbeMode.PING_ONLY, down, 20.0, null, ProbeOutcome.TIMEOUT, true);
+
+            PollResultRecord row = database.listPollResults("8.8.8.8", 1).get(0);
+            assertEquals(false, row.reachable());
+            assertEquals(true, row.targetSampled());
+            assertEquals(ProbeOutcome.TIMEOUT, row.probeOutcome());
+            assertNull(row.errorCode());
         }
     }
 

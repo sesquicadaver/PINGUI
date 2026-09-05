@@ -15,6 +15,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P33-004 — poll_result tri-state:** monitor/DNS/internal error → `target_sampled=false`, `reachable=null` (not downtime); target timeout stays sampled+unreachable; NEXT→**P33-005**.
 - **P33-003 — SessionStore bounded persistence writer:** SQLite/TS off FX/probe via `SessionPersistenceWriter`; sync in-memory + `snapshot()` API; drop counter; NEXT→**P33-004**.
 - **P33-002 — MTR/projection semantics:** authoritative `routeChanged` in `SessionStore.applyPollSnapshot`; `targetStats` / classifier use `targetIp`+`targetHop` (not discovery last hop); NEXT→**P33-003**.
 - **P33-001 — MTR stable `targetHop` / monitoring span:** cursor rotates in `1..targetHop` (not reachable-prefix); intermediate timeout must not skip target; target slot by hop number; NEXT→**P33-002**.
