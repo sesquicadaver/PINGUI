@@ -9,12 +9,14 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **P33 NEXT activated:** ROADMAP **NEXT = P33-001** (Correctness: MTR / projection / side-effects); queue P33-001…008; [pingui-correctness.md](docs/en/pingui-correctness.md). `beta` synced to `main@28bdb41`.
 - **P32 NEXT activated:** ROADMAP **NEXT = P32-001** (Stabilization: MTR freshness / history / side-effects); queue P32-001…008; [pingui-stabilization.md](docs/pingui-stabilization.md).
 - **P31 NEXT activated:** ROADMAP **NEXT = P31-001** (GUI information hierarchy); queue P31-001…007; evo [pingui-evo-gui.md](docs/en/pingui-evo-gui.md).
 
 ### Changed
 
-- **P32-008 — SessionDatabase split + phase close:** facade `SessionDatabase` + `SchemaManager` / `SessionStateRepository` / `HistoryRepository` / `DbCommit`; Java canonical, Python bugfix-only; phase 32 **NEXT=DONE**.
+- **P33-001 — MTR stable `targetHop` / monitoring span:** cursor rotates in `1..targetHop` (not reachable-prefix); intermediate timeout must not skip target; target slot by hop number; NEXT→**P33-002**.
+- **P32-008 — SessionDatabase split + phase close:** facade `SessionDatabase` + `SchemaManager` / `SessionStateRepository` / `HistoryRepository` / `DbCommit`; Java canonical, Python bugfix-only; phase 32 **closed**.
 - **P32-007 — runtime i18n + a11y leftovers:** `configureOnce`/`retranslate`; problemsFirst keyboard focus; bundle key parity + no duplicate `history.initial_route`; NEXT→**P32-008**.
 - **P32-006 — alert lifecycle vs delivery:** engine always emits FIRING/RESOLVED; silence/cooldown delivery-only (`QualityAlertDelivery`); pending notify once after expiry; NEXT→**P32-007**.
 - **P32-005 — bounded side-effect consumers:** `BoundedForwardDnsLookup` (executor+timeout+TTL cache); async webhook posts; `applyPollSnapshot` / deferred persist; `ensureHostExists` without full `load()`; NEXT→**P32-006**.

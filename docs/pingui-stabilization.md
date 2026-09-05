@@ -2,7 +2,9 @@
 
 # Stabilization — MTR / history / side-effects (P32)
 
-**Джерело для фази 32.** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
+> **Архів:** фаза 32 закрита. Актуальна фаза 33 — [pingui-correctness.md](pingui-correctness.md).
+
+**Джерело для фази 32 (історичне).** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
 
 Аудит `beta` @ `2c08a61` (після P31-007). Фаза стабілізації — **не** розширення функціональності.
 
