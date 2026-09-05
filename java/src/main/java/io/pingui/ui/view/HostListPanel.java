@@ -53,6 +53,13 @@ public final class HostListPanel {
         removeButton.setText(UiI18n.get("host.remove"));
         saveButton.setText(UiI18n.get("host.save"));
         hostInput.setPromptText(UiI18n.get("host.prompt"));
+        hostList.setAccessibleText(UiI18n.get("a11y.host_list"));
+        hostInput.setAccessibleText(UiI18n.get("a11y.host_input"));
+        addButton.setAccessibleText(UiI18n.get("host.add"));
+        editButton.setAccessibleText(UiI18n.get("host.edit"));
+        tagsButton.setAccessibleText(UiI18n.get("host.tags"));
+        removeButton.setAccessibleText(UiI18n.get("host.remove"));
+        saveButton.setAccessibleText(UiI18n.get("host.save"));
     }
 
     /**

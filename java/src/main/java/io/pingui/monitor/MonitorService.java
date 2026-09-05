@@ -4,6 +4,7 @@ import io.pingui.config.AlertSilenceConfig;
 import io.pingui.config.EndpointDownRuleConfig;
 import io.pingui.config.LatencyHighRuleConfig;
 import io.pingui.config.PingExpertEntry;
+import io.pingui.dns.BoundedForwardDnsLookup;
 import io.pingui.dns.DnsControlTracker;
 import io.pingui.dns.ForwardDnsLookup;
 import io.pingui.model.Models.RouteSnapshot;
@@ -27,6 +28,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +40,14 @@ public final class MonitorService implements AutoCloseable {
 
     public interface Listener {
         void onDataReceived(String host, RouteSnapshot snapshot);
+
+        /**
+         * Same as {@link #onDataReceived(String, RouteSnapshot)} with MTR freshness scope (P32-001).
+         * Default delegates to the two-arg form.
+         */
+        default void onDataReceived(String host, RouteSnapshot snapshot, PollSampleScope sampleScope) {
+            onDataReceived(host, snapshot);
+        }
 
         void onRouteChanged(String host, List<String> oldIps, List<String> newIps);
 
@@ -89,7 +99,14 @@ public final class MonitorService implements AutoCloseable {
     private final PersistencePolicyHolder persistencePolicy = new PersistencePolicyHolder();
     private final BurstSchedulePolicy burstPolicy = new BurstSchedulePolicy();
     private final TraceConcurrencyLimiter traceLimiter;
-    private volatile DnsControlTracker dnsControl = new DnsControlTracker();
+    private final BoundedForwardDnsLookup ownedForwardDns = BoundedForwardDnsLookup.systemDefault();
+    private final ExecutorService dnsControlExecutor = Executors.newSingleThreadExecutor(r -> {
+        Thread thread = new Thread(r, "pingui-dns-control-" + DNS_CONTROL_SEQ.incrementAndGet());
+        thread.setDaemon(true);
+        return thread;
+    });
+    private volatile DnsControlTracker dnsControl = new DnsControlTracker(ownedForwardDns);
+    private static final AtomicInteger DNS_CONTROL_SEQ = new AtomicInteger();
 
     public MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds) {
         this(intervalSeconds, maxHops, timeoutSeconds, ProbeMode.AUTO);
@@ -194,6 +211,15 @@ public final class MonitorService implements AutoCloseable {
         pollEffects.setHostTagsResolver(hostTagsResolver);
     }
 
+    /**
+     * Supplies measured terminal-hop loss/jitter from an RTT series (P32-003). Absent → {@code null}
+     * metrics in {@code poll_result}.
+     */
+    public void setMeasuredHopStatsResolver(
+            Function<String, io.pingui.model.Models.HopStatsSummary> measuredHopStatsResolver) {
+        pollEffects.setMeasuredHopStatsResolver(measuredHopStatsResolver);
+    }
+
     /** Session quality problem summary for host-row badge (P22-002 / P23). */
     public Optional<HostProblemSummary> hostProblemSummary(String host) {
         return alertRuleEngine.problemSummary(host, Instant.now());
@@ -277,9 +303,9 @@ public final class MonitorService implements AutoCloseable {
         pollEffects.setPersistenceEventWriter(persistenceEvents);
     }
 
-    /** Test hook: replace forward-DNS lookup used by hostname DNS control (P29-004). */
+    /** Test hook: replace forward-DNS lookup used by hostname DNS control (P29-004 / P32-005). */
     void setForwardDnsLookupForTests(ForwardDnsLookup lookup) {
-        dnsControl = lookup == null ? new DnsControlTracker() : new DnsControlTracker(lookup);
+        dnsControl = lookup == null ? new DnsControlTracker(ownedForwardDns) : new DnsControlTracker(lookup);
     }
 
     /** Optional telemetry bus (P16-013); null disables offers. Must not block poll. */
@@ -341,11 +367,13 @@ public final class MonitorService implements AutoCloseable {
         registry.remove(host);
         burstPolicy.clearHost(host);
         alertRuleEngine.clearHost(host);
+        poller.resetMtrHost(host);
     }
 
     public void renameHost(String oldHost, String newHost) {
         registry.rename(oldHost, newHost);
         burstPolicy.renameHost(oldHost, newHost);
+        poller.renameMtrHost(oldHost, newHost);
     }
 
     public void setHostEnabled(String host, boolean hostEnabled) {
@@ -475,11 +503,16 @@ public final class MonitorService implements AutoCloseable {
                     }
                 }
                 pollEffects.offerTelemetryFailure(host, outcome.error(), probeMode, durationMs);
-                pollEffects.recordPollResult(host, probeMode, null, durationMs, outcome.error());
+                pollEffects.recordPollResult(
+                        host, probeMode, null, durationMs, outcome.error(), outcome.probeOutcome(), true);
                 current.onProbeError(host, outcome.error());
                 return;
             }
-            registry.putLastRoute(host, outcome.currentIps());
+            PollSampleScope sampleScope = outcome.sampleScope();
+            // MTR: only advance the announced route after the target was sampled (P32-001).
+            if (probeMode != HostProbeMode.MTR || sampleScope.targetSampled()) {
+                registry.putLastRoute(host, outcome.currentIps());
+            }
             boolean deliveredSnapshot = false;
             if (outcome.snapshot() != null && registry.contains(host)) {
                 RouteSnapshot snapshot = outcome.snapshot();
@@ -487,16 +520,20 @@ public final class MonitorService implements AutoCloseable {
                     PingExpertEntry expert = resolveExpert(host);
                     if (expert.isConfigured()) {
                         snapshot = expertEnricher.enrich(snapshot, expert, timeoutSeconds);
-                    } else {
+                    } else if (sampleScope.targetSampled()) {
+                        // Avoid treating the last discovered router as the target during MTR discovery.
                         snapshot = defaultTargetPingEnricher.enrich(snapshot, timeoutSeconds);
                     }
                 }
-                pollEffects.offerTelemetrySuccess(host, probeMode, snapshot, durationMs);
-                current.onDataReceived(host, snapshot);
+                pollEffects.offerTelemetrySuccess(host, probeMode, snapshot, durationMs, sampleScope);
+                current.onDataReceived(host, snapshot, sampleScope);
                 deliveredSnapshot = true;
-                pollEffects.recordPollResult(host, probeMode, snapshot, durationMs, null);
-                pollEffects.evaluateEndpointDown(host, snapshot);
-                pollEffects.evaluateLatencyHigh(host, snapshot);
+                if (sampleScope.targetSampled()) {
+                    pollEffects.recordPollResult(
+                            host, probeMode, snapshot, durationMs, null, outcome.probeOutcome(), true);
+                    pollEffects.evaluateEndpointDown(host, snapshot);
+                    pollEffects.evaluateLatencyHigh(host, snapshot);
+                }
             }
             if (outcome.routeChanged() && BurstSchedulePolicy.shouldArmBurst(outcome.oldIps(), outcome.newIps())) {
                 burstPolicy.onRouteChange(host, Instant.now());
@@ -505,7 +542,8 @@ public final class MonitorService implements AutoCloseable {
                 pollEffects.offerTelemetryRouteChange(host, outcome.oldIps(), outcome.newIps(), probeMode);
                 current.onRouteChanged(host, outcome.oldIps(), outcome.newIps());
                 pollEffects.dispatchRouteChangeAlert(host, outcome.oldIps(), outcome.newIps());
-            } else if (PollResultEffects.isFirstBaseline(previousIps, outcome.currentIps())) {
+            } else if (sampleScope.targetSampled()
+                    && PollResultEffects.isFirstBaseline(previousIps, outcome.currentIps())) {
                 pollEffects.persistBaselineRouteChange(host, outcome.currentIps());
                 pollEffects.offerTelemetryRouteChange(host, List.of(), outcome.currentIps(), probeMode);
                 current.onRouteChanged(host, List.of(), outcome.currentIps());
@@ -520,21 +558,28 @@ public final class MonitorService implements AutoCloseable {
     }
 
     /**
-     * Forward-DNS control for hostname targets (P29-004). Persists distinct dns_change events only —
-     * never opens quality incidents or alert dispatch.
+     * Forward-DNS control for hostname targets (P29-004 / P32-005). Runs on a dedicated executor so
+     * resolver latency never blocks probe workers. Persists distinct dns_change events only — never
+     * opens quality incidents or alert dispatch.
      */
     private void observeDnsControl(String host) {
         try {
-            var event = dnsControl.observe(host);
-            if (event.isEmpty()) {
-                return;
-            }
-            PersistenceEventWriter events = persistenceEvents;
-            if (events != null) {
-                events.writeDnsChange(event.get());
-            }
-        } catch (RuntimeException ex) {
-            LOG.warn("DNS control failed for {}: {}", host, ex.getMessage());
+            dnsControlExecutor.execute(() -> {
+                try {
+                    var event = dnsControl.observe(host);
+                    if (event.isEmpty()) {
+                        return;
+                    }
+                    PersistenceEventWriter events = persistenceEvents;
+                    if (events != null) {
+                        events.writeDnsChange(event.get());
+                    }
+                } catch (RuntimeException ex) {
+                    LOG.warn("DNS control failed for {}: {}", host, ex.getMessage());
+                }
+            });
+        } catch (RejectedExecutionException ex) {
+            LOG.warn("DNS control executor rejected observe for {}: {}", host, ex.getMessage());
         }
     }
 
@@ -576,9 +621,12 @@ public final class MonitorService implements AutoCloseable {
         running.set(false);
         scheduler.shutdownNow();
         probePool.shutdownNow();
+        dnsControlExecutor.shutdownNow();
+        ownedForwardDns.close();
         try {
             scheduler.awaitTermination(5, TimeUnit.SECONDS);
             probePool.awaitTermination(5, TimeUnit.SECONDS);
+            dnsControlExecutor.awaitTermination(2, TimeUnit.SECONDS);
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
         }

@@ -17,11 +17,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.OptionalDouble;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** In-memory session storage for route and ping metrics; optional SQLite persistence (P11-011). */
+/** In-memory session storage for route and ping metrics; optional SQLite persistence (P11-011 / P32-005). */
 public final class SessionStore implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(SessionStore.class);
     public static final int MAX_PING_SAMPLES = 50;
@@ -29,6 +30,11 @@ public final class SessionStore implements AutoCloseable {
     private final Map<String, HostSessionData> data = new LinkedHashMap<>();
     private SessionDatabase database;
     private TimeSeriesBackend timeseries;
+    /** Nested depth for coalescing SQLite saves within one poll (P32-005). */
+    private int deferPersistDepth;
+
+    private final java.util.LinkedHashSet<String> deferredPersistHosts = new java.util.LinkedHashSet<>();
+    private int flushPersistCountForTests;
 
     public SessionStore(List<String> hosts) {
         this(hosts, null);
@@ -251,12 +257,32 @@ public final class SessionStore implements AutoCloseable {
         writeRouteEvent(host, newIps, routeChanged, snapshot);
     }
 
+    /**
+     * Applies one poll snapshot with a single SQLite {@code save} (P32-005). Prefer this over separate
+     * {@link #updateRoute} + {@link #appendPingSamples} on the hot path.
+     */
+    public void applyPollSnapshot(String host, RouteSnapshot snapshot, PollSampleScope sampleScope) {
+        withDeferredPersist(() -> {
+            updateRoute(host, snapshot);
+            appendPingSamples(host, snapshot, sampleScope != null ? sampleScope : PollSampleScope.FULL);
+        });
+    }
+
     public void appendPingSamples(String host, RouteSnapshot snapshot) {
-        recordHopProbes(host, snapshot);
+        appendPingSamples(host, snapshot, PollSampleScope.FULL);
+    }
+
+    /** Records hop stats / RTT history for fresh samples only (P32-001). */
+    public void appendPingSamples(String host, RouteSnapshot snapshot, PollSampleScope scope) {
+        PollSampleScope safe = scope != null ? scope : PollSampleScope.FULL;
+        recordHopProbes(host, snapshot, safe);
         Map<String, List<Double>> history = get(host).getPingHistory();
         boolean changed = false;
         List<PingSample> newSamples = new ArrayList<>();
         for (HopNode node : snapshot.nodes()) {
+            if (!safe.allHopsFresh() && (safe.freshHop() == null || node.hop() != safe.freshHop())) {
+                continue;
+            }
             if (!node.isReachable() || node.pingMs() == null) {
                 continue;
             }
@@ -361,16 +387,24 @@ public final class SessionStore implements AutoCloseable {
         }
     }
 
-    private void recordHopProbes(String host, RouteSnapshot snapshot) {
+    private void recordHopProbes(String host, RouteSnapshot snapshot, PollSampleScope scope) {
         if (snapshot.nodes().isEmpty()) {
             return;
         }
+        PollSampleScope safe = scope != null ? scope : PollSampleScope.FULL;
         HostSessionData session = get(host);
+        boolean changed = false;
         for (HopNode node : snapshot.nodes()) {
+            if (!safe.allHopsFresh() && (safe.freshHop() == null || node.hop() != safe.freshHop())) {
+                continue;
+            }
             HopProbeStats stats = session.getHopStats().computeIfAbsent(node.hop(), ignored -> new HopProbeStats());
             HopStats.recordProbe(stats, node);
+            changed = true;
         }
-        persist(host);
+        if (changed) {
+            persist(host);
+        }
     }
 
     private HostSessionData loadOrCreate(String host) {
@@ -382,8 +416,42 @@ public final class SessionStore implements AutoCloseable {
     }
 
     private void persist(String host) {
+        if (deferPersistDepth > 0) {
+            deferredPersistHosts.add(host);
+            return;
+        }
+        flushPersist(host);
+    }
+
+    private void flushPersist(String host) {
+        flushPersistCountForTests++;
         if (database != null) {
             database.save(host, get(host));
+        }
+    }
+
+    /** Test hook: number of SQLite {@code save} flushes since construction (P32-005). */
+    int flushPersistCountForTests() {
+        return flushPersistCountForTests;
+    }
+
+    /**
+     * Coalesces nested {@link #persist(String)} calls into one SQLite write per dirty host (P32-005).
+     */
+    void withDeferredPersist(Runnable action) {
+        Objects.requireNonNull(action, "action");
+        deferPersistDepth++;
+        try {
+            action.run();
+        } finally {
+            deferPersistDepth--;
+            if (deferPersistDepth == 0 && !deferredPersistHosts.isEmpty()) {
+                java.util.ArrayList<String> hosts = new java.util.ArrayList<>(deferredPersistHosts);
+                deferredPersistHosts.clear();
+                for (String host : hosts) {
+                    flushPersist(host);
+                }
+            }
         }
     }
 

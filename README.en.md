@@ -18,7 +18,7 @@ By default session data lives **in RAM**; optional **SQLite** (`--session-db`, G
 | **Java desktop** | ✅ GUI + Pro (IPv6, SQLite, alerts, history, daemon, export, telemetry, Expert MTU) as of last merge | ✅ Same **plus** any work until merge; linear ROADMAP queue **P29-001** (phase 29) |
 | **Session** | RAM by default; optional **SQLite** | Same |
 | **Alerts / history / daemon / IPv6** | ✅ (after phases 9–12+ merged) | ✅ + newer work until merge |
-| **Python PyQt6** | ✅ `src/pingui/`, `./pingui.sh`, pytest (may lag `beta` slightly) | ✅ Latest Python stack |
+| **Python PyQt6** | ✅ `src/pingui/` — **legacy / bugfix-only** (P32-008); may lag Java | ✅ Same |
 | **CI** | Java `gradlew check` + Python pytest | Same |
 | **Documentation** | Synced on merge | Living docs ahead of `main` until merge |
 

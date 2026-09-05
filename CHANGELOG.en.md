@@ -9,10 +9,20 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **P32 NEXT activated:** ROADMAP **NEXT = P32-001** (Stabilization: MTR freshness / history / side-effects); queue P32-001…008; [pingui-stabilization.md](docs/pingui-stabilization.md).
 - **P31 NEXT activated:** ROADMAP **NEXT = P31-001** (GUI information hierarchy); queue P31-001…007; evo [pingui-evo-gui.md](docs/en/pingui-evo-gui.md).
 
 ### Changed
 
+- **P32-008 — SessionDatabase split + phase close:** facade `SessionDatabase` + `SchemaManager` / `SessionStateRepository` / `HistoryRepository` / `DbCommit`; Java canonical, Python bugfix-only; phase 32 **NEXT=DONE**.
+- **P32-007 — runtime i18n + a11y leftovers:** `configureOnce`/`retranslate`; problemsFirst keyboard focus; bundle key parity + no duplicate `history.initial_route`; NEXT→**P32-008**.
+- **P32-006 — alert lifecycle vs delivery:** engine always emits FIRING/RESOLVED; silence/cooldown delivery-only (`QualityAlertDelivery`); pending notify once after expiry; NEXT→**P32-007**.
+- **P32-005 — bounded side-effect consumers:** `BoundedForwardDnsLookup` (executor+timeout+TTL cache); async webhook posts; `applyPollSnapshot` / deferred persist; `ensureHostExists` without full `load()`; NEXT→**P32-006**.
+- **P32-004 — schema v14 rollup + atomic retention:** additive `*_samples`/`*_sum` in `metric_rollup` (avg on read); retention in one transaction; migrate **v13→v14**; NEXT→**P32-005**.
+- **P32-003 — structured PollResult + TCP outcomes:** `ProbeOutcome` SUCCESS/TIMEOUT/REFUSED/DNS_ERROR/NETWORK_ERROR; `loss=NULL` when unmeasured; jitter only from RTT series; schema **v13** (`probe_outcome`, `target_sampled`); NEXT→**P32-004**.
+- **P32-002 — MTR concurrency / lifecycle:** `ConcurrentHashMap` + generation token in `MtrProbe`; clear on remove/rename; NEXT→**P32-003**.
+- **P32-001 — MTR freshness / topology:** only `freshHopSample` updates hop/telemetry; endpoint/`poll_result` only when target sampled; discovery/timeout ≠ route change; NEXT→**P32-002**.
+- **P31-007 — accessibility pass:** state icons + text tooltips/a11y names; severity contrast; focus ring; NEXT→**DONE** (phase 31).
 - **P31-006 — app status area:** durable Monitoring summary + transient ops line + progress/cancel; feedback no longer wipes monitoring; NEXT→**P31-007**.
 - **P31-005 — host list navigation:** text filter, sort (config/severity/RTT/loss/last change), problems-first, header counters, persisted prefs; NEXT→**P31-006**.
 - **P31-004 — severity model:** Critical/Warning/Notice/Info/Muted → row color, badge, timeline glyph, desktop alert title; red only for Critical; NEXT→**P31-005**.

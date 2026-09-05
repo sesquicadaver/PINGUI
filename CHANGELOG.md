@@ -9,10 +9,20 @@
 
 ### Added
 
+- **P32 NEXT activated:** ROADMAP **NEXT = P32-001** (Stabilization: MTR freshness / history / side-effects); черга P32-001…008; [pingui-stabilization.md](docs/pingui-stabilization.md).
 - **P31 NEXT activated:** ROADMAP **NEXT = P31-001** (GUI information hierarchy); черга P31-001…007; evo [pingui-evo-gui.md](docs/pingui-evo-gui.md).
 
 ### Changed
 
+- **P32-008 — SessionDatabase split + phase close:** facade `SessionDatabase` + `SchemaManager` / `SessionStateRepository` / `HistoryRepository` / `DbCommit`; Java канон, Python bugfix-only; фаза 32 **NEXT=DONE**.
+- **P32-007 — runtime i18n + a11y leftovers:** `configureOnce`/`retranslate`; problemsFirst keyboard; bundle key parity + без дубля `history.initial_route`; NEXT→**P32-008**.
+- **P32-006 — alert lifecycle vs delivery:** FIRING/RESOLVED завжди з engine; silence/cooldown лише delivery (`QualityAlertDelivery`); pending notify після expiry один раз; NEXT→**P32-007**.
+- **P32-005 — bounded side-effect consumers:** `BoundedForwardDnsLookup` (executor+timeout+TTL cache); async webhook posts; `applyPollSnapshot` / deferred persist; `ensureHostExists` без повного `load()`; NEXT→**P32-006**.
+- **P32-004 — schema v14 rollup + atomic retention:** additive `*_samples`/`*_sum` у `metric_rollup` (avg на читанні); retention в одній транзакції; migrate **v13→v14**; NEXT→**P32-005**.
+- **P32-003 — structured PollResult + TCP outcomes:** `ProbeOutcome` SUCCESS/TIMEOUT/REFUSED/DNS_ERROR/NETWORK_ERROR; `loss=NULL` без вимірювання; jitter лише з RTT series; schema **v13** (`probe_outcome`, `target_sampled`); NEXT→**P32-004**.
+- **P32-002 — MTR concurrency / lifecycle:** `ConcurrentHashMap` + generation token у `MtrProbe`; clear на remove/rename; NEXT→**P32-003**.
+- **P32-001 — MTR freshness / topology:** лише `freshHopSample` оновлює hop/telemetry; endpoint/`poll_result` лише при target sampled; discovery/timeout ≠ route change; NEXT→**P32-002**.
+- **P31-007 — accessibility pass:** іконки станів + text tooltips/a11y names; contrast severity; focus ring; NEXT→**DONE** (фаза 31).
 - **P31-006 — app status area:** durable Monitoring summary + transient ops line + progress/cancel; feedback no longer wipes monitoring; NEXT→**P31-007**.
 - **P31-005 — host list navigation:** text filter, sort (config/severity/RTT/loss/last change), problems-first, header counters, persisted prefs; NEXT→**P31-006**.
 - **P31-004 — severity model:** Critical/Warning/Notice/Info/Muted → row color, badge, timeline glyph, desktop alert title; red only for Critical; NEXT→**P31-005**.

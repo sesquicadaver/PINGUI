@@ -1,6 +1,7 @@
 package io.pingui.ui;
 
 import io.pingui.model.Models.RouteSnapshot;
+import io.pingui.monitor.PollSampleScope;
 import io.pingui.ui.view.MainView;
 import java.util.List;
 import java.util.function.BooleanSupplier;
@@ -46,12 +47,15 @@ final class MonitorUiHandler {
     }
 
     void handleData(String host, RouteSnapshot snapshot) {
+        handleData(host, snapshot, PollSampleScope.FULL);
+    }
+
+    void handleData(String host, RouteSnapshot snapshot, PollSampleScope sampleScope) {
         var sessionStore = store.get();
         if (!sessionStore.containsHost(host)) {
             return;
         }
-        sessionStore.updateRoute(host, snapshot);
-        sessionStore.appendPingSamples(host, snapshot);
+        sessionStore.applyPollSnapshot(host, snapshot, sampleScope != null ? sampleScope : PollSampleScope.FULL);
         HostItem item = hostListPresenter.findItem(host);
         if (item != null) {
             item.clearRouteChangedLatch();

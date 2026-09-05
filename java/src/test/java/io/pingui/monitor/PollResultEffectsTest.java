@@ -20,6 +20,7 @@ import io.pingui.telemetry.TelemetrySink;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.OptionalDouble;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -100,6 +101,79 @@ class PollResultEffectsTest {
             effects.persistBaselineRouteChange("8.8.8.8", List.of("10.0.0.2"));
             assertEquals(1, database.countEvents(PersistenceEventType.ROUTE_CHANGE));
         }
+    }
+
+    @Test
+    void silenceSuppressesQualityDispatchThenFlushesOnceAfterExpiry() throws Exception {
+        Path dbPath = Files.createTempDirectory("pingui-silence-q").resolve("silence.db");
+        AlertRuleEngine engine = new AlertRuleEngine();
+        PollResultEffects effects = new PollResultEffects(engine);
+        RecordingAlertDispatcher alerts = new RecordingAlertDispatcher();
+        effects.setAlertDispatcher(alerts);
+        effects.setEndpointDownRule(new EndpointDownRuleConfig(true, 2, 1, 0));
+        Instant t0 = Instant.parse("2026-09-05T12:00:00Z");
+        effects.setClock(java.time.Clock.fixed(t0, java.time.ZoneOffset.UTC));
+        effects.setAlertSilence(new io.pingui.config.AlertSilenceConfig(List.of(new io.pingui.config.AlertSilenceEntry(
+                io.pingui.config.AlertSilenceScope.HOST, "8.8.8.8", t0.plusSeconds(60), "maint"))));
+        RouteSnapshot down = new RouteSnapshot(
+                "8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "*", null, true)));
+        try (SessionDatabase database = new SessionDatabase(dbPath)) {
+            PersistencePolicyHolder policy = new PersistencePolicyHolder();
+            effects.setPersistenceEventWriter(new PersistenceEventWriter(database, policy));
+            effects.evaluateEndpointDown("8.8.8.8", down);
+            effects.evaluateEndpointDown("8.8.8.8", down);
+            assertEquals(0, alerts.qualityEvents().size());
+            assertEquals(1, database.countEvents(PersistenceEventType.ENDPOINT_DOWN));
+            assertTrue(effects.qualityDeliveryForTests()
+                    .hasPendingForTests("8.8.8.8", QualityAlertEvent.EVENT_ENDPOINT_DOWN));
+
+            effects.setClock(java.time.Clock.fixed(t0.plusSeconds(61), java.time.ZoneOffset.UTC));
+            effects.evaluateEndpointDown("8.8.8.8", down);
+            assertEquals(1, alerts.qualityEvents().size());
+            assertEquals(
+                    QualityAlertEvent.STATE_FIRING,
+                    alerts.qualityEvents().get(0).state());
+            assertFalse(effects.qualityDeliveryForTests()
+                    .hasPendingForTests("8.8.8.8", QualityAlertEvent.EVENT_ENDPOINT_DOWN));
+
+            effects.evaluateEndpointDown("8.8.8.8", down);
+            assertEquals(1, alerts.qualityEvents().size());
+        }
+    }
+
+    @Test
+    void cooldownSuppressesRepeatDeliveryUntilElapsedThenFlushesOnce() {
+        AlertRuleEngine engine = new AlertRuleEngine();
+        PollResultEffects effects = new PollResultEffects(engine);
+        RecordingAlertDispatcher alerts = new RecordingAlertDispatcher();
+        effects.setAlertDispatcher(alerts);
+        effects.setEndpointDownRule(new EndpointDownRuleConfig(true, 1, 1, 15));
+        effects.setNotifyResolved(true);
+        Instant t0 = Instant.parse("2026-09-05T12:00:00Z");
+        effects.setClock(java.time.Clock.fixed(t0, java.time.ZoneOffset.UTC));
+        RouteSnapshot down = new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "*", null, true)));
+        RouteSnapshot up = new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "8.8.8.8", 10.0, false)));
+
+        effects.evaluateEndpointDown("8.8.8.8", down);
+        assertEquals(1, alerts.qualityEvents().size());
+
+        effects.evaluateEndpointDown("8.8.8.8", up);
+        assertEquals(2, alerts.qualityEvents().size());
+        assertEquals(
+                QualityAlertEvent.STATE_RESOLVED, alerts.qualityEvents().get(1).state());
+
+        effects.evaluateEndpointDown("8.8.8.8", down);
+        assertEquals(2, alerts.qualityEvents().size());
+        assertTrue(
+                effects.qualityDeliveryForTests().hasPendingForTests("8.8.8.8", QualityAlertEvent.EVENT_ENDPOINT_DOWN));
+
+        effects.setClock(java.time.Clock.fixed(t0.plusSeconds(15 * 60L), java.time.ZoneOffset.UTC));
+        effects.evaluateEndpointDown("8.8.8.8", down);
+        assertEquals(3, alerts.qualityEvents().size());
+        assertEquals(
+                QualityAlertEvent.STATE_FIRING, alerts.qualityEvents().get(2).state());
+        effects.evaluateEndpointDown("8.8.8.8", down);
+        assertEquals(3, alerts.qualityEvents().size());
     }
 
     @Test

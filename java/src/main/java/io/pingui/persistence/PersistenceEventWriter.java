@@ -3,6 +3,7 @@ package io.pingui.persistence;
 import io.pingui.dns.DnsControlEvent;
 import io.pingui.monitor.QualityAlertEvent;
 import io.pingui.monitor.RouteChangeEvent;
+import io.pingui.probe.ProbeOutcome;
 import java.time.Instant;
 import java.util.Objects;
 
@@ -125,8 +126,11 @@ public final class PersistenceEventWriter {
     }
 
     /**
-     * Persists one finished-poll aggregate (P30-003). Always written when DB is connected — not gated
-     * by {@code persistence.events} toggles (canonical history, not discrete event types).
+     * Persists one finished-poll aggregate (P30-003 / P32-003). Always written when DB is connected — not
+     * gated by {@code persistence.events} toggles (canonical history, not discrete event types).
+     *
+     * <p>{@code lossPercent} and {@code jitterMs} must be measured values or {@code null} — never
+     * synthetic 0/100 from reachability alone.
      */
     public void writePollResult(
             String host,
@@ -138,7 +142,9 @@ public final class PersistenceEventWriter {
             Double lossPercent,
             Double durationMs,
             Long routeId,
-            String errorCode) {
+            String errorCode,
+            ProbeOutcome probeOutcome,
+            boolean targetSampled) {
         if (host == null || host.isBlank() || probeMode == null || probeMode.isBlank()) {
             return;
         }
@@ -153,7 +159,9 @@ public final class PersistenceEventWriter {
                 lossPercent,
                 durationMs,
                 routeId,
-                errorCode);
+                errorCode,
+                probeOutcome,
+                targetSampled);
     }
 
     /**
@@ -206,9 +214,7 @@ public final class PersistenceEventWriter {
     }
 
     private void ensureHostRow(String host) {
-        if (database.load(host) == null) {
-            database.save(host, new io.pingui.model.Models.HostSessionData());
-        }
+        database.ensureHostExists(host);
     }
 
     /** Wire-shaped probe_error JSON for reconstructed {@link PersistenceEventRecord#payloadJson()}. */

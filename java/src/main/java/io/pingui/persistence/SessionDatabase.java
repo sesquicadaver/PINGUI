@@ -1,40 +1,36 @@
 package io.pingui.persistence;
 
-import io.pingui.model.Models;
-import io.pingui.model.Models.HopNode;
-import io.pingui.model.Models.HopProbeStats;
 import io.pingui.model.Models.HostSessionData;
+import io.pingui.probe.ProbeOutcome;
 import io.pingui.telemetry.MetricSample;
 import io.pingui.telemetry.TelemetryEvent;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalDouble;
 import java.util.OptionalLong;
 
 /**
- * SQLite persistence for per-host session metrics (P11-010 / P27 / P30) and telemetry archive (P16).
+ * SQLite persistence for per-host session metrics (P11-010 / P27 / P30 / P32) and telemetry
+ * archive (P16).
  *
- * <p>Schema v12: stable {@code host_session.id}; {@code incident}; {@code poll_result}; deduplicated
- * {@code route}; {@code metric_rollup} with bounded poll retention. Public API remains address-keyed.
- * Legacy schema versions are rejected (delete and recreate the DB file).
+ * <p>Schema v14: additive {@code metric_rollup} counters ({@code *_samples}/{@code *_sum});
+ * averages on read. Public API remains address-keyed. Opens migrate {@code 13 → 14} in-place;
+ * older versions are still rejected.
+ *
+ * <p>This class is the public facade: it owns the {@link Connection}, manages the transaction
+ * boundary via {@link #inTransaction}, and delegates all SQL work to package-private repositories.
  */
 public final class SessionDatabase implements AutoCloseable {
+
     /** How the SQLite file is opened (P30-006). */
     public enum OpenMode {
         /** Normal monitor / GUI / retention writes. */
@@ -43,24 +39,25 @@ public final class SessionDatabase implements AutoCloseable {
         READ_ONLY
     }
 
-    /** Current Java session DB schema (v12 = metric_rollup + poll retention, P30-005). */
-    public static final int SCHEMA_VERSION = 12;
+    /** Current Java session DB schema (v14 = accurate metric_rollup + atomic retention, P32-004). */
+    public static final int SCHEMA_VERSION = SchemaManager.SCHEMA_VERSION;
 
-    private static final String ROUTE_CURRENT = "current";
-    private static final String ROUTE_PREVIOUS = "previous";
-    private static final String ROUTE_LAST_KNOWN = "last_known";
-
-    private static final DateTimeFormatter ISO_UTC = DateTimeFormatter.ISO_INSTANT.withZone(ZoneOffset.UTC);
+    /** Minimum version that can be migrated forward (v13 has probe_outcome). */
+    public static final int MIN_MIGRATE_FROM = SchemaManager.MIN_MIGRATE_FROM;
 
     private final Path path;
     private final OpenMode openMode;
-    private final Connection connection;
+    private final DbCommit dbCommit;
+    private final SchemaManager schemaManager;
+    private final SessionStateRepository stateRepo;
+    private final HistoryRepository historyRepo;
 
     /** Opens {@code path} for read/write (creates schema when missing). */
     public SessionDatabase(Path path) {
         this(path, OpenMode.READ_WRITE);
     }
 
+    /** Opens {@code path} for read/write (creates schema when missing). */
     public SessionDatabase(String path) {
         this(Path.of(path));
     }
@@ -70,6 +67,7 @@ public final class SessionDatabase implements AutoCloseable {
         return new SessionDatabase(path, OpenMode.READ_ONLY);
     }
 
+    /** Opens {@code path} with the given {@code openMode}. */
     public SessionDatabase(Path path, OpenMode openMode) {
         this.path = Objects.requireNonNull(path, "path");
         this.openMode = Objects.requireNonNull(openMode, "openMode");
@@ -97,8 +95,11 @@ public final class SessionDatabase implements AutoCloseable {
                 pragma.execute("PRAGMA foreign_keys = ON");
                 pragma.execute("PRAGMA busy_timeout = 5000");
             }
-            this.connection = opened;
-            initSchema();
+            this.dbCommit = new DbCommit(opened);
+            this.schemaManager = new SchemaManager(dbCommit, path, openMode);
+            this.stateRepo = new SessionStateRepository(dbCommit);
+            this.historyRepo = new HistoryRepository(dbCommit, stateRepo);
+            schemaManager.initSchema();
         } catch (SQLException ex) {
             closeQuietly(opened);
             throw new PersistenceException("Failed to open session database: " + path, ex);
@@ -116,13 +117,23 @@ public final class SessionDatabase implements AutoCloseable {
         return "jdbc:sqlite:" + absolute;
     }
 
+    // -------------------------------------------------------------------------
+    // Accessors
+    // -------------------------------------------------------------------------
+
+    /** Returns the database file path. */
     public Path path() {
         return path;
     }
 
+    /** Returns the open mode. */
     public OpenMode openMode() {
         return openMode;
     }
+
+    // -------------------------------------------------------------------------
+    // Connection-level operations
+    // -------------------------------------------------------------------------
 
     /**
      * Runs {@code PRAGMA integrity_check} (P30-006). Safe on read-only connections.
@@ -130,7 +141,7 @@ public final class SessionDatabase implements AutoCloseable {
      * @return {@code ok=true} when SQLite reports a single {@code ok} row
      */
     public synchronized IntegrityCheckResult integrityCheck() {
-        try (Statement statement = connection.createStatement();
+        try (Statement statement = dbCommit.connection.createStatement();
                 ResultSet rs = statement.executeQuery("PRAGMA integrity_check")) {
             List<String> messages = new ArrayList<>();
             while (rs.next()) {
@@ -143,17 +154,68 @@ public final class SessionDatabase implements AutoCloseable {
         }
     }
 
+    /**
+     * Runs {@code work} with deferred commits — one commit on success, full rollback on failure
+     * (P32-004 atomic retention).
+     */
+    public synchronized <T> T inTransaction(TransactionWork<T> work) {
+        Objects.requireNonNull(work, "work");
+        if (openMode == OpenMode.READ_ONLY) {
+            throw new PersistenceException("Cannot begin a write transaction on a read-only session database");
+        }
+        if (dbCommit.deferCommit) {
+            throw new PersistenceException("Nested SessionDatabase transactions are not supported");
+        }
+        dbCommit.deferCommit = true;
+        try {
+            T result = work.execute();
+            dbCommit.connection.commit();
+            return result;
+        } catch (PersistenceException ex) {
+            dbCommit.rollbackQuietly();
+            throw ex;
+        } catch (RuntimeException ex) {
+            dbCommit.rollbackQuietly();
+            throw ex;
+        } catch (Exception ex) {
+            dbCommit.rollbackQuietly();
+            throw new PersistenceException("Session transaction failed", ex);
+        } finally {
+            dbCommit.deferCommit = false;
+        }
+    }
+
+    /** Functional interface for {@link #inTransaction}. */
+    @FunctionalInterface
+    public interface TransactionWork<T> {
+        T execute() throws Exception;
+    }
+
+    @Override
+    public synchronized void close() {
+        try {
+            dbCommit.connection.close();
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to close session database", ex);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Schema
+    // -------------------------------------------------------------------------
+
+    /** Returns the schema version stored in {@code schema_meta}. */
     public synchronized int schemaVersion() {
-        try (PreparedStatement ps = connection.prepareStatement("SELECT version FROM schema_meta LIMIT 1");
-                ResultSet rs = ps.executeQuery()) {
-            if (!rs.next()) {
-                return SCHEMA_VERSION;
-            }
-            return rs.getInt(1);
+        try {
+            return schemaManager.schemaVersion();
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to read schema version", ex);
         }
     }
+
+    // -------------------------------------------------------------------------
+    // host_session delegates
+    // -------------------------------------------------------------------------
 
     /**
      * Resolves the stable integer id for {@code address}, or empty when the host row is absent
@@ -161,40 +223,33 @@ public final class SessionDatabase implements AutoCloseable {
      */
     public synchronized OptionalLong hostId(String address) {
         Objects.requireNonNull(address, "address");
-        try {
-            return findHostId(address);
-        } catch (SQLException ex) {
-            throw new PersistenceException("Failed to resolve host id: " + address, ex);
-        }
+        return stateRepo.hostId(address);
     }
 
     /** Loads persisted metrics for {@code host} address, or {@code null} when absent. */
     public synchronized HostSessionData load(String host) {
         Objects.requireNonNull(host, "host");
         try {
-            OptionalLong id = findHostId(host);
-            if (id.isEmpty()) {
-                return null;
-            }
-            long hostId = id.getAsLong();
-            try (PreparedStatement ps = connection.prepareStatement("SELECT enabled FROM host_session WHERE id = ?")) {
-                ps.setLong(1, hostId);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (!rs.next()) {
-                        return null;
-                    }
-                    HostSessionData data = new HostSessionData();
-                    data.setEnabled(rs.getInt(1) != 0);
-                    data.setCurrentRoute(loadRouteHops(hostId, ROUTE_CURRENT));
-                    data.setPreviousRoute(loadRouteHops(hostId, ROUTE_PREVIOUS));
-                    data.getLastKnownByHop().putAll(loadLastKnown(hostId));
-                    data.getPingHistory().putAll(loadPingHistory(hostId));
-                    data.getHopStats().putAll(loadHopStats(hostId));
-                    return data;
-                }
-            }
+            return stateRepo.load(host);
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to load host session: " + host, ex);
+        }
+    }
+
+    /**
+     * Ensures a {@code host_session} row exists without loading hop/ping payloads (P32-005). Uses
+     * {@code INSERT … ON CONFLICT DO NOTHING}.
+     */
+    public synchronized void ensureHostExists(String host) {
+        Objects.requireNonNull(host, "host");
+        if (host.isBlank()) {
+            throw new IllegalArgumentException("host must not be blank");
+        }
+        try {
+            stateRepo.ensureHostExists(host);
+        } catch (SQLException ex) {
+            dbCommit.rollbackQuietly();
+            throw new PersistenceException("Failed to ensure host row: " + host, ex);
         }
     }
 
@@ -202,30 +257,21 @@ public final class SessionDatabase implements AutoCloseable {
     public synchronized void save(String host, HostSessionData data) {
         Objects.requireNonNull(host, "host");
         Objects.requireNonNull(data, "data");
-        String now = ISO_UTC.format(Instant.now());
         try {
-            long hostId = upsertHost(host, data.isEnabled(), now);
-            clearHostChildren(hostId);
-            insertRouteHops(hostId, ROUTE_CURRENT, data.getCurrentRoute());
-            insertRouteHops(hostId, ROUTE_PREVIOUS, data.getPreviousRoute());
-            insertLastKnown(hostId, data.getLastKnownByHop());
-            insertPingHistory(hostId, data.getPingHistory());
-            insertHopStats(hostId, data.getHopStats());
-            connection.commit();
+            stateRepo.save(host, data);
         } catch (SQLException ex) {
-            rollbackQuietly();
+            dbCommit.rollbackQuietly();
             throw new PersistenceException("Failed to save host session: " + host, ex);
         }
     }
 
+    /** Deletes the {@code host_session} row (cascades to child tables). */
     public synchronized void delete(String host) {
         Objects.requireNonNull(host, "host");
-        try (PreparedStatement ps = connection.prepareStatement("DELETE FROM host_session WHERE address = ?")) {
-            ps.setString(1, host);
-            ps.executeUpdate();
-            connection.commit();
+        try {
+            stateRepo.delete(host);
         } catch (SQLException ex) {
-            rollbackQuietly();
+            dbCommit.rollbackQuietly();
             throw new PersistenceException("Failed to delete host session: " + host, ex);
         }
     }
@@ -237,46 +283,26 @@ public final class SessionDatabase implements AutoCloseable {
     public synchronized void rename(String oldHost, String newHost) {
         Objects.requireNonNull(oldHost, "oldHost");
         Objects.requireNonNull(newHost, "newHost");
-        if (oldHost.equals(newHost)) {
-            return;
-        }
-        String now = ISO_UTC.format(Instant.now());
         try {
-            OptionalLong id = findHostId(oldHost);
-            if (id.isEmpty()) {
-                return;
-            }
-            try (PreparedStatement ps = connection.prepareStatement(
-                    """
-                    UPDATE host_session
-                    SET address = ?, updated_at = ?
-                    WHERE id = ?
-                    """)) {
-                ps.setString(1, newHost);
-                ps.setString(2, now);
-                ps.setLong(3, id.getAsLong());
-                ps.executeUpdate();
-            }
-            connection.commit();
+            stateRepo.rename(oldHost, newHost);
         } catch (SQLException ex) {
-            rollbackQuietly();
+            dbCommit.rollbackQuietly();
             throw new PersistenceException("Failed to rename host session: " + oldHost + " -> " + newHost, ex);
         }
     }
 
     /** Returns all host addresses with persisted session rows, sorted lexicographically. */
     public synchronized List<String> listHosts() {
-        try (PreparedStatement ps = connection.prepareStatement("SELECT address FROM host_session ORDER BY address");
-                ResultSet rs = ps.executeQuery()) {
-            List<String> hosts = new ArrayList<>();
-            while (rs.next()) {
-                hosts.add(rs.getString(1));
-            }
-            return List.copyOf(hosts);
+        try {
+            return stateRepo.listHosts();
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to list hosts", ex);
         }
     }
+
+    // -------------------------------------------------------------------------
+    // persistence_event delegates
+    // -------------------------------------------------------------------------
 
     /**
      * Appends a discrete event row (P11-011+ / P27-002 typed columns). Requires an existing host
@@ -294,31 +320,11 @@ public final class SessionDatabase implements AutoCloseable {
             Instant observedAt) {
         Objects.requireNonNull(eventType, "eventType");
         Objects.requireNonNull(host, "host");
-        Instant when = observedAt != null ? observedAt : Instant.now();
-        String profileValue = profile == null || profile.isBlank() ? null : profile;
         try {
-            long hostId = requireHostId(host);
-            try (PreparedStatement ps = connection.prepareStatement(
-                    """
-                    INSERT INTO persistence_event(
-                        event_type, host_id, profile, state, message,
-                        old_ips_json, new_ips_json, detail_json, observed_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """)) {
-                ps.setString(1, eventType.id());
-                ps.setLong(2, hostId);
-                ps.setString(3, profileValue);
-                ps.setString(4, state);
-                ps.setString(5, message);
-                ps.setString(6, oldIpsJson);
-                ps.setString(7, newIpsJson);
-                ps.setString(8, detailJson);
-                ps.setString(9, ISO_UTC.format(when));
-                ps.executeUpdate();
-            }
-            connection.commit();
+            historyRepo.insertEvent(
+                    eventType, host, profile, state, message, oldIpsJson, newIpsJson, detailJson, observedAt);
         } catch (SQLException ex) {
-            rollbackQuietly();
+            dbCommit.rollbackQuietly();
             throw new PersistenceException("Failed to insert persistence event for " + host, ex);
         }
     }
@@ -341,13 +347,10 @@ public final class SessionDatabase implements AutoCloseable {
     /** Deletes all rows of {@code eventType}; used by purge policy (P11-014). */
     public synchronized int deleteEventsByType(PersistenceEventType eventType) {
         Objects.requireNonNull(eventType, "eventType");
-        try (PreparedStatement ps = connection.prepareStatement("DELETE FROM persistence_event WHERE event_type = ?")) {
-            ps.setString(1, eventType.id());
-            int deleted = ps.executeUpdate();
-            connection.commit();
-            return deleted;
+        try {
+            return historyRepo.deleteEventsByType(eventType);
         } catch (SQLException ex) {
-            rollbackQuietly();
+            dbCommit.rollbackQuietly();
             throw new PersistenceException("Failed to purge events: " + eventType.id(), ex);
         }
     }
@@ -355,12 +358,8 @@ public final class SessionDatabase implements AutoCloseable {
     /** Returns number of rows for {@code eventType} (tests / diagnostics). */
     public synchronized int countEvents(PersistenceEventType eventType) {
         Objects.requireNonNull(eventType, "eventType");
-        try (PreparedStatement ps =
-                connection.prepareStatement("SELECT COUNT(*) FROM persistence_event WHERE event_type = ?")) {
-            ps.setString(1, eventType.id());
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getInt(1) : 0;
-            }
+        try {
+            return historyRepo.countEvents(eventType);
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to count events: " + eventType.id(), ex);
         }
@@ -379,30 +378,16 @@ public final class SessionDatabase implements AutoCloseable {
         if (limit < 1) {
             throw new IllegalArgumentException("limit must be >= 1");
         }
-        String sinceIso = ISO_UTC.format(since);
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                SELECT pe.id, pe.event_type, hs.address, pe.profile, pe.state, pe.message,
-                       pe.old_ips_json, pe.new_ips_json, pe.detail_json, pe.observed_at
-                FROM persistence_event pe
-                JOIN host_session hs ON hs.id = pe.host_id
-                WHERE pe.event_type = ? AND hs.address = ? AND pe.observed_at >= ?
-                ORDER BY pe.observed_at DESC
-                LIMIT ?
-                """)) {
-            ps.setString(1, eventType.id());
-            ps.setString(2, host);
-            ps.setString(3, sinceIso);
-            ps.setInt(4, limit);
-            return readEventRows(ps);
+        try {
+            return historyRepo.listEvents(eventType, host, since, limit);
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to list events for " + host, ex);
         }
     }
 
     /**
-     * Lists all discrete event types for {@code host} address since {@code since} (P29-002). Newest
-     * first.
+     * Lists all discrete event types for {@code host} address since {@code since} (P29-002).
+     * Newest first.
      *
      * @param limit max rows (must be &gt;= 1)
      */
@@ -412,25 +397,16 @@ public final class SessionDatabase implements AutoCloseable {
         if (limit < 1) {
             throw new IllegalArgumentException("limit must be >= 1");
         }
-        String sinceIso = ISO_UTC.format(since);
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                SELECT pe.id, pe.event_type, hs.address, pe.profile, pe.state, pe.message,
-                       pe.old_ips_json, pe.new_ips_json, pe.detail_json, pe.observed_at
-                FROM persistence_event pe
-                JOIN host_session hs ON hs.id = pe.host_id
-                WHERE hs.address = ? AND pe.observed_at >= ?
-                ORDER BY pe.observed_at DESC
-                LIMIT ?
-                """)) {
-            ps.setString(1, host);
-            ps.setString(2, sinceIso);
-            ps.setInt(3, limit);
-            return readEventRows(ps);
+        try {
+            return historyRepo.listHostEvents(host, since, limit);
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to list host events for " + host, ex);
         }
     }
+
+    // -------------------------------------------------------------------------
+    // incident delegates
+    // -------------------------------------------------------------------------
 
     /**
      * Opens or refreshes a FIRING incident for {@code host}/{@code kind} (P30-002). Same open kind
@@ -443,69 +419,10 @@ public final class SessionDatabase implements AutoCloseable {
         Objects.requireNonNull(host, "host");
         Objects.requireNonNull(kind, "kind");
         Objects.requireNonNull(severity, "severity");
-        Instant when = startedAt != null ? startedAt : Instant.now();
-        String details = detailsJson == null || detailsJson.isBlank() ? "{}" : detailsJson;
         try {
-            long hostId = requireHostId(host);
-            OptionalLong openId = findOpenIncidentId(hostId, kind);
-            if (openId.isPresent()) {
-                try (PreparedStatement ps = connection.prepareStatement(
-                        """
-                        UPDATE incident
-                        SET occurrences = occurrences + 1,
-                            peak_value = CASE
-                                WHEN ? IS NOT NULL AND (peak_value IS NULL OR ? > peak_value) THEN ?
-                                ELSE peak_value
-                            END,
-                            details_json = ?
-                        WHERE id = ?
-                        """)) {
-                    if (peakValue == null) {
-                        ps.setObject(1, null);
-                        ps.setObject(2, null);
-                        ps.setObject(3, null);
-                    } else {
-                        ps.setDouble(1, peakValue);
-                        ps.setDouble(2, peakValue);
-                        ps.setDouble(3, peakValue);
-                    }
-                    ps.setString(4, details);
-                    ps.setLong(5, openId.getAsLong());
-                    ps.executeUpdate();
-                }
-                connection.commit();
-                return openId.getAsLong();
-            }
-            try (PreparedStatement ps = connection.prepareStatement(
-                    """
-                    INSERT INTO incident(
-                        host_id, kind, severity, state, started_at, ended_at, acknowledged_at,
-                        occurrences, peak_value, details_json)
-                    VALUES (?, ?, ?, ?, ?, NULL, NULL, 1, ?, ?)
-                    """)) {
-                ps.setLong(1, hostId);
-                ps.setString(2, kind);
-                ps.setString(3, severity);
-                ps.setString(4, IncidentRecord.STATE_FIRING);
-                ps.setString(5, ISO_UTC.format(when));
-                if (peakValue == null) {
-                    ps.setObject(6, null);
-                } else {
-                    ps.setDouble(6, peakValue);
-                }
-                ps.setString(7, details);
-                ps.executeUpdate();
-            }
-            long id;
-            try (PreparedStatement ps = connection.prepareStatement("SELECT last_insert_rowid()");
-                    ResultSet rs = ps.executeQuery()) {
-                rs.next();
-                id = rs.getLong(1);
-            }
-            connection.commit();
-            return id;
+            return historyRepo.openOrRefreshIncident(host, kind, severity, startedAt, peakValue, detailsJson);
         } catch (SQLException ex) {
-            rollbackQuietly();
+            dbCommit.rollbackQuietly();
             throw new PersistenceException("Failed to open incident for " + host + "/" + kind, ex);
         }
     }
@@ -518,31 +435,10 @@ public final class SessionDatabase implements AutoCloseable {
     public synchronized boolean resolveIncident(String host, String kind, Instant endedAt) {
         Objects.requireNonNull(host, "host");
         Objects.requireNonNull(kind, "kind");
-        Instant when = endedAt != null ? endedAt : Instant.now();
         try {
-            OptionalLong hostId = findHostId(host);
-            if (hostId.isEmpty()) {
-                return false;
-            }
-            OptionalLong openId = findOpenIncidentId(hostId.getAsLong(), kind);
-            if (openId.isEmpty()) {
-                return false;
-            }
-            try (PreparedStatement ps = connection.prepareStatement(
-                    """
-                    UPDATE incident
-                    SET state = ?, ended_at = ?
-                    WHERE id = ?
-                    """)) {
-                ps.setString(1, IncidentRecord.STATE_RESOLVED);
-                ps.setString(2, ISO_UTC.format(when));
-                ps.setLong(3, openId.getAsLong());
-                int updated = ps.executeUpdate();
-                connection.commit();
-                return updated > 0;
-            }
+            return historyRepo.resolveIncident(host, kind, endedAt);
         } catch (SQLException ex) {
-            rollbackQuietly();
+            dbCommit.rollbackQuietly();
             throw new PersistenceException("Failed to resolve incident for " + host + "/" + kind, ex);
         }
     }
@@ -554,27 +450,10 @@ public final class SessionDatabase implements AutoCloseable {
      */
     public synchronized int acknowledgeOpenIncidents(String host, Instant when) {
         Objects.requireNonNull(host, "host");
-        Instant at = when != null ? when : Instant.now();
         try {
-            OptionalLong hostId = findHostId(host);
-            if (hostId.isEmpty()) {
-                return 0;
-            }
-            try (PreparedStatement ps = connection.prepareStatement(
-                    """
-                    UPDATE incident
-                    SET acknowledged_at = ?
-                    WHERE host_id = ? AND state = ? AND ended_at IS NULL
-                    """)) {
-                ps.setString(1, ISO_UTC.format(at));
-                ps.setLong(2, hostId.getAsLong());
-                ps.setString(3, IncidentRecord.STATE_FIRING);
-                int updated = ps.executeUpdate();
-                connection.commit();
-                return updated;
-            }
+            return historyRepo.acknowledgeOpenIncidents(host, when);
         } catch (SQLException ex) {
-            rollbackQuietly();
+            dbCommit.rollbackQuietly();
             throw new PersistenceException("Failed to acknowledge incidents for " + host, ex);
         }
     }
@@ -584,20 +463,8 @@ public final class SessionDatabase implements AutoCloseable {
         if (limit < 1) {
             throw new IllegalArgumentException("limit must be >= 1");
         }
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                SELECT i.id, i.host_id, hs.address, i.kind, i.severity, i.state,
-                       i.started_at, i.ended_at, i.acknowledged_at,
-                       i.occurrences, i.peak_value, i.details_json
-                FROM incident i
-                JOIN host_session hs ON hs.id = i.host_id
-                WHERE i.state = ? AND i.ended_at IS NULL
-                ORDER BY i.started_at DESC
-                LIMIT ?
-                """)) {
-            ps.setString(1, IncidentRecord.STATE_FIRING);
-            ps.setInt(2, limit);
-            return readIncidentRows(ps);
+        try {
+            return historyRepo.listActiveIncidents(limit);
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to list active incidents", ex);
         }
@@ -609,20 +476,8 @@ public final class SessionDatabase implements AutoCloseable {
         if (limit < 1) {
             throw new IllegalArgumentException("limit must be >= 1");
         }
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                SELECT i.id, i.host_id, hs.address, i.kind, i.severity, i.state,
-                       i.started_at, i.ended_at, i.acknowledged_at,
-                       i.occurrences, i.peak_value, i.details_json
-                FROM incident i
-                JOIN host_session hs ON hs.id = i.host_id
-                WHERE hs.address = ?
-                ORDER BY i.started_at DESC
-                LIMIT ?
-                """)) {
-            ps.setString(1, host);
-            ps.setInt(2, limit);
-            return readIncidentRows(ps);
+        try {
+            return historyRepo.listIncidents(host, limit);
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to list incidents for " + host, ex);
         }
@@ -634,31 +489,20 @@ public final class SessionDatabase implements AutoCloseable {
      */
     public synchronized OptionalDouble averageResolvedDurationSeconds(String kind) {
         Objects.requireNonNull(kind, "kind");
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                SELECT started_at, ended_at FROM incident
-                WHERE kind = ? AND state = ? AND ended_at IS NOT NULL
-                """)) {
-            ps.setString(1, kind);
-            ps.setString(2, IncidentRecord.STATE_RESOLVED);
-            try (ResultSet rs = ps.executeQuery()) {
-                double sum = 0;
-                int count = 0;
-                while (rs.next()) {
-                    Instant start = Instant.parse(rs.getString(1));
-                    Instant end = Instant.parse(rs.getString(2));
-                    sum += Duration.between(start, end).toMillis() / 1000.0;
-                    count++;
-                }
-                return count == 0 ? OptionalDouble.empty() : OptionalDouble.of(sum / count);
-            }
+        try {
+            return historyRepo.averageResolvedDurationSeconds(kind);
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to compute average duration for " + kind, ex);
         }
     }
 
+    // -------------------------------------------------------------------------
+    // poll_result delegates
+    // -------------------------------------------------------------------------
+
     /**
-     * Inserts one finished-poll aggregate (P30-003). {@code route_id} reserved for P30-004 (nullable).
+     * Inserts one finished-poll aggregate (P30-003). {@code route_id} reserved for P30-004
+     * (nullable).
      *
      * @return row id
      */
@@ -672,49 +516,27 @@ public final class SessionDatabase implements AutoCloseable {
             Double lossPercent,
             Double durationMs,
             Long routeId,
-            String errorCode) {
+            String errorCode,
+            ProbeOutcome probeOutcome,
+            boolean targetSampled) {
         Objects.requireNonNull(host, "host");
         Objects.requireNonNull(probeMode, "probeMode");
-        Instant when = observedAt != null ? observedAt : Instant.now();
         try {
-            long hostId = requireHostId(host);
-            try (PreparedStatement ps = connection.prepareStatement(
-                    """
-                    INSERT INTO poll_result(
-                        host_id, observed_at, probe_mode, reachable, terminal_rtt_ms,
-                        jitter_ms, loss_percent, duration_ms, route_id, error_code)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """)) {
-                ps.setLong(1, hostId);
-                ps.setString(2, ISO_UTC.format(when));
-                ps.setString(3, probeMode);
-                if (reachable == null) {
-                    ps.setObject(4, null);
-                } else {
-                    ps.setInt(4, reachable ? 1 : 0);
-                }
-                setNullableDouble(ps, 5, terminalRttMs);
-                setNullableDouble(ps, 6, jitterMs);
-                setNullableDouble(ps, 7, lossPercent);
-                setNullableDouble(ps, 8, durationMs);
-                if (routeId == null) {
-                    ps.setObject(9, null);
-                } else {
-                    ps.setLong(9, routeId);
-                }
-                ps.setString(10, errorCode);
-                ps.executeUpdate();
-            }
-            long id;
-            try (PreparedStatement ps = connection.prepareStatement("SELECT last_insert_rowid()");
-                    ResultSet rs = ps.executeQuery()) {
-                rs.next();
-                id = rs.getLong(1);
-            }
-            connection.commit();
-            return id;
+            return historyRepo.insertPollResult(
+                    host,
+                    observedAt,
+                    probeMode,
+                    reachable,
+                    terminalRttMs,
+                    jitterMs,
+                    lossPercent,
+                    durationMs,
+                    routeId,
+                    errorCode,
+                    probeOutcome,
+                    targetSampled);
         } catch (SQLException ex) {
-            rollbackQuietly();
+            dbCommit.rollbackQuietly();
             throw new PersistenceException("Failed to insert poll_result for " + host, ex);
         }
     }
@@ -725,20 +547,8 @@ public final class SessionDatabase implements AutoCloseable {
         if (limit < 1) {
             throw new IllegalArgumentException("limit must be >= 1");
         }
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                SELECT p.id, p.host_id, hs.address, p.observed_at, p.probe_mode, p.reachable,
-                       p.terminal_rtt_ms, p.jitter_ms, p.loss_percent, p.duration_ms,
-                       p.route_id, p.error_code
-                FROM poll_result p
-                JOIN host_session hs ON hs.id = p.host_id
-                WHERE hs.address = ?
-                ORDER BY p.observed_at DESC, p.id DESC
-                LIMIT ?
-                """)) {
-            ps.setString(1, host);
-            ps.setInt(2, limit);
-            return readPollResultRows(ps);
+        try {
+            return historyRepo.listPollResults(host, limit);
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to list poll_result for " + host, ex);
         }
@@ -746,8 +556,38 @@ public final class SessionDatabase implements AutoCloseable {
 
     /** Count of poll_result rows (tests / diagnostics). */
     public synchronized int countPollResults() {
-        return countTable("poll_result");
+        try {
+            return historyRepo.countPollResults();
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to count poll_result", ex);
+        }
     }
+
+    /** All poll_result rows with {@code observed_at} strictly before {@code cutoff} (oldest first). */
+    public synchronized List<PollResultRecord> listPollResultsBefore(Instant cutoff) {
+        Objects.requireNonNull(cutoff, "cutoff");
+        try {
+            return historyRepo.listPollResultsBefore(cutoff);
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to list poll_result before " + DbCommit.ISO_UTC.format(cutoff), ex);
+        }
+    }
+
+    /** Deletes poll_result rows with {@code observed_at} strictly before {@code cutoff}. */
+    public synchronized int deletePollResultsBefore(Instant cutoff) {
+        Objects.requireNonNull(cutoff, "cutoff");
+        try {
+            return historyRepo.deletePollResultsBefore(cutoff);
+        } catch (SQLException ex) {
+            dbCommit.rollbackQuietly();
+            throw new PersistenceException(
+                    "Failed to delete poll_result before " + DbCommit.ISO_UTC.format(cutoff), ex);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // route delegates
+    // -------------------------------------------------------------------------
 
     /**
      * Inserts or refreshes a deduplicated route for {@code host} (P30-004). Same signature bumps
@@ -762,44 +602,10 @@ public final class SessionDatabase implements AutoCloseable {
         if (signature.isBlank()) {
             throw new IllegalArgumentException("signature must be non-blank");
         }
-        Instant when = seenAt != null ? seenAt : Instant.now();
-        String whenIso = ISO_UTC.format(when);
         try {
-            long hostId = requireHostId(host);
-            try (PreparedStatement ps = connection.prepareStatement(
-                    """
-                    INSERT INTO route(host_id, signature, hops_json, first_seen, last_seen, seen_count)
-                    VALUES (?, ?, ?, ?, ?, 1)
-                    ON CONFLICT(host_id, signature) DO UPDATE SET
-                        last_seen = excluded.last_seen,
-                        seen_count = seen_count + 1,
-                        hops_json = excluded.hops_json
-                    """)) {
-                ps.setLong(1, hostId);
-                ps.setString(2, signature);
-                ps.setString(3, hopsJson);
-                ps.setString(4, whenIso);
-                ps.setString(5, whenIso);
-                ps.executeUpdate();
-            }
-            long id;
-            try (PreparedStatement ps = connection.prepareStatement(
-                    """
-                    SELECT id FROM route WHERE host_id = ? AND signature = ?
-                    """)) {
-                ps.setLong(1, hostId);
-                ps.setString(2, signature);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (!rs.next()) {
-                        throw new PersistenceException("Failed to resolve route id after upsert for " + host);
-                    }
-                    id = rs.getLong(1);
-                }
-            }
-            connection.commit();
-            return id;
+            return historyRepo.upsertRoute(host, signature, hopsJson, seenAt);
         } catch (SQLException ex) {
-            rollbackQuietly();
+            dbCommit.rollbackQuietly();
             throw new PersistenceException("Failed to upsert route for " + host, ex);
         }
     }
@@ -810,138 +616,73 @@ public final class SessionDatabase implements AutoCloseable {
         if (limit < 1) {
             throw new IllegalArgumentException("limit must be >= 1");
         }
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                SELECT r.id, r.host_id, hs.address, r.signature, r.hops_json,
-                       r.first_seen, r.last_seen, r.seen_count
-                FROM route r
-                JOIN host_session hs ON hs.id = r.host_id
-                WHERE hs.address = ?
-                ORDER BY r.last_seen DESC, r.id DESC
-                LIMIT ?
-                """)) {
-            ps.setString(1, host);
-            ps.setInt(2, limit);
-            return readRouteRows(ps);
+        try {
+            return historyRepo.listRoutes(host, limit);
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to list routes for " + host, ex);
         }
     }
 
+    /** Count of route rows (tests / diagnostics). */
     public synchronized int countRoutes() {
-        return countTable("route");
-    }
-
-    /** All poll_result rows with {@code observed_at} strictly before {@code cutoff} (oldest first). */
-    public synchronized List<PollResultRecord> listPollResultsBefore(Instant cutoff) {
-        Objects.requireNonNull(cutoff, "cutoff");
-        String cutoffIso = ISO_UTC.format(cutoff);
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                SELECT p.id, p.host_id, hs.address, p.observed_at, p.probe_mode, p.reachable,
-                       p.terminal_rtt_ms, p.jitter_ms, p.loss_percent, p.duration_ms,
-                       p.route_id, p.error_code
-                FROM poll_result p
-                JOIN host_session hs ON hs.id = p.host_id
-                WHERE p.observed_at < ?
-                ORDER BY p.observed_at ASC, p.id ASC
-                """)) {
-            ps.setString(1, cutoffIso);
-            return readPollResultRows(ps);
+        try {
+            return historyRepo.countRoutes();
         } catch (SQLException ex) {
-            throw new PersistenceException("Failed to list poll_result before " + cutoffIso, ex);
+            throw new PersistenceException("Failed to count routes", ex);
         }
     }
 
-    /** Deletes poll_result rows with {@code observed_at} strictly before {@code cutoff}. */
-    public synchronized int deletePollResultsBefore(Instant cutoff) {
-        Objects.requireNonNull(cutoff, "cutoff");
-        String cutoffIso = ISO_UTC.format(cutoff);
-        try (PreparedStatement ps = connection.prepareStatement("DELETE FROM poll_result WHERE observed_at < ?")) {
-            ps.setString(1, cutoffIso);
-            int deleted = ps.executeUpdate();
-            connection.commit();
-            return deleted;
-        } catch (SQLException ex) {
-            rollbackQuietly();
-            throw new PersistenceException("Failed to delete poll_result before " + cutoffIso, ex);
-        }
-    }
+    // -------------------------------------------------------------------------
+    // metric_rollup delegates
+    // -------------------------------------------------------------------------
 
     /**
-     * Upserts a metric rollup bucket (P30-005). Weighted merge when the bucket already exists.
+     * Upserts a metric rollup bucket with additive counters (P32-004). Averages are derived on
+     * read.
      */
     public synchronized void upsertMetricRollup(
             long hostId,
             Instant bucketStart,
             int bucketSizeSeconds,
-            int samples,
-            Double uptimeRatio,
+            int sampleCount,
+            int reachableSamples,
+            int reachableCount,
+            int rttSamples,
+            double rttSum,
             Double rttMin,
-            Double rttAvg,
             Double rttMax,
-            Double lossAvg) {
+            int lossSamples,
+            double lossSum) {
         Objects.requireNonNull(bucketStart, "bucketStart");
         if (bucketSizeSeconds < 1) {
             throw new IllegalArgumentException("bucketSizeSeconds must be >= 1");
         }
-        if (samples < 1) {
-            throw new IllegalArgumentException("samples must be >= 1");
+        if (sampleCount < 1) {
+            throw new IllegalArgumentException("sampleCount must be >= 1");
         }
-        String startIso = ISO_UTC.format(bucketStart);
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                INSERT INTO metric_rollup(
-                    host_id, bucket_start, bucket_size, samples,
-                    uptime_ratio, rtt_min, rtt_avg, rtt_max, loss_avg)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(host_id, bucket_start, bucket_size) DO UPDATE SET
-                    samples = metric_rollup.samples + excluded.samples,
-                    uptime_ratio = CASE
-                        WHEN metric_rollup.uptime_ratio IS NULL THEN excluded.uptime_ratio
-                        WHEN excluded.uptime_ratio IS NULL THEN metric_rollup.uptime_ratio
-                        ELSE (metric_rollup.uptime_ratio * metric_rollup.samples
-                              + excluded.uptime_ratio * excluded.samples)
-                             / (metric_rollup.samples + excluded.samples)
-                    END,
-                    rtt_min = CASE
-                        WHEN metric_rollup.rtt_min IS NULL THEN excluded.rtt_min
-                        WHEN excluded.rtt_min IS NULL THEN metric_rollup.rtt_min
-                        ELSE MIN(metric_rollup.rtt_min, excluded.rtt_min)
-                    END,
-                    rtt_max = CASE
-                        WHEN metric_rollup.rtt_max IS NULL THEN excluded.rtt_max
-                        WHEN excluded.rtt_max IS NULL THEN metric_rollup.rtt_max
-                        ELSE MAX(metric_rollup.rtt_max, excluded.rtt_max)
-                    END,
-                    rtt_avg = CASE
-                        WHEN metric_rollup.rtt_avg IS NULL THEN excluded.rtt_avg
-                        WHEN excluded.rtt_avg IS NULL THEN metric_rollup.rtt_avg
-                        ELSE (metric_rollup.rtt_avg * metric_rollup.samples
-                              + excluded.rtt_avg * excluded.samples)
-                             / (metric_rollup.samples + excluded.samples)
-                    END,
-                    loss_avg = CASE
-                        WHEN metric_rollup.loss_avg IS NULL THEN excluded.loss_avg
-                        WHEN excluded.loss_avg IS NULL THEN metric_rollup.loss_avg
-                        ELSE (metric_rollup.loss_avg * metric_rollup.samples
-                              + excluded.loss_avg * excluded.samples)
-                             / (metric_rollup.samples + excluded.samples)
-                    END
-                """)) {
-            ps.setLong(1, hostId);
-            ps.setString(2, startIso);
-            ps.setInt(3, bucketSizeSeconds);
-            ps.setInt(4, samples);
-            setNullableDouble(ps, 5, uptimeRatio);
-            setNullableDouble(ps, 6, rttMin);
-            setNullableDouble(ps, 7, rttAvg);
-            setNullableDouble(ps, 8, rttMax);
-            setNullableDouble(ps, 9, lossAvg);
-            ps.executeUpdate();
-            connection.commit();
+        if (reachableSamples < 0
+                || reachableCount < 0
+                || rttSamples < 0
+                || lossSamples < 0
+                || reachableCount > reachableSamples) {
+            throw new IllegalArgumentException("invalid rollup counters");
+        }
+        try {
+            historyRepo.upsertMetricRollup(
+                    hostId,
+                    bucketStart,
+                    bucketSizeSeconds,
+                    sampleCount,
+                    reachableSamples,
+                    reachableCount,
+                    rttSamples,
+                    rttSum,
+                    rttMin,
+                    rttMax,
+                    lossSamples,
+                    lossSum);
         } catch (SQLException ex) {
-            rollbackQuietly();
+            dbCommit.rollbackQuietly();
             throw new PersistenceException("Failed to upsert metric_rollup for host_id=" + hostId, ex);
         }
     }
@@ -955,20 +696,8 @@ public final class SessionDatabase implements AutoCloseable {
         if (limit < 1) {
             throw new IllegalArgumentException("limit must be >= 1");
         }
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                SELECT m.host_id, hs.address, m.bucket_start, m.bucket_size, m.samples,
-                       m.uptime_ratio, m.rtt_min, m.rtt_avg, m.rtt_max, m.loss_avg
-                FROM metric_rollup m
-                JOIN host_session hs ON hs.id = m.host_id
-                WHERE hs.address = ? AND m.bucket_size = ?
-                ORDER BY m.bucket_start DESC
-                LIMIT ?
-                """)) {
-            ps.setString(1, host);
-            ps.setInt(2, bucketSizeSeconds);
-            ps.setInt(3, limit);
-            return readMetricRollupRows(ps);
+        try {
+            return historyRepo.listMetricRollups(host, bucketSizeSeconds, limit);
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to list metric_rollup for " + host, ex);
         }
@@ -980,21 +709,11 @@ public final class SessionDatabase implements AutoCloseable {
         if (bucketSizeSeconds < 1) {
             throw new IllegalArgumentException("bucketSizeSeconds must be >= 1");
         }
-        String cutoffIso = ISO_UTC.format(cutoff);
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                SELECT m.host_id, hs.address, m.bucket_start, m.bucket_size, m.samples,
-                       m.uptime_ratio, m.rtt_min, m.rtt_avg, m.rtt_max, m.loss_avg
-                FROM metric_rollup m
-                JOIN host_session hs ON hs.id = m.host_id
-                WHERE m.bucket_size = ? AND m.bucket_start < ?
-                ORDER BY m.bucket_start ASC
-                """)) {
-            ps.setInt(1, bucketSizeSeconds);
-            ps.setString(2, cutoffIso);
-            return readMetricRollupRows(ps);
+        try {
+            return historyRepo.listMetricRollupsBefore(bucketSizeSeconds, cutoff);
         } catch (SQLException ex) {
-            throw new PersistenceException("Failed to list metric_rollup before " + cutoffIso, ex);
+            throw new PersistenceException(
+                    "Failed to list metric_rollup before " + DbCommit.ISO_UTC.format(cutoff), ex);
         }
     }
 
@@ -1004,26 +723,27 @@ public final class SessionDatabase implements AutoCloseable {
         if (bucketSizeSeconds < 1) {
             throw new IllegalArgumentException("bucketSizeSeconds must be >= 1");
         }
-        String cutoffIso = ISO_UTC.format(cutoff);
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                DELETE FROM metric_rollup
-                WHERE bucket_size = ? AND bucket_start < ?
-                """)) {
-            ps.setInt(1, bucketSizeSeconds);
-            ps.setString(2, cutoffIso);
-            int deleted = ps.executeUpdate();
-            connection.commit();
-            return deleted;
+        try {
+            return historyRepo.deleteMetricRollupsBefore(bucketSizeSeconds, cutoff);
         } catch (SQLException ex) {
-            rollbackQuietly();
-            throw new PersistenceException("Failed to delete metric_rollup before " + cutoffIso, ex);
+            dbCommit.rollbackQuietly();
+            throw new PersistenceException(
+                    "Failed to delete metric_rollup before " + DbCommit.ISO_UTC.format(cutoff), ex);
         }
     }
 
+    /** Count of metric_rollup rows (tests / diagnostics). */
     public synchronized int countMetricRollups() {
-        return countTable("metric_rollup");
+        try {
+            return historyRepo.countMetricRollups();
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to count metric_rollup", ex);
+        }
     }
+
+    // -------------------------------------------------------------------------
+    // telemetry delegates
+    // -------------------------------------------------------------------------
 
     /**
      * Appends one telemetry sample row (P16-020 / P27-001). Columns are SSOT; dump rebuilds JSON.
@@ -1031,25 +751,10 @@ public final class SessionDatabase implements AutoCloseable {
      */
     public synchronized void insertTelemetrySample(MetricSample sample) {
         Objects.requireNonNull(sample, "sample");
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                INSERT INTO telemetry_sample(name, value, host, hop, labels_json, observed_at)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """)) {
-            ps.setString(1, sample.name());
-            ps.setDouble(2, sample.value());
-            ps.setString(3, sample.host());
-            if (sample.hop() == null) {
-                ps.setObject(4, null);
-            } else {
-                ps.setInt(4, sample.hop());
-            }
-            ps.setString(5, sample.labelsJson());
-            ps.setString(6, ISO_UTC.format(sample.timestamp()));
-            ps.executeUpdate();
-            connection.commit();
+        try {
+            historyRepo.insertTelemetrySample(sample);
         } catch (SQLException ex) {
-            rollbackQuietly();
+            dbCommit.rollbackQuietly();
             throw new PersistenceException("Failed to insert telemetry sample for " + sample.host(), ex);
         }
     }
@@ -1057,23 +762,10 @@ public final class SessionDatabase implements AutoCloseable {
     /** Appends one telemetry event row (P16-020 / P27-001). */
     public synchronized void insertTelemetryEvent(TelemetryEvent event) {
         Objects.requireNonNull(event, "event");
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                INSERT INTO telemetry_event(
-                    event, host, message, labels_json, old_ips_json, new_ips_json, observed_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """)) {
-            ps.setString(1, event.event());
-            ps.setString(2, event.host());
-            ps.setString(3, event.message());
-            ps.setString(4, event.labelsJson());
-            ps.setString(5, event.oldIpsJson());
-            ps.setString(6, event.newIpsJson());
-            ps.setString(7, ISO_UTC.format(event.timestamp()));
-            ps.executeUpdate();
-            connection.commit();
+        try {
+            historyRepo.insertTelemetryEvent(event);
         } catch (SQLException ex) {
-            rollbackQuietly();
+            dbCommit.rollbackQuietly();
             throw new PersistenceException("Failed to insert telemetry event for " + event.host(), ex);
         }
     }
@@ -1084,22 +776,8 @@ public final class SessionDatabase implements AutoCloseable {
         if (limit < 1) {
             throw new IllegalArgumentException("limit must be >= 1");
         }
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                SELECT name, value, host, hop, labels_json, observed_at FROM telemetry_sample
-                WHERE host = ?
-                ORDER BY observed_at DESC, id DESC
-                LIMIT ?
-                """)) {
-            ps.setString(1, host);
-            ps.setInt(2, limit);
-            try (ResultSet rs = ps.executeQuery()) {
-                List<MetricSample> rows = new ArrayList<>();
-                while (rs.next()) {
-                    rows.add(readTelemetrySample(rs));
-                }
-                return List.copyOf(rows);
-            }
+        try {
+            return historyRepo.listTelemetrySamples(host, limit);
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to list telemetry samples for " + host, ex);
         }
@@ -1111,23 +789,8 @@ public final class SessionDatabase implements AutoCloseable {
         if (limit < 1) {
             throw new IllegalArgumentException("limit must be >= 1");
         }
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                SELECT event, host, message, labels_json, old_ips_json, new_ips_json, observed_at
-                FROM telemetry_event
-                WHERE host = ?
-                ORDER BY observed_at DESC, id DESC
-                LIMIT ?
-                """)) {
-            ps.setString(1, host);
-            ps.setInt(2, limit);
-            try (ResultSet rs = ps.executeQuery()) {
-                List<TelemetryEvent> rows = new ArrayList<>();
-                while (rs.next()) {
-                    rows.add(readTelemetryEvent(rs));
-                }
-                return List.copyOf(rows);
-            }
+        try {
+            return historyRepo.listTelemetryEvents(host, limit);
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to list telemetry events for " + host, ex);
         }
@@ -1135,17 +798,8 @@ public final class SessionDatabase implements AutoCloseable {
 
     /** Oldest-first samples for full archive dump (P16-023). */
     public synchronized List<MetricSample> listAllTelemetrySamples() {
-        try (PreparedStatement ps = connection.prepareStatement(
-                        """
-                SELECT name, value, host, hop, labels_json, observed_at FROM telemetry_sample
-                ORDER BY observed_at ASC, id ASC
-                """);
-                ResultSet rs = ps.executeQuery()) {
-            List<MetricSample> rows = new ArrayList<>();
-            while (rs.next()) {
-                rows.add(readTelemetrySample(rs));
-            }
-            return List.copyOf(rows);
+        try {
+            return historyRepo.listAllTelemetrySamples();
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to list all telemetry samples", ex);
         }
@@ -1153,61 +807,46 @@ public final class SessionDatabase implements AutoCloseable {
 
     /** Oldest-first events for full archive dump (P16-023). */
     public synchronized List<TelemetryEvent> listAllTelemetryEvents() {
-        try (PreparedStatement ps = connection.prepareStatement(
-                        """
-                SELECT event, host, message, labels_json, old_ips_json, new_ips_json, observed_at
-                FROM telemetry_event
-                ORDER BY observed_at ASC, id ASC
-                """);
-                ResultSet rs = ps.executeQuery()) {
-            List<TelemetryEvent> rows = new ArrayList<>();
-            while (rs.next()) {
-                rows.add(readTelemetryEvent(rs));
-            }
-            return List.copyOf(rows);
+        try {
+            return historyRepo.listAllTelemetryEvents();
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to list all telemetry events", ex);
         }
     }
 
-    private static MetricSample readTelemetrySample(ResultSet rs) throws SQLException {
-        Integer hop = rs.getObject(4) == null ? null : rs.getInt(4);
-        return MetricSample.fromColumns(
-                rs.getString(1),
-                rs.getDouble(2),
-                rs.getString(3),
-                hop,
-                rs.getString(5),
-                Instant.parse(rs.getString(6)));
-    }
-
-    private static TelemetryEvent readTelemetryEvent(ResultSet rs) throws SQLException {
-        return TelemetryEvent.fromColumns(
-                rs.getString(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4),
-                rs.getString(5),
-                rs.getString(6),
-                Instant.parse(rs.getString(7)));
-    }
-
+    /** Count of telemetry_sample rows (tests / diagnostics). */
     public synchronized int countTelemetrySamples() {
-        return countTable("telemetry_sample");
+        try {
+            return historyRepo.countTelemetrySamples();
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to count telemetry_sample", ex);
+        }
     }
 
+    /** Count of telemetry_event rows (tests / diagnostics). */
     public synchronized int countTelemetryEvents() {
-        return countTable("telemetry_event");
+        try {
+            return historyRepo.countTelemetryEvents();
+        } catch (SQLException ex) {
+            throw new PersistenceException("Failed to count telemetry_event", ex);
+        }
     }
 
     /**
-     * Deletes telemetry samples with {@code observed_at} strictly before {@code cutoff} (P16-022).
+     * Deletes telemetry samples with {@code observed_at} strictly before {@code cutoff}
+     * (P16-022).
      *
      * @return number of deleted sample rows
      */
     public synchronized int deleteTelemetrySamplesBefore(Instant cutoff) {
         Objects.requireNonNull(cutoff, "cutoff");
-        return deleteBefore("telemetry_sample", cutoff);
+        try {
+            return historyRepo.deleteTelemetrySamplesBefore(cutoff);
+        } catch (SQLException ex) {
+            dbCommit.rollbackQuietly();
+            throw new PersistenceException(
+                    "Failed to purge telemetry_sample before " + DbCommit.ISO_UTC.format(cutoff), ex);
+        }
     }
 
     /**
@@ -1217,757 +856,18 @@ public final class SessionDatabase implements AutoCloseable {
      */
     public synchronized int deleteTelemetryEventsBefore(Instant cutoff) {
         Objects.requireNonNull(cutoff, "cutoff");
-        return deleteBefore("telemetry_event", cutoff);
-    }
-
-    private int deleteBefore(String table, Instant cutoff) {
-        String iso = ISO_UTC.format(cutoff);
-        try (PreparedStatement ps = connection.prepareStatement("DELETE FROM " + table + " WHERE observed_at < ?")) {
-            ps.setString(1, iso);
-            int deleted = ps.executeUpdate();
-            connection.commit();
-            return deleted;
-        } catch (SQLException ex) {
-            rollbackQuietly();
-            throw new PersistenceException("Failed to purge " + table + " before " + iso, ex);
-        }
-    }
-
-    private int countTable(String table) {
-        try (PreparedStatement ps = connection.prepareStatement("SELECT COUNT(*) FROM " + table);
-                ResultSet rs = ps.executeQuery()) {
-            return rs.next() ? rs.getInt(1) : 0;
-        } catch (SQLException ex) {
-            throw new PersistenceException("Failed to count " + table, ex);
-        }
-    }
-
-    @Override
-    public synchronized void close() {
         try {
-            connection.close();
+            return historyRepo.deleteTelemetryEventsBefore(cutoff);
         } catch (SQLException ex) {
-            throw new PersistenceException("Failed to close session database", ex);
+            dbCommit.rollbackQuietly();
+            throw new PersistenceException(
+                    "Failed to purge telemetry_event before " + DbCommit.ISO_UTC.format(cutoff), ex);
         }
     }
 
-    private void initSchema() throws SQLException {
-        if (openMode == OpenMode.READ_ONLY) {
-            initSchemaReadOnly(readSchemaVersionOrNull());
-            return;
-        }
-        try (Statement statement = connection.createStatement()) {
-            statement.execute(
-                    """
-                    CREATE TABLE IF NOT EXISTS schema_meta (
-                        version INTEGER NOT NULL
-                    )
-                    """);
-        }
-        Integer existingVersion = readSchemaVersionOrNull();
-        if (existingVersion != null && existingVersion != SCHEMA_VERSION) {
-            throw new PersistenceException("Unsupported session DB schema version "
-                    + existingVersion
-                    + " (required "
-                    + SCHEMA_VERSION
-                    + "). Delete the database file and recreate.");
-        }
-        try (Statement statement = connection.createStatement()) {
-            statement.execute(
-                    """
-                    CREATE TABLE IF NOT EXISTS host_session (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        address TEXT NOT NULL UNIQUE,
-                        enabled INTEGER NOT NULL,
-                        created_at TEXT NOT NULL,
-                        updated_at TEXT NOT NULL
-                    )
-                    """);
-            createSessionChildTables(statement);
-            statement.execute(
-                    """
-                    CREATE TABLE IF NOT EXISTS persistence_event (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        event_type TEXT NOT NULL,
-                        host_id INTEGER NOT NULL,
-                        profile TEXT,
-                        state TEXT,
-                        message TEXT,
-                        old_ips_json TEXT,
-                        new_ips_json TEXT,
-                        detail_json TEXT,
-                        observed_at TEXT NOT NULL,
-                        FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
-                    )
-                    """);
-            statement.execute(
-                    """
-                    CREATE INDEX IF NOT EXISTS idx_pe_host_type_time
-                        ON persistence_event(host_id, event_type, observed_at)
-                    """);
-            createIncidentTable(statement);
-            createRouteTable(statement);
-            createPollResultTable(statement);
-            createMetricRollupTable(statement);
-            createTelemetryTables(statement);
-        }
-        if (existingVersion == null) {
-            seedSchemaVersion();
-        }
-        connection.commit();
-    }
-
-    private void initSchemaReadOnly(Integer existingVersion) {
-        if (existingVersion == null) {
-            throw new PersistenceException("Session database has no schema version: " + path);
-        }
-        if (existingVersion != SCHEMA_VERSION) {
-            throw new PersistenceException("Unsupported session DB schema version "
-                    + existingVersion
-                    + " (required "
-                    + SCHEMA_VERSION
-                    + "). Delete the database file and recreate.");
-        }
-    }
-
-    private static void createSessionChildTables(Statement statement) throws SQLException {
-        statement.execute(
-                """
-                CREATE TABLE IF NOT EXISTS session_route_hop (
-                    host_id INTEGER NOT NULL,
-                    route_kind TEXT NOT NULL,
-                    hop INTEGER NOT NULL,
-                    ip TEXT,
-                    ping_ms REAL,
-                    is_timeout INTEGER NOT NULL,
-                    PRIMARY KEY (host_id, route_kind, hop),
-                    FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
-                )
-                """);
-        statement.execute(
-                """
-                CREATE TABLE IF NOT EXISTS session_ping_sample (
-                    host_id INTEGER NOT NULL,
-                    ip TEXT NOT NULL,
-                    seq INTEGER NOT NULL,
-                    rtt_ms REAL NOT NULL,
-                    PRIMARY KEY (host_id, ip, seq),
-                    FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
-                )
-                """);
-        statement.execute(
-                """
-                CREATE TABLE IF NOT EXISTS session_hop_stats (
-                    host_id INTEGER NOT NULL,
-                    hop INTEGER NOT NULL,
-                    probes INTEGER NOT NULL,
-                    successes INTEGER NOT NULL,
-                    PRIMARY KEY (host_id, hop),
-                    FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
-                )
-                """);
-        statement.execute(
-                """
-                CREATE TABLE IF NOT EXISTS session_hop_rtt_sample (
-                    host_id INTEGER NOT NULL,
-                    hop INTEGER NOT NULL,
-                    seq INTEGER NOT NULL,
-                    rtt_ms REAL NOT NULL,
-                    PRIMARY KEY (host_id, hop, seq),
-                    FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
-                )
-                """);
-    }
-
-    private OptionalLong findHostId(String address) throws SQLException {
-        try (PreparedStatement ps = connection.prepareStatement("SELECT id FROM host_session WHERE address = ?")) {
-            ps.setString(1, address);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
-                    return OptionalLong.empty();
-                }
-                return OptionalLong.of(rs.getLong(1));
-            }
-        }
-    }
-
-    private long requireHostId(String address) throws SQLException {
-        OptionalLong id = findHostId(address);
-        if (id.isEmpty()) {
-            throw new PersistenceException("Unknown host address for persistence event: " + address);
-        }
-        return id.getAsLong();
-    }
-
-    private long upsertHost(String address, boolean enabled, String now) throws SQLException {
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                INSERT INTO host_session(address, enabled, created_at, updated_at)
-                VALUES (?, ?, ?, ?)
-                ON CONFLICT(address) DO UPDATE SET
-                    enabled = excluded.enabled,
-                    updated_at = excluded.updated_at
-                """)) {
-            ps.setString(1, address);
-            ps.setInt(2, enabled ? 1 : 0);
-            ps.setString(3, now);
-            ps.setString(4, now);
-            ps.executeUpdate();
-        }
-        return findHostId(address)
-                .orElseThrow(() -> new PersistenceException("Failed to resolve host id after upsert: " + address));
-    }
-
-    private void clearHostChildren(long hostId) throws SQLException {
-        try (PreparedStatement route = connection.prepareStatement("DELETE FROM session_route_hop WHERE host_id = ?");
-                PreparedStatement ping =
-                        connection.prepareStatement("DELETE FROM session_ping_sample WHERE host_id = ?");
-                PreparedStatement rtt =
-                        connection.prepareStatement("DELETE FROM session_hop_rtt_sample WHERE host_id = ?");
-                PreparedStatement stats =
-                        connection.prepareStatement("DELETE FROM session_hop_stats WHERE host_id = ?")) {
-            route.setLong(1, hostId);
-            route.executeUpdate();
-            ping.setLong(1, hostId);
-            ping.executeUpdate();
-            rtt.setLong(1, hostId);
-            rtt.executeUpdate();
-            stats.setLong(1, hostId);
-            stats.executeUpdate();
-        }
-    }
-
-    private List<HopNode> loadRouteHops(long hostId, String routeKind) throws SQLException {
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                SELECT hop, ip, ping_ms, is_timeout FROM session_route_hop
-                WHERE host_id = ? AND route_kind = ?
-                ORDER BY hop ASC
-                """)) {
-            ps.setLong(1, hostId);
-            ps.setString(2, routeKind);
-            try (ResultSet rs = ps.executeQuery()) {
-                List<HopNode> hops = new ArrayList<>();
-                while (rs.next()) {
-                    hops.add(readHopNode(rs));
-                }
-                return List.copyOf(hops);
-            }
-        }
-    }
-
-    private Map<Integer, HopNode> loadLastKnown(long hostId) throws SQLException {
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                SELECT hop, ip, ping_ms, is_timeout FROM session_route_hop
-                WHERE host_id = ? AND route_kind = ?
-                ORDER BY hop ASC
-                """)) {
-            ps.setLong(1, hostId);
-            ps.setString(2, ROUTE_LAST_KNOWN);
-            try (ResultSet rs = ps.executeQuery()) {
-                Map<Integer, HopNode> result = new LinkedHashMap<>();
-                while (rs.next()) {
-                    HopNode node = readHopNode(rs);
-                    result.put(node.hop(), node);
-                }
-                return result;
-            }
-        }
-    }
-
-    private Map<String, List<Double>> loadPingHistory(long hostId) throws SQLException {
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                SELECT ip, seq, rtt_ms FROM session_ping_sample
-                WHERE host_id = ?
-                ORDER BY ip ASC, seq ASC
-                """)) {
-            ps.setLong(1, hostId);
-            try (ResultSet rs = ps.executeQuery()) {
-                Map<String, List<Double>> result = new LinkedHashMap<>();
-                while (rs.next()) {
-                    result.computeIfAbsent(rs.getString(1), key -> new ArrayList<>())
-                            .add(rs.getDouble(3));
-                }
-                Map<String, List<Double>> copy = new LinkedHashMap<>();
-                for (Map.Entry<String, List<Double>> entry : result.entrySet()) {
-                    copy.put(entry.getKey(), List.copyOf(entry.getValue()));
-                }
-                return copy;
-            }
-        }
-    }
-
-    private Map<Integer, HopProbeStats> loadHopStats(long hostId) throws SQLException {
-        Map<Integer, List<Double>> samplesByHop = new LinkedHashMap<>();
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                SELECT hop, seq, rtt_ms FROM session_hop_rtt_sample
-                WHERE host_id = ?
-                ORDER BY hop ASC, seq ASC
-                """)) {
-            ps.setLong(1, hostId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    samplesByHop
-                            .computeIfAbsent(rs.getInt(1), key -> new ArrayList<>())
-                            .add(rs.getDouble(3));
-                }
-            }
-        }
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                SELECT hop, probes, successes FROM session_hop_stats
-                WHERE host_id = ?
-                ORDER BY hop ASC
-                """)) {
-            ps.setLong(1, hostId);
-            try (ResultSet rs = ps.executeQuery()) {
-                Map<Integer, HopProbeStats> result = new LinkedHashMap<>();
-                while (rs.next()) {
-                    int hop = rs.getInt(1);
-                    List<Double> samples = samplesByHop.getOrDefault(hop, List.of());
-                    result.put(hop, HopProbeStats.fromSerialized(rs.getInt(2), rs.getInt(3), samples));
-                }
-                return result;
-            }
-        }
-    }
-
-    private void insertRouteHops(long hostId, String routeKind, List<HopNode> hops) throws SQLException {
-        if (hops == null || hops.isEmpty()) {
-            return;
-        }
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                INSERT INTO session_route_hop(host_id, route_kind, hop, ip, ping_ms, is_timeout)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """)) {
-            for (HopNode node : hops) {
-                bindHop(ps, hostId, routeKind, node);
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        }
-    }
-
-    private void insertLastKnown(long hostId, Map<Integer, HopNode> lastKnown) throws SQLException {
-        if (lastKnown == null || lastKnown.isEmpty()) {
-            return;
-        }
-        List<Map.Entry<Integer, HopNode>> entries = new ArrayList<>(lastKnown.entrySet());
-        entries.sort(Comparator.comparingInt(Map.Entry::getKey));
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                INSERT INTO session_route_hop(host_id, route_kind, hop, ip, ping_ms, is_timeout)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """)) {
-            for (Map.Entry<Integer, HopNode> entry : entries) {
-                bindHop(ps, hostId, ROUTE_LAST_KNOWN, entry.getValue());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        }
-    }
-
-    private void insertPingHistory(long hostId, Map<String, List<Double>> history) throws SQLException {
-        if (history == null || history.isEmpty()) {
-            return;
-        }
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                INSERT INTO session_ping_sample(host_id, ip, seq, rtt_ms)
-                VALUES (?, ?, ?, ?)
-                """)) {
-            for (Map.Entry<String, List<Double>> entry : history.entrySet()) {
-                List<Double> samples = entry.getValue();
-                if (samples == null) {
-                    continue;
-                }
-                for (int i = 0; i < samples.size(); i++) {
-                    ps.setLong(1, hostId);
-                    ps.setString(2, entry.getKey());
-                    ps.setInt(3, i);
-                    ps.setDouble(4, samples.get(i));
-                    ps.addBatch();
-                }
-            }
-            ps.executeBatch();
-        }
-    }
-
-    private void insertHopStats(long hostId, Map<Integer, HopProbeStats> stats) throws SQLException {
-        if (stats == null || stats.isEmpty()) {
-            return;
-        }
-        try (PreparedStatement statsPs = connection.prepareStatement(
-                        """
-                        INSERT INTO session_hop_stats(host_id, hop, probes, successes)
-                        VALUES (?, ?, ?, ?)
-                        """);
-                PreparedStatement rttPs = connection.prepareStatement(
-                        """
-                        INSERT INTO session_hop_rtt_sample(host_id, hop, seq, rtt_ms)
-                        VALUES (?, ?, ?, ?)
-                        """)) {
-            for (Map.Entry<Integer, HopProbeStats> entry : stats.entrySet()) {
-                HopProbeStats item = entry.getValue();
-                if (item == null) {
-                    continue;
-                }
-                int hop = entry.getKey();
-                statsPs.setLong(1, hostId);
-                statsPs.setInt(2, hop);
-                statsPs.setInt(3, item.getProbes());
-                statsPs.setInt(4, item.getSuccesses());
-                statsPs.addBatch();
-                List<Double> samples = item.getRttSamples();
-                for (int i = 0; i < samples.size(); i++) {
-                    rttPs.setLong(1, hostId);
-                    rttPs.setInt(2, hop);
-                    rttPs.setInt(3, i);
-                    rttPs.setDouble(4, samples.get(i));
-                    rttPs.addBatch();
-                }
-            }
-            statsPs.executeBatch();
-            rttPs.executeBatch();
-        }
-    }
-
-    private static void bindHop(PreparedStatement ps, long hostId, String routeKind, HopNode node) throws SQLException {
-        ps.setLong(1, hostId);
-        ps.setString(2, routeKind);
-        ps.setInt(3, node.hop());
-        ps.setString(4, node.ip());
-        if (node.pingMs() == null) {
-            ps.setObject(5, null);
-        } else {
-            ps.setDouble(5, node.pingMs());
-        }
-        ps.setInt(6, node.timeout() ? 1 : 0);
-    }
-
-    private static HopNode readHopNode(ResultSet rs) throws SQLException {
-        int hop = rs.getInt(1);
-        boolean timeout = rs.getInt(4) != 0;
-        if (timeout) {
-            return Models.timeout(hop);
-        }
-        Double pingMs = rs.getObject(3) == null ? null : rs.getDouble(3);
-        return new HopNode(hop, rs.getString(2), pingMs, false);
-    }
-
-    private static List<PersistenceEventRecord> readEventRows(PreparedStatement ps) throws SQLException {
-        try (ResultSet rs = ps.executeQuery()) {
-            List<PersistenceEventRecord> rows = new ArrayList<>();
-            while (rs.next()) {
-                rows.add(new PersistenceEventRecord(
-                        rs.getLong(1),
-                        PersistenceEventType.fromId(rs.getString(2)),
-                        rs.getString(3),
-                        rs.getString(4),
-                        rs.getString(5),
-                        rs.getString(6),
-                        rs.getString(7),
-                        rs.getString(8),
-                        rs.getString(9),
-                        Instant.parse(rs.getString(10))));
-            }
-            return List.copyOf(rows);
-        }
-    }
-
-    private static void createMetricRollupTable(Statement statement) throws SQLException {
-        statement.execute(
-                """
-                CREATE TABLE IF NOT EXISTS metric_rollup (
-                    host_id INTEGER NOT NULL,
-                    bucket_start TEXT NOT NULL,
-                    bucket_size INTEGER NOT NULL,
-                    samples INTEGER NOT NULL,
-                    uptime_ratio REAL,
-                    rtt_min REAL,
-                    rtt_avg REAL,
-                    rtt_max REAL,
-                    loss_avg REAL,
-                    PRIMARY KEY(host_id, bucket_start, bucket_size),
-                    FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
-                )
-                """);
-        statement.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_rollup_host_bucket
-                    ON metric_rollup(host_id, bucket_size, bucket_start DESC)
-                """);
-    }
-
-    private static List<MetricRollupRecord> readMetricRollupRows(PreparedStatement ps) throws SQLException {
-        try (ResultSet rs = ps.executeQuery()) {
-            List<MetricRollupRecord> rows = new ArrayList<>();
-            while (rs.next()) {
-                rows.add(new MetricRollupRecord(
-                        rs.getLong(1),
-                        rs.getString(2),
-                        Instant.parse(rs.getString(3)),
-                        rs.getInt(4),
-                        rs.getInt(5),
-                        nullableDouble(rs, 6),
-                        nullableDouble(rs, 7),
-                        nullableDouble(rs, 8),
-                        nullableDouble(rs, 9),
-                        nullableDouble(rs, 10)));
-            }
-            return List.copyOf(rows);
-        }
-    }
-
-    private static void createRouteTable(Statement statement) throws SQLException {
-        statement.execute(
-                """
-                CREATE TABLE IF NOT EXISTS route (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    host_id INTEGER NOT NULL,
-                    signature TEXT NOT NULL,
-                    hops_json TEXT NOT NULL,
-                    first_seen TEXT NOT NULL,
-                    last_seen TEXT NOT NULL,
-                    seen_count INTEGER NOT NULL DEFAULT 1,
-                    FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE,
-                    UNIQUE(host_id, signature)
-                )
-                """);
-        statement.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_route_host_last_seen
-                    ON route(host_id, last_seen DESC)
-                """);
-    }
-
-    private static List<RouteRecord> readRouteRows(PreparedStatement ps) throws SQLException {
-        try (ResultSet rs = ps.executeQuery()) {
-            List<RouteRecord> rows = new ArrayList<>();
-            while (rs.next()) {
-                rows.add(new RouteRecord(
-                        rs.getLong(1),
-                        rs.getLong(2),
-                        rs.getString(3),
-                        rs.getString(4),
-                        rs.getString(5),
-                        Instant.parse(rs.getString(6)),
-                        Instant.parse(rs.getString(7)),
-                        rs.getInt(8)));
-            }
-            return List.copyOf(rows);
-        }
-    }
-
-    private static void createPollResultTable(Statement statement) throws SQLException {
-        statement.execute(
-                """
-                CREATE TABLE IF NOT EXISTS poll_result (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    host_id INTEGER NOT NULL,
-                    observed_at TEXT NOT NULL,
-                    probe_mode TEXT NOT NULL,
-                    reachable INTEGER,
-                    terminal_rtt_ms REAL,
-                    jitter_ms REAL,
-                    loss_percent REAL,
-                    duration_ms REAL,
-                    route_id INTEGER,
-                    error_code TEXT,
-                    FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
-                )
-                """);
-        statement.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_poll_host_time
-                    ON poll_result(host_id, observed_at DESC)
-                """);
-        statement.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_poll_reachable_time
-                    ON poll_result(reachable, observed_at DESC)
-                """);
-    }
-
-    private static List<PollResultRecord> readPollResultRows(PreparedStatement ps) throws SQLException {
-        try (ResultSet rs = ps.executeQuery()) {
-            List<PollResultRecord> rows = new ArrayList<>();
-            while (rs.next()) {
-                Object reachableObj = rs.getObject(6);
-                Boolean reachable = reachableObj == null ? null : rs.getInt(6) != 0;
-                Object routeObj = rs.getObject(11);
-                rows.add(new PollResultRecord(
-                        rs.getLong(1),
-                        rs.getLong(2),
-                        rs.getString(3),
-                        Instant.parse(rs.getString(4)),
-                        rs.getString(5),
-                        reachable,
-                        nullableDouble(rs, 7),
-                        nullableDouble(rs, 8),
-                        nullableDouble(rs, 9),
-                        nullableDouble(rs, 10),
-                        routeObj == null ? null : rs.getLong(11),
-                        rs.getString(12)));
-            }
-            return List.copyOf(rows);
-        }
-    }
-
-    private static Double nullableDouble(ResultSet rs, int column) throws SQLException {
-        Object value = rs.getObject(column);
-        return value == null ? null : rs.getDouble(column);
-    }
-
-    private static void setNullableDouble(PreparedStatement ps, int index, Double value) throws SQLException {
-        if (value == null) {
-            ps.setObject(index, null);
-        } else {
-            ps.setDouble(index, value);
-        }
-    }
-
-    private static void createIncidentTable(Statement statement) throws SQLException {
-        statement.execute(
-                """
-                CREATE TABLE IF NOT EXISTS incident (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    host_id INTEGER NOT NULL,
-                    kind TEXT NOT NULL,
-                    severity TEXT NOT NULL,
-                    state TEXT NOT NULL,
-                    started_at TEXT NOT NULL,
-                    ended_at TEXT,
-                    acknowledged_at TEXT,
-                    occurrences INTEGER NOT NULL DEFAULT 1,
-                    peak_value REAL,
-                    details_json TEXT NOT NULL DEFAULT '{}',
-                    FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
-                )
-                """);
-        statement.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_incident_host_state
-                    ON incident(host_id, state, started_at DESC)
-                """);
-        statement.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_incident_active
-                    ON incident(state, severity, started_at DESC)
-                """);
-    }
-
-    private OptionalLong findOpenIncidentId(long hostId, String kind) throws SQLException {
-        try (PreparedStatement ps = connection.prepareStatement(
-                """
-                SELECT id FROM incident
-                WHERE host_id = ? AND kind = ? AND state = ? AND ended_at IS NULL
-                ORDER BY started_at DESC
-                LIMIT 1
-                """)) {
-            ps.setLong(1, hostId);
-            ps.setString(2, kind);
-            ps.setString(3, IncidentRecord.STATE_FIRING);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
-                    return OptionalLong.empty();
-                }
-                return OptionalLong.of(rs.getLong(1));
-            }
-        }
-    }
-
-    private static List<IncidentRecord> readIncidentRows(PreparedStatement ps) throws SQLException {
-        try (ResultSet rs = ps.executeQuery()) {
-            List<IncidentRecord> rows = new ArrayList<>();
-            while (rs.next()) {
-                String ended = rs.getString(8);
-                String acked = rs.getString(9);
-                Object peak = rs.getObject(11);
-                rows.add(new IncidentRecord(
-                        rs.getLong(1),
-                        rs.getLong(2),
-                        rs.getString(3),
-                        rs.getString(4),
-                        rs.getString(5),
-                        rs.getString(6),
-                        Instant.parse(rs.getString(7)),
-                        ended == null ? null : Instant.parse(ended),
-                        acked == null ? null : Instant.parse(acked),
-                        rs.getInt(10),
-                        peak == null ? null : rs.getDouble(11),
-                        rs.getString(12)));
-            }
-            return List.copyOf(rows);
-        }
-    }
-
-    private static void createTelemetryTables(Statement statement) throws SQLException {
-        statement.execute(
-                """
-                CREATE TABLE IF NOT EXISTS telemetry_sample (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
-                    value REAL NOT NULL,
-                    host TEXT NOT NULL,
-                    hop INTEGER,
-                    labels_json TEXT NOT NULL DEFAULT '{}',
-                    observed_at TEXT NOT NULL
-                )
-                """);
-        statement.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_ts_host_time
-                    ON telemetry_sample(host, observed_at)
-                """);
-        statement.execute(
-                """
-                CREATE TABLE IF NOT EXISTS telemetry_event (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    event TEXT NOT NULL,
-                    host TEXT NOT NULL,
-                    message TEXT,
-                    labels_json TEXT NOT NULL DEFAULT '{}',
-                    old_ips_json TEXT NOT NULL DEFAULT '[]',
-                    new_ips_json TEXT NOT NULL DEFAULT '[]',
-                    observed_at TEXT NOT NULL
-                )
-                """);
-        statement.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_te_host_time
-                    ON telemetry_event(host, observed_at)
-                """);
-    }
-
-    private Integer readSchemaVersionOrNull() throws SQLException {
-        try (PreparedStatement ps = connection.prepareStatement("SELECT version FROM schema_meta LIMIT 1");
-                ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
-            return null;
-        }
-    }
-
-    private void seedSchemaVersion() throws SQLException {
-        try (PreparedStatement ps = connection.prepareStatement("INSERT INTO schema_meta(version) VALUES (?)")) {
-            ps.setInt(1, SCHEMA_VERSION);
-            ps.executeUpdate();
-        }
-    }
-
-    private void rollbackQuietly() {
-        try {
-            connection.rollback();
-        } catch (SQLException ignored) {
-            // Best effort after failure.
-        }
-    }
+    // -------------------------------------------------------------------------
+    // Private static utilities
+    // -------------------------------------------------------------------------
 
     private static void closeQuietly(Connection connection) {
         try {

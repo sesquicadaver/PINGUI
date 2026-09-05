@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.config.HostEntry;
 import io.pingui.config.PingExpertEntry;
+import io.pingui.i18n.UiI18n;
+import io.pingui.i18n.UiLocale;
 import io.pingui.monitor.MonitorFixtures;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
@@ -18,6 +20,7 @@ import java.util.function.Supplier;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
@@ -224,6 +227,39 @@ class HostListPresenterTest {
         });
     }
 
+    @Test
+    void configureOnceIsIdempotentAndProblemsFirstIsKeyboardFocusable() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            Harness harness = new Harness(List.of(tagged("8.8.8.8", "dc")));
+            harness.presenter.configureOnce();
+            harness.presenter.configureOnce();
+            harness.presenter.rebuild(harness.entries);
+            CheckBox problemsFirst = harness.problemsFirstCheck();
+            assertTrue(problemsFirst.isFocusTraversable());
+            assertEquals(1, harness.hostList.getItems().size());
+        });
+    }
+
+    @Test
+    void retranslateUpdatesProblemsFirstLabelWithoutReconfigure() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            UiI18n.setLocale(UiLocale.EN);
+            Harness harness = new Harness(List.of(tagged("8.8.8.8")));
+            harness.presenter.configureOnce();
+            assertEquals(
+                    UiI18n.get("host.problems_first"),
+                    harness.problemsFirstCheck().getText());
+            UiI18n.setLocale(UiLocale.UK);
+            harness.presenter.retranslate();
+            assertEquals(
+                    UiI18n.get("host.problems_first"),
+                    harness.problemsFirstCheck().getText());
+            assertEquals(
+                    HostListPresenter.tagFilterAllLabel(),
+                    ((ToggleButton) harness.chipPane().getChildren().get(0)).getText());
+        });
+    }
+
     private static HostEntry tagged(String host, String... tags) {
         return new HostEntry(host, true, false, PingExpertEntry.empty(), null, null, List.of(tags));
     }
@@ -286,6 +322,12 @@ class HostListPresenterTest {
             VBox chrome = (VBox) presenter.navigationChrome();
             HBox tagBar = (HBox) chrome.getChildren().get(2);
             return (FlowPane) tagBar.getChildren().get(1);
+        }
+
+        CheckBox problemsFirstCheck() {
+            VBox chrome = (VBox) presenter.navigationChrome();
+            HBox controls = (HBox) chrome.getChildren().get(0);
+            return (CheckBox) controls.getChildren().get(2);
         }
     }
 }

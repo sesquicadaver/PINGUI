@@ -1,20 +1,28 @@
 package io.pingui.persistence;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.model.Models.HostSessionData;
+import io.pingui.probe.ProbeOutcome;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class PollResultRetentionJobTest {
     @TempDir
     Path tempDir;
+
+    @AfterEach
+    void clearHook() {
+        PollResultRetentionJob.afterUpsertBeforeDeleteHook = null;
+    }
 
     @Test
     void rollsRawIntoFiveMinAndDeletesOlderThanSevenDays() {
@@ -24,9 +32,23 @@ class PollResultRetentionJobTest {
             seedHost(db, "8.8.8.8");
             Instant mid = Instant.parse("2026-08-20T10:02:30Z"); // ~14d old → 5m rollup
             Instant recent = Instant.parse("2026-09-02T12:00:00Z"); // within 7d → keep raw
-            db.insertPollResult("8.8.8.8", mid, "ping_only", true, 10.0, null, 0.0, 40.0, null, null);
-            db.insertPollResult("8.8.8.8", mid.plusSeconds(60), "ping_only", true, 20.0, null, 1.0, 41.0, null, null);
-            db.insertPollResult("8.8.8.8", recent, "ping_only", true, 5.0, null, 0.0, 30.0, null, null);
+            db.insertPollResult(
+                    "8.8.8.8", mid, "ping_only", true, 10.0, null, 0.0, 40.0, null, null, ProbeOutcome.SUCCESS, true);
+            db.insertPollResult(
+                    "8.8.8.8",
+                    mid.plusSeconds(60),
+                    "ping_only",
+                    true,
+                    20.0,
+                    null,
+                    1.0,
+                    41.0,
+                    null,
+                    null,
+                    ProbeOutcome.SUCCESS,
+                    true);
+            db.insertPollResult(
+                    "8.8.8.8", recent, "ping_only", true, 5.0, null, 0.0, 30.0, null, null, ProbeOutcome.SUCCESS, true);
 
             PollResultRetentionJob.Result result = PollResultRetentionJob.run(db, clock);
             assertEquals(1, result.rolledFiveMinBuckets());
@@ -57,11 +79,23 @@ class PollResultRetentionJobTest {
             seedHost(db, "1.1.1.1");
             long hostId = db.hostId("1.1.1.1").orElseThrow();
             Instant ancient = Instant.parse("2026-05-01T03:10:00Z"); // >90d → hourly from raw
-            db.insertPollResult("1.1.1.1", ancient, "trace", true, 30.0, null, 2.0, 100.0, null, null);
+            db.insertPollResult(
+                    "1.1.1.1", ancient, "trace", true, 30.0, null, 2.0, 100.0, null, null, ProbeOutcome.SUCCESS, true);
 
             Instant staleFiveMin = Instant.parse("2026-05-15T04:05:00Z");
             db.upsertMetricRollup(
-                    hostId, staleFiveMin, PollResultRetentionJob.BUCKET_5_MIN_SECONDS, 3, 1.0, 8.0, 9.0, 10.0, 0.0);
+                    hostId,
+                    staleFiveMin,
+                    PollResultRetentionJob.BUCKET_5_MIN_SECONDS,
+                    3,
+                    3,
+                    3,
+                    3,
+                    27.0,
+                    8.0,
+                    10.0,
+                    3,
+                    0.0);
 
             PollResultRetentionJob.Result result = PollResultRetentionJob.run(db, clock);
             assertEquals(0, result.rolledFiveMinBuckets());
@@ -79,6 +113,54 @@ class PollResultRetentionJobTest {
             assertTrue(hourly.size() >= 1);
             assertTrue(hourly.stream().anyMatch(r -> r.bucketStart().equals(Instant.parse("2026-05-01T03:00:00Z"))));
             assertTrue(hourly.stream().anyMatch(r -> r.bucketStart().equals(Instant.parse("2026-05-15T04:00:00Z"))));
+        }
+    }
+
+    @Test
+    void failureAfterUpsertRollsBackDeletes() {
+        Clock clock = Clock.fixed(Instant.parse("2026-09-03T12:00:00Z"), ZoneOffset.UTC);
+        Path dbPath = tempDir.resolve("ret-crash.db");
+        try (SessionDatabase db = new SessionDatabase(dbPath)) {
+            seedHost(db, "8.8.8.8");
+            Instant mid = Instant.parse("2026-08-20T10:02:30Z");
+            db.insertPollResult(
+                    "8.8.8.8", mid, "ping_only", true, 10.0, null, 0.0, 40.0, null, null, ProbeOutcome.SUCCESS, true);
+            assertEquals(1, db.countPollResults());
+            assertEquals(0, db.countMetricRollups());
+
+            PollResultRetentionJob.afterUpsertBeforeDeleteHook = () -> {
+                throw new PersistenceException("simulated crash after upsert");
+            };
+            assertThrows(PersistenceException.class, () -> PollResultRetentionJob.run(db, clock));
+
+            assertEquals(1, db.countPollResults(), "raw polls restored after rollback");
+            assertEquals(0, db.countMetricRollups(), "rollup upsert rolled back");
+        }
+    }
+
+    @Test
+    void rerunIsIdempotent() {
+        Clock clock = Clock.fixed(Instant.parse("2026-09-03T12:00:00Z"), ZoneOffset.UTC);
+        Path dbPath = tempDir.resolve("ret-idem.db");
+        try (SessionDatabase db = new SessionDatabase(dbPath)) {
+            seedHost(db, "8.8.8.8");
+            Instant mid = Instant.parse("2026-08-20T10:02:30Z");
+            db.insertPollResult(
+                    "8.8.8.8", mid, "ping_only", true, 10.0, null, 1.0, 40.0, null, null, ProbeOutcome.SUCCESS, true);
+
+            PollResultRetentionJob.Result first = PollResultRetentionJob.run(db, clock);
+            PollResultRetentionJob.Result second = PollResultRetentionJob.run(db, clock);
+            assertEquals(1, first.rolledFiveMinBuckets());
+            assertEquals(1, first.deletedRawPolls());
+            assertEquals(0, second.rolledFiveMinBuckets());
+            assertEquals(0, second.deletedRawPolls());
+            assertEquals(1, db.countMetricRollups());
+            assertEquals(0, db.countPollResults());
+            MetricRollupRecord row = db.listMetricRollups("8.8.8.8", PollResultRetentionJob.BUCKET_5_MIN_SECONDS, 1)
+                    .get(0);
+            assertEquals(1, row.sampleCount());
+            assertEquals(10.0, row.rttAvg());
+            assertEquals(1.0, row.lossAvg());
         }
     }
 
@@ -107,7 +189,9 @@ class PollResultRetentionJobTest {
                     null,
                     10.0,
                     null,
-                    "timeout");
+                    "timeout",
+                    ProbeOutcome.TIMEOUT,
+                    true);
 
             PollResultRetentionJob.run(db, clock);
             assertEquals(1, db.listIncidents("9.9.9.9", 10).size());

@@ -67,6 +67,7 @@ final class HostListPresenter {
     private final Consumer<Runnable> runWithoutHistoryFilterSync;
     private final FlowPane tagChipPane = new FlowPane(6, 6);
     private final ToggleGroup tagFilterGroup = new ToggleGroup();
+    private final Label tagFilterLabel = new Label();
     private final HBox tagFilterBar = new HBox(8);
     private final TextField textFilterField = new TextField();
     private final ComboBox<HostListSortMode> sortCombo = new ComboBox<>();
@@ -78,6 +79,7 @@ final class HostListPresenter {
     private boolean updatingList;
     private boolean refreshingChips;
     private boolean applyingNavPrefs;
+    private boolean configured;
     private BiFunction<String, List<String>, Optional<List<String>>> tagsEditor = HostTagsDialog::show;
     private Function<String, Boolean> confirmDeleteHost = this::confirmDeleteHostDialog;
     private Runnable markDirty = () -> {};
@@ -112,10 +114,10 @@ final class HostListPresenter {
         this.onHostRenamed = onHostRenamed;
         this.startEasterEgg = startEasterEgg;
         this.runWithoutHistoryFilterSync = runWithoutHistoryFilterSync;
-        Label tagLabel = new Label(UiI18n.get("host.tag_label"));
+        tagFilterLabel.setText(UiI18n.get("host.tag_label"));
         tagChipPane.setPadding(new Insets(2, 0, 2, 0));
         HBox.setHgrow(tagChipPane, Priority.ALWAYS);
-        tagFilterBar.getChildren().addAll(tagLabel, tagChipPane);
+        tagFilterBar.getChildren().addAll(tagFilterLabel, tagChipPane);
         tagFilterGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
             if (refreshingChips) {
                 return;
@@ -155,7 +157,8 @@ final class HostListPresenter {
         });
         sortCombo.setPrefWidth(140);
         problemsFirstCheck.setText(UiI18n.get("host.problems_first"));
-        problemsFirstCheck.setFocusTraversable(false);
+        problemsFirstCheck.setFocusTraversable(true);
+        problemsFirstCheck.setAccessibleText(UiI18n.get("host.problems_first"));
         hostCountersLabel.getStyleClass().add("pingui-muted");
         HBox controls = new HBox(8, textFilterField, sortCombo, problemsFirstCheck);
         controls.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
@@ -188,7 +191,15 @@ final class HostListPresenter {
         return navigationChrome;
     }
 
-    void configure() {
+    /**
+     * Wires list items, cell factory, and change listeners once (P32-007). Safe to call repeatedly —
+     * subsequent calls are no-ops. Use {@link #retranslate()} after locale changes.
+     */
+    void configureOnce() {
+        if (configured) {
+            return;
+        }
+        configured = true;
         hostList.setItems(sortedHosts);
         hostList.setFixedCellSize(HOST_ROW_HEIGHT);
         hostList.setMaxHeight(listHeightForRows(HostsConfig.MAX_HOSTS));
@@ -209,6 +220,47 @@ final class HostListPresenter {
                 this::onOpenExpertPing,
                 this::onOpenMtuWizard,
                 this::onOpenProblem));
+    }
+
+    /** @deprecated use {@link #configureOnce()}; kept for older call sites / tests */
+    void configure() {
+        configureOnce();
+    }
+
+    /**
+     * Idempotent refresh of navigation chrome strings after a locale change (P32-007). Does not add
+     * listeners.
+     */
+    void retranslate() {
+        tagFilterLabel.setText(UiI18n.get("host.tag_label"));
+        textFilterField.setPromptText(UiI18n.get("host.filter_prompt"));
+        problemsFirstCheck.setText(UiI18n.get("host.problems_first"));
+        problemsFirstCheck.setAccessibleText(UiI18n.get("host.problems_first"));
+        HostListSortMode mode = sortMode();
+        sortCombo.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(HostListSortMode value) {
+                return value != null ? value.label() : "";
+            }
+
+            @Override
+            public HostListSortMode fromString(String string) {
+                return HostListSortMode.CONFIG;
+            }
+        });
+        applyingNavPrefs = true;
+        sortCombo.setValue(null);
+        sortCombo.setValue(mode);
+        applyingNavPrefs = false;
+        refreshTagChips();
+        refreshCounters();
+        syncInputLimits();
+        if (hostInspector != null) {
+            HostItem selected = hostList.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                hostInspector.refreshIfHost(selected.getHost());
+            }
+        }
     }
 
     void rebuild(List<HostEntry> entries) {

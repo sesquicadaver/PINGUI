@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P31-007** |
-| **Фаза** | 31 — GUI information hierarchy |
-| **DoD (коротко)** | accessibility pass |
+| **Поточна задача** | **DONE** |
+| **Фаза** | 32 — Stabilization (MTR / history / side-effects) |
+| **DoD (коротко)** | Лінійна черга фази 32 закрита |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -178,9 +178,17 @@
 | 132 | **P31-004** | [x] | Unified severity model |
 | 133 | **P31-005** | [x] | Filter, sort, problems-first |
 | 134 | **P31-006** | [x] | Centralized application status |
-| 135 | **P31-007** | [ ] | Accessibility pass |
+| 135 | **P31-007** | [x] | Accessibility pass |
+| 136 | **P32-001** | [x] | MTR freshness і topology completeness |
+| 137 | **P32-002** | [x] | MTR concurrency та lifecycle |
+| 138 | **P32-003** | [x] | Структурований PollResult і TCP outcomes |
+| 139 | **P32-004** | [x] | Schema v14 rollup + atomic retention |
+| 140 | **P32-005** | [x] | Bounded side-effect consumers і persistence batching |
+| 141 | **P32-006** | [x] | Alert lifecycle окремо від silence/cooldown |
+| 142 | **P32-007** | [x] | Runtime i18n та залишки accessibility |
+| 143 | **P32-008** | [x] | Локальний поділ DB/monitor hotspot-ів і документація |
 
-**Стан черги:** **NEXT = P31-007** (фаза 31; P31-006 [x]; Java-first; [pingui-evo-gui.md](pingui-evo-gui.md)).
+**Стан черги:** **NEXT = DONE** (фаза 32 закрита; Java-first; [pingui-stabilization.md](pingui-stabilization.md)).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -979,7 +987,7 @@ flowchart TD
 
 **Контекст:** [pingui-evo-gui.md](pingui-evo-gui.md). Не змінювати геометрію вікна (див. [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md)). Java-first.
 
-**Черга:** після P30; **NEXT = P31-007**.
+**Черга:** після P30; **NEXT = DONE** (фаза 31 закрита).
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
@@ -989,9 +997,30 @@ flowchart TD
 | **P31-004** | [x] Severity model | UI theme, timeline, alerts | Critical/Warning/Notice/Info/Muted → колір, іконка, sort, badge, timeline, alert |
 | **P31-005** | [x] Host list navigation | `HostListPresenter` | Text filter; sort; problems-first; header counters; persist filter/sort |
 | **P31-006** | [x] App status area | `MainController`, coordinators | Monitoring summary + transient ops (profile, DB, export, MTU…) без зайвих popup |
-| **P31-007** | [ ] Accessibility | CSS, controls | Не лише колір; іконки станів; contrast; focus; a11y names |
+| **P31-007** | [x] Accessibility | CSS, controls | Не лише колір; іконки станів; contrast; focus; a11y names |
 
 **Backlog (поза чергою):** групування settings (§7 evo-gui); graph legend/tweaks (§8); structured errors (§9).
+
+---
+
+## Фаза 32 — Stabilization: MTR / history / side-effects (`beta`, P0)
+
+**Контекст:** [pingui-stabilization.md](pingui-stabilization.md). Стабілізація семантики даних і критичних потоків — **не** нове функціональне розширення. Java-first; TRACE/PING_ONLY вже зрілі.
+
+**Черга:** після P31; **NEXT = DONE** (P32-001…008 [x]; фаза 32 закрита).
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P32-001** | [x] MTR freshness / topology | `MtrProbe`, `SessionStore`, telemetry, alerts | Лише `freshHopSample` оновлює hop/telemetry; endpoint/`poll_result` лише коли target sampled; discovery prefix ≠ route change; timeout ≠ topology change |
+| **P32-002** | [x] MTR concurrency / lifecycle | `MtrProbe` state | `ConcurrentHashMap` / atomic update; generation token; clear on remove/rename host |
+| **P32-003** | [x] Structured PollResult + TCP | `PollResultEffects`, `RoutePoller`, probe outcomes | `loss=NULL` якщо не виміряно; `probe_outcome` SUCCESS/TIMEOUT/REFUSED/DNS_ERROR/NETWORK_ERROR; `target_sampled`; jitter лише з серії RTT |
+| **P32-004** | [x] Schema v14 rollup + atomic retention | `SessionDatabase`, `PollResultRetentionJob` | окремі `*_samples`/`*_sum`; avg на читанні; retention одна транзакція; crash-safe + idempotent; migrate v13→v14 (не delete DB); v13 уже має probe_outcome |
+| **P32-005** | [x] Bounded side-effect consumers | Monitor/DNS/webhook/DB writer | DNS executor+timeout+cache; webhook/telemetry off probe/UI thread; один persistence update / poll; `ensureHostRow` без повного `load()` |
+| **P32-006** | [x] Alert lifecycle vs silence | `AlertRuleEngine`, dispatcher | FIRING/RESOLVED завжди; silence лише delivery; pending notification після expiry один раз |
+| **P32-007** | [x] Runtime i18n + a11y leftovers | `HostListPresenter`, bundles, CSS | `configureOnce` + idempotent `retranslate`; bundle key parity; problemsFirst keyboard; без дублів ключів |
+| **P32-008** | [x] Split SessionDatabase + docs | persistence split, ADR/docs | facade + Schema/Session/History; Java canonical / Python bugfix-only note; LIVING_SPEC + phase close |
+
+**Поза scope:** ORM; Kafka/reactive bus; окремий dashboard; silent delete `.db` для v14.
 
 ---
 
@@ -1080,7 +1109,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P31-007**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **DONE**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

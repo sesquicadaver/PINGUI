@@ -21,7 +21,7 @@ import javafx.scene.paint.Color;
 
 /**
  * Unified host list row (P31-001): {@code [state] name RTT loss mode [problem]} with fixed columns;
- * poll/RTT detail and tags in tooltip.
+ * poll/RTT detail and tags in tooltip. Accessibility names/tooltips (P31-007).
  */
 final class HostListCell extends ListCell<HostItem> {
     private static final double COL_RTT = 36.0;
@@ -95,6 +95,11 @@ final class HostListCell extends ListCell<HostItem> {
         problemButton.setTooltip(new Tooltip(UiI18n.get("host.problem_tooltip")));
         pingOnlyCheck.getStyleClass().add("pingui-muted");
         pingOnlyCheck.setMinWidth(Region.USE_PREF_SIZE);
+        UiAccessibility.name(extenButton, UiI18n.get("a11y.host_expert"));
+        UiAccessibility.name(mtuButton, UiI18n.get("a11y.host_mtu"));
+        UiAccessibility.name(rttLabel, UiI18n.get("a11y.host_rtt"));
+        UiAccessibility.name(lossLabel, UiI18n.get("a11y.host_loss"));
+        UiAccessibility.name(modeLabel, UiI18n.get("a11y.host_mode"));
         extenButton.setOnAction(e -> {
             HostItem item = getItem();
             if (item != null) {
@@ -144,6 +149,7 @@ final class HostListCell extends ListCell<HostItem> {
             setGraphic(null);
             setBackground(null);
             setTooltip(null);
+            setAccessibleText(null);
             return;
         }
         boundItem = item;
@@ -155,24 +161,41 @@ final class HostListCell extends ListCell<HostItem> {
         if (tcpTarget) {
             pingOnlyCheck.setText(UiI18n.get("host.tcp_connect"));
             pingOnlyCheck.setTooltip(new Tooltip(UiI18n.get("host.tcp_connect_tooltip")));
+            UiAccessibility.name(pingOnlyCheck, UiI18n.get("a11y.host_tcp"));
         } else {
             pingOnlyCheck.setText(UiI18n.get("host.ping_only"));
             pingOnlyCheck.setTooltip(null);
+            UiAccessibility.name(pingOnlyCheck, UiI18n.get("a11y.host_ping_only"));
         }
         hostLabel.textProperty().bind(item.hostProperty());
-        stateGlyphListener = (obs, was, glyph) -> stateLabel.setText(glyph);
+        stateGlyphListener = (obs, was, glyph) -> {
+            stateLabel.setText(glyph);
+            refreshStateRouteAccessibility(getItem());
+        };
         item.stateGlyphProperty().addListener(stateGlyphListener);
         stateLabel.setText(item.stateGlyphProperty().get());
-        routeGlyphListener = (obs, was, glyph) -> routeLabel.setText(glyph);
+        routeGlyphListener = (obs, was, glyph) -> {
+            routeLabel.setText(glyph);
+            refreshStateRouteAccessibility(getItem());
+        };
         item.routeGlyphProperty().addListener(routeGlyphListener);
         routeLabel.setText(item.routeGlyphProperty().get());
-        rttColumnListener = (obs, was, text) -> rttLabel.setText(text);
+        rttColumnListener = (obs, was, text) -> {
+            rttLabel.setText(text);
+            refreshRowAccessibility(getItem());
+        };
         item.rttColumnTextProperty().addListener(rttColumnListener);
         rttLabel.setText(item.rttColumnTextProperty().get());
-        lossColumnListener = (obs, was, text) -> lossLabel.setText(text);
+        lossColumnListener = (obs, was, text) -> {
+            lossLabel.setText(text);
+            refreshRowAccessibility(getItem());
+        };
         item.lossColumnTextProperty().addListener(lossColumnListener);
         lossLabel.setText(item.lossColumnTextProperty().get());
-        modeColumnListener = (obs, was, text) -> modeLabel.setText(text);
+        modeColumnListener = (obs, was, text) -> {
+            modeLabel.setText(text);
+            refreshRowAccessibility(getItem());
+        };
         item.modeColumnTextProperty().addListener(modeColumnListener);
         modeLabel.setText(item.modeColumnTextProperty().get());
         rowTooltipListener = (obs, was, text) -> applyRowTooltip(text);
@@ -188,6 +211,10 @@ final class HostListCell extends ListCell<HostItem> {
         styleExtenButton(item.isExpertConfigured());
         refreshExpertControls(item);
         refreshProblemBadge(item, item.isProblemUnread());
+        refreshStateRouteAccessibility(item);
+        refreshRowAccessibility(item);
+        UiAccessibility.name(checkBox, UiI18n.get("a11y.host_enabled", item.getHost()));
+        UiAccessibility.name(hostLabel, item.getHost());
         updating = false;
         setGraphic(root);
     }
@@ -235,9 +262,32 @@ final class HostListCell extends ListCell<HostItem> {
                 problemButton.getStyleClass().add("pingui-danger");
             }
             problemButton.setText(SeverityTheme.glyph(item.severity()));
+            UiAccessibility.name(problemButton, UiAccessibility.problemBadgeName(item.severity()));
         } else {
             problemButton.setText(UiI18n.get("host.problem_badge"));
+            UiAccessibility.name(problemButton, UiI18n.get("host.problem_tooltip"));
         }
+    }
+
+    private void refreshStateRouteAccessibility(HostItem item) {
+        if (item == null) {
+            return;
+        }
+        String endpoint = UiAccessibility.endpointName(item.isEnabled(), item.endpointState());
+        String route = UiAccessibility.routeName(item.routeState());
+        UiAccessibility.name(stateLabel, endpoint);
+        UiAccessibility.textTooltip(stateLabel, endpoint);
+        UiAccessibility.name(routeLabel, route);
+        UiAccessibility.textTooltip(routeLabel, route);
+        refreshRowAccessibility(item);
+    }
+
+    private void refreshRowAccessibility(HostItem item) {
+        if (item == null) {
+            setAccessibleText(null);
+            return;
+        }
+        setAccessibleText(UiAccessibility.hostRowSummary(item));
     }
 
     private void styleExtenButton(boolean configured) {
