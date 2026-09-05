@@ -75,3 +75,15 @@ P32 landed well (fresh-hop, `target_sampled`, rollup v14, bounded DNS/webhook te
 * target timeout stays `sampled=true`, `reachable=false`.
 
 **Tests:** `PollResultEffectsPollResultTest` (error/null, timeout/false, caller-marked sampled).
+
+## P33-005 (done) — Latency baseline reset
+
+**Bug:** after a confirmed route change or probe-mode switch, the `latency_high` EWMA still reflected the old path/mode, so the first RTT in the new context could false-FIRE.
+
+**Fix:**
+
+* `PollResultEffects.resetLatencyBaseline(host)` → `AlertRuleEngine.clearLatencyHost`;
+* `MonitorService` poll path: when `routeChanged && !oldIps.isEmpty()`, reset **before** `evaluateLatencyHigh`;
+* `setHostProbeMode` clears latency baseline for that host.
+
+**Tests:** `AlertRuleEngineTest.clearLatencyHostDropsBaselineForWarmup`, `PollResultEffectsTest.resetLatencyBaselineWarmsUpWithoutFalseHigh`.
