@@ -169,6 +169,120 @@ class MtrProbeTest {
         assertEquals("8.8.8.8", mtrProbe.stateFor("8.8.8.8").targetIp());
     }
 
+    @Test
+    void intermediateTimeoutDoesNotShrinkMonitoringSpan() {
+        // discover 3 hops, then hop1 OK, hop2 timeout → must still probe hop3 (target)
+        prober.enqueue(
+                new ProbeResult("10.0.0.1", 4.0, false),
+                new ProbeResult("10.0.0.2", 6.0, false),
+                new ProbeResult("8.8.8.8", 8.0, true),
+                new ProbeResult("10.0.0.1", 4.5, false));
+        prober.enqueueTimeout();
+        prober.enqueue(new ProbeResult("8.8.8.8", 9.0, true));
+
+        mtrProbe.poll("8.8.8.8", 20, 0.5);
+        mtrProbe.poll("8.8.8.8", 20, 0.5);
+        mtrProbe.poll("8.8.8.8", 20, 0.5);
+        assertEquals(3, mtrProbe.stateFor("8.8.8.8").targetHop());
+        assertEquals(3, mtrProbe.stateFor("8.8.8.8").monitoringSpan());
+
+        mtrProbe.poll("8.8.8.8", 20, 0.5); // hop1
+        MtrPollOutcome midTimeout = mtrProbe.poll("8.8.8.8", 20, 0.5); // hop2 timeout
+        assertEquals(2, midTimeout.probedHop());
+        assertFalse(midTimeout.targetSampled());
+        assertEquals(MtrTargetOutcome.NOT_SAMPLED, midTimeout.targetOutcome());
+        assertEquals(3, mtrProbe.stateFor("8.8.8.8").monitoringSpan());
+        assertEquals(3, mtrProbe.stateFor("8.8.8.8").cursor());
+
+        MtrPollOutcome targetStillSampled = mtrProbe.poll("8.8.8.8", 20, 0.5);
+        assertEquals(3, targetStillSampled.probedHop());
+        assertTrue(targetStillSampled.targetSampled());
+        assertEquals(MtrTargetOutcome.REACHABLE, targetStillSampled.targetOutcome());
+        assertEquals(1, mtrProbe.stateFor("8.8.8.8").cursor());
+    }
+
+    @Test
+    void intermediateTimeoutThenRecoveryKeepsFullRotation() {
+        prober.enqueue(
+                new ProbeResult("10.0.0.1", 4.0, false),
+                new ProbeResult("10.0.0.2", 6.0, false),
+                new ProbeResult("8.8.8.8", 8.0, true),
+                new ProbeResult("10.0.0.1", 4.1, false));
+        prober.enqueueTimeout();
+        prober.enqueue(
+                new ProbeResult("8.8.8.8", 8.5, true),
+                new ProbeResult("10.0.0.1", 4.2, false),
+                new ProbeResult("10.0.0.2", 6.5, false),
+                new ProbeResult("8.8.8.8", 9.0, true));
+
+        for (int i = 0; i < 3; i++) {
+            mtrProbe.poll("8.8.8.8", 20, 0.5);
+        }
+        mtrProbe.poll("8.8.8.8", 20, 0.5); // hop1
+        mtrProbe.poll("8.8.8.8", 20, 0.5); // hop2 timeout
+        mtrProbe.poll("8.8.8.8", 20, 0.5); // hop3 target
+        mtrProbe.poll("8.8.8.8", 20, 0.5); // hop1 again
+        MtrPollOutcome hop2Recovered = mtrProbe.poll("8.8.8.8", 20, 0.5);
+        assertEquals(2, hop2Recovered.probedHop());
+        assertEquals("10.0.0.2", hop2Recovered.freshHopSample().ip());
+        assertTrue(hop2Recovered.freshHopSample().isReachable());
+        assertEquals(3, mtrProbe.stateFor("8.8.8.8").cursor());
+
+        MtrPollOutcome hop3 = mtrProbe.poll("8.8.8.8", 20, 0.5);
+        assertEquals(3, hop3.probedHop());
+        assertTrue(hop3.targetSampled());
+    }
+
+    @Test
+    void repeatedTargetTimeoutsRemainIdentifiable() {
+        prober.enqueue(
+                new ProbeResult("10.0.0.1", 4.0, false),
+                new ProbeResult("8.8.8.8", 8.0, true),
+                new ProbeResult("10.0.0.1", 4.0, false));
+        prober.enqueueTimeout();
+        prober.enqueue(new ProbeResult("10.0.0.1", 4.1, false));
+        prober.enqueueTimeout();
+
+        mtrProbe.poll("8.8.8.8", 20, 0.5);
+        mtrProbe.poll("8.8.8.8", 20, 0.5);
+        mtrProbe.poll("8.8.8.8", 20, 0.5); // hop1
+        MtrPollOutcome firstTargetTimeout = mtrProbe.poll("8.8.8.8", 20, 0.5);
+        assertEquals(2, firstTargetTimeout.probedHop());
+        assertTrue(firstTargetTimeout.targetSampled());
+        assertEquals(MtrTargetOutcome.UNREACHABLE, firstTargetTimeout.targetOutcome());
+        assertEquals(2, mtrProbe.stateFor("8.8.8.8").targetHop());
+        assertEquals(1, mtrProbe.stateFor("8.8.8.8").cursor());
+
+        mtrProbe.poll("8.8.8.8", 20, 0.5); // hop1
+        MtrPollOutcome secondTargetTimeout = mtrProbe.poll("8.8.8.8", 20, 0.5);
+        assertEquals(2, secondTargetTimeout.probedHop());
+        assertTrue(secondTargetTimeout.targetSampled());
+        assertEquals(MtrTargetOutcome.UNREACHABLE, secondTargetTimeout.targetOutcome());
+    }
+
+    @Test
+    void targetRecoversAfterTimeout() {
+        prober.enqueue(
+                new ProbeResult("10.0.0.1", 4.0, false),
+                new ProbeResult("8.8.8.8", 8.0, true),
+                new ProbeResult("10.0.0.1", 4.0, false));
+        prober.enqueueTimeout();
+        prober.enqueue(new ProbeResult("10.0.0.1", 4.2, false), new ProbeResult("8.8.8.8", 9.5, true));
+
+        mtrProbe.poll("8.8.8.8", 20, 0.5);
+        mtrProbe.poll("8.8.8.8", 20, 0.5);
+        mtrProbe.poll("8.8.8.8", 20, 0.5);
+        MtrPollOutcome down = mtrProbe.poll("8.8.8.8", 20, 0.5);
+        assertEquals(MtrTargetOutcome.UNREACHABLE, down.targetOutcome());
+
+        mtrProbe.poll("8.8.8.8", 20, 0.5);
+        MtrPollOutcome up = mtrProbe.poll("8.8.8.8", 20, 0.5);
+        assertEquals(2, up.probedHop());
+        assertTrue(up.targetSampled());
+        assertEquals(MtrTargetOutcome.REACHABLE, up.targetOutcome());
+        assertEquals(9.5, up.freshHopSample().pingMs());
+    }
+
     private static final class ScriptMtrHopProber implements MtrHopProber {
         private final String targetIp;
         private final Deque<Optional<ProbeResult>> script = new ArrayDeque<>();
@@ -186,6 +300,10 @@ class MtrProbeTest {
         void enqueueTimeout(ProbeResult... results) {
             script.addLast(Optional.empty());
             enqueue(results);
+        }
+
+        void enqueueTimeout() {
+            script.addLast(Optional.empty());
         }
 
         @Override

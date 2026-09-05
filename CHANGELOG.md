@@ -9,12 +9,14 @@
 
 ### Added
 
+- **P33 NEXT activated:** ROADMAP **NEXT = P33-001** (Correctness: MTR / projection / side-effects); черга P33-001…008; [pingui-correctness.md](docs/pingui-correctness.md). `beta` синхронізовано з `main@28bdb41`.
 - **P32 NEXT activated:** ROADMAP **NEXT = P32-001** (Stabilization: MTR freshness / history / side-effects); черга P32-001…008; [pingui-stabilization.md](docs/pingui-stabilization.md).
 - **P31 NEXT activated:** ROADMAP **NEXT = P31-001** (GUI information hierarchy); черга P31-001…007; evo [pingui-evo-gui.md](docs/pingui-evo-gui.md).
 
 ### Changed
 
-- **P32-008 — SessionDatabase split + phase close:** facade `SessionDatabase` + `SchemaManager` / `SessionStateRepository` / `HistoryRepository` / `DbCommit`; Java канон, Python bugfix-only; фаза 32 **NEXT=DONE**.
+- **P33-001 — MTR stable `targetHop` / monitoring span:** cursor обертається в `1..targetHop` (не reachable-prefix); intermediate timeout не пропускає target; target slot за номером hop; NEXT→**P33-002**.
+- **P32-008 — SessionDatabase split + phase close:** facade `SessionDatabase` + `SchemaManager` / `SessionStateRepository` / `HistoryRepository` / `DbCommit`; Java канон, Python bugfix-only; фаза 32 **closed**.
 - **P32-007 — runtime i18n + a11y leftovers:** `configureOnce`/`retranslate`; problemsFirst keyboard; bundle key parity + без дубля `history.initial_route`; NEXT→**P32-008**.
 - **P32-006 — alert lifecycle vs delivery:** FIRING/RESOLVED завжди з engine; silence/cooldown лише delivery (`QualityAlertDelivery`); pending notify після expiry один раз; NEXT→**P32-007**.
 - **P32-005 — bounded side-effect consumers:** `BoundedForwardDnsLookup` (executor+timeout+TTL cache); async webhook posts; `applyPollSnapshot` / deferred persist; `ensureHostExists` без повного `load()`; NEXT→**P32-006**.

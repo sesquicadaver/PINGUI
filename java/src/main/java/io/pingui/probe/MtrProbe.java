@@ -11,11 +11,12 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * MTR-style per-hop poll state machine (P13-010 / P32-001 / P32-002).
+ * MTR-style per-hop poll state machine (P13-010 / P32-001 / P32-002 / P33-001).
  *
  * <p>One hop per {@link #poll} call. Per-host state lives in a {@link ConcurrentHashMap}; a
  * generation token drops in-flight writes after {@link #resetHost(String)} / rename so a finished
- * poll cannot resurrect cleared state.
+ * poll cannot resurrect cleared state. Monitoring rotates across a stable {@code targetHop} span so
+ * intermediate timeouts cannot permanently skip the target (P33-001).
  */
 public final class MtrProbe {
     private final MtrHopProber hopProber;
@@ -110,7 +111,8 @@ public final class MtrProbe {
                     working.phase(),
                     working.cursor(),
                     working.nodes(),
-                    working.lastCompleteRouteIps());
+                    working.lastCompleteRouteIps(),
+                    working.targetHop());
         }
         int hop = working.cursor();
         Optional<ProbeResult> probe = hopProber.probeHop(working.targetHost(), working.targetIp(), hop, timeoutSeconds);
@@ -135,9 +137,11 @@ public final class MtrProbe {
         if (isTarget) {
             List<HopNode> trimmed = trimTrailingEmpty(nodes);
             List<String> completeIps = routeIps(trimmed);
+            int discoveredTargetHop = trimmed.isEmpty() ? hop : trimmed.size();
             MtrProbeState next = state.withNodes(trimmed)
                     .withPhase(MtrProbeState.Phase.MONITORING)
                     .withCursor(1)
+                    .withTargetHop(discoveredTargetHop)
                     .withLastCompleteRouteIps(completeIps);
             return toStepResult(next, hop, node, true, MtrTargetOutcome.REACHABLE);
         }
@@ -158,22 +162,26 @@ public final class MtrProbe {
             return toStepResult(next, hop, fresh, false, targetOutcome);
         }
         List<HopNode> trimmed = trimTrailingEmpty(nodes);
+        int inferredTarget = state.targetHop() > 0 ? state.targetHop() : trimmed.size();
         MtrProbeState next = state.withNodes(trimmed)
                 .withPhase(MtrProbeState.Phase.MONITORING)
-                .withCursor(1);
+                .withCursor(1)
+                .withTargetHop(inferredTarget > 0 ? inferredTarget : state.targetHop());
         boolean targetSampled = targetOutcome != MtrTargetOutcome.NOT_SAMPLED;
         return toStepResult(next, hop, fresh, targetSampled, targetOutcome);
     }
 
     private StepResult stepMonitoring(MtrProbeState state, int hop, Optional<ProbeResult> probe) {
         List<HopNode> nodes = state.mutableNodes();
+        ensureNodeSlots(nodes, Math.max(hop, state.monitoringSpan()));
         if (nodes.isEmpty() || hop > nodes.size()) {
-            MtrProbeState rediscover =
-                    state.withPhase(MtrProbeState.Phase.DISCOVERING).withCursor(1);
+            MtrProbeState rediscover = state.withPhase(MtrProbeState.Phase.DISCOVERING)
+                    .withCursor(1)
+                    .withTargetHop(0);
             return toStepResult(rediscover, hop, null, false, MtrTargetOutcome.NOT_SAMPLED);
         }
         HopNode previous = nodes.get(hop - 1);
-        boolean probingTarget = isTargetHop(state, previous);
+        boolean probingTarget = isTargetSlot(state, hop, previous);
         if (probe.isEmpty()) {
             HopNode fresh = Models.timeout(hop);
             nodes.set(hop - 1, fresh);
@@ -189,7 +197,8 @@ public final class MtrProbe {
             boolean isTarget = result.target() || result.sourceIp().equals(state.targetIp());
             MtrProbeState next = state.withNodes(truncated)
                     .withPhase(MtrProbeState.Phase.DISCOVERING)
-                    .withCursor(hop + 1);
+                    .withCursor(hop + 1)
+                    .withTargetHop(0);
             return toStepResult(
                     next, hop, fresh, isTarget, isTarget ? MtrTargetOutcome.REACHABLE : MtrTargetOutcome.NOT_SAMPLED);
         }
@@ -197,17 +206,30 @@ public final class MtrProbe {
         nodes.set(hop - 1, fresh);
         boolean isTarget = result.target() || result.sourceIp().equals(state.targetIp()) || probingTarget;
         List<String> completeIps = state.lastCompleteRouteIps();
-        if (isTarget || routeIps(nodes).equals(state.lastCompleteRouteIps())) {
+        int nextTargetHop = state.targetHop();
+        if (isTarget) {
+            nextTargetHop = hop;
+            completeIps = routeIps(nodes);
+        } else if (routeIps(nodes).equals(state.lastCompleteRouteIps())) {
             completeIps = routeIps(nodes);
         }
         MtrProbeState next = state.withNodes(nodes)
                 .withCursor(nextMonitoringCursor(state, hop))
+                .withTargetHop(nextTargetHop)
                 .withLastCompleteRouteIps(completeIps);
         return toStepResult(
                 next, hop, fresh, isTarget, isTarget ? MtrTargetOutcome.REACHABLE : MtrTargetOutcome.NOT_SAMPLED);
     }
 
-    private static boolean isTargetHop(MtrProbeState state, HopNode hop) {
+    /** True when this hop index is the stable target slot (P33-001), else IP match fallback. */
+    private static boolean isTargetSlot(MtrProbeState state, int hop, HopNode node) {
+        if (state.targetHop() > 0) {
+            return hop == state.targetHop();
+        }
+        return isTargetHopByIp(state, node);
+    }
+
+    private static boolean isTargetHopByIp(MtrProbeState state, HopNode hop) {
         if (hop == null || !hop.isReachable() || hop.ip() == null) {
             return false;
         }
@@ -215,7 +237,7 @@ public final class MtrProbe {
     }
 
     private static int nextMonitoringCursor(MtrProbeState state, int probedHop) {
-        int hopCount = state.monitoringHopCount();
+        int hopCount = state.monitoringSpan();
         if (hopCount <= 1) {
             return 1;
         }

@@ -229,4 +229,4 @@ pingui-java.bat --package    REM .msi
 
 ## Майбутнє
 
-Лінійна черга ROADMAP: **NEXT = DONE** (фаза 32 — Stabilization). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT; [pingui-stabilization.md](pingui-stabilization.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
+Лінійна черга ROADMAP: **NEXT = P33-002** (фаза 33 — Correctness). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT; [pingui-correctness.md](pingui-correctness.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
