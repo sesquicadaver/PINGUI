@@ -251,6 +251,17 @@ final class PollResultEffects {
         }
     }
 
+    /**
+     * Drops per-host {@code latency_high} EWMA / streaks so the next RTT seeds a warm-up baseline
+     * (P33-005). Call on confirmed route change or probe-mode switch.
+     */
+    void resetLatencyBaseline(String host) {
+        if (host == null || host.isBlank()) {
+            return;
+        }
+        alertRuleEngine.clearLatencyHost(host);
+    }
+
     void persistBaselineRouteChange(String host, List<String> currentIps) {
         RouteChangeEvent event =
                 RouteChangeEvent.fromRouteChange(host, List.of(), currentIps, alertProfileName, Instant.now());

@@ -75,3 +75,15 @@ P32 закрито якісно (fresh-hop, `target_sampled`, rollup v14, bounde
 * target timeout лишається `sampled=true`, `reachable=false`.
 
 **Тести:** `PollResultEffectsPollResultTest` (error/null, timeout/false, caller-marked sampled).
+
+## P33-005 (зроблено) — Latency baseline reset
+
+**Проблема:** після confirmed route change або зміни probe mode EWMA `latency_high` лишався від старого шляху/режиму → перший RTT на новому контексті міг дати false FIRING.
+
+**Виправлення:**
+
+* `PollResultEffects.resetLatencyBaseline(host)` → `AlertRuleEngine.clearLatencyHost`;
+* `MonitorService` poll path: при `routeChanged && !oldIps.isEmpty()` — reset **перед** `evaluateLatencyHigh`;
+* `setHostProbeMode` — `clearLatencyHost` для цього хоста.
+
+**Тести:** `AlertRuleEngineTest.clearLatencyHostDropsBaselineForWarmup`, `PollResultEffectsTest.resetLatencyBaselineWarmsUpWithoutFalseHigh`.

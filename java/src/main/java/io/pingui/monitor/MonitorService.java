@@ -393,6 +393,8 @@ public final class MonitorService implements AutoCloseable {
         registry.setProbeMode(host, probeMode);
         burstPolicy.clearHost(host);
         poller.resetMtrHost(host);
+        // New probe mode must not inherit the previous EWMA baseline (P33-005).
+        alertRuleEngine.clearLatencyHost(host);
     }
 
     /** Liveness counters for the current probe mode (reset on {@link #setHostProbeMode}). */
@@ -542,6 +544,10 @@ public final class MonitorService implements AutoCloseable {
                     pollEffects.recordPollResult(
                             host, probeMode, snapshot, durationMs, null, outcome.probeOutcome(), true);
                     pollEffects.evaluateEndpointDown(host, snapshot);
+                    // Reset EWMA before latency_high so the first RTT on a new path is warm-up (P33-005).
+                    if (outcome.routeChanged() && !outcome.oldIps().isEmpty()) {
+                        pollEffects.resetLatencyBaseline(host);
+                    }
                     pollEffects.evaluateLatencyHigh(host, snapshot);
                 }
             }

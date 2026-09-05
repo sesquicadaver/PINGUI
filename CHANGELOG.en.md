@@ -15,6 +15,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P33-005 — latency baseline reset:** clear EWMA on confirmed route change and `setHostProbeMode`; first RTT on the new path is warm-up without a false `latency_high`; NEXT→**P33-006**.
 - **P33-004 — poll_result tri-state:** monitor/DNS/internal error → `target_sampled=false`, `reachable=null` (not downtime); target timeout stays sampled+unreachable; NEXT→**P33-005**.
 - **P33-003 — SessionStore bounded persistence writer:** SQLite/TS off FX/probe via `SessionPersistenceWriter`; sync in-memory + `snapshot()` API; drop counter; NEXT→**P33-004**.
 - **P33-002 — MTR/projection semantics:** authoritative `routeChanged` in `SessionStore.applyPollSnapshot`; `targetStats` / classifier use `targetIp`+`targetHop` (not discovery last hop); NEXT→**P33-003**.

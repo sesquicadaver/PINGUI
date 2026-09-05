@@ -47,6 +47,26 @@ class PollResultEffectsTest {
     }
 
     @Test
+    void resetLatencyBaselineWarmsUpWithoutFalseHigh() {
+        AlertRuleEngine engine = new AlertRuleEngine();
+        PollResultEffects effects = new PollResultEffects(engine);
+        effects.setLatencyHighRule(io.pingui.config.LatencyHighRuleConfig.critical(true));
+        RouteSnapshot oldPath =
+                new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "8.8.8.8", 10.0, false)));
+        effects.evaluateLatencyHigh("8.8.8.8", oldPath);
+        assertEquals(10.0, engine.latencyAvg("8.8.8.8").orElseThrow(), 0.001);
+
+        effects.resetLatencyBaseline("8.8.8.8");
+        assertTrue(engine.latencyAvg("8.8.8.8").isEmpty());
+
+        RouteSnapshot newPath =
+                new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "8.8.8.8", 100.0, false)));
+        effects.evaluateLatencyHigh("8.8.8.8", newPath);
+        assertEquals(100.0, engine.latencyAvg("8.8.8.8").orElseThrow(), 0.001);
+        assertTrue(engine.problemSummary("8.8.8.8").isEmpty());
+    }
+
+    @Test
     void dispatchRouteChangeAlertPersistsAndDispatches() throws Exception {
         Path dbPath = Files.createTempDirectory("pingui-pre").resolve("effects.db");
         AlertRuleEngine engine = new AlertRuleEngine();
