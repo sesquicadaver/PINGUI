@@ -63,3 +63,15 @@ P32 landed well (fresh-hop, `target_sampled`, rollup v14, bounded DNS/webhook te
 * API: `snapshot()` / `currentRouteSnapshot()`.
 
 **Tests:** `SessionPersistenceWriterTest`, updated `SessionStore*Test`.
+
+## P33-004 (done) — `poll_result` tri-state
+
+**Bug:** the failure path always wrote `target_sampled=true` and `reachable=false`, so DNS/permission/internal errors lowered uptime like real downtime.
+
+**Fix:**
+
+* `PollResultEffects.recordPollResult` — set `reachable` only when the target was actually sampled and there is no monitor error;
+* `MonitorService` failure → `targetSampled=false`;
+* target timeout stays `sampled=true`, `reachable=false`.
+
+**Tests:** `PollResultEffectsPollResultTest` (error/null, timeout/false, caller-marked sampled).

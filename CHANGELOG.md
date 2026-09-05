@@ -15,6 +15,7 @@
 
 ### Changed
 
+- **P33-004 — poll_result tri-state:** monitor/DNS/internal error → `target_sampled=false`, `reachable=null` (не downtime); target timeout лишається sampled+unreachable; NEXT→**P33-005**.
 - **P33-003 — SessionStore bounded persistence writer:** SQLite/TS off FX/probe via `SessionPersistenceWriter`; sync in-memory + `snapshot()` API; drop counter; NEXT→**P33-004**.
 - **P33-002 — MTR/projection semantics:** authoritative `routeChanged` у `SessionStore.applyPollSnapshot`; `targetStats` / classifier за `targetIp`+`targetHop` (не last hop discovery); NEXT→**P33-003**.
 - **P33-001 — MTR stable `targetHop` / monitoring span:** cursor обертається в `1..targetHop` (не reachable-prefix); intermediate timeout не пропускає target; target slot за номером hop; NEXT→**P33-002**.
