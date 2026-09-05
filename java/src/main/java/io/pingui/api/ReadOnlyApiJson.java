@@ -21,13 +21,13 @@ final class ReadOnlyApiJson {
                 json.append(',');
             }
             String host = hosts.get(i);
-            HostSessionData session = store.get(host);
+            HostSessionData session = store.snapshot(host);
             json.append("{\"address\":")
                     .append(JsonStrings.quote(host))
                     .append(",\"enabled\":")
                     .append(session.isEnabled())
                     .append(",\"probe_mode\":")
-                    .append(JsonStrings.quote(store.getProbeMode(host).yamlValue()))
+                    .append(JsonStrings.quote(session.getProbeMode().yamlValue()))
                     .append('}');
         }
         json.append("]}");

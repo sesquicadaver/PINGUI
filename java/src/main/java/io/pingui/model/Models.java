@@ -219,5 +219,33 @@ public final class Models {
         public void setPingExpert(PingExpertEntry pingExpert) {
             this.pingExpert = pingExpert != null ? pingExpert.normalized() : PingExpertEntry.empty();
         }
+
+        /** Deep copy for async SQLite snapshots (P33-003). */
+        public HostSessionData copy() {
+            HostSessionData copy = new HostSessionData();
+            copy.currentRoute = currentRoute;
+            copy.previousRoute = previousRoute;
+            copy.lastKnownByHop.putAll(lastKnownByHop);
+            for (java.util.Map.Entry<String, java.util.List<Double>> entry : pingHistory.entrySet()) {
+                copy.pingHistory.put(entry.getKey(), new java.util.ArrayList<>(entry.getValue()));
+            }
+            for (java.util.Map.Entry<Integer, HopProbeStats> entry : hopStats.entrySet()) {
+                HopProbeStats src = entry.getValue();
+                copy.hopStats.put(
+                        entry.getKey(),
+                        HopProbeStats.fromSerialized(
+                                src.getProbes(), src.getSuccesses(), List.copyOf(src.getRttSamples())));
+            }
+            copy.enabled = enabled;
+            copy.pingOnly = pingOnly;
+            copy.probeMode = probeMode;
+            copy.probeModeOverride = probeModeOverride;
+            copy.intervalSecondsOverride = intervalSecondsOverride;
+            copy.tags = tags;
+            copy.pingExpert = pingExpert;
+            copy.lastTargetIp = lastTargetIp;
+            copy.lastTargetHop = lastTargetHop;
+            return copy;
+        }
     }
 }

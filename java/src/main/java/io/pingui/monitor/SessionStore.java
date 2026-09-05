@@ -10,11 +10,14 @@ import io.pingui.model.Models.HopStatsSummary;
 import io.pingui.model.Models.HostSessionData;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.persistence.SessionDatabase;
+import io.pingui.persistence.SessionPersistenceWriter;
 import io.pingui.persistence.timeseries.PingSample;
 import io.pingui.persistence.timeseries.RouteEvent;
 import io.pingui.persistence.timeseries.TimeSeriesBackend;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -22,18 +25,25 @@ import java.util.OptionalDouble;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** In-memory session storage for route and ping metrics; optional SQLite persistence (P11-011 / P32-005). */
+/**
+ * In-memory session storage for route and ping metrics (P11-011 / P32-005 / P33-003).
+ *
+ * <p>Hot-path mutations update memory only under an internal lock. SQLite and time-series I/O go
+ * through a bounded {@link SessionPersistenceWriter} so FX / probe threads never block on JDBC/HTTP.
+ */
 public final class SessionStore implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(SessionStore.class);
     public static final int MAX_PING_SAMPLES = 50;
 
+    private final Object lock = new Object();
     private final Map<String, HostSessionData> data = new LinkedHashMap<>();
     private SessionDatabase database;
     private TimeSeriesBackend timeseries;
+    private SessionPersistenceWriter persistenceWriter;
     /** Nested depth for coalescing SQLite saves within one poll (P32-005). */
     private int deferPersistDepth;
 
-    private final java.util.LinkedHashSet<String> deferredPersistHosts = new java.util.LinkedHashSet<>();
+    private final LinkedHashSet<String> deferredPersistHosts = new LinkedHashSet<>();
     private int flushPersistCountForTests;
 
     public SessionStore(List<String> hosts) {
@@ -42,6 +52,9 @@ public final class SessionStore implements AutoCloseable {
 
     public SessionStore(List<String> hosts, SessionDatabase database) {
         this.database = database;
+        if (database != null) {
+            this.persistenceWriter = new SessionPersistenceWriter(database, null);
+        }
         for (String host : hosts) {
             data.put(host, loadOrCreate(host));
         }
@@ -63,32 +76,56 @@ public final class SessionStore implements AutoCloseable {
     }
 
     public boolean hasPersistence() {
-        return database != null;
+        synchronized (lock) {
+            return database != null;
+        }
     }
 
     public SessionDatabase database() {
-        return database;
+        synchronized (lock) {
+            return database;
+        }
     }
 
-    /** Optional Influx/Timescale writer (P15-020); null disables push. */
+    /** Optional Influx/Timescale writer (P15-020 / P33-003); null disables push. */
     public void setTimeSeriesBackend(TimeSeriesBackend timeseries) {
-        this.timeseries = timeseries;
+        synchronized (lock) {
+            this.timeseries = timeseries;
+            ensureWriter();
+            if (persistenceWriter != null) {
+                persistenceWriter.setTimeSeriesBackend(timeseries);
+            }
+        }
     }
 
     public TimeSeriesBackend timeSeriesBackend() {
-        return timeseries;
+        synchronized (lock) {
+            return timeseries;
+        }
+    }
+
+    /** Dropped persistence / time-series jobs when the bounded writer queue overflowed (P33-003). */
+    public long persistenceDroppedCount() {
+        SessionPersistenceWriter writer = persistenceWriter;
+        return writer != null ? writer.droppedCount() : 0L;
     }
 
     public List<String> hosts() {
-        return List.copyOf(data.keySet());
+        synchronized (lock) {
+            return List.copyOf(data.keySet());
+        }
     }
 
     public boolean containsHost(String host) {
-        return data.containsKey(host);
+        synchronized (lock) {
+            return data.containsKey(host);
+        }
     }
 
     public boolean canAddHost() {
-        return data.size() < HostsConfig.MAX_HOSTS;
+        synchronized (lock) {
+            return data.size() < HostsConfig.MAX_HOSTS;
+        }
     }
 
     public String addHost(String host, boolean enabled) {
@@ -104,76 +141,99 @@ public final class SessionStore implements AutoCloseable {
     }
 
     public String addHost(String host, boolean enabled, HostProbeMode probeMode, PingExpertEntry pingExpert) {
-        String normalized = HostsConfig.validateSessionHost(host, hosts());
-        if (data.containsKey(normalized)) {
-            throw new ConfigError("Host already in list: " + normalized);
+        synchronized (lock) {
+            String normalized = HostsConfig.validateSessionHost(host, List.copyOf(data.keySet()));
+            if (data.containsKey(normalized)) {
+                throw new ConfigError("Host already in list: " + normalized);
+            }
+            HostSessionData session = new HostSessionData();
+            session.setEnabled(enabled);
+            session.setProbeMode(probeMode);
+            session.setPingExpert(pingExpert);
+            data.put(normalized, session);
+            persist(normalized);
+            return normalized;
         }
-        HostSessionData session = new HostSessionData();
-        session.setEnabled(enabled);
-        session.setProbeMode(probeMode);
-        session.setPingExpert(pingExpert);
-        data.put(normalized, session);
-        persist(normalized);
-        return normalized;
     }
 
     public void removeHost(String host) {
-        if (!data.containsKey(host)) {
-            throw new ConfigError("Unknown host: " + host);
-        }
-        data.remove(host);
-        if (database != null) {
-            database.delete(host);
+        synchronized (lock) {
+            if (!data.containsKey(host)) {
+                throw new ConfigError("Unknown host: " + host);
+            }
+            data.remove(host);
+            if (persistenceWriter != null) {
+                persistenceWriter.offerDelete(host);
+            } else if (database != null) {
+                database.delete(host);
+            }
         }
     }
 
     public void setEnabled(String host, boolean enabled) {
-        get(host).setEnabled(enabled);
-        persist(host);
+        synchronized (lock) {
+            getUnlocked(host).setEnabled(enabled);
+            persist(host);
+        }
     }
 
     public PingExpertEntry getPingExpert(String host) {
-        return get(host).getPingExpert();
+        synchronized (lock) {
+            return getUnlocked(host).getPingExpert();
+        }
     }
 
     public void setPingExpert(String host, PingExpertEntry expert) {
-        get(host).setPingExpert(expert);
+        synchronized (lock) {
+            getUnlocked(host).setPingExpert(expert);
+        }
     }
 
     public List<String> getTags(String host) {
-        return get(host).getTags();
+        synchronized (lock) {
+            return getUnlocked(host).getTags();
+        }
     }
 
     /** Replaces host tags (normalized via {@link io.pingui.config.HostTags}). */
     public void setTags(String host, List<String> tags) {
-        get(host).setTags(tags);
+        synchronized (lock) {
+            getUnlocked(host).setTags(tags);
+        }
     }
 
     public boolean isPingOnly(String host) {
-        return get(host).isPingOnly();
+        synchronized (lock) {
+            return getUnlocked(host).isPingOnly();
+        }
     }
 
     public HostProbeMode getProbeMode(String host) {
-        return get(host).getProbeMode();
+        synchronized (lock) {
+            return getUnlocked(host).getProbeMode();
+        }
     }
 
     public OptionalDouble getIntervalOverride(String host) {
-        Double override = get(host).getIntervalSecondsOverride();
-        return override != null ? OptionalDouble.of(override) : OptionalDouble.empty();
+        synchronized (lock) {
+            Double override = getUnlocked(host).getIntervalSecondsOverride();
+            return override != null ? OptionalDouble.of(override) : OptionalDouble.empty();
+        }
     }
 
     public void setProbeMode(String host, HostProbeMode probeMode) {
-        HostSessionData session = get(host);
-        session.setProbeMode(probeMode);
-        session.setProbeModeOverride(null);
-        session.setCurrentRoute(List.of());
-        session.setPreviousRoute(List.of());
-        session.clearTargetIdentity();
-        session.getLastKnownByHop().clear();
-        // Mode switch changes terminal hop identity (trace N ↔ ping_only 1); drop probe series.
-        session.getHopStats().clear();
-        session.getPingHistory().clear();
-        persist(host);
+        synchronized (lock) {
+            HostSessionData session = getUnlocked(host);
+            session.setProbeMode(probeMode);
+            session.setProbeModeOverride(null);
+            session.setCurrentRoute(List.of());
+            session.setPreviousRoute(List.of());
+            session.clearTargetIdentity();
+            session.getLastKnownByHop().clear();
+            session.getHopStats().clear();
+            session.getPingHistory().clear();
+            persist(host);
+        }
     }
 
     public void setPingOnly(String host, boolean pingOnly) {
@@ -185,62 +245,88 @@ public final class SessionStore implements AutoCloseable {
     }
 
     public void loadHostEntries(List<HostEntry> entries, HostProbeMode profileDefault) {
-        data.clear();
-        for (HostEntry entry : entries) {
-            HostSessionData session = database != null ? loadOrCreate(entry.address()) : new HostSessionData();
-            session.setEnabled(entry.enabled());
-            session.applyProbeFromEntry(entry, profileDefault);
-            session.setPingExpert(entry.pingExpert());
-            data.put(entry.address(), session);
-            persist(entry.address());
+        synchronized (lock) {
+            data.clear();
+            for (HostEntry entry : entries) {
+                HostSessionData session = database != null ? loadOrCreate(entry.address()) : new HostSessionData();
+                session.setEnabled(entry.enabled());
+                session.applyProbeFromEntry(entry, profileDefault);
+                session.setPingExpert(entry.pingExpert());
+                data.put(entry.address(), session);
+                persist(entry.address());
+            }
         }
     }
 
     public List<HostEntry> toHostEntries() {
-        List<HostEntry> out = new ArrayList<>();
-        for (Map.Entry<String, HostSessionData> entry : data.entrySet()) {
-            HostSessionData session = entry.getValue();
-            boolean pingOnly = session.isPingOnly() && session.getProbeModeOverride() == null;
-            out.add(new HostEntry(
-                    entry.getKey(),
-                    session.isEnabled(),
-                    pingOnly,
-                    session.getPingExpert(),
-                    session.getProbeModeOverride(),
-                    session.getIntervalSecondsOverride(),
-                    session.getTags()));
+        synchronized (lock) {
+            List<HostEntry> out = new ArrayList<>();
+            for (Map.Entry<String, HostSessionData> entry : data.entrySet()) {
+                HostSessionData session = entry.getValue();
+                boolean pingOnly = session.isPingOnly() && session.getProbeModeOverride() == null;
+                out.add(new HostEntry(
+                        entry.getKey(),
+                        session.isEnabled(),
+                        pingOnly,
+                        session.getPingExpert(),
+                        session.getProbeModeOverride(),
+                        session.getIntervalSecondsOverride(),
+                        session.getTags()));
+            }
+            return List.copyOf(out);
         }
-        return List.copyOf(out);
     }
 
     public String renameHost(String oldHost, String newHost) {
-        List<String> others = new ArrayList<>(hosts());
-        others.remove(oldHost);
-        String normalized = HostsConfig.validateSessionHost(newHost, others);
-        HostSessionData session = data.remove(oldHost);
-        if (session == null) {
-            throw new ConfigError("Unknown host: " + oldHost);
+        synchronized (lock) {
+            List<String> others = new ArrayList<>(data.keySet());
+            others.remove(oldHost);
+            String normalized = HostsConfig.validateSessionHost(newHost, others);
+            HostSessionData session = data.remove(oldHost);
+            if (session == null) {
+                throw new ConfigError("Unknown host: " + oldHost);
+            }
+            data.put(normalized, session);
+            if (persistenceWriter != null && database != null) {
+                persistenceWriter.offerRename(oldHost, normalized);
+            } else if (database != null) {
+                database.rename(oldHost, normalized);
+            } else {
+                persist(normalized);
+            }
+            return normalized;
         }
-        data.put(normalized, session);
-        if (database != null) {
-            database.rename(oldHost, normalized);
-        } else {
-            persist(normalized);
-        }
-        return normalized;
     }
 
+    /**
+     * Mutable session view for in-process UI/monitor callers. Prefer {@link #snapshot(String)} for
+     * API / cross-thread reads (P33-003).
+     */
     public HostSessionData get(String host) {
-        HostSessionData session = data.get(host);
-        if (session == null) {
-            throw new ConfigError("Unknown host: " + host);
+        synchronized (lock) {
+            return getUnlocked(host);
         }
-        return session;
+    }
+
+    /** Immutable copy of session state for read-only consumers (P33-003). */
+    public HostSessionData snapshot(String host) {
+        synchronized (lock) {
+            return getUnlocked(host).copy();
+        }
+    }
+
+    /** Immutable current-route hops for API / graph readers (P33-003). */
+    public List<HopNode> currentRouteSnapshot(String host) {
+        synchronized (lock) {
+            return List.copyOf(getUnlocked(host).getCurrentRoute());
+        }
     }
 
     public List<HopNode> inactiveRoute(String host) {
-        HostSessionData session = get(host);
-        return RouteHistory.routeWithLastKnownIps(session.getPreviousRoute(), session.getLastKnownByHop());
+        synchronized (lock) {
+            HostSessionData session = getUnlocked(host);
+            return RouteHistory.routeWithLastKnownIps(session.getPreviousRoute(), session.getLastKnownByHop());
+        }
     }
 
     /**
@@ -252,29 +338,28 @@ public final class SessionStore implements AutoCloseable {
     }
 
     public void updateRoute(String host, RouteSnapshot snapshot, Boolean confirmedRouteChange) {
-        HostSessionData session = get(host);
-        rememberTargetIdentity(session, snapshot, null);
-        List<String> oldIps = routeIps(session.getCurrentRoute());
-        List<String> newIps = snapshot.routeIps();
-        boolean routeChanged = confirmedRouteChange != null
-                ? confirmedRouteChange
-                : !session.getCurrentRoute().isEmpty() && !oldIps.equals(newIps);
-        if (routeChanged) {
-            session.setPreviousRoute(
-                    RouteHistory.routeWithLastKnownIps(session.getCurrentRoute(), session.getLastKnownByHop()));
+        synchronized (lock) {
+            HostSessionData session = getUnlocked(host);
+            rememberTargetIdentity(session, snapshot, null);
+            List<String> oldIps = routeIps(session.getCurrentRoute());
+            List<String> newIps = snapshot.routeIps();
+            boolean routeChanged = confirmedRouteChange != null
+                    ? confirmedRouteChange
+                    : !session.getCurrentRoute().isEmpty() && !oldIps.equals(newIps);
+            if (routeChanged) {
+                session.setPreviousRoute(
+                        RouteHistory.routeWithLastKnownIps(session.getCurrentRoute(), session.getLastKnownByHop()));
+            }
+            RouteHistory.recordLastKnown(session.getLastKnownByHop(), snapshot.nodes());
+            session.setCurrentRoute(snapshot.nodes());
+            persist(host);
+            writeRouteEvent(host, newIps, routeChanged, snapshot);
         }
-        RouteHistory.recordLastKnown(session.getLastKnownByHop(), snapshot.nodes());
-        session.setCurrentRoute(snapshot.nodes());
-        persist(host);
-        writeRouteEvent(host, newIps, routeChanged, snapshot);
     }
 
     /**
-     * Applies one poll snapshot with a single SQLite {@code save} (P32-005 / P33-002). Prefer this over
-     * separate {@link #updateRoute} + {@link #appendPingSamples} on the hot path.
-     *
-     * <p>{@code confirmedRouteChange} must come from the probe outcome (MTR discovery / timeout are not
-     * topology changes). Pass {@code null} only for TRACE-style auto-detect callers.
+     * Applies one poll snapshot with coalesced persistence (P32-005 / P33-002 / P33-003). Prefer this
+     * over separate {@link #updateRoute} + {@link #appendPingSamples} on the hot path.
      */
     public void applyPollSnapshot(String host, RouteSnapshot snapshot, PollSampleScope sampleScope) {
         applyPollSnapshot(host, snapshot, sampleScope, null);
@@ -285,7 +370,9 @@ public final class SessionStore implements AutoCloseable {
         PollSampleScope safe = sampleScope != null ? sampleScope : PollSampleScope.FULL;
         withDeferredPersist(() -> {
             updateRoute(host, snapshot, confirmedRouteChange);
-            rememberTargetIdentity(get(host), snapshot, safe);
+            synchronized (lock) {
+                rememberTargetIdentity(getUnlocked(host), snapshot, safe);
+            }
             appendPingSamples(host, snapshot, safe);
         });
     }
@@ -296,29 +383,31 @@ public final class SessionStore implements AutoCloseable {
 
     /** Records hop stats / RTT history for fresh samples only (P32-001). */
     public void appendPingSamples(String host, RouteSnapshot snapshot, PollSampleScope scope) {
-        PollSampleScope safe = scope != null ? scope : PollSampleScope.FULL;
-        recordHopProbes(host, snapshot, safe);
-        Map<String, List<Double>> history = get(host).getPingHistory();
-        boolean changed = false;
-        List<PingSample> newSamples = new ArrayList<>();
-        for (HopNode node : snapshot.nodes()) {
-            if (!safe.allHopsFresh() && (safe.freshHop() == null || node.hop() != safe.freshHop())) {
-                continue;
+        synchronized (lock) {
+            PollSampleScope safe = scope != null ? scope : PollSampleScope.FULL;
+            recordHopProbesUnlocked(host, snapshot, safe);
+            Map<String, List<Double>> history = getUnlocked(host).getPingHistory();
+            boolean changed = false;
+            List<PingSample> newSamples = new ArrayList<>();
+            for (HopNode node : snapshot.nodes()) {
+                if (!safe.allHopsFresh() && (safe.freshHop() == null || node.hop() != safe.freshHop())) {
+                    continue;
+                }
+                if (!node.isReachable() || node.pingMs() == null) {
+                    continue;
+                }
+                List<Double> samples = mutablePingSamples(history, node.ip());
+                samples.add(node.pingMs());
+                if (samples.size() > MAX_PING_SAMPLES) {
+                    samples.subList(0, samples.size() - MAX_PING_SAMPLES).clear();
+                }
+                changed = true;
+                newSamples.add(new PingSample(host, node.hop(), node.ip(), node.pingMs(), snapshot.timestamp()));
             }
-            if (!node.isReachable() || node.pingMs() == null) {
-                continue;
+            if (changed) {
+                persist(host);
+                writePingSamples(newSamples);
             }
-            List<Double> samples = mutablePingSamples(history, node.ip());
-            samples.add(node.pingMs());
-            if (samples.size() > MAX_PING_SAMPLES) {
-                samples.subList(0, samples.size() - MAX_PING_SAMPLES).clear();
-            }
-            changed = true;
-            newSamples.add(new PingSample(host, node.hop(), node.ip(), node.pingMs(), snapshot.timestamp()));
-        }
-        if (changed) {
-            persist(host);
-            writePingSamples(newSamples);
         }
     }
 
@@ -338,16 +427,20 @@ public final class SessionStore implements AutoCloseable {
     }
 
     public Double avgPing(String host, String ip) {
-        List<Double> samples = get(host).getPingHistory().get(ip);
-        if (samples == null || samples.isEmpty()) {
-            return null;
+        synchronized (lock) {
+            List<Double> samples = getUnlocked(host).getPingHistory().get(ip);
+            if (samples == null || samples.isEmpty()) {
+                return null;
+            }
+            return samples.stream().mapToDouble(Double::doubleValue).average().orElse(Double.NaN);
         }
-        return samples.stream().mapToDouble(Double::doubleValue).average().orElse(Double.NaN);
     }
 
     public HopStatsSummary hopStatsSummary(String host, int hop) {
-        HopProbeStats stats = get(host).getHopStats().get(hop);
-        return stats != null ? HopStats.summarize(stats) : null;
+        synchronized (lock) {
+            HopProbeStats stats = getUnlocked(host).getHopStats().get(hop);
+            return stats != null ? HopStats.summarize(stats) : null;
+        }
     }
 
     /**
@@ -355,20 +448,22 @@ public final class SessionStore implements AutoCloseable {
      * {@code null} when disabled, empty, or the target has not been identified yet.
      */
     public HostTargetStats targetStats(String host) {
-        HostSessionData session = get(host);
-        if (!session.isEnabled()) {
-            return null;
+        synchronized (lock) {
+            HostSessionData session = getUnlocked(host);
+            if (!session.isEnabled()) {
+                return null;
+            }
+            List<HopNode> route = session.getCurrentRoute();
+            if (route.isEmpty()) {
+                return null;
+            }
+            HopNode terminal = resolveTargetHop(session, route);
+            if (terminal == null) {
+                return null;
+            }
+            HopProbeStats stats = session.getHopStats().get(terminal.hop());
+            return HopStats.targetStats(terminal, stats);
         }
-        List<HopNode> route = session.getCurrentRoute();
-        if (route.isEmpty()) {
-            return null;
-        }
-        HopNode terminal = resolveTargetHop(session, route);
-        if (terminal == null) {
-            return null;
-        }
-        HopProbeStats stats = session.getHopStats().get(terminal.hop());
-        return HopStats.targetStats(terminal, stats);
     }
 
     /** Resolves the hop that represents the monitored target (P33-002). */
@@ -384,7 +479,6 @@ public final class SessionStore implements AutoCloseable {
                     return node;
                 }
             }
-            // Known target but not present yet (MTR discovery) — do not use an intermediate router.
             return null;
         }
         return route.get(route.size() - 1);
@@ -416,27 +510,63 @@ public final class SessionStore implements AutoCloseable {
 
     @Override
     public void close() {
-        if (timeseries != null) {
+        SessionPersistenceWriter writer;
+        SessionDatabase db;
+        TimeSeriesBackend ts;
+        List<String> hostsCopy;
+        synchronized (lock) {
+            writer = persistenceWriter;
+            db = database;
+            ts = timeseries;
+            hostsCopy = List.copyOf(data.keySet());
+            if (writer != null) {
+                for (String host : hostsCopy) {
+                    HostSessionData session = data.get(host);
+                    if (session != null) {
+                        writer.offerSave(host, session.copy());
+                    }
+                }
+            }
+            persistenceWriter = null;
+            database = null;
+            timeseries = null;
+        }
+        if (writer != null) {
+            writer.close();
+        } else if (db != null) {
+            for (String host : hostsCopy) {
+                HostSessionData session;
+                synchronized (lock) {
+                    session = data.get(host);
+                }
+                if (session != null) {
+                    db.save(host, session);
+                }
+            }
+        }
+        if (ts != null) {
             try {
-                timeseries.close();
+                ts.close();
             } catch (RuntimeException ex) {
                 LOG.warn("Time-series backend close failed: {}", ex.getMessage());
             }
-            timeseries = null;
         }
-        if (database == null) {
-            return;
+        if (db != null) {
+            db.close();
         }
-        for (String host : hosts()) {
-            database.save(host, get(host));
-        }
-        database.close();
-        database = null;
     }
 
     private void writePingSamples(List<PingSample> samples) {
+        if (samples.isEmpty()) {
+            return;
+        }
+        ensureWriter();
+        if (persistenceWriter != null) {
+            persistenceWriter.offerPingSamples(samples);
+            return;
+        }
         TimeSeriesBackend backend = timeseries;
-        if (backend == null || samples.isEmpty()) {
+        if (backend == null) {
             return;
         }
         try {
@@ -447,23 +577,29 @@ public final class SessionStore implements AutoCloseable {
     }
 
     private void writeRouteEvent(String host, List<String> routeIps, boolean routeChanged, RouteSnapshot snapshot) {
+        ensureWriter();
+        RouteEvent event = new RouteEvent(host, routeIps, routeChanged, snapshot.timestamp());
+        if (persistenceWriter != null) {
+            persistenceWriter.offerRouteEvent(event);
+            return;
+        }
         TimeSeriesBackend backend = timeseries;
         if (backend == null) {
             return;
         }
         try {
-            backend.writeRouteEvent(new RouteEvent(host, routeIps, routeChanged, snapshot.timestamp()));
+            backend.writeRouteEvent(event);
         } catch (RuntimeException ex) {
             LOG.warn("Time-series route write failed: {}", ex.getMessage());
         }
     }
 
-    private void recordHopProbes(String host, RouteSnapshot snapshot, PollSampleScope scope) {
+    private void recordHopProbesUnlocked(String host, RouteSnapshot snapshot, PollSampleScope scope) {
         if (snapshot.nodes().isEmpty()) {
             return;
         }
         PollSampleScope safe = scope != null ? scope : PollSampleScope.FULL;
-        HostSessionData session = get(host);
+        HostSessionData session = getUnlocked(host);
         boolean changed = false;
         for (HopNode node : snapshot.nodes()) {
             if (!safe.allHopsFresh() && (safe.freshHop() == null || node.hop() != safe.freshHop())) {
@@ -486,6 +622,14 @@ public final class SessionStore implements AutoCloseable {
         return loaded != null ? loaded : new HostSessionData();
     }
 
+    private HostSessionData getUnlocked(String host) {
+        HostSessionData session = data.get(host);
+        if (session == null) {
+            throw new ConfigError("Unknown host: " + host);
+        }
+        return session;
+    }
+
     private void persist(String host) {
         if (deferPersistDepth > 0) {
             deferredPersistHosts.add(host);
@@ -496,14 +640,39 @@ public final class SessionStore implements AutoCloseable {
 
     private void flushPersist(String host) {
         flushPersistCountForTests++;
-        if (database != null) {
-            database.save(host, get(host));
+        HostSessionData session = data.get(host);
+        if (session == null) {
+            return;
+        }
+        ensureWriter();
+        if (persistenceWriter != null) {
+            persistenceWriter.offerSave(host, session.copy());
+        } else if (database != null) {
+            database.save(host, session);
         }
     }
 
-    /** Test hook: number of SQLite {@code save} flushes since construction (P32-005). */
+    private void ensureWriter() {
+        if (persistenceWriter != null) {
+            return;
+        }
+        if (database == null && timeseries == null) {
+            return;
+        }
+        persistenceWriter = new SessionPersistenceWriter(database, timeseries);
+    }
+
+    /** Test hook: number of SQLite {@code save} flushes enqueued/executed since construction. */
     int flushPersistCountForTests() {
         return flushPersistCountForTests;
+    }
+
+    /** Test hook: wait until the async writer drained (P33-003). */
+    void awaitPersistenceIdleForTests() throws InterruptedException {
+        SessionPersistenceWriter writer = persistenceWriter;
+        if (writer != null) {
+            writer.awaitIdle(Duration.ofSeconds(5));
+        }
     }
 
     /**
@@ -511,16 +680,20 @@ public final class SessionStore implements AutoCloseable {
      */
     void withDeferredPersist(Runnable action) {
         Objects.requireNonNull(action, "action");
-        deferPersistDepth++;
+        synchronized (lock) {
+            deferPersistDepth++;
+        }
         try {
             action.run();
         } finally {
-            deferPersistDepth--;
-            if (deferPersistDepth == 0 && !deferredPersistHosts.isEmpty()) {
-                java.util.ArrayList<String> hosts = new java.util.ArrayList<>(deferredPersistHosts);
-                deferredPersistHosts.clear();
-                for (String host : hosts) {
-                    flushPersist(host);
+            synchronized (lock) {
+                deferPersistDepth--;
+                if (deferPersistDepth == 0 && !deferredPersistHosts.isEmpty()) {
+                    ArrayList<String> hosts = new ArrayList<>(deferredPersistHosts);
+                    deferredPersistHosts.clear();
+                    for (String host : hosts) {
+                        flushPersist(host);
+                    }
                 }
             }
         }

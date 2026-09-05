@@ -101,7 +101,7 @@ public final class ReadOnlyApiServer implements AutoCloseable {
             sendJson(exchange, 404, "{\"error\":\"unknown_host\",\"host\":" + JsonStrings.quote(host) + "}");
             return;
         }
-        List<HopNode> hops = store.get(host).getCurrentRoute();
+        List<HopNode> hops = store.currentRouteSnapshot(host);
         sendJson(exchange, 200, ReadOnlyApiJson.routeDocument(host, hops));
     }
 

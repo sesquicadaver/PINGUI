@@ -51,3 +51,15 @@ P32 закрито якісно (fresh-hop, `target_sampled`, rollup v14, bounde
 * `HostNetworkStateClassifier.targetReached(hops, targetIp)` — intermediate ≠ target.
 
 **Тести:** `SessionStoreTest` (discovery/timeout/confirmed change), `HostNetworkStateClassifierTest`.
+
+## P33-003 (зроблено) — SessionStore + bounded writers
+
+**Проблема:** SQLite/`HttpClient` time-series викликалися синхронно з FX/probe потоків; `SessionStore` не був синхронізований для daemon workers.
+
+**Виправлення:**
+
+* `SessionPersistenceWriter` — bounded queue + single worker; DROP_OLDEST/DROP_NEWEST + `droppedCount`;
+* hot path лише in-memory під lock; SQLite/TS через immutable `HostSessionData.copy()` deltas;
+* API: `snapshot()` / `currentRouteSnapshot()`.
+
+**Тести:** `SessionPersistenceWriterTest`, оновлені `SessionStore*Test`.
