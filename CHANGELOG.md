@@ -14,6 +14,7 @@
 
 ### Changed
 
+- **P32-003 — structured PollResult + TCP outcomes:** `ProbeOutcome` SUCCESS/TIMEOUT/REFUSED/DNS_ERROR/NETWORK_ERROR; `loss=NULL` без вимірювання; jitter лише з RTT series; schema **v13** (`probe_outcome`, `target_sampled`); NEXT→**P32-004**.
 - **P32-002 — MTR concurrency / lifecycle:** `ConcurrentHashMap` + generation token у `MtrProbe`; clear на remove/rename; NEXT→**P32-003**.
 - **P32-001 — MTR freshness / topology:** лише `freshHopSample` оновлює hop/telemetry; endpoint/`poll_result` лише при target sampled; discovery/timeout ≠ route change; NEXT→**P32-002**.
 - **P31-007 — accessibility pass:** іконки станів + text tooltips/a11y names; contrast severity; focus ring; NEXT→**DONE** (фаза 31).

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.model.Models.HostSessionData;
+import io.pingui.probe.ProbeOutcome;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
@@ -24,9 +25,23 @@ class PollResultRetentionJobTest {
             seedHost(db, "8.8.8.8");
             Instant mid = Instant.parse("2026-08-20T10:02:30Z"); // ~14d old → 5m rollup
             Instant recent = Instant.parse("2026-09-02T12:00:00Z"); // within 7d → keep raw
-            db.insertPollResult("8.8.8.8", mid, "ping_only", true, 10.0, null, 0.0, 40.0, null, null);
-            db.insertPollResult("8.8.8.8", mid.plusSeconds(60), "ping_only", true, 20.0, null, 1.0, 41.0, null, null);
-            db.insertPollResult("8.8.8.8", recent, "ping_only", true, 5.0, null, 0.0, 30.0, null, null);
+            db.insertPollResult(
+                    "8.8.8.8", mid, "ping_only", true, 10.0, null, 0.0, 40.0, null, null, ProbeOutcome.SUCCESS, true);
+            db.insertPollResult(
+                    "8.8.8.8",
+                    mid.plusSeconds(60),
+                    "ping_only",
+                    true,
+                    20.0,
+                    null,
+                    1.0,
+                    41.0,
+                    null,
+                    null,
+                    ProbeOutcome.SUCCESS,
+                    true);
+            db.insertPollResult(
+                    "8.8.8.8", recent, "ping_only", true, 5.0, null, 0.0, 30.0, null, null, ProbeOutcome.SUCCESS, true);
 
             PollResultRetentionJob.Result result = PollResultRetentionJob.run(db, clock);
             assertEquals(1, result.rolledFiveMinBuckets());
@@ -57,7 +72,8 @@ class PollResultRetentionJobTest {
             seedHost(db, "1.1.1.1");
             long hostId = db.hostId("1.1.1.1").orElseThrow();
             Instant ancient = Instant.parse("2026-05-01T03:10:00Z"); // >90d → hourly from raw
-            db.insertPollResult("1.1.1.1", ancient, "trace", true, 30.0, null, 2.0, 100.0, null, null);
+            db.insertPollResult(
+                    "1.1.1.1", ancient, "trace", true, 30.0, null, 2.0, 100.0, null, null, ProbeOutcome.SUCCESS, true);
 
             Instant staleFiveMin = Instant.parse("2026-05-15T04:05:00Z");
             db.upsertMetricRollup(
@@ -107,7 +123,9 @@ class PollResultRetentionJobTest {
                     null,
                     10.0,
                     null,
-                    "timeout");
+                    "timeout",
+                    ProbeOutcome.TIMEOUT,
+                    true);
 
             PollResultRetentionJob.run(db, clock);
             assertEquals(1, db.listIncidents("9.9.9.9", 10).size());

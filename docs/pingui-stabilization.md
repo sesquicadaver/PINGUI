@@ -107,17 +107,7 @@ COMMIT
 
 ## 3. Зробити `poll_result` правдивим
 
-Зараз loss фактично записується як `0%` для reachable і `100%` для unreachable, а jitter завжди `null`. Це не виміряний packet loss.
-
-Краще:
-
-* зберігати `loss_percent = NULL`, якщо probe не вимірював loss;
-* додати структурований `probe_outcome`;
-* розділити `SUCCESS`, `TIMEOUT`, `REFUSED`, `DNS_ERROR`, `NETWORK_ERROR`;
-* зберігати `target_sampled`, щоб відрізняти «target не перевіряли» від «target недоступний»;
-* jitter записувати лише за наявності достатньої серії RTT.
-
-Це також дасть адміністратору корисну різницю: `TCP REFUSED` означає доступний host із закритим портом, а не мережевий timeout.
+P32-003 зроблено: `loss_percent = NULL`, якщо probe не вимірював loss; структурований `probe_outcome` (SUCCESS/TIMEOUT/REFUSED/DNS_ERROR/NETWORK_ERROR); `target_sampled`; jitter лише з серії RTT. `TCP REFUSED` відрізняється від мережевого timeout.
 
 ## 4. Винести повільні side effects із probe та UI потоків
 

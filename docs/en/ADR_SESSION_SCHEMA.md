@@ -154,3 +154,11 @@ CREATE TABLE metric_rollup (
 - Rename and correlation become cheaper.
 - Later tables (`incident`, `poll_result`, `route`) attach to `host_id`.
 - Operators on v7 `.db` must delete the file before upgrading.
+### P32-003 (done, schema v13)
+
+`poll_result` gains:
+
+- `probe_outcome TEXT NOT NULL` — SUCCESS / TIMEOUT / REFUSED / DNS_ERROR / NETWORK_ERROR;
+- `target_sampled INTEGER NOT NULL` — whether this cycle sampled the target.
+
+`loss_percent` / `jitter_ms` are no longer synthesized from reachability (NULL when unmeasured; jitter only from an RTT series). Transactional migrate from older versions — **P32-004**.

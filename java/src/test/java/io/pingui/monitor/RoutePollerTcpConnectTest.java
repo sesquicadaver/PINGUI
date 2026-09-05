@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.model.Models;
+import io.pingui.probe.ProbeOutcome;
 import io.pingui.probe.RouteProbe;
 import io.pingui.probe.TcpConnectProbe;
 import java.net.ConnectException;
@@ -26,6 +27,7 @@ class RoutePollerTcpConnectTest {
         RoutePoller poller = new RoutePoller(UNUSED, null, probe);
         HostPollOutcome outcome = poller.pollHostTcpConnect("127.0.0.1:9", List.of(), 1.0);
         assertEquals(null, outcome.error());
+        assertEquals(ProbeOutcome.SUCCESS, outcome.probeOutcome());
         assertTrue(outcome.snapshot().nodes().get(0).isReachable());
         assertEquals("127.0.0.1", outcome.snapshot().targetIp());
     }
@@ -40,6 +42,7 @@ class RoutePollerTcpConnectTest {
         RoutePoller poller = new RoutePoller(UNUSED, null, probe);
         HostPollOutcome outcome = poller.pollHostTcpConnect("127.0.0.1:1", List.of(), 0.5);
         assertEquals(null, outcome.error());
+        assertEquals(ProbeOutcome.REFUSED, outcome.probeOutcome());
         assertFalse(outcome.snapshot().nodes().get(0).isReachable());
         assertEquals(Models.TIMEOUT_IP, outcome.snapshot().nodes().get(0).ip());
     }
@@ -56,6 +59,7 @@ class RoutePollerTcpConnectTest {
         RoutePoller poller = new RoutePoller(UNUSED, null, probe);
         HostPollOutcome outcome = poller.pollHostTcpConnect("no.such:443", List.of("1.1.1.1"), 1.0);
         assertTrue(outcome.error().contains("DNS"));
+        assertEquals(ProbeOutcome.DNS_ERROR, outcome.probeOutcome());
         assertEquals(List.of("1.1.1.1"), outcome.currentIps());
     }
 }

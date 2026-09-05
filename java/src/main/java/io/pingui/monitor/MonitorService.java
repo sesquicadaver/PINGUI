@@ -202,6 +202,15 @@ public final class MonitorService implements AutoCloseable {
         pollEffects.setHostTagsResolver(hostTagsResolver);
     }
 
+    /**
+     * Supplies measured terminal-hop loss/jitter from an RTT series (P32-003). Absent → {@code null}
+     * metrics in {@code poll_result}.
+     */
+    public void setMeasuredHopStatsResolver(
+            Function<String, io.pingui.model.Models.HopStatsSummary> measuredHopStatsResolver) {
+        pollEffects.setMeasuredHopStatsResolver(measuredHopStatsResolver);
+    }
+
     /** Session quality problem summary for host-row badge (P22-002 / P23). */
     public Optional<HostProblemSummary> hostProblemSummary(String host) {
         return alertRuleEngine.problemSummary(host, Instant.now());
@@ -485,7 +494,8 @@ public final class MonitorService implements AutoCloseable {
                     }
                 }
                 pollEffects.offerTelemetryFailure(host, outcome.error(), probeMode, durationMs);
-                pollEffects.recordPollResult(host, probeMode, null, durationMs, outcome.error());
+                pollEffects.recordPollResult(
+                        host, probeMode, null, durationMs, outcome.error(), outcome.probeOutcome(), true);
                 current.onProbeError(host, outcome.error());
                 return;
             }
@@ -510,7 +520,8 @@ public final class MonitorService implements AutoCloseable {
                 current.onDataReceived(host, snapshot, sampleScope);
                 deliveredSnapshot = true;
                 if (sampleScope.targetSampled()) {
-                    pollEffects.recordPollResult(host, probeMode, snapshot, durationMs, null);
+                    pollEffects.recordPollResult(
+                            host, probeMode, snapshot, durationMs, null, outcome.probeOutcome(), true);
                     pollEffects.evaluateEndpointDown(host, snapshot);
                     pollEffects.evaluateLatencyHigh(host, snapshot);
                 }

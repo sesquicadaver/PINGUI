@@ -363,7 +363,7 @@ Session persistence (`host_session` / `persistence_event`) — окремий ш
 | Routes | `route` (дедуп signature + hops_json; P30-004) |
 | Rollups | `metric_rollup` (5m/1h; retention `--poll-retention`; P30-005) |
 
-**Схема:** Java `SCHEMA_VERSION = 12`. Старі `.db` (v11 і нижче) **не мігруються** — видаліть файл і створіть наново ([ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md)).
+**Схема:** Java `SCHEMA_VERSION = 13` (P32-003: `probe_outcome` / `target_sampled`). Старі `.db` (v12 і нижче) **не мігруються** — видаліть файл і створіть наново ([ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md)); транзакційна міграція — P32-004.
 
 **Backup / integrity (P30-006):** перед `--poll-retention`, `--telemetry-retention`, purge у GUI або delete/recreate після bump schema — зробіть копію:
 
