@@ -1020,7 +1020,7 @@ flowchart TD
 | **P32-007** | [ ] Runtime i18n + a11y leftovers | `HostListPresenter`, bundles, CSS | `configureOnce` + idempotent `retranslate`; bundle key parity; problemsFirst keyboard; no duplicate keys |
 | **P32-008** | [ ] Split SessionDatabase + docs | persistence split, ADR/docs | facade + Schema/Session/History; Java canonical / Python bugfix-only note; LIVING_SPEC + phase close |
 
-**Out of scope:** ORM; Kafka/reactive bus; separate dashboard; silent `.db` delete for v13.
+**Out of scope:** ORM; Kafka/reactive bus; separate dashboard; silent `.db` delete for v14.
 
 ---
 
