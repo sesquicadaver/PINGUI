@@ -31,11 +31,21 @@ class HostNetworkStateClassifierTest {
     }
 
     @Test
+    void incompleteWhenLastHopIsRouterNotTarget() {
+        List<HopNode> hops = List.of(new HopNode(1, "10.0.0.1", 1.0, false));
+        assertFalse(HostNetworkStateClassifier.targetReached(hops, "8.8.8.8"));
+        assertEquals(
+                RouteState.INCOMPLETE, HostNetworkStateClassifier.route(HostProbeMode.MTR, hops, false, "8.8.8.8"));
+    }
+
+    @Test
     void changedOnlyWhenPathComplete() {
         List<HopNode> hops = List.of(new HopNode(1, "10.0.0.1", 1.0, false), new HopNode(2, "8.8.8.8", 12.0, false));
         assertTrue(HostNetworkStateClassifier.targetReached(hops));
+        assertTrue(HostNetworkStateClassifier.targetReached(hops, "8.8.8.8"));
         assertEquals(RouteState.CHANGED, HostNetworkStateClassifier.route(HostProbeMode.TRACE, hops, true));
         assertEquals(RouteState.STABLE, HostNetworkStateClassifier.route(HostProbeMode.TRACE, hops, false));
+        assertEquals(RouteState.STABLE, HostNetworkStateClassifier.route(HostProbeMode.MTR, hops, false, "8.8.8.8"));
     }
 
     @Test

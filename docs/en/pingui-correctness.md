@@ -38,3 +38,16 @@ P32 landed well (fresh-hop, `target_sampled`, rollup v14, bounded DNS/webhook te
 * re-entering `DISCOVERING` resets `targetHop` to `0`.
 
 **Tests:** `MtrProbeTest` — intermediate timeout→recovery, repeated target timeouts, target recovery.
+
+## P33-002 (done) — Projection semantics
+
+**Bug:** `SessionStore.updateRoute()` independently compared any snapshots; `targetStats()` used the last hop of a partial route; the classifier treated a reachable router as the target.
+
+**Fix:**
+
+* `applyPollSnapshot(..., confirmedRouteChange)` — authoritative `routeChanged` from the probe outcome;
+* discovery/timeout must not update `previousRoute` or write a topology change to time-series;
+* `lastTargetIp` / `lastTargetHop` + `resolveTargetHop` for endpoint metrics;
+* `HostNetworkStateClassifier.targetReached(hops, targetIp)` — intermediate ≠ target.
+
+**Tests:** `SessionStoreTest` (discovery/timeout/confirmed change), `HostNetworkStateClassifierTest`.

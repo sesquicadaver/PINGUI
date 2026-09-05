@@ -38,3 +38,16 @@ P32 закрито якісно (fresh-hop, `target_sampled`, rollup v14, bounde
 * при поверненні в `DISCOVERING` — `targetHop = 0`.
 
 **Тести:** `MtrProbeTest` — intermediate timeout→recovery, повторні target timeouts, target recovery.
+
+## P33-002 (зроблено) — Projection semantics
+
+**Проблема:** `SessionStore.updateRoute()` самостійно порівнював будь-які snapshots; `targetStats()` брав останній hop partial route; classifier вважав reachable router ціллю.
+
+**Виправлення:**
+
+* `applyPollSnapshot(..., confirmedRouteChange)` — авторитетний `routeChanged` з probe outcome;
+* discovery/timeout не оновлюють `previousRoute` і не пишуть topology change у time-series;
+* `lastTargetIp` / `lastTargetHop` + `resolveTargetHop` для endpoint metrics;
+* `HostNetworkStateClassifier.targetReached(hops, targetIp)` — intermediate ≠ target.
+
+**Тести:** `SessionStoreTest` (discovery/timeout/confirmed change), `HostNetworkStateClassifierTest`.
