@@ -18,7 +18,7 @@
 | **Java desktop** | ✅ GUI + Pro (IPv6, SQLite, alerts, history, daemon, export, telemetry, Expert MTU) — як у останньому merge | ✅ Те саме **+** будь-які зміни до merge; лінійна черга ROADMAP **P29-001** (фаза 29) |
 | **Сесія** | RAM за замовчуванням; опційно **SQLite** | Те саме |
 | **Оповіщення / історія / daemon / IPv6** | ✅ (після merge фаз 9–12+) | ✅ + новіші зміни до merge |
-| **Python PyQt6** | ✅ `src/pingui/`, `./pingui.sh`, pytest (може трохи відставати від `beta`) | ✅ Найновіший Python-шар |
+| **Python PyQt6** | ✅ `src/pingui/` — **legacy / bugfix-only** (P32-008); може відставати від Java | ✅ Те саме |
 | **CI** | Java `gradlew check` + Python pytest | Те саме |
 | **Документація** | Синхронізується при merge | Living docs попереду `main` до merge |
 

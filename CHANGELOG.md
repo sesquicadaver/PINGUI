@@ -14,6 +14,7 @@
 
 ### Changed
 
+- **P32-008 — SessionDatabase split + phase close:** facade `SessionDatabase` + `SchemaManager` / `SessionStateRepository` / `HistoryRepository` / `DbCommit`; Java канон, Python bugfix-only; фаза 32 **NEXT=DONE**.
 - **P32-007 — runtime i18n + a11y leftovers:** `configureOnce`/`retranslate`; problemsFirst keyboard; bundle key parity + без дубля `history.initial_route`; NEXT→**P32-008**.
 - **P32-006 — alert lifecycle vs delivery:** FIRING/RESOLVED завжди з engine; silence/cooldown лише delivery (`QualityAlertDelivery`); pending notify після expiry один раз; NEXT→**P32-007**.
 - **P32-005 — bounded side-effect consumers:** `BoundedForwardDnsLookup` (executor+timeout+TTL cache); async webhook posts; `applyPollSnapshot` / deferred persist; `ensureHostExists` без повного `load()`; NEXT→**P32-006**.

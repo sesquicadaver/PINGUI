@@ -4,6 +4,11 @@
 
 Крос-платформова реалізація в каталозі [`java/`](../java/).
 
+## Канон редакції (P32-008)
+
+**Java** — канонічна реалізація продукту (схема SQLite v14, GUI, daemon, alerts, telemetry).
+**Python** (`src/pingui/`) — maintenance / legacy edition: **лише bugfix** і безпекові патчі; нові фічі / schema evolution — лише в Java, якщо окремо не вирішено інше.
+
 ## Мета
 
 Дозволити моніторинг маршрутів **незалежно від ОС** без Python/PyQt6 і без Linux-only `cap_net_raw`.
@@ -224,4 +229,4 @@ pingui-java.bat --package    REM .msi
 
 ## Майбутнє
 
-Лінійна черга ROADMAP: **NEXT = P32-008** (фаза 32 — Stabilization). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT; [pingui-stabilization.md](pingui-stabilization.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
+Лінійна черга ROADMAP: **NEXT = DONE** (фаза 32 — Stabilization). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT; [pingui-stabilization.md](pingui-stabilization.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).

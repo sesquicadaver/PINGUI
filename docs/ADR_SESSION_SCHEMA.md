@@ -165,3 +165,16 @@ CREATE TABLE metric_rollup (
 ### P32-004 (зроблено, schema v14)
 
 `metric_rollup` зберігає адитивні лічильники (`sample_count`, `reachable_*`, `rtt_samples`/`rtt_sum`, `loss_samples`/`loss_sum`); середні обчислюються на читанні. `PollResultRetentionJob` виконує upsert+delete в **одній** транзакції. Відкриття БД мігрує **v13→v14** in-place.
+
+### P32-008 (зроблено) — поділ persistence hotspot
+
+Публічний API лишається `SessionDatabase` (connection + transactions). SQL рознесено package-private:
+
+| Клас | Роль |
+|------|------|
+| `DbCommit` | `Connection`, `deferCommit`, `maybeCommit` / `rollbackQuietly` |
+| `SchemaManager` | DDL, `schema_meta`, migrate v13→v14 |
+| `SessionStateRepository` | `host_session` + дочірні hop/ping/stats |
+| `HistoryRepository` | events, incident, poll_result, route, rollup, telemetry |
+
+Без ORM і без interface-на-таблицю. Monitor-side effects уже винесені раніше (`PollResultEffects`, P26/P32).

@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P32-008** |
+| **Current task** | **DONE** |
 | **Phase** | 32 — Stabilization (MTR / history / side-effects) |
-| **DoD (short)** | Local DB/monitor hotspot split and documentation |
+| **DoD (short)** | Phase 32 linear queue closed |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -186,9 +186,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 140 | **P32-005** | [x] | Bounded side-effect consumers and persistence batching |
 | 141 | **P32-006** | [x] | Alert lifecycle separate from silence/cooldown |
 | 142 | **P32-007** | [x] | Runtime i18n and remaining accessibility |
-| 143 | **P32-008** | [ ] | Local split of DB/monitor hotspots and documentation |
+| 143 | **P32-008** | [x] | Local split of DB/monitor hotspots and documentation |
 
-**Queue status:** **NEXT = P32-008** (phase 32; P31 DONE; Java-first; [pingui-stabilization.md](pingui-stabilization.md)).
+**Queue status:** **NEXT = DONE** (phase 32 closed; Java-first; [pingui-stabilization.md](pingui-stabilization.md)).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -1007,7 +1007,7 @@ flowchart TD
 
 **Context:** [pingui-stabilization.md](pingui-stabilization.md). Data-semantics and critical-path stabilization — **not** feature expansion. Java-first; TRACE/PING_ONLY already mature.
 
-**Queue:** after P31; **NEXT = P32-008** (P32-001…007 [x]).
+**Queue:** after P31; **NEXT = DONE** (P32-001…008 [x]; phase 32 closed).
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
@@ -1018,7 +1018,7 @@ flowchart TD
 | **P32-005** | [x] Bounded side-effect consumers | Monitor/DNS/webhook/DB writer | DNS executor+timeout+cache; webhook/telemetry off probe/UI thread; one persistence update / poll; `ensureHostRow` without full `load()` |
 | **P32-006** | [x] Alert lifecycle vs silence | `AlertRuleEngine`, dispatcher | FIRING/RESOLVED always; silence is delivery-only; pending notification once after expiry |
 | **P32-007** | [x] Runtime i18n + a11y leftovers | `HostListPresenter`, bundles, CSS | `configureOnce` + idempotent `retranslate`; bundle key parity; problemsFirst keyboard; no duplicate keys |
-| **P32-008** | [ ] Split SessionDatabase + docs | persistence split, ADR/docs | facade + Schema/Session/History; Java canonical / Python bugfix-only note; LIVING_SPEC + phase close |
+| **P32-008** | [x] Split SessionDatabase + docs | persistence split, ADR/docs | facade + Schema/Session/History; Java canonical / Python bugfix-only note; LIVING_SPEC + phase close |
 
 **Out of scope:** ORM; Kafka/reactive bus; separate dashboard; silent `.db` delete for v14.
 
@@ -1112,7 +1112,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P32-008**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **DONE**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

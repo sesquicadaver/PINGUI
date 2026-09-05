@@ -14,6 +14,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P32-008 — SessionDatabase split + phase close:** facade `SessionDatabase` + `SchemaManager` / `SessionStateRepository` / `HistoryRepository` / `DbCommit`; Java canonical, Python bugfix-only; phase 32 **NEXT=DONE**.
 - **P32-007 — runtime i18n + a11y leftovers:** `configureOnce`/`retranslate`; problemsFirst keyboard focus; bundle key parity + no duplicate `history.initial_route`; NEXT→**P32-008**.
 - **P32-006 — alert lifecycle vs delivery:** engine always emits FIRING/RESOLVED; silence/cooldown delivery-only (`QualityAlertDelivery`); pending notify once after expiry; NEXT→**P32-007**.
 - **P32-005 — bounded side-effect consumers:** `BoundedForwardDnsLookup` (executor+timeout+TTL cache); async webhook posts; `applyPollSnapshot` / deferred persist; `ensureHostExists` without full `load()`; NEXT→**P32-006**.
