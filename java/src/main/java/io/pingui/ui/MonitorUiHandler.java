@@ -55,8 +55,7 @@ final class MonitorUiHandler {
         if (!sessionStore.containsHost(host)) {
             return;
         }
-        sessionStore.updateRoute(host, snapshot);
-        sessionStore.appendPingSamples(host, snapshot, sampleScope != null ? sampleScope : PollSampleScope.FULL);
+        sessionStore.applyPollSnapshot(host, snapshot, sampleScope != null ? sampleScope : PollSampleScope.FULL);
         HostItem item = hostListPresenter.findItem(host);
         if (item != null) {
             item.clearRouteChangedLatch();

@@ -205,6 +205,33 @@ public final class SessionDatabase implements AutoCloseable {
         }
     }
 
+    /**
+     * Ensures a {@code host_session} row exists without loading hop/ping payloads (P32-005). Uses
+     * {@code INSERT … ON CONFLICT DO NOTHING}.
+     */
+    public synchronized void ensureHostExists(String host) {
+        Objects.requireNonNull(host, "host");
+        if (host.isBlank()) {
+            throw new IllegalArgumentException("host must not be blank");
+        }
+        String now = ISO_UTC.format(Instant.now());
+        try (PreparedStatement ps = connection.prepareStatement(
+                """
+                INSERT INTO host_session(address, enabled, created_at, updated_at)
+                VALUES (?, 1, ?, ?)
+                ON CONFLICT(address) DO NOTHING
+                """)) {
+            ps.setString(1, host);
+            ps.setString(2, now);
+            ps.setString(3, now);
+            ps.executeUpdate();
+            maybeCommit();
+        } catch (SQLException ex) {
+            rollbackQuietly();
+            throw new PersistenceException("Failed to ensure host row: " + host, ex);
+        }
+    }
+
     /** Upserts route/ping metrics for {@code host} address. */
     public synchronized void save(String host, HostSessionData data) {
         Objects.requireNonNull(host, "host");

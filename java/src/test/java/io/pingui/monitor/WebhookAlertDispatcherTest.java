@@ -41,6 +41,7 @@ class WebhookAlertDispatcherTest {
             RouteChangeEvent event = RouteChangeEvent.fromRouteChange(
                     "8.8.8.8", List.of("10.0.0.1"), List.of("8.8.8.8"), "lab", Instant.parse("2026-07-09T07:30:00Z"));
             dispatcher.dispatch(event);
+            dispatcher.telemetrySink().awaitIdleForTests(java.time.Duration.ofSeconds(5));
             String posted = body.get();
             assertTrue(posted != null && !posted.isBlank());
             RouteChangeEvent parsed = RouteChangeEvent.fromJson(posted);
