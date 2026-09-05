@@ -203,6 +203,19 @@ class AlertRuleEngineTest {
     }
 
     @Test
+    void clearLatencyHostDropsBaselineForWarmup() {
+        LatencyHighRuleConfig rule = LatencyHighRuleConfig.critical(true);
+        assertTrue(engine.observeLatencyHigh("h", 10.0, t0, "p", rule).isEmpty());
+        assertEquals(10.0, engine.latencyAvg("h").orElseThrow(), 0.001);
+        engine.clearLatencyHost("h");
+        assertTrue(engine.latencyAvg("h").isEmpty());
+        // First sample after reset seeds AVG and must not fire even if large vs old baseline.
+        assertTrue(engine.observeLatencyHigh("h", 100.0, t0.plusSeconds(1), "p", rule)
+                .isEmpty());
+        assertEquals(100.0, engine.latencyAvg("h").orElseThrow(), 0.001);
+    }
+
+    @Test
     void problemSummaryPrefersUnreadEndpointDownOverLatency() {
         EndpointDownRuleConfig down = new EndpointDownRuleConfig(true, 1, 1, 0);
         LatencyHighRuleConfig latency = LatencyHighRuleConfig.critical(true);

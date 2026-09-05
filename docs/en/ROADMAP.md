@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P33-005** |
+| **Current task** | **P33-006** |
 | **Phase** | 33 — Correctness (MTR / projection / side-effects) |
-| **DoD (short)** | Latency baseline reset on route/mode change |
+| **DoD (short)** | Webhook bounded queue + closeable dispatcher |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -191,12 +191,12 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 145 | **P33-002** | [x] | Projection: phase / targetSampled / routeChanged |
 | 146 | **P33-003** | [x] | SessionStore + bounded persistence writers |
 | 147 | **P33-004** | [x] | `poll_result` tri-state (error ≠ downtime) |
-| 148 | **P33-005** | [ ] | Latency baseline reset on route/mode change |
+| 148 | **P33-005** | [x] | Latency baseline reset on route/mode change |
 | 149 | **P33-006** | [ ] | Webhook bounded queue + closeable dispatcher |
 | 150 | **P33-007** | [ ] | DB migrate v12→v14 + chunked retention |
 | 151 | **P33-008** | [ ] | Docs / branch sync |
 
-**Queue status:** **NEXT = P33-005** (phase 33; [pingui-correctness.md](pingui-correctness.md)).
+**Queue status:** **NEXT = P33-006** (phase 33; [pingui-correctness.md](pingui-correctness.md)).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -1036,7 +1036,7 @@ flowchart TD
 
 **Context:** [pingui-correctness.md](pingui-correctness.md). Correctness after P32 — **not** feature expansion. Java-first.
 
-**Queue:** after P32; **NEXT = P33-005**.
+**Queue:** after P32; **NEXT = P33-006**.
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
@@ -1044,7 +1044,7 @@ flowchart TD
 | **P33-002** | [x] Projection semantics | `SessionStore`, classifiers, telemetry | phase/`targetSampled`/`routeChanged` in projection; partial discovery ≠ route change; endpoint only when target sampled |
 | **P33-003** | [x] SessionStore + bounded writers | `SessionStore`, persistence, Influx/TS | Fast in-memory path; SQLite/TS off FX/probe; immutable API snapshot; drop/degraded counter |
 | **P33-004** | [x] `poll_result` tri-state | `MonitorService`, `PollResultEffects` | Probe/internal error → `target_sampled=false`, `reachable=null` (not downtime) |
-| **P33-005** | [ ] Latency baseline reset | `MonitorService` / alert EWMA | Reset on confirmed route change and `setHostProbeMode` |
+| **P33-005** | [x] Latency baseline reset | `MonitorService` / alert EWMA | Reset on confirmed route change and `setHostProbeMode` |
 | **P33-006** | [ ] Webhook lifecycle | `WebhookTelemetrySink`, alert dispatcher | Bounded queue + rejected counter; closeable dispatcher on replace/stop |
 | **P33-007** | [ ] DB migrate + chunked retention | `SchemaManager`, retention job | v12→v14 (or offline CLI); chunked retention |
 | **P33-008** | [ ] Docs / branch sync | README, ROADMAP, indexes | Align phases/NEXT/`main`≡`beta`; archival note for P32 audit |
@@ -1138,7 +1138,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P33-005**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P33-006**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 
