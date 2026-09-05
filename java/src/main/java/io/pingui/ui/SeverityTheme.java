@@ -4,9 +4,10 @@ import io.pingui.i18n.UiI18n;
 import io.pingui.monitor.Severity;
 
 /**
- * Severity → row color, glyph, and CSS style class (P31-004).
+ * Severity → row color, glyph, CSS style class, and contrast-safe accent (P31-004 / P31-007).
  *
- * <p>Red/critical pastel is reserved for {@link Severity#CRITICAL} only.
+ * <p>Red/critical pastel is reserved for {@link Severity#CRITICAL} only. Accent text colors are
+ * chosen for readable contrast on light / pastel surfaces (not color-only status).
  */
 public final class SeverityTheme {
     private SeverityTheme() {}
@@ -19,6 +20,21 @@ public final class SeverityTheme {
             case NOTICE -> "#fff9c4";
             case INFO -> "#e8f5e9";
             case MUTED -> "#f5f5f5";
+        };
+    }
+
+    /**
+     * Foreground accent for badges / timeline (must stay in sync with {@code .pingui-severity-*} in
+     * {@code pingui.css}).
+     */
+    public static String accentColor(Severity severity) {
+        Severity safe = severity != null ? severity : Severity.MUTED;
+        return switch (safe) {
+            case CRITICAL -> "#b71c1c";
+            case WARNING -> "#bf360c";
+            case NOTICE -> "#7a5c00";
+            case INFO -> "#222222";
+            case MUTED -> "#666666";
         };
     }
 

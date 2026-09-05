@@ -8,10 +8,10 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **[P31-007](docs/ROADMAP.md#next--єдине-джерело-правди)** |
+| **Поточна задача** | **[DONE](docs/ROADMAP.md#next--єдине-джерело-правди)** |
 | **Правило** | якщо не `DONE` — `/autopilot` = цей ID; якщо `DONE` — зупинитись / чекати явного нового ID. **Не питати** «який пункт?». |
 
-Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна) (фаза 31; NEXT=**P31-007**).
+Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна) (фаза 31; NEXT=**DONE**).
 
 **Статус MVP:** ✅ реалізовано (2026-06-26)
 
@@ -50,7 +50,9 @@
 | **26** | Hardening post-audit (telemetry / launchers / split) | ✅ **DONE** ([ADR_HARDENING](docs/ADR_HARDENING.md)) |
 | **27** | SQLite record format normalize (Java) | ✅ P27-001…003 |
 | **28** | Runtime hardening follow-up (audit pimgui-5) | ✅ **DONE** |
-| **29** | Diagnostic evolution (correlation / timeline / silence / DNS / TCP) | 🔄 **P29-001** |
+| **29** | Diagnostic evolution (correlation / timeline / silence / DNS / TCP) | ✅ **DONE** |
+| **30** | SQLite schema evolution (stable host id / incident / poll / route) | ✅ **DONE** |
+| **31** | GUI information hierarchy (host row → a11y) | ✅ **DONE** |
 
 ---
 

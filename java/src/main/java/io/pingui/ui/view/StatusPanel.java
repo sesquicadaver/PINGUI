@@ -33,7 +33,12 @@ public final class StatusPanel {
         progressBar.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(progressBar, Priority.ALWAYS);
         cancelButton.setText(UiI18n.get("status.op.cancel"));
-        cancelButton.setFocusTraversable(false);
+        cancelButton.setFocusTraversable(true);
+        progressBar.setAccessibleText(UiI18n.get("a11y.status_progress"));
+        cancelButton.setAccessibleText(UiI18n.get("status.op.cancel"));
+        monitoringLabel.setAccessibleText(UiI18n.get("a11y.status_monitoring"));
+        opsLabel.setAccessibleText(UiI18n.get("a11y.status_ops"));
+        logArea.setAccessibleText(UiI18n.get("a11y.status_log"));
         progressRow.getChildren().setAll(progressBar, cancelButton);
         progressRow.setManaged(false);
         progressRow.setVisible(false);

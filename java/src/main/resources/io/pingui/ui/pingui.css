@@ -1,5 +1,5 @@
 /*
- * PINGUI light theme (P24-008)
+ * PINGUI light theme (P24-008) + accessibility (P31-007)
  *
  * Contract with io.pingui.ui.UiPalette (keep hex in sync):
  *   bg            #fafafa
@@ -11,6 +11,7 @@
  *   edge-active   #666666
  *   edge-inactive #c8c8c8
  *   danger        #b71c1c
+ *   focus         #1565c0
  *   space-sm      8px
  *
  * Canvas paint reads UiPalette Java constants — not these looked-up colors.
@@ -26,7 +27,10 @@
     -pingui-edge-active: #666666;
     -pingui-edge-inactive: #c8c8c8;
     -pingui-danger: #b71c1c;
+    -pingui-focus: #1565c0;
     -pingui-space-sm: 8px;
+    -fx-focus-color: -pingui-focus;
+    -fx-faint-focus-color: rgba(21, 101, 192, 0.28);
 }
 
 .pingui-root {
@@ -65,17 +69,21 @@
     -fx-font-weight: bold;
 }
 
+/* Severity text: WCAG-ish contrast on light/pastel surfaces (not color-only). */
 .pingui-severity-critical {
     -fx-text-fill: -pingui-danger;
     -fx-font-weight: bold;
 }
 
 .pingui-severity-warning {
-    -fx-text-fill: #e65100;
+    -fx-text-fill: #bf360c;
+    -fx-font-weight: bold;
 }
 
 .pingui-severity-notice {
-    -fx-text-fill: #f9a825;
+    /* Dark amber — pastel yellow fails contrast on white / #fff9c4. */
+    -fx-text-fill: #7a5c00;
+    -fx-font-weight: bold;
 }
 
 .pingui-severity-info {
@@ -98,6 +106,7 @@
 .pingui-host-state {
     -fx-font-size: 12px;
     -fx-text-fill: -pingui-text;
+    -fx-font-weight: bold;
 }
 
 .pingui-host-route {
@@ -165,6 +174,30 @@
 .pingui-host-list .list-cell:filled:selected .pingui-danger,
 .pingui-host-list .list-cell:filled:selected:focused .pingui-danger {
     -fx-text-fill: -pingui-danger;
+}
+
+/* Keyboard focus: left accent on focused host row (selection can stay pastel). */
+.pingui-host-list .list-cell:filled:focused {
+    -fx-border-color: -pingui-focus;
+    -fx-border-width: 0 0 0 3;
+    -fx-padding: 0 0 0 1;
+}
+
+.pingui-host-list .list-cell:filled:selected:focused {
+    -fx-border-color: -pingui-focus;
+    -fx-border-width: 0 0 0 3;
+}
+
+.button:focused,
+.toggle-button:focused,
+.radio-button:focused > .radio,
+.check-box:focused > .box,
+.text-field:focused,
+.text-area:focused,
+.combo-box-base:focused,
+.menu-button:focused {
+    -fx-focus-color: -pingui-focus;
+    -fx-faint-focus-color: rgba(21, 101, 192, 0.28);
 }
 
 .pingui-split {

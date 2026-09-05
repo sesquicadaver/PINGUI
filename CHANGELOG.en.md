@@ -13,6 +13,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P31-007 — accessibility pass:** state icons + text tooltips/a11y names; severity contrast; focus ring; NEXT→**DONE** (phase 31).
 - **P31-006 — app status area:** durable Monitoring summary + transient ops line + progress/cancel; feedback no longer wipes monitoring; NEXT→**P31-007**.
 - **P31-005 — host list navigation:** text filter, sort (config/severity/RTT/loss/last change), problems-first, header counters, persisted prefs; NEXT→**P31-006**.
 - **P31-004 — severity model:** Critical/Warning/Notice/Info/Muted → row color, badge, timeline glyph, desktop alert title; red only for Critical; NEXT→**P31-005**.

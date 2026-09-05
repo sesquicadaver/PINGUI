@@ -67,6 +67,10 @@ public final class HostInspectorPanel {
         copyButton.setText(UiI18n.get("inspector.copy"));
         ackButton.setText(UiI18n.get("inspector.ack"));
         diagnosticsButton.setText(UiI18n.get("inspector.diagnostics"));
+        root.setAccessibleText(UiI18n.get("a11y.inspector"));
+        copyButton.setAccessibleText(UiI18n.get("inspector.copy"));
+        ackButton.setAccessibleText(UiI18n.get("inspector.ack"));
+        diagnosticsButton.setAccessibleText(UiI18n.get("inspector.diagnostics"));
     }
 
     public void showEmpty() {

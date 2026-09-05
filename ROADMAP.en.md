@@ -8,10 +8,10 @@
 
 | Field | Value |
 |------|----------|
-| **Current task** | **[P31-007](docs/en/ROADMAP.md#next--single-source-of-truth)** |
+| **Current task** | **[DONE](docs/en/ROADMAP.md#next--single-source-of-truth)** |
 | **Rule** | if not `DONE` — `/autopilot` = this ID; if `DONE` — stop / wait for an explicit new ID. **Do not ask** “which item?”. |
 
-Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (phase 31; NEXT=**P31-007**).
+Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (phase 31; NEXT=**DONE**).
 
 **MVP status:** ✅ implemented (2026-06-26)
 
@@ -50,7 +50,9 @@ Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#e
 | **26** | Hardening post-audit (telemetry / launchers / split) | ✅ **DONE** ([ADR_HARDENING](docs/en/ADR_HARDENING.md)) |
 | **27** | SQLite record format normalize (Java) | ✅ P27-001…003 |
 | **28** | Runtime hardening follow-up (audit pimgui-5) | ✅ **DONE** |
-| **29** | Diagnostic evolution (correlation / timeline / silence / DNS / TCP) | 🔄 **P29-001** |
+| **29** | Diagnostic evolution (correlation / timeline / silence / DNS / TCP) | ✅ **DONE** |
+| **30** | SQLite schema evolution (stable host id / incident / poll / route) | ✅ **DONE** |
+| **31** | GUI information hierarchy (host row → a11y) | ✅ **DONE** |
 
 ---
 

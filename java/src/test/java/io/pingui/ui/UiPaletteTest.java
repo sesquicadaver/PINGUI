@@ -44,6 +44,10 @@ class UiPaletteTest {
                 css.contains(".pingui-metrics") && css.contains("-fx-text-fill: -pingui-text"),
                 "metrics/poll counters must force readable text on RTT row backgrounds");
         assertTrue(css.contains(".pingui-poll-counters"));
+        assertTrue(css.contains("-pingui-focus:") || css.contains("-fx-focus-color"), "P31-007 focus token");
+        assertTrue(css.contains(".list-cell:filled:focused"), "P31-007 host-row focus accent");
+        assertTrue(css.contains("#7a5c00"), "P31-007 notice contrast accent");
+        assertFalse(css.contains("#f9a825"), "low-contrast notice yellow must not remain");
     }
 
     @Test
