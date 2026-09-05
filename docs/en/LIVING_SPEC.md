@@ -117,7 +117,7 @@ Module → unit test matrix. Update when adding features.
 | SQLite format normalize (P27) | schema v5–v7: telemetry columns SSOT; typed `persistence_event`; normalized `host_session` | Java-only; no legacy migrate (delete `.db`); [x] in queue |
 | SQLite schema evolution (P30) | schema v8–v12 complete | P30-006 [x]; NEXT→**P31-001** |
 | GUI information hierarchy (P31) | a11y [x] | [pingui-evo-gui.md](pingui-evo-gui.md); P31-007 [x]; phase closed |
-| Stabilization MTR/history (P32) | alert lifecycle [x] → i18n/a11y | [pingui-stabilization.md](pingui-stabilization.md); P32-006 [x]; NEXT=P32-007 |
+| Stabilization MTR/history (P32) | i18n/a11y [x] → DB/monitor split | [pingui-stabilization.md](pingui-stabilization.md); P32-007 [x]; NEXT=P32-008 |
 | Runtime hardening follow-up (P28) | SinkRegistry hang [x]; inFlight before pool [x]; Python schema `!=` gate [x] | phase 28 closed |
 | Diagnostic evolution (P29) | multi-host correlation [x]; incident timeline [x]; alert silence [x]; DNS control [x]; TCP connect [x] | NEXT=`DONE`; Java-first |
 | TCP connect (P29-005) | `TcpEndpoint`, `TcpConnectProbe`, `HostProbeMode.TCP_CONNECT`, `RoutePoller.pollHostTcpConnect` | `TcpEndpointTest`, `TcpConnectProbeTest`, `RoutePollerTcpConnectTest`, `ProfilesConfigTest.loadTcpConnect*` |

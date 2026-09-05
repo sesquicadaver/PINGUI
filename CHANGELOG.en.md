@@ -14,6 +14,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P32-007 — runtime i18n + a11y leftovers:** `configureOnce`/`retranslate`; problemsFirst keyboard focus; bundle key parity + no duplicate `history.initial_route`; NEXT→**P32-008**.
 - **P32-006 — alert lifecycle vs delivery:** engine always emits FIRING/RESOLVED; silence/cooldown delivery-only (`QualityAlertDelivery`); pending notify once after expiry; NEXT→**P32-007**.
 - **P32-005 — bounded side-effect consumers:** `BoundedForwardDnsLookup` (executor+timeout+TTL cache); async webhook posts; `applyPollSnapshot` / deferred persist; `ensureHostExists` without full `load()`; NEXT→**P32-006**.
 - **P32-004 — schema v14 rollup + atomic retention:** additive `*_samples`/`*_sum` in `metric_rollup` (avg on read); retention in one transaction; migrate **v13→v14**; NEXT→**P32-005**.

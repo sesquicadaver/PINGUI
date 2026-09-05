@@ -14,6 +14,7 @@
 
 ### Changed
 
+- **P32-007 — runtime i18n + a11y leftovers:** `configureOnce`/`retranslate`; problemsFirst keyboard; bundle key parity + без дубля `history.initial_route`; NEXT→**P32-008**.
 - **P32-006 — alert lifecycle vs delivery:** FIRING/RESOLVED завжди з engine; silence/cooldown лише delivery (`QualityAlertDelivery`); pending notify після expiry один раз; NEXT→**P32-007**.
 - **P32-005 — bounded side-effect consumers:** `BoundedForwardDnsLookup` (executor+timeout+TTL cache); async webhook posts; `applyPollSnapshot` / deferred persist; `ensureHostExists` без повного `load()`; NEXT→**P32-006**.
 - **P32-004 — schema v14 rollup + atomic retention:** additive `*_samples`/`*_sum` у `metric_rollup` (avg на читанні); retention в одній транзакції; migrate **v13→v14**; NEXT→**P32-005**.
