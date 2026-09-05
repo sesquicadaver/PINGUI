@@ -15,6 +15,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P33-002 — MTR/projection semantics:** authoritative `routeChanged` in `SessionStore.applyPollSnapshot`; `targetStats` / classifier use `targetIp`+`targetHop` (not discovery last hop); NEXT→**P33-003**.
 - **P33-001 — MTR stable `targetHop` / monitoring span:** cursor rotates in `1..targetHop` (not reachable-prefix); intermediate timeout must not skip target; target slot by hop number; NEXT→**P33-002**.
 - **P32-008 — SessionDatabase split + phase close:** facade `SessionDatabase` + `SchemaManager` / `SessionStateRepository` / `HistoryRepository` / `DbCommit`; Java canonical, Python bugfix-only; phase 32 **closed**.
 - **P32-007 — runtime i18n + a11y leftovers:** `configureOnce`/`retranslate`; problemsFirst keyboard focus; bundle key parity + no duplicate `history.initial_route`; NEXT→**P32-008**.

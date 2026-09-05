@@ -39,6 +39,7 @@ public final class HostItem {
     private final StringProperty rowDetailsTooltip = new SimpleStringProperty("");
     private List<String> tags = List.of();
     private List<HopNode> lastHops = List.of();
+    private String lastTargetIp;
     private HostProbeMode probeMode = HostProbeMode.TRACE;
     private HostProblemSummary problemSummary;
     private HostTargetStats lastStats;
@@ -220,7 +221,12 @@ public final class HostItem {
     }
 
     public void applyRouteHops(List<HopNode> hops) {
+        applyRouteHops(hops, null);
+    }
+
+    public void applyRouteHops(List<HopNode> hops, String targetIp) {
         lastHops = hops != null ? List.copyOf(hops) : List.of();
+        lastTargetIp = targetIp;
         refreshNetworkStates(lastStats);
     }
 
@@ -413,7 +419,7 @@ public final class HostItem {
 
     private void refreshNetworkStates(HostTargetStats stats) {
         endpointState = HostNetworkStateClassifier.endpoint(isEnabled(), stats);
-        routeState = HostNetworkStateClassifier.route(probeMode, lastHops, routeChangedLatched);
+        routeState = HostNetworkStateClassifier.route(probeMode, lastHops, routeChangedLatched, lastTargetIp);
         stateGlyph.set(formatEndpointGlyph(isEnabled(), endpointState));
         routeGlyph.set(formatRouteGlyph(routeState));
         refreshSeverity();

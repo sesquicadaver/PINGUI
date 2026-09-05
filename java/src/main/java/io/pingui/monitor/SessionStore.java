@@ -168,6 +168,7 @@ public final class SessionStore implements AutoCloseable {
         session.setProbeModeOverride(null);
         session.setCurrentRoute(List.of());
         session.setPreviousRoute(List.of());
+        session.clearTargetIdentity();
         session.getLastKnownByHop().clear();
         // Mode switch changes terminal hop identity (trace N ↔ ping_only 1); drop probe series.
         session.getHopStats().clear();
@@ -242,11 +243,22 @@ public final class SessionStore implements AutoCloseable {
         return RouteHistory.routeWithLastKnownIps(session.getPreviousRoute(), session.getLastKnownByHop());
     }
 
+    /**
+     * Updates displayed route nodes. When {@code confirmedRouteChange} is non-null it is the
+     * authoritative topology flag (P33-002); otherwise IP-list auto-detect is used (TRACE / tests).
+     */
     public void updateRoute(String host, RouteSnapshot snapshot) {
+        updateRoute(host, snapshot, null);
+    }
+
+    public void updateRoute(String host, RouteSnapshot snapshot, Boolean confirmedRouteChange) {
         HostSessionData session = get(host);
+        rememberTargetIdentity(session, snapshot, null);
         List<String> oldIps = routeIps(session.getCurrentRoute());
         List<String> newIps = snapshot.routeIps();
-        boolean routeChanged = !session.getCurrentRoute().isEmpty() && !oldIps.equals(newIps);
+        boolean routeChanged = confirmedRouteChange != null
+                ? confirmedRouteChange
+                : !session.getCurrentRoute().isEmpty() && !oldIps.equals(newIps);
         if (routeChanged) {
             session.setPreviousRoute(
                     RouteHistory.routeWithLastKnownIps(session.getCurrentRoute(), session.getLastKnownByHop()));
@@ -258,13 +270,23 @@ public final class SessionStore implements AutoCloseable {
     }
 
     /**
-     * Applies one poll snapshot with a single SQLite {@code save} (P32-005). Prefer this over separate
-     * {@link #updateRoute} + {@link #appendPingSamples} on the hot path.
+     * Applies one poll snapshot with a single SQLite {@code save} (P32-005 / P33-002). Prefer this over
+     * separate {@link #updateRoute} + {@link #appendPingSamples} on the hot path.
+     *
+     * <p>{@code confirmedRouteChange} must come from the probe outcome (MTR discovery / timeout are not
+     * topology changes). Pass {@code null} only for TRACE-style auto-detect callers.
      */
     public void applyPollSnapshot(String host, RouteSnapshot snapshot, PollSampleScope sampleScope) {
+        applyPollSnapshot(host, snapshot, sampleScope, null);
+    }
+
+    public void applyPollSnapshot(
+            String host, RouteSnapshot snapshot, PollSampleScope sampleScope, Boolean confirmedRouteChange) {
+        PollSampleScope safe = sampleScope != null ? sampleScope : PollSampleScope.FULL;
         withDeferredPersist(() -> {
-            updateRoute(host, snapshot);
-            appendPingSamples(host, snapshot, sampleScope != null ? sampleScope : PollSampleScope.FULL);
+            updateRoute(host, snapshot, confirmedRouteChange);
+            rememberTargetIdentity(get(host), snapshot, safe);
+            appendPingSamples(host, snapshot, safe);
         });
     }
 
@@ -328,7 +350,10 @@ public final class SessionStore implements AutoCloseable {
         return stats != null ? HopStats.summarize(stats) : null;
     }
 
-    /** Metrics for the last hop in the current route; {@code null} when route or probes are missing. */
+    /**
+     * Metrics for the real target hop (P33-002), not merely the last node of a partial MTR route.
+     * {@code null} when disabled, empty, or the target has not been identified yet.
+     */
     public HostTargetStats targetStats(String host) {
         HostSessionData session = get(host);
         if (!session.isEnabled()) {
@@ -338,9 +363,55 @@ public final class SessionStore implements AutoCloseable {
         if (route.isEmpty()) {
             return null;
         }
-        HopNode terminal = route.get(route.size() - 1);
+        HopNode terminal = resolveTargetHop(session, route);
+        if (terminal == null) {
+            return null;
+        }
         HopProbeStats stats = session.getHopStats().get(terminal.hop());
         return HopStats.targetStats(terminal, stats);
+    }
+
+    /** Resolves the hop that represents the monitored target (P33-002). */
+    static HopNode resolveTargetHop(HostSessionData session, List<HopNode> route) {
+        Integer targetHop = session.getLastTargetHop();
+        if (targetHop != null && targetHop >= 1 && targetHop <= route.size()) {
+            return route.get(targetHop - 1);
+        }
+        String targetIp = session.getLastTargetIp();
+        if (targetIp != null && !targetIp.isBlank()) {
+            for (HopNode node : route) {
+                if (node.isReachable() && targetIp.equals(node.ip())) {
+                    return node;
+                }
+            }
+            // Known target but not present yet (MTR discovery) — do not use an intermediate router.
+            return null;
+        }
+        return route.get(route.size() - 1);
+    }
+
+    /** Records target IP / hop identity from a poll for endpoint projection (P33-002). */
+    static void rememberTargetIdentity(HostSessionData session, RouteSnapshot snapshot, PollSampleScope scope) {
+        if (snapshot == null) {
+            return;
+        }
+        if (snapshot.targetIp() != null && !snapshot.targetIp().isBlank()) {
+            session.setLastTargetIp(snapshot.targetIp());
+        }
+        if (scope != null && scope.targetSampled() && scope.freshHop() != null) {
+            session.setLastTargetHop(scope.freshHop());
+            return;
+        }
+        String tip = session.getLastTargetIp();
+        if (tip == null || tip.isBlank()) {
+            return;
+        }
+        for (HopNode node : snapshot.nodes()) {
+            if (node.isReachable() && tip.equals(node.ip())) {
+                session.setLastTargetHop(node.hop());
+                return;
+            }
+        }
     }
 
     @Override

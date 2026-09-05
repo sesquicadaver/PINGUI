@@ -467,7 +467,8 @@ final class HostListPresenter {
             item.applyRouteHops(List.of());
             return;
         }
-        item.applyRouteHops(session.get(item.getHost()).getCurrentRoute());
+        var data = session.get(item.getHost());
+        item.applyRouteHops(data.getCurrentRoute(), data.getLastTargetIp());
     }
 
     /** Syncs unread endpoint_down badge from {@link MonitorService} (P22-004). */
