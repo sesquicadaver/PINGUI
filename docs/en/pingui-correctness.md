@@ -1,0 +1,40 @@
+> **Language:** English · [Українська](../pingui-correctness.md)
+
+# Correctness — MTR / projection / side-effects (P33)
+
+**Source for phase 33.** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
+
+Audit of `main` @ `28bdb41` (after P32 close). Correctness phase — **not** feature expansion.
+
+> Historical stabilization audit (phase 32): [pingui-stabilization.md](pingui-stabilization.md) — **archival**.
+
+## Summary
+
+P32 landed well (fresh-hop, `target_sampled`, rollup v14, bounded DNS/webhook telemetry, alert lifecycle, i18n, DB split). Remaining blockers: MTR shrinks the monitoring span after an intermediate timeout, the projection layer ignores phase/`targetSampled`, and SQLite/Influx/Timescale may still run on FX/probe threads.
+
+## Linear queue
+
+| ID | Priority | Task | DoD (short) |
+|----|----------|------|-------------|
+| **P33-001** | P0 | Stable `targetHop` + cursor `1..targetHop` | Intermediate timeout must not skip target; repeated target timeouts stay identifiable; recovery |
+| **P33-002** | P0 | Projection: phase / targetSampled / routeChanged | Partial discovery ≠ route change; endpoint only when target sampled |
+| **P33-003** | P0 | SessionStore + bounded writers | Fast in-memory path; SQLite/TS off FX/probe; immutable API snapshot |
+| **P33-004** | P1 | `poll_result` tri-state | Probe/internal error → `target_sampled=false`, `reachable=null` |
+| **P33-005** | P1 | Latency baseline reset | Clear EWMA on route change / probe mode change |
+| **P33-006** | P1 | Webhook lifecycle | Bounded queue + rejected counter; closeable dispatcher |
+| **P33-007** | P2 | DB migrate + chunked retention | v12→v14 (or offline CLI); chunked retention |
+| **P33-008** | P2 | Docs / branch sync | README/ROADMAP/phases match `main`≡`beta` |
+
+## P33-001 (done) — MTR monitoring span
+
+**Bug:** `nextMonitoringCursor()` used `monitoringHopCount()` (reachable prefix). A hop2 timeout shrunk the span so the target was never polled again; a target timeout lost slot identity.
+
+**Fix:**
+
+* `MtrProbeState.targetHop` — stable 1-based target index after discovery;
+* `monitoringSpan()` = `targetHop` (fallback: reachable prefix before target is known);
+* cursor rotates in `1..monitoringSpan()`;
+* `isTargetSlot(hop)` by hop number / `targetHop`;
+* re-entering `DISCOVERING` resets `targetHop` to `0`.
+
+**Tests:** `MtrProbeTest` — intermediate timeout→recovery, repeated target timeouts, target recovery.

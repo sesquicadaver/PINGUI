@@ -2,7 +2,9 @@
 
 # Stabilization — MTR / history / side-effects (P32)
 
-**Source for phase 32.** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
+> **Archival:** phase 32 closed. Current phase 33 — [pingui-correctness.md](pingui-correctness.md).
+
+**Historical source for phase 32.** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
 
 Audit of `beta` @ `2c08a61` (after P31-007). Stabilization phase — **not** feature expansion.
 
