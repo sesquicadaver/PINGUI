@@ -512,8 +512,9 @@ public final class MonitorService implements AutoCloseable {
                     }
                 }
                 pollEffects.offerTelemetryFailure(host, outcome.error(), probeMode, durationMs);
+                // Monitor/DNS/internal failure is not a sampled downtime (P33-004).
                 pollEffects.recordPollResult(
-                        host, probeMode, null, durationMs, outcome.error(), outcome.probeOutcome(), true);
+                        host, probeMode, null, durationMs, outcome.error(), outcome.probeOutcome(), false);
                 current.onProbeError(host, outcome.error());
                 return;
             }

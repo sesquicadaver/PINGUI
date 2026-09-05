@@ -116,8 +116,11 @@ final class PollResultEffects {
     }
 
     /**
-     * Writes canonical {@code poll_result} for a finished poll (P30-003 / P32-003). Safe no-op without
-     * DB. Does not invent loss/jitter from reachability alone.
+     * Writes canonical {@code poll_result} for a finished poll (P30-003 / P32-003 / P33-004). Safe no-op
+     * without DB. Does not invent loss/jitter from reachability alone.
+     *
+     * <p>Tri-state {@code reachable}: {@code true}/{@code false} only when the target was actually
+     * sampled; monitor/DNS/internal errors keep {@code reachable=null} and must not lower uptime.
      */
     void recordPollResult(
             String host, HostProbeMode probeMode, RouteSnapshot snapshot, double durationMs, String error) {
@@ -138,14 +141,14 @@ final class PollResultEffects {
             return;
         }
         ProbeOutcome outcome = probeOutcome != null ? probeOutcome : deriveProbeOutcome(snapshot, error, null);
+        // Monitor failure is not a measured target downtime (P33-004).
+        boolean sampled = targetSampled && error == null;
         Boolean reachable = null;
         Double terminalRtt = null;
         Double lossPercent = null;
         Double jitterMs = null;
         Long routeId = null;
-        if (error != null) {
-            reachable = false;
-        } else if (snapshot != null) {
+        if (sampled && snapshot != null) {
             reachable = TelemetryEmission.isTargetReachable(snapshot);
             OptionalDouble rtt = terminalRttMs(snapshot);
             if (rtt.isPresent()) {
@@ -176,7 +179,7 @@ final class PollResultEffects {
                     routeId,
                     error,
                     outcome,
-                    targetSampled);
+                    sampled);
         } catch (RuntimeException ex) {
             LOG.warn("Persistence poll_result failed for {}: {}", host, ex.getMessage());
         }

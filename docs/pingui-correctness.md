@@ -63,3 +63,15 @@ P32 закрито якісно (fresh-hop, `target_sampled`, rollup v14, bounde
 * API: `snapshot()` / `currentRouteSnapshot()`.
 
 **Тести:** `SessionPersistenceWriterTest`, оновлені `SessionStore*Test`.
+
+## P33-004 (зроблено) — `poll_result` tri-state
+
+**Проблема:** failure-path завжди писав `target_sampled=true` і `reachable=false`, тож DNS/permission/internal error знижували uptime як downtime.
+
+**Виправлення:**
+
+* `PollResultEffects.recordPollResult` — `reachable` лише коли target реально sampled і немає monitor error;
+* `MonitorService` failure → `targetSampled=false`;
+* target timeout лишається `sampled=true`, `reachable=false`.
+
+**Тести:** `PollResultEffectsPollResultTest` (error/null, timeout/false, caller-marked sampled).
