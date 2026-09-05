@@ -12,10 +12,11 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * MTR-style per-hop poll state machine (P13-010).
+ * MTR-style per-hop poll state machine (P13-010 / P32-001).
  *
  * <p>One hop per {@link #poll} call: DISCOVERING builds the route incrementally; MONITORING
- * round-robins RTT refresh on known hops. Does not run a full trace each cycle.
+ * round-robins RTT refresh on known hops. Consumers must treat only {@link
+ * MtrPollOutcome#freshHopSample()} as a new measurement.
  */
 public final class MtrProbe {
     private final MtrHopProber hopProber;
@@ -31,7 +32,7 @@ public final class MtrProbe {
             MtrProbeState state = states.computeIfAbsent(host, h -> MtrProbeState.initial(h, maxHops));
             StepResult step = advance(state, maxHops, timeoutSeconds);
             states.put(host, step.state());
-            return MtrPollOutcome.ok(step.snapshot());
+            return step.outcome();
         } catch (IOException ex) {
             return MtrPollOutcome.failure(ex.getMessage());
         } catch (RuntimeException ex) {
@@ -59,7 +60,8 @@ public final class MtrProbe {
                     maxHops,
                     working.phase(),
                     working.cursor(),
-                    working.nodes());
+                    working.nodes(),
+                    working.lastCompleteRouteIps());
         }
         int hop = working.cursor();
         Optional<ProbeResult> probe = hopProber.probeHop(working.targetHost(), working.targetIp(), hop, timeoutSeconds);
@@ -73,34 +75,46 @@ public final class MtrProbe {
         List<HopNode> nodes = state.mutableNodes();
         ensureNodeSlots(nodes, hop);
         if (probe.isEmpty()) {
-            nodes.set(hop - 1, Models.timeout(hop));
-            return finishDiscoveringStep(state, nodes, hop, false, false);
+            HopNode fresh = Models.timeout(hop);
+            nodes.set(hop - 1, fresh);
+            return finishDiscoveringStep(state, nodes, hop, fresh, false, MtrTargetOutcome.NOT_SAMPLED);
         }
         ProbeResult result = probe.get();
         HopNode node = new HopNode(hop, result.sourceIp(), result.rttMs(), false);
         nodes.set(hop - 1, node);
-        if (result.target() || result.sourceIp().equals(state.targetIp())) {
+        boolean isTarget = result.target() || result.sourceIp().equals(state.targetIp());
+        if (isTarget) {
             List<HopNode> trimmed = trimTrailingEmpty(nodes);
+            List<String> completeIps = routeIps(trimmed);
             MtrProbeState next = state.withNodes(trimmed)
                     .withPhase(MtrProbeState.Phase.MONITORING)
-                    .withCursor(1);
-            return toStepResult(next);
+                    .withCursor(1)
+                    .withLastCompleteRouteIps(completeIps);
+            return toStepResult(next, hop, node, true, MtrTargetOutcome.REACHABLE);
         }
-        return finishDiscoveringStep(state, nodes, hop, false, false);
+        return finishDiscoveringStep(state, nodes, hop, node, false, MtrTargetOutcome.NOT_SAMPLED);
     }
 
     private StepResult finishDiscoveringStep(
-            MtrProbeState state, List<HopNode> nodes, int hop, boolean forceMonitoring, boolean trimNodes) {
-        List<HopNode> route = trimNodes ? trimTrailingEmpty(nodes) : List.copyOf(nodes);
+            MtrProbeState state,
+            List<HopNode> nodes,
+            int hop,
+            HopNode fresh,
+            boolean forceMonitoring,
+            MtrTargetOutcome targetOutcome) {
+        List<HopNode> route = List.copyOf(nodes);
         int nextHop = hop + 1;
         if (!forceMonitoring && nextHop <= state.maxHops()) {
             MtrProbeState next = state.withNodes(route).withCursor(nextHop);
-            return toStepResult(next);
+            return toStepResult(next, hop, fresh, false, targetOutcome);
         }
-        MtrProbeState next = state.withNodes(trimTrailingEmpty(nodes))
+        // Max hops without seeing target: enter MONITORING on incomplete path; no complete baseline.
+        List<HopNode> trimmed = trimTrailingEmpty(nodes);
+        MtrProbeState next = state.withNodes(trimmed)
                 .withPhase(MtrProbeState.Phase.MONITORING)
                 .withCursor(1);
-        return toStepResult(next);
+        boolean targetSampled = targetOutcome != MtrTargetOutcome.NOT_SAMPLED;
+        return toStepResult(next, hop, fresh, targetSampled, targetOutcome);
     }
 
     private StepResult stepMonitoring(MtrProbeState state, int hop, Optional<ProbeResult> probe) {
@@ -108,26 +122,51 @@ public final class MtrProbe {
         if (nodes.isEmpty() || hop > nodes.size()) {
             MtrProbeState rediscover =
                     state.withPhase(MtrProbeState.Phase.DISCOVERING).withCursor(1);
-            return toStepResult(rediscover);
+            return toStepResult(rediscover, hop, null, false, MtrTargetOutcome.NOT_SAMPLED);
         }
         HopNode previous = nodes.get(hop - 1);
+        boolean probingTarget = isTargetHop(state, previous);
         if (probe.isEmpty()) {
-            nodes.set(hop - 1, Models.timeout(hop));
+            HopNode fresh = Models.timeout(hop);
+            nodes.set(hop - 1, fresh);
+            // Timeout is not a topology change — keep lastCompleteRouteIps unchanged.
             MtrProbeState next = state.withNodes(nodes).withCursor(nextMonitoringCursor(state, hop));
-            return toStepResult(next);
+            MtrTargetOutcome outcome = probingTarget ? MtrTargetOutcome.UNREACHABLE : MtrTargetOutcome.NOT_SAMPLED;
+            return toStepResult(next, hop, fresh, probingTarget, outcome);
         }
         ProbeResult result = probe.get();
         if (previous.isReachable() && !previous.ip().equals(result.sourceIp())) {
             List<HopNode> truncated = new ArrayList<>(nodes.subList(0, hop - 1));
-            truncated.add(new HopNode(hop, result.sourceIp(), result.rttMs(), false));
+            HopNode fresh = new HopNode(hop, result.sourceIp(), result.rttMs(), false);
+            truncated.add(fresh);
+            boolean isTarget = result.target() || result.sourceIp().equals(state.targetIp());
             MtrProbeState next = state.withNodes(truncated)
                     .withPhase(MtrProbeState.Phase.DISCOVERING)
                     .withCursor(hop + 1);
-            return toStepResult(next);
+            // Topology broke relative to last complete route; discovery resumes.
+            return toStepResult(
+                    next, hop, fresh, isTarget, isTarget ? MtrTargetOutcome.REACHABLE : MtrTargetOutcome.NOT_SAMPLED);
         }
-        nodes.set(hop - 1, new HopNode(hop, result.sourceIp(), result.rttMs(), false));
-        MtrProbeState next = state.withNodes(nodes).withCursor(nextMonitoringCursor(state, hop));
-        return toStepResult(next);
+        HopNode fresh = new HopNode(hop, result.sourceIp(), result.rttMs(), false);
+        nodes.set(hop - 1, fresh);
+        boolean isTarget = result.target() || result.sourceIp().equals(state.targetIp()) || probingTarget;
+        List<String> completeIps = state.lastCompleteRouteIps();
+        if (isTarget || routeIps(nodes).equals(state.lastCompleteRouteIps())) {
+            completeIps = routeIps(nodes);
+        }
+        MtrProbeState next = state.withNodes(nodes)
+                .withCursor(nextMonitoringCursor(state, hop))
+                .withLastCompleteRouteIps(completeIps);
+        return toStepResult(
+                next, hop, fresh, isTarget, isTarget ? MtrTargetOutcome.REACHABLE : MtrTargetOutcome.NOT_SAMPLED);
+    }
+
+    private static boolean isTargetHop(MtrProbeState state, HopNode hop) {
+        if (hop == null || !hop.isReachable() || hop.ip() == null) {
+            // Last hop slot may be the destination even when previously timed out.
+            return false;
+        }
+        return hop.ip().equals(state.targetIp());
     }
 
     private static int nextMonitoringCursor(MtrProbeState state, int probedHop) {
@@ -156,10 +195,23 @@ public final class MtrProbe {
         return List.copyOf(nodes.subList(0, end));
     }
 
-    private static StepResult toStepResult(MtrProbeState state) {
-        RouteSnapshot snapshot = new RouteSnapshot(state.targetHost(), state.targetIp(), state.nodes());
-        return new StepResult(state, snapshot);
+    private static List<String> routeIps(List<HopNode> nodes) {
+        List<String> ips = new ArrayList<>();
+        for (HopNode node : nodes) {
+            if (node.isReachable() && node.ip() != null && !node.ip().isBlank()) {
+                ips.add(node.ip());
+            }
+        }
+        return List.copyOf(ips);
     }
 
-    private record StepResult(MtrProbeState state, RouteSnapshot snapshot) {}
+    private static StepResult toStepResult(
+            MtrProbeState state, int probedHop, HopNode fresh, boolean targetSampled, MtrTargetOutcome targetOutcome) {
+        RouteSnapshot snapshot = new RouteSnapshot(state.targetHost(), state.targetIp(), state.nodes());
+        MtrPollOutcome outcome = MtrPollOutcome.ok(
+                snapshot, state.phase(), probedHop, fresh, targetSampled, targetOutcome, state.lastCompleteRouteIps());
+        return new StepResult(state, outcome);
+    }
+
+    private record StepResult(MtrProbeState state, MtrPollOutcome outcome) {}
 }

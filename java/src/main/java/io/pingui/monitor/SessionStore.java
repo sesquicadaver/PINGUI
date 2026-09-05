@@ -252,11 +252,20 @@ public final class SessionStore implements AutoCloseable {
     }
 
     public void appendPingSamples(String host, RouteSnapshot snapshot) {
-        recordHopProbes(host, snapshot);
+        appendPingSamples(host, snapshot, PollSampleScope.FULL);
+    }
+
+    /** Records hop stats / RTT history for fresh samples only (P32-001). */
+    public void appendPingSamples(String host, RouteSnapshot snapshot, PollSampleScope scope) {
+        PollSampleScope safe = scope != null ? scope : PollSampleScope.FULL;
+        recordHopProbes(host, snapshot, safe);
         Map<String, List<Double>> history = get(host).getPingHistory();
         boolean changed = false;
         List<PingSample> newSamples = new ArrayList<>();
         for (HopNode node : snapshot.nodes()) {
+            if (!safe.allHopsFresh() && (safe.freshHop() == null || node.hop() != safe.freshHop())) {
+                continue;
+            }
             if (!node.isReachable() || node.pingMs() == null) {
                 continue;
             }
@@ -361,16 +370,24 @@ public final class SessionStore implements AutoCloseable {
         }
     }
 
-    private void recordHopProbes(String host, RouteSnapshot snapshot) {
+    private void recordHopProbes(String host, RouteSnapshot snapshot, PollSampleScope scope) {
         if (snapshot.nodes().isEmpty()) {
             return;
         }
+        PollSampleScope safe = scope != null ? scope : PollSampleScope.FULL;
         HostSessionData session = get(host);
+        boolean changed = false;
         for (HopNode node : snapshot.nodes()) {
+            if (!safe.allHopsFresh() && (safe.freshHop() == null || node.hop() != safe.freshHop())) {
+                continue;
+            }
             HopProbeStats stats = session.getHopStats().computeIfAbsent(node.hop(), ignored -> new HopProbeStats());
             HopStats.recordProbe(stats, node);
+            changed = true;
         }
-        persist(host);
+        if (changed) {
+            persist(host);
+        }
     }
 
     private HostSessionData loadOrCreate(String host) {

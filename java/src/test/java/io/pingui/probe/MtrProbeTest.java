@@ -3,6 +3,7 @@ package io.pingui.probe;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.probe.icmp.ProbeResult;
 import java.util.ArrayDeque;
@@ -23,26 +24,41 @@ class MtrProbeTest {
     }
 
     @Test
-    void discoversRouteHopByHop() {
+    void discoveryDoesNotSampleTargetUntilLastHop() {
         prober.enqueue(
                 new ProbeResult("10.0.0.1", 4.0, false),
                 new ProbeResult("10.0.0.2", 6.0, false),
                 new ProbeResult("8.8.8.8", 8.0, true));
 
         MtrPollOutcome hop1 = mtrProbe.poll("8.8.8.8", 20, 0.5);
-        assertNotNull(hop1.snapshot());
-        assertEquals(List.of("10.0.0.1"), hop1.snapshot().routeIps());
-        assertEquals(
-                MtrProbeState.Phase.DISCOVERING, mtrProbe.stateFor("8.8.8.8").phase());
+        assertFalse(hop1.targetSampled());
+        assertEquals(1, hop1.probedHop());
+        assertEquals("10.0.0.1", hop1.freshHopSample().ip());
 
         MtrPollOutcome hop2 = mtrProbe.poll("8.8.8.8", 20, 0.5);
-        assertEquals(List.of("10.0.0.1", "10.0.0.2"), hop2.snapshot().routeIps());
+        assertFalse(hop2.targetSampled());
+        assertEquals(2, hop2.probedHop());
 
         MtrPollOutcome hop3 = mtrProbe.poll("8.8.8.8", 20, 0.5);
-        assertEquals(List.of("10.0.0.1", "10.0.0.2", "8.8.8.8"), hop3.snapshot().routeIps());
-        assertEquals(
-                MtrProbeState.Phase.MONITORING, mtrProbe.stateFor("8.8.8.8").phase());
-        assertEquals(1, mtrProbe.stateFor("8.8.8.8").cursor());
+        assertTrue(hop3.targetSampled());
+        assertEquals(MtrTargetOutcome.REACHABLE, hop3.targetOutcome());
+        assertEquals(List.of("10.0.0.1", "10.0.0.2", "8.8.8.8"), hop3.lastCompleteRouteIps());
+    }
+
+    @Test
+    void monitoringEmitsOnlyFreshHopSample() {
+        prober.enqueue(
+                new ProbeResult("10.0.0.1", 4.0, false),
+                new ProbeResult("8.8.8.8", 8.0, true),
+                new ProbeResult("10.0.0.1", 5.0, false));
+
+        mtrProbe.poll("8.8.8.8", 20, 0.5);
+        mtrProbe.poll("8.8.8.8", 20, 0.5);
+        MtrPollOutcome refresh = mtrProbe.poll("8.8.8.8", 20, 0.5);
+        assertEquals(1, refresh.probedHop());
+        assertEquals(5.0, refresh.freshHopSample().pingMs());
+        assertFalse(refresh.targetSampled());
+        assertEquals(2, refresh.completeRoute().nodes().size());
     }
 
     @Test

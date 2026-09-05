@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P32-001** |
+| **Поточна задача** | **P32-002** |
 | **Фаза** | 32 — Stabilization (MTR / history / side-effects) |
-| **DoD (коротко)** | MTR freshness і topology completeness |
+| **DoD (коротко)** | MTR concurrency та lifecycle |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -179,7 +179,7 @@
 | 133 | **P31-005** | [x] | Filter, sort, problems-first |
 | 134 | **P31-006** | [x] | Centralized application status |
 | 135 | **P31-007** | [x] | Accessibility pass |
-| 136 | **P32-001** | [ ] | MTR freshness і topology completeness |
+| 136 | **P32-001** | [x] | MTR freshness і topology completeness |
 | 137 | **P32-002** | [ ] | MTR concurrency та lifecycle |
 | 138 | **P32-003** | [ ] | Структурований PollResult і TCP outcomes |
 | 139 | **P32-004** | [ ] | Schema v13, точні rollups, атомарний retention |
@@ -188,7 +188,7 @@
 | 142 | **P32-007** | [ ] | Runtime i18n та залишки accessibility |
 | 143 | **P32-008** | [ ] | Локальний поділ DB/monitor hotspot-ів і документація |
 
-**Стан черги:** **NEXT = P32-001** (фаза 32; P31 DONE; Java-first; [pingui-stabilization.md](pingui-stabilization.md)).
+**Стан черги:** **NEXT = P32-002** (фаза 32; P31 DONE; Java-first; [pingui-stabilization.md](pingui-stabilization.md)).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -1007,11 +1007,11 @@ flowchart TD
 
 **Контекст:** [pingui-stabilization.md](pingui-stabilization.md). Стабілізація семантики даних і критичних потоків — **не** нове функціональне розширення. Java-first; TRACE/PING_ONLY вже зрілі.
 
-**Черга:** після P31; **NEXT = P32-001**.
+**Черга:** після P31; **NEXT = P32-002** (P32-001 [x]).
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
-| **P32-001** | [ ] MTR freshness / topology | `MtrProbe`, `SessionStore`, telemetry, alerts | Лише `freshHopSample` оновлює hop/telemetry; endpoint/`poll_result` лише коли target sampled; discovery prefix ≠ route change; timeout ≠ topology change |
+| **P32-001** | [x] MTR freshness / topology | `MtrProbe`, `SessionStore`, telemetry, alerts | Лише `freshHopSample` оновлює hop/telemetry; endpoint/`poll_result` лише коли target sampled; discovery prefix ≠ route change; timeout ≠ topology change |
 | **P32-002** | [ ] MTR concurrency / lifecycle | `MtrProbe` state | `ConcurrentHashMap` / atomic update; generation token; clear on remove/rename host |
 | **P32-003** | [ ] Structured PollResult + TCP | `PollResultEffects`, `RoutePoller`, probe outcomes | `loss=NULL` якщо не виміряно; `probe_outcome` SUCCESS/TIMEOUT/REFUSED/DNS_ERROR/NETWORK_ERROR; `target_sampled`; jitter лише з серії RTT |
 | **P32-004** | [ ] Schema v13 rollup + atomic retention | `SessionDatabase`, `PollResultRetentionJob` | окремі `*_samples`/`*_sum`; avg на читанні; retention одна транзакція; crash-safe + idempotent; migrate v12→v13 (не delete DB) |
@@ -1109,7 +1109,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P32-001**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P32-002**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 
