@@ -51,3 +51,15 @@ P32 landed well (fresh-hop, `target_sampled`, rollup v14, bounded DNS/webhook te
 * `HostNetworkStateClassifier.targetReached(hops, targetIp)` — intermediate ≠ target.
 
 **Tests:** `SessionStoreTest` (discovery/timeout/confirmed change), `HostNetworkStateClassifierTest`.
+
+## P33-003 (done) — SessionStore + bounded writers
+
+**Bug:** SQLite / time-series HTTP ran synchronously on FX/probe threads; `SessionStore` was unsynchronized for daemon workers.
+
+**Fix:**
+
+* `SessionPersistenceWriter` — bounded queue + single worker; DROP_OLDEST/DROP_NEWEST + `droppedCount`;
+* hot path is in-memory under a lock; SQLite/TS via immutable `HostSessionData.copy()` deltas;
+* API: `snapshot()` / `currentRouteSnapshot()`.
+
+**Tests:** `SessionPersistenceWriterTest`, updated `SessionStore*Test`.

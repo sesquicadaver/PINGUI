@@ -226,7 +226,7 @@ class SessionStoreTest {
     }
 
     @Test
-    void reconnectUsesLiveEnabledStateNotYamlDefault(@TempDir Path tempDir) {
+    void reconnectUsesLiveEnabledStateNotYamlDefault(@TempDir Path tempDir) throws Exception {
         HostEntry yamlDefault = new HostEntry("8.8.8.8", false, false, PingExpertEntry.empty());
         SessionStore ram = SessionStore.fromEntries(List.of(yamlDefault));
         ram.setEnabled("8.8.8.8", true);
@@ -239,6 +239,7 @@ class SessionStoreTest {
             RouteSnapshot snapshot =
                     new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
             persisted.updateRoute("8.8.8.8", snapshot);
+            persisted.awaitPersistenceIdleForTests();
 
             var loaded = database.load("8.8.8.8");
             assertNotNull(loaded);
@@ -249,7 +250,7 @@ class SessionStoreTest {
     }
 
     @Test
-    void forwardsRouteAndPingSamplesToTimeSeriesBackend() {
+    void forwardsRouteAndPingSamplesToTimeSeriesBackend() throws Exception {
         io.pingui.persistence.timeseries.MemoryTimeSeriesBackend backend =
                 new io.pingui.persistence.timeseries.MemoryTimeSeriesBackend();
         SessionStore store = new SessionStore(List.of("8.8.8.8"));
@@ -265,6 +266,7 @@ class SessionStoreTest {
         store.updateRoute("8.8.8.8", first);
         store.appendPingSamples("8.8.8.8", first);
         store.updateRoute("8.8.8.8", second);
+        store.awaitPersistenceIdleForTests();
         assertEquals(2, backend.routeEvents().size());
         assertFalse(backend.routeEvents().get(0).routeChanged());
         assertTrue(backend.routeEvents().get(1).routeChanged());
@@ -274,7 +276,7 @@ class SessionStoreTest {
     }
 
     @Test
-    void discoveryGrowthDoesNotConfirmRouteChange() {
+    void discoveryGrowthDoesNotConfirmRouteChange() throws Exception {
         io.pingui.persistence.timeseries.MemoryTimeSeriesBackend backend =
                 new io.pingui.persistence.timeseries.MemoryTimeSeriesBackend();
         SessionStore store = new SessionStore(List.of("8.8.8.8"));
@@ -287,6 +289,7 @@ class SessionStoreTest {
                 List.of(new HopNode(1, "10.0.0.1", 4.0, false), new HopNode(2, "10.0.0.2", 6.0, false)));
         store.applyPollSnapshot("8.8.8.8", hop1, PollSampleScope.mtr(1, false), false);
         store.applyPollSnapshot("8.8.8.8", hop2, PollSampleScope.mtr(2, false), false);
+        store.awaitPersistenceIdleForTests();
         assertTrue(store.get("8.8.8.8").getPreviousRoute().isEmpty());
         assertEquals(2, backend.routeEvents().size());
         assertFalse(backend.routeEvents().get(0).routeChanged());

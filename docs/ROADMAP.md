@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P33-003** |
+| **Поточна задача** | **P33-004** |
 | **Фаза** | 33 — Correctness (MTR / projection / side-effects) |
-| **DoD (коротко)** | SessionStore + bounded persistence writers поза FX/probe |
+| **DoD (коротко)** | poll_result tri-state: error ≠ downtime |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -189,14 +189,14 @@
 | 143 | **P32-008** | [x] | Локальний поділ DB/monitor hotspot-ів і документація |
 | 144 | **P33-001** | [x] | MTR: стабільний `targetHop` + cursor після timeout |
 | 145 | **P33-002** | [x] | Projection: phase / targetSampled / routeChanged |
-| 146 | **P33-003** | [ ] | SessionStore + bounded persistence writers |
+| 146 | **P33-003** | [x] | SessionStore + bounded persistence writers |
 | 147 | **P33-004** | [ ] | `poll_result` tri-state (error ≠ downtime) |
 | 148 | **P33-005** | [ ] | Latency baseline reset на route/mode change |
 | 149 | **P33-006** | [ ] | Webhook bounded queue + closeable dispatcher |
 | 150 | **P33-007** | [ ] | DB migrate v12→v14 + chunked retention |
 | 151 | **P33-008** | [ ] | Docs / branch sync |
 
-**Стан черги:** **NEXT = P33-003** (фаза 33; [pingui-correctness.md](pingui-correctness.md)).
+**Стан черги:** **NEXT = P33-004** (фаза 33; [pingui-correctness.md](pingui-correctness.md)).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -1036,13 +1036,13 @@ flowchart TD
 
 **Контекст:** [pingui-correctness.md](pingui-correctness.md). Correctness після P32 — **не** нове функціональне розширення. Java-first.
 
-**Черга:** після P32; **NEXT = P33-003**.
+**Черга:** після P32; **NEXT = P33-004**.
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
 | **P33-001** | [x] MTR stable `targetHop` / span | `MtrProbe`, `MtrProbeState` | Cursor `1..targetHop`; intermediate timeout не стискає span; target slot за номером hop; reset `targetHop` у DISCOVERING; тести timeout→recovery |
 | **P33-002** | [x] Projection semantics | `SessionStore`, classifiers, telemetry | phase/`targetSampled`/`routeChanged` у projection; partial discovery ≠ route change; endpoint лише при target sampled |
-| **P33-003** | [ ] SessionStore + bounded writers | `SessionStore`, persistence, Influx/TS | Швидкий in-memory path; SQLite/TS поза FX/probe; immutable snapshot API; drop/degraded counter |
+| **P33-003** | [x] SessionStore + bounded writers | `SessionStore`, persistence, Influx/TS | Швидкий in-memory path; SQLite/TS поза FX/probe; immutable snapshot API; drop/degraded counter |
 | **P33-004** | [ ] `poll_result` tri-state | `MonitorService`, `PollResultEffects` | Probe/internal error → `target_sampled=false`, `reachable=null` (не downtime) |
 | **P33-005** | [ ] Latency baseline reset | `MonitorService` / alert EWMA | Скидання на confirmed route change і `setHostProbeMode` |
 | **P33-006** | [ ] Webhook lifecycle | `WebhookTelemetrySink`, alert dispatcher | Bounded queue + rejected counter; closeable dispatcher при заміні/stop |
@@ -1138,7 +1138,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P33-003**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P33-004**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 
