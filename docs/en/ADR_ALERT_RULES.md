@@ -47,7 +47,7 @@ OK → PENDING → FIRING → (cooldown while still bad) → OK
 | **FIRING** | confirmed; **one** emit on enter FIRING |
 | after clear | `clear_after` successes → OK; if `notify_resolved` — one RESOLVED emit |
 
-**Cooldownoff** (`cooldown_minutes`): while still bad after FIRING — **do not** re-emit FIRING (journal/telemetry may update without toast/webhook duplicates). Global `alerts.rate_limit` (ADR_ALERTS) remains a backstop.
+**Cooldownoff** (`cooldown_minutes`): while still bad after FIRING — **do not** re-*deliver* FIRING (lifecycle edge and persistence always). Global `alerts.rate_limit` (ADR_ALERTS) remains a backstop. Silence/cooldown are delivery-only (`PollResultEffects` / `QualityAlertDelivery`, P32-006): suppressed FIRING → pending notification → once after expiry if still active.
 
 ### 3. v1 rule — `endpoint_down`
 

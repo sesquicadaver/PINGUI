@@ -16,13 +16,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Post-poll side effects: telemetry, alert evaluation/dispatch, and persistence (P26-006 / P32-003).
- * Poll orchestration stays in {@link MonitorService}.
+ * Post-poll side effects: telemetry, alert evaluation/dispatch, and persistence (P26-006 / P32-003 /
+ * P32-006). Poll orchestration stays in {@link MonitorService}.
  */
 final class PollResultEffects {
     private static final Logger LOG = LoggerFactory.getLogger(PollResultEffects.class);
 
     private final AlertRuleEngine alertRuleEngine;
+    private final QualityAlertDelivery qualityDelivery = new QualityAlertDelivery();
     private final TelemetryEmission telemetry = new TelemetryEmission();
     private volatile AlertDispatcher alertDispatcher = AlertDispatcher.noop();
     private volatile PersistenceEventWriter persistenceEvents;
@@ -57,6 +58,15 @@ final class PollResultEffects {
 
     void setAlertSilence(AlertSilenceConfig alertSilence) {
         this.alertSilence = alertSilence != null ? alertSilence : AlertSilenceConfig.none();
+    }
+
+    /** Test hook: controllable clock for silence/cooldown expiry (P32-006). */
+    void setClock(java.time.Clock clock) {
+        qualityDelivery.setClock(clock);
+    }
+
+    QualityAlertDelivery qualityDeliveryForTests() {
+        return qualityDelivery;
     }
 
     void setHostTagsResolver(Function<String, List<String>> hostTagsResolver) {
@@ -204,11 +214,12 @@ final class PollResultEffects {
             return;
         }
         boolean down = !TelemetryEmission.isTargetReachable(snapshot);
-        Instant now = Instant.now();
+        Instant now = qualityDelivery.now();
         try {
             alertRuleEngine
                     .observeEndpointDown(host, down, now, alertProfileName, rule)
-                    .ifPresent(this::onQualityAlertEdge);
+                    .ifPresent(event -> onQualityAlertEdge(event, rule.cooldownMinutes()));
+            flushPendingQuality(host, QualityAlertEvent.EVENT_ENDPOINT_DOWN, rule.cooldownMinutes());
         } catch (RuntimeException ex) {
             LOG.warn("endpoint_down rule failed for {}: {}", host, ex.getMessage());
         }
@@ -226,11 +237,12 @@ final class PollResultEffects {
         if (rtt.isEmpty()) {
             return;
         }
-        Instant now = Instant.now();
+        Instant now = qualityDelivery.now();
         try {
             alertRuleEngine
                     .observeLatencyHigh(host, rtt.getAsDouble(), now, alertProfileName, rule)
-                    .ifPresent(this::onQualityAlertEdge);
+                    .ifPresent(event -> onQualityAlertEdge(event, rule.cooldownMinutes()));
+            flushPendingQuality(host, QualityAlertEvent.EVENT_LATENCY_HIGH, rule.cooldownMinutes());
         } catch (RuntimeException ex) {
             LOG.warn("latency_high rule failed for {}: {}", host, ex.getMessage());
         }
@@ -302,15 +314,27 @@ final class PollResultEffects {
         return OptionalDouble.empty();
     }
 
-    private void onQualityAlertEdge(QualityAlertEvent event) {
+    private void onQualityAlertEdge(QualityAlertEvent event, int cooldownMinutes) {
         persistQualityAlert(event);
         if (QualityAlertEvent.STATE_RESOLVED.equals(event.state()) && !notifyResolved) {
+            // Clear pending FIRING; channel policy suppresses RESOLVED notify.
+            qualityDelivery.acceptEdge(event, true, cooldownMinutes);
             return;
         }
-        if (isSilenced(event.host())) {
-            return;
-        }
-        dispatchQualityAlert(event);
+        qualityDelivery
+                .acceptEdge(event, isSilenced(event.host()), cooldownMinutes)
+                .ifPresent(this::dispatchQualityAlert);
+    }
+
+    private void flushPendingQuality(String host, String ruleEvent, int cooldownMinutes) {
+        qualityDelivery
+                .flushPending(
+                        host,
+                        ruleEvent,
+                        alertRuleEngine.isRuleFiring(host, ruleEvent),
+                        isSilenced(host),
+                        cooldownMinutes)
+                .ifPresent(this::dispatchQualityAlert);
     }
 
     private boolean isSilenced(String host) {
@@ -325,7 +349,7 @@ final class PollResultEffects {
             LOG.warn("host tags resolve failed for {}: {}", host, ex.getMessage());
             tags = List.of();
         }
-        return silence.isSilenced(host, tags, Instant.now());
+        return silence.isSilenced(host, tags, qualityDelivery.now());
     }
 
     private void persistQualityAlert(QualityAlertEvent event) {
