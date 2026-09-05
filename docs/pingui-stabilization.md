@@ -61,7 +61,7 @@ MtrPollResult {
 * timeout не є доказом зміни topology;
 * route change порівнюється з останнім завершеним маршрутом.
 
-Окремо треба зробити MTR state потокобезпечним. Спільний `HashMap` використовується паралельними host polls. Потрібні `ConcurrentHashMap`, атомарне оновлення стану та generation token для захисту від race між poll і reset. Стан також слід очищати при remove/rename host.
+MTR state потокобезпечний (P32-002): `ConcurrentHashMap`, generation token проти race poll↔reset, clear на remove/rename host.
 
 ## 2. Переробити rollup без надмірного ускладнення БД
 

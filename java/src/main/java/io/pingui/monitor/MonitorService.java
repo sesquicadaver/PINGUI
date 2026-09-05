@@ -349,11 +349,13 @@ public final class MonitorService implements AutoCloseable {
         registry.remove(host);
         burstPolicy.clearHost(host);
         alertRuleEngine.clearHost(host);
+        poller.resetMtrHost(host);
     }
 
     public void renameHost(String oldHost, String newHost) {
         registry.rename(oldHost, newHost);
         burstPolicy.renameHost(oldHost, newHost);
+        poller.renameMtrHost(oldHost, newHost);
     }
 
     public void setHostEnabled(String host, boolean hostEnabled) {
