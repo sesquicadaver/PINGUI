@@ -70,6 +70,13 @@ public final class MonitorLifecycle {
         service.setHostProbeModeResolver(store::getProbeMode);
         service.setHostPollIntervalResolver(store::getIntervalOverride);
         service.setHostTagsResolver(store::getTags);
+        service.setMeasuredHopStatsResolver(host -> {
+            var route = store.get(host).getCurrentRoute();
+            if (route.isEmpty()) {
+                return null;
+            }
+            return store.hopStatsSummary(host, route.get(route.size() - 1).hop());
+        });
         if (sessionDatabase != null) {
             service.setPersistenceEventWriter(new PersistenceEventWriter(sessionDatabase, service.persistencePolicy()));
         }

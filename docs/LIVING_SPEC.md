@@ -117,7 +117,7 @@
 | SQLite format normalize (P27) | schema v5–v7: telemetry columns SSOT; typed `persistence_event`; normalized `host_session` | Java-only; no legacy migrate (delete `.db`); [x] у черзі |
 | SQLite schema evolution (P30) | schema v8–v12 complete | P30-006 [x]; NEXT→**P31-001** |
 | GUI information hierarchy (P31) | a11y [x] | [pingui-evo-gui.md](pingui-evo-gui.md); P31-007 [x]; фаза закрита |
-| Stabilization MTR/history (P32) | freshness [x]; concurrency [x] → PollResult/TCP | [pingui-stabilization.md](pingui-stabilization.md); P32-002 [x]; NEXT=P32-003 |
+| Stabilization MTR/history (P32) | freshness/concurrency/PollResult [x] → rollup | [pingui-stabilization.md](pingui-stabilization.md); P32-003 [x]; NEXT=P32-004 |
 | Runtime hardening follow-up (P28) | SinkRegistry hang [x]; inFlight before pool [x]; Python schema `!=` gate [x] | фаза 28 closed |
 | Diagnostic evolution (P29) | multi-host correlation [x]; incident timeline [x]; alert silence [x]; DNS control [x]; TCP connect [x] | NEXT=`DONE`; Java-first |
 | TCP connect (P29-005) | `TcpEndpoint`, `TcpConnectProbe`, `HostProbeMode.TCP_CONNECT`, `RoutePoller.pollHostTcpConnect` | `TcpEndpointTest`, `TcpConnectProbeTest`, `RoutePollerTcpConnectTest`, `ProfilesConfigTest.loadTcpConnect*` |
@@ -135,7 +135,7 @@
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `DesktopAlertDispatcher`, `DesktopAlertSink`, `JavaFxDesktopAlertSink` (one popup per host), `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `DesktopAlertDispatcherTest`, `JavaFxDesktopAlertSinkTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics | `SessionStore`, `HostTargetStats` | `SessionStoreTest`, `HopStatsTest` |
-| SQLite session (P11… / P30-006) | `SessionDatabase` v12; `readOnly()` + `integrityCheck()`; export uses RO | `SessionDatabaseExportReliabilityTest`, export tests |
+| SQLite session (P11… / P30-006 / P32-003) | `SessionDatabase` v13 (`probe_outcome`, `target_sampled`); `readOnly()` + `integrityCheck()`; export uses RO | `SessionDatabaseExportReliabilityTest`, `SessionDatabasePollResultTest` |
 | Persistence wire (P11-011) | `SessionStore`, `PersistenceEventWriter`, `MonitorService` | `SessionStorePersistenceTest`, `PersistenceEventWriterTest`, `MonitorServiceTest.persistsRouteChangeAndProbeErrorEvents` |
 | CLI `--session-db` (P11-012) | `PinguiApplication`, `AppOptions`, `MainController` | `PinguiApplicationTest.parseOptions_sessionDbPath` |
 | Persistence policy (P11-013) | `PersistencePolicy`, `PersistencePolicyHolder`, `PersistenceEventWriter`, `MonitorService` | `PersistencePolicyTest`, `PersistencePolicyHolderTest`, `PersistenceEventWriterTest`, `MonitorServiceTest.appliesPersistencePolicyAfterPollCycle` |

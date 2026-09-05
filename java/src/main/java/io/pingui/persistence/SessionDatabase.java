@@ -4,6 +4,7 @@ import io.pingui.model.Models;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.HopProbeStats;
 import io.pingui.model.Models.HostSessionData;
+import io.pingui.probe.ProbeOutcome;
 import io.pingui.telemetry.MetricSample;
 import io.pingui.telemetry.TelemetryEvent;
 import java.nio.file.Files;
@@ -28,11 +29,12 @@ import java.util.OptionalDouble;
 import java.util.OptionalLong;
 
 /**
- * SQLite persistence for per-host session metrics (P11-010 / P27 / P30) and telemetry archive (P16).
+ * SQLite persistence for per-host session metrics (P11-010 / P27 / P30 / P32-003) and telemetry archive
+ * (P16).
  *
- * <p>Schema v12: stable {@code host_session.id}; {@code incident}; {@code poll_result}; deduplicated
- * {@code route}; {@code metric_rollup} with bounded poll retention. Public API remains address-keyed.
- * Legacy schema versions are rejected (delete and recreate the DB file).
+ * <p>Schema v13: v12 plus structured {@code poll_result.probe_outcome} / {@code target_sampled}. Public
+ * API remains address-keyed. Legacy schema versions are rejected (delete and recreate the DB file;
+ * transactional migrate arrives with P32-004).
  */
 public final class SessionDatabase implements AutoCloseable {
     /** How the SQLite file is opened (P30-006). */
@@ -43,8 +45,8 @@ public final class SessionDatabase implements AutoCloseable {
         READ_ONLY
     }
 
-    /** Current Java session DB schema (v12 = metric_rollup + poll retention, P30-005). */
-    public static final int SCHEMA_VERSION = 12;
+    /** Current Java session DB schema (v13 = poll_result probe_outcome + target_sampled, P32-003). */
+    public static final int SCHEMA_VERSION = 13;
 
     private static final String ROUTE_CURRENT = "current";
     private static final String ROUTE_PREVIOUS = "previous";
@@ -672,9 +674,12 @@ public final class SessionDatabase implements AutoCloseable {
             Double lossPercent,
             Double durationMs,
             Long routeId,
-            String errorCode) {
+            String errorCode,
+            ProbeOutcome probeOutcome,
+            boolean targetSampled) {
         Objects.requireNonNull(host, "host");
         Objects.requireNonNull(probeMode, "probeMode");
+        ProbeOutcome outcome = probeOutcome != null ? probeOutcome : ProbeOutcome.NETWORK_ERROR;
         Instant when = observedAt != null ? observedAt : Instant.now();
         try {
             long hostId = requireHostId(host);
@@ -682,8 +687,9 @@ public final class SessionDatabase implements AutoCloseable {
                     """
                     INSERT INTO poll_result(
                         host_id, observed_at, probe_mode, reachable, terminal_rtt_ms,
-                        jitter_ms, loss_percent, duration_ms, route_id, error_code)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        jitter_ms, loss_percent, duration_ms, route_id, error_code,
+                        probe_outcome, target_sampled)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """)) {
                 ps.setLong(1, hostId);
                 ps.setString(2, ISO_UTC.format(when));
@@ -703,6 +709,8 @@ public final class SessionDatabase implements AutoCloseable {
                     ps.setLong(9, routeId);
                 }
                 ps.setString(10, errorCode);
+                ps.setString(11, outcome.wire());
+                ps.setInt(12, targetSampled ? 1 : 0);
                 ps.executeUpdate();
             }
             long id;
@@ -729,7 +737,7 @@ public final class SessionDatabase implements AutoCloseable {
                 """
                 SELECT p.id, p.host_id, hs.address, p.observed_at, p.probe_mode, p.reachable,
                        p.terminal_rtt_ms, p.jitter_ms, p.loss_percent, p.duration_ms,
-                       p.route_id, p.error_code
+                       p.route_id, p.error_code, p.probe_outcome, p.target_sampled
                 FROM poll_result p
                 JOIN host_session hs ON hs.id = p.host_id
                 WHERE hs.address = ?
@@ -840,7 +848,7 @@ public final class SessionDatabase implements AutoCloseable {
                 """
                 SELECT p.id, p.host_id, hs.address, p.observed_at, p.probe_mode, p.reachable,
                        p.terminal_rtt_ms, p.jitter_ms, p.loss_percent, p.duration_ms,
-                       p.route_id, p.error_code
+                       p.route_id, p.error_code, p.probe_outcome, p.target_sampled
                 FROM poll_result p
                 JOIN host_session hs ON hs.id = p.host_id
                 WHERE p.observed_at < ?
@@ -1778,6 +1786,8 @@ public final class SessionDatabase implements AutoCloseable {
                     duration_ms REAL,
                     route_id INTEGER,
                     error_code TEXT,
+                    probe_outcome TEXT NOT NULL,
+                    target_sampled INTEGER NOT NULL,
                     FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
                 )
                 """);
@@ -1790,6 +1800,11 @@ public final class SessionDatabase implements AutoCloseable {
                 """
                 CREATE INDEX IF NOT EXISTS idx_poll_reachable_time
                     ON poll_result(reachable, observed_at DESC)
+                """);
+        statement.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_poll_outcome_time
+                    ON poll_result(probe_outcome, observed_at DESC)
                 """);
     }
 
@@ -1812,7 +1827,9 @@ public final class SessionDatabase implements AutoCloseable {
                         nullableDouble(rs, 9),
                         nullableDouble(rs, 10),
                         routeObj == null ? null : rs.getLong(11),
-                        rs.getString(12)));
+                        rs.getString(12),
+                        ProbeOutcome.fromWire(rs.getString(13)),
+                        rs.getInt(14) != 0));
             }
             return List.copyOf(rows);
         }

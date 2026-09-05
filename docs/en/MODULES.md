@@ -160,7 +160,7 @@ SQLite persistence for `SessionStore` (optional `--session-db`).
 | `save(host, data)` | Write snapshot + ping history |
 | `close()` | Flush and close connection |
 
-Schema **v4** (`SCHEMA_VERSION`): JSON hops/routes/`hop_stats` + `persistence_event` + telemetry tables. **P28-003:** `version != SCHEMA_VERSION` → `SessionDatabaseError` (no silent migrate; delete `.db` and recreate). Java session schema is separately **v12** (P30-005…006: `metric_rollup`, RO export, integrity_check; also `route` / `poll_result` / `incident` / `host_id`).
+Schema **v4** (`SCHEMA_VERSION`): JSON hops/routes/`hop_stats` + `persistence_event` + telemetry tables. **P28-003:** `version != SCHEMA_VERSION` → `SessionDatabaseError` (no silent migrate; delete `.db` and recreate). Java session schema is separately **v13** (P32-003: `poll_result.probe_outcome` / `target_sampled`; also P30 `metric_rollup` / RO export / `route` / `incident` / `host_id`).
 
 ---
 

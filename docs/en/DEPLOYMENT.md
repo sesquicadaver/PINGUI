@@ -363,7 +363,7 @@ Session persistence (`host_session` / `persistence_event`) is a separate layer; 
 | Routes | `route` (deduped signature + hops_json; P30-004) |
 | Rollups | `metric_rollup` (5m/1h; retention `--poll-retention`; P30-005) |
 
-**Schema:** Java `SCHEMA_VERSION = 12`. Older `.db` files (v11 and below) are **not migrated** — delete the file and recreate ([ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md)).
+**Schema:** Java `SCHEMA_VERSION = 13` (P32-003: `probe_outcome` / `target_sampled`). Older `.db` files (v12 and below) are **not migrated** — delete the file and recreate ([ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md)); transactional migrate — P32-004.
 
 **Backup / integrity (P30-006):** before `--poll-retention`, `--telemetry-retention`, GUI purge, or delete/recreate after a schema bump — copy the file:
 

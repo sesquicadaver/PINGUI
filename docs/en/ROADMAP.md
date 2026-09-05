@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P32-003** |
+| **Current task** | **P32-004** |
 | **Phase** | 32 — Stabilization (MTR / history / side-effects) |
-| **DoD (short)** | Structured PollResult + TCP outcomes |
+| **DoD (short)** | Schema v14 rollup + atomic retention |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -181,14 +181,14 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 135 | **P31-007** | [x] | Accessibility pass |
 | 136 | **P32-001** | [x] | MTR freshness and topology completeness |
 | 137 | **P32-002** | [x] | MTR concurrency and lifecycle |
-| 138 | **P32-003** | [ ] | Structured PollResult and TCP outcomes |
-| 139 | **P32-004** | [ ] | Schema v13, accurate rollups, atomic retention |
+| 138 | **P32-003** | [x] | Structured PollResult and TCP outcomes |
+| 139 | **P32-004** | [ ] | Schema v14 rollup + atomic retention |
 | 140 | **P32-005** | [ ] | Bounded side-effect consumers and persistence batching |
 | 141 | **P32-006** | [ ] | Alert lifecycle separate from silence/cooldown |
 | 142 | **P32-007** | [ ] | Runtime i18n and remaining accessibility |
 | 143 | **P32-008** | [ ] | Local split of DB/monitor hotspots and documentation |
 
-**Queue status:** **NEXT = P32-003** (phase 32; P31 DONE; Java-first; [pingui-stabilization.md](pingui-stabilization.md)).
+**Queue status:** **NEXT = P32-004** (phase 32; P31 DONE; Java-first; [pingui-stabilization.md](pingui-stabilization.md)).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -1007,20 +1007,20 @@ flowchart TD
 
 **Context:** [pingui-stabilization.md](pingui-stabilization.md). Data-semantics and critical-path stabilization — **not** feature expansion. Java-first; TRACE/PING_ONLY already mature.
 
-**Queue:** after P31; **NEXT = P32-003** (P32-001…002 [x]).
+**Queue:** after P31; **NEXT = P32-004** (P32-001…003 [x]).
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
 | **P32-001** | [x] MTR freshness / topology | `MtrProbe`, `SessionStore`, telemetry, alerts | Only `freshHopSample` updates hop/telemetry; endpoint/`poll_result` only when target sampled; discovery prefix ≠ route change; timeout ≠ topology change |
 | **P32-002** | [x] MTR concurrency / lifecycle | `MtrProbe` state | `ConcurrentHashMap` / atomic update; generation token; clear on remove/rename host |
-| **P32-003** | [ ] Structured PollResult + TCP | `PollResultEffects`, `RoutePoller`, probe outcomes | `loss=NULL` when not measured; `probe_outcome` SUCCESS/TIMEOUT/REFUSED/DNS_ERROR/NETWORK_ERROR; `target_sampled`; jitter only from RTT series |
-| **P32-004** | [ ] Schema v13 rollup + atomic retention | `SessionDatabase`, `PollResultRetentionJob` | separate `*_samples`/`*_sum`; avg on read; retention one transaction; crash-safe + idempotent; migrate v12→v13 (no delete DB) |
+| **P32-003** | [x] Structured PollResult + TCP | `PollResultEffects`, `RoutePoller`, probe outcomes | `loss=NULL` when not measured; `probe_outcome` SUCCESS/TIMEOUT/REFUSED/DNS_ERROR/NETWORK_ERROR; `target_sampled`; jitter only from RTT series |
+| **P32-004** | [ ] Schema v14 rollup + atomic retention | `SessionDatabase`, `PollResultRetentionJob` | separate `*_samples`/`*_sum`; avg on read; retention one transaction; crash-safe + idempotent; migrate v13→v14 (no delete DB); v13 already has probe_outcome |
 | **P32-005** | [ ] Bounded side-effect consumers | Monitor/DNS/webhook/DB writer | DNS executor+timeout+cache; webhook/telemetry off probe/UI thread; one persistence update / poll; `ensureHostRow` without full `load()` |
 | **P32-006** | [ ] Alert lifecycle vs silence | `AlertRuleEngine`, dispatcher | FIRING/RESOLVED always; silence is delivery-only; pending notification once after expiry |
 | **P32-007** | [ ] Runtime i18n + a11y leftovers | `HostListPresenter`, bundles, CSS | `configureOnce` + idempotent `retranslate`; bundle key parity; problemsFirst keyboard; no duplicate keys |
 | **P32-008** | [ ] Split SessionDatabase + docs | persistence split, ADR/docs | facade + Schema/Session/History; Java canonical / Python bugfix-only note; LIVING_SPEC + phase close |
 
-**Out of scope:** ORM; Kafka/reactive bus; separate dashboard; silent `.db` delete for v13.
+**Out of scope:** ORM; Kafka/reactive bus; separate dashboard; silent `.db` delete for v14.
 
 ---
 
@@ -1112,7 +1112,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P32-003**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P32-004**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

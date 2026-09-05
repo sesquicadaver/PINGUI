@@ -4,8 +4,10 @@ import io.pingui.config.AlertSilenceConfig;
 import io.pingui.config.EndpointDownRuleConfig;
 import io.pingui.config.LatencyHighRuleConfig;
 import io.pingui.model.Models.HopNode;
+import io.pingui.model.Models.HopStatsSummary;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.persistence.PersistenceEventWriter;
+import io.pingui.probe.ProbeOutcome;
 import java.time.Instant;
 import java.util.List;
 import java.util.OptionalDouble;
@@ -14,8 +16,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Post-poll side effects: telemetry, alert evaluation/dispatch, and persistence (P26-006). Poll
- * orchestration stays in {@link MonitorService}.
+ * Post-poll side effects: telemetry, alert evaluation/dispatch, and persistence (P26-006 / P32-003).
+ * Poll orchestration stays in {@link MonitorService}.
  */
 final class PollResultEffects {
     private static final Logger LOG = LoggerFactory.getLogger(PollResultEffects.class);
@@ -30,6 +32,8 @@ final class PollResultEffects {
     private volatile String alertProfileName = "default";
     private volatile AlertSilenceConfig alertSilence = AlertSilenceConfig.none();
     private volatile Function<String, List<String>> hostTagsResolver = host -> List.of();
+    /** Optional measured hop summary (loss/jitter from RTT series); never invents values. */
+    private volatile Function<String, HopStatsSummary> measuredHopStatsResolver = host -> null;
 
     PollResultEffects(AlertRuleEngine alertRuleEngine) {
         this.alertRuleEngine = alertRuleEngine;
@@ -57,6 +61,10 @@ final class PollResultEffects {
 
     void setHostTagsResolver(Function<String, List<String>> hostTagsResolver) {
         this.hostTagsResolver = hostTagsResolver != null ? hostTagsResolver : host -> List.of();
+    }
+
+    void setMeasuredHopStatsResolver(Function<String, HopStatsSummary> measuredHopStatsResolver) {
+        this.measuredHopStatsResolver = measuredHopStatsResolver != null ? measuredHopStatsResolver : host -> null;
     }
 
     void setAlertProfileName(String alertProfileName) {
@@ -98,17 +106,32 @@ final class PollResultEffects {
     }
 
     /**
-     * Writes canonical {@code poll_result} for a finished poll (P30-003). Safe no-op without DB.
+     * Writes canonical {@code poll_result} for a finished poll (P30-003 / P32-003). Safe no-op without
+     * DB. Does not invent loss/jitter from reachability alone.
      */
     void recordPollResult(
             String host, HostProbeMode probeMode, RouteSnapshot snapshot, double durationMs, String error) {
+        recordPollResult(
+                host, probeMode, snapshot, durationMs, error, deriveProbeOutcome(snapshot, error, null), error == null);
+    }
+
+    void recordPollResult(
+            String host,
+            HostProbeMode probeMode,
+            RouteSnapshot snapshot,
+            double durationMs,
+            String error,
+            ProbeOutcome probeOutcome,
+            boolean targetSampled) {
         PersistenceEventWriter events = persistenceEvents;
         if (events == null || host == null || host.isBlank() || probeMode == null) {
             return;
         }
+        ProbeOutcome outcome = probeOutcome != null ? probeOutcome : deriveProbeOutcome(snapshot, error, null);
         Boolean reachable = null;
         Double terminalRtt = null;
         Double lossPercent = null;
+        Double jitterMs = null;
         Long routeId = null;
         if (error != null) {
             reachable = false;
@@ -118,7 +141,12 @@ final class PollResultEffects {
             if (rtt.isPresent()) {
                 terminalRtt = rtt.getAsDouble();
             }
-            lossPercent = reachable ? 0.0 : 100.0;
+            HopStatsSummary measured = resolveMeasuredStats(host);
+            if (measured != null) {
+                // Session hop stats accumulate probes → measured loss; jitter only with RTT series.
+                lossPercent = measured.lossPct();
+                jitterMs = measured.jitterMs();
+            }
             try {
                 routeId = events.observeRoute(host, snapshot.nodes(), Instant.now());
             } catch (RuntimeException ex) {
@@ -132,14 +160,42 @@ final class PollResultEffects {
                     Instant.now(),
                     reachable,
                     terminalRtt,
-                    null,
+                    jitterMs,
                     lossPercent,
                     durationMs,
                     routeId,
-                    error);
+                    error,
+                    outcome,
+                    targetSampled);
         } catch (RuntimeException ex) {
             LOG.warn("Persistence poll_result failed for {}: {}", host, ex.getMessage());
         }
+    }
+
+    private HopStatsSummary resolveMeasuredStats(String host) {
+        Function<String, HopStatsSummary> resolver = measuredHopStatsResolver;
+        if (resolver == null) {
+            return null;
+        }
+        try {
+            return resolver.apply(host);
+        } catch (RuntimeException ex) {
+            LOG.warn("Measured hop stats resolve failed for {}: {}", host, ex.getMessage());
+            return null;
+        }
+    }
+
+    static ProbeOutcome deriveProbeOutcome(RouteSnapshot snapshot, String error, ProbeOutcome hinted) {
+        if (hinted != null) {
+            return hinted;
+        }
+        if (error != null) {
+            return ProbeOutcome.NETWORK_ERROR;
+        }
+        if (snapshot == null) {
+            return ProbeOutcome.NETWORK_ERROR;
+        }
+        return TelemetryEmission.isTargetReachable(snapshot) ? ProbeOutcome.SUCCESS : ProbeOutcome.TIMEOUT;
     }
 
     void evaluateEndpointDown(String host, RouteSnapshot snapshot) {

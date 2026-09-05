@@ -7,9 +7,9 @@ import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.probe.MtrPollOutcome;
 import io.pingui.probe.MtrProbe;
 import io.pingui.probe.MtrProbeState;
+import io.pingui.probe.ProbeOutcome;
 import io.pingui.probe.ProcessHostPing;
 import io.pingui.probe.RouteProbe;
-import io.pingui.probe.TcpConnectOutcome;
 import io.pingui.probe.TcpConnectProbe;
 import io.pingui.probe.TcpConnectResult;
 import java.io.IOException;
@@ -64,7 +64,8 @@ public final class RoutePoller {
         PollSampleScope scope = outcome.probedHop() >= 1
                 ? PollSampleScope.mtr(outcome.probedHop(), outcome.targetSampled())
                 : PollSampleScope.FULL;
-        return HostPollOutcome.success(snapshot, routeChanged, oldIps, newIps, currentIps, scope);
+        return HostPollOutcome.success(
+                snapshot, routeChanged, oldIps, newIps, currentIps, scope, icmpOrMtrOutcome(snapshot, scope));
     }
 
     /**
@@ -124,11 +125,17 @@ public final class RoutePoller {
             List<String> currentIps = snapshot.routeIps();
             RouteChangeDetector.RouteChangeResult change = RouteChangeDetector.detect(previousIps, currentIps);
             return HostPollOutcome.success(
-                    snapshot, change.changed(), change.oldIps(), change.newIps(), currentIps, PollSampleScope.FULL);
+                    snapshot,
+                    change.changed(),
+                    change.oldIps(),
+                    change.newIps(),
+                    currentIps,
+                    PollSampleScope.FULL,
+                    icmpOrMtrOutcome(snapshot, PollSampleScope.FULL));
         } catch (IOException ex) {
-            return HostPollOutcome.error(previousIps, ex.getMessage());
+            return HostPollOutcome.error(previousIps, ex.getMessage(), ProbeOutcome.NETWORK_ERROR);
         } catch (RuntimeException ex) {
-            return HostPollOutcome.error(previousIps, ex.getMessage());
+            return HostPollOutcome.error(previousIps, ex.getMessage(), ProbeOutcome.NETWORK_ERROR);
         }
     }
 
@@ -144,23 +151,30 @@ public final class RoutePoller {
             List<String> currentIps = snapshot.routeIps();
             RouteChangeDetector.RouteChangeResult change = RouteChangeDetector.detect(previousIps, currentIps);
             return HostPollOutcome.success(
-                    snapshot, change.changed(), change.oldIps(), change.newIps(), currentIps, PollSampleScope.FULL);
+                    snapshot,
+                    change.changed(),
+                    change.oldIps(),
+                    change.newIps(),
+                    currentIps,
+                    PollSampleScope.FULL,
+                    icmpOrMtrOutcome(snapshot, PollSampleScope.FULL));
         } catch (IOException ex) {
-            return HostPollOutcome.error(previousIps, ex.getMessage());
+            return HostPollOutcome.error(previousIps, ex.getMessage(), ProbeOutcome.NETWORK_ERROR);
         } catch (RuntimeException ex) {
-            return HostPollOutcome.error(previousIps, ex.getMessage());
+            return HostPollOutcome.error(previousIps, ex.getMessage(), ProbeOutcome.NETWORK_ERROR);
         }
     }
 
     /**
-     * TCP connect to {@code host:port}: DNS time + connect time; success/refused/timeout as snapshot or
-     * probe error (P29-005). Not an ICMP replacement.
+     * TCP connect to {@code host:port}: DNS time + connect time with structured {@link ProbeOutcome}
+     * (P29-005 / P32-003). Not an ICMP replacement.
      */
     public HostPollOutcome pollHostTcpConnect(String host, List<String> previousIps, double timeoutSeconds) {
         try {
             TcpConnectResult result = tcpConnectProbe.probe(host, timeoutSeconds);
-            if (result.outcome() == TcpConnectOutcome.DNS_ERROR) {
-                return HostPollOutcome.error(previousIps, result.message());
+            ProbeOutcome outcome = ProbeOutcome.fromTcp(result.outcome());
+            if (outcome == ProbeOutcome.DNS_ERROR || outcome == ProbeOutcome.NETWORK_ERROR) {
+                return HostPollOutcome.error(previousIps, result.message(), outcome);
             }
             List<HopNode> nodes;
             String targetIp;
@@ -175,9 +189,23 @@ public final class RoutePoller {
             List<String> currentIps = snapshot.routeIps();
             RouteChangeDetector.RouteChangeResult change = RouteChangeDetector.detect(previousIps, currentIps);
             return HostPollOutcome.success(
-                    snapshot, change.changed(), change.oldIps(), change.newIps(), currentIps, PollSampleScope.FULL);
+                    snapshot,
+                    change.changed(),
+                    change.oldIps(),
+                    change.newIps(),
+                    currentIps,
+                    PollSampleScope.FULL,
+                    outcome);
         } catch (RuntimeException ex) {
-            return HostPollOutcome.error(previousIps, ex.getMessage());
+            return HostPollOutcome.error(previousIps, ex.getMessage(), ProbeOutcome.NETWORK_ERROR);
         }
+    }
+
+    /** ICMP / MTR: reachable target → SUCCESS; otherwise TIMEOUT (not synthetic loss). */
+    static ProbeOutcome icmpOrMtrOutcome(RouteSnapshot snapshot, PollSampleScope scope) {
+        if (scope != null && !scope.targetSampled()) {
+            return ProbeOutcome.SUCCESS;
+        }
+        return TelemetryEmission.isTargetReachable(snapshot) ? ProbeOutcome.SUCCESS : ProbeOutcome.TIMEOUT;
     }
 }
