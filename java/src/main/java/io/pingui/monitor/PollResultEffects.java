@@ -80,8 +80,13 @@ final class PollResultEffects {
         telemetry.clear();
     }
 
+    void offerTelemetrySuccess(
+            String host, HostProbeMode probeMode, RouteSnapshot snapshot, double durationMs, PollSampleScope scope) {
+        telemetry.offerSuccess(host, probeMode, snapshot, durationMs, scope != null ? scope : PollSampleScope.FULL);
+    }
+
     void offerTelemetrySuccess(String host, HostProbeMode probeMode, RouteSnapshot snapshot, double durationMs) {
-        telemetry.offerSuccess(host, probeMode, snapshot, durationMs);
+        offerTelemetrySuccess(host, probeMode, snapshot, durationMs, PollSampleScope.FULL);
     }
 
     void offerTelemetryFailure(String host, String message, HostProbeMode probeMode, double durationMs) {

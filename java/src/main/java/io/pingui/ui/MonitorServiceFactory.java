@@ -61,6 +61,12 @@ final class MonitorServiceFactory {
                     }
 
                     @Override
+                    public void onDataReceived(
+                            String host, RouteSnapshot snapshot, io.pingui.monitor.PollSampleScope sampleScope) {
+                        Platform.runLater(() -> monitorUi.handleData(host, snapshot, sampleScope));
+                    }
+
+                    @Override
                     public void onRouteChanged(String host, List<String> oldIps, List<String> newIps) {
                         Platform.runLater(() -> monitorUi.handleRouteChanged(host, oldIps, newIps));
                     }

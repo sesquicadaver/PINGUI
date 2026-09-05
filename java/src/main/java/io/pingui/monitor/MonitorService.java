@@ -39,6 +39,14 @@ public final class MonitorService implements AutoCloseable {
     public interface Listener {
         void onDataReceived(String host, RouteSnapshot snapshot);
 
+        /**
+         * Same as {@link #onDataReceived(String, RouteSnapshot)} with MTR freshness scope (P32-001).
+         * Default delegates to the two-arg form.
+         */
+        default void onDataReceived(String host, RouteSnapshot snapshot, PollSampleScope sampleScope) {
+            onDataReceived(host, snapshot);
+        }
+
         void onRouteChanged(String host, List<String> oldIps, List<String> newIps);
 
         void onProbeError(String host, String message);
@@ -479,7 +487,11 @@ public final class MonitorService implements AutoCloseable {
                 current.onProbeError(host, outcome.error());
                 return;
             }
-            registry.putLastRoute(host, outcome.currentIps());
+            PollSampleScope sampleScope = outcome.sampleScope();
+            // MTR: only advance the announced route after the target was sampled (P32-001).
+            if (probeMode != HostProbeMode.MTR || sampleScope.targetSampled()) {
+                registry.putLastRoute(host, outcome.currentIps());
+            }
             boolean deliveredSnapshot = false;
             if (outcome.snapshot() != null && registry.contains(host)) {
                 RouteSnapshot snapshot = outcome.snapshot();
@@ -487,16 +499,19 @@ public final class MonitorService implements AutoCloseable {
                     PingExpertEntry expert = resolveExpert(host);
                     if (expert.isConfigured()) {
                         snapshot = expertEnricher.enrich(snapshot, expert, timeoutSeconds);
-                    } else {
+                    } else if (sampleScope.targetSampled()) {
+                        // Avoid treating the last discovered router as the target during MTR discovery.
                         snapshot = defaultTargetPingEnricher.enrich(snapshot, timeoutSeconds);
                     }
                 }
-                pollEffects.offerTelemetrySuccess(host, probeMode, snapshot, durationMs);
-                current.onDataReceived(host, snapshot);
+                pollEffects.offerTelemetrySuccess(host, probeMode, snapshot, durationMs, sampleScope);
+                current.onDataReceived(host, snapshot, sampleScope);
                 deliveredSnapshot = true;
-                pollEffects.recordPollResult(host, probeMode, snapshot, durationMs, null);
-                pollEffects.evaluateEndpointDown(host, snapshot);
-                pollEffects.evaluateLatencyHigh(host, snapshot);
+                if (sampleScope.targetSampled()) {
+                    pollEffects.recordPollResult(host, probeMode, snapshot, durationMs, null);
+                    pollEffects.evaluateEndpointDown(host, snapshot);
+                    pollEffects.evaluateLatencyHigh(host, snapshot);
+                }
             }
             if (outcome.routeChanged() && BurstSchedulePolicy.shouldArmBurst(outcome.oldIps(), outcome.newIps())) {
                 burstPolicy.onRouteChange(host, Instant.now());
@@ -505,7 +520,8 @@ public final class MonitorService implements AutoCloseable {
                 pollEffects.offerTelemetryRouteChange(host, outcome.oldIps(), outcome.newIps(), probeMode);
                 current.onRouteChanged(host, outcome.oldIps(), outcome.newIps());
                 pollEffects.dispatchRouteChangeAlert(host, outcome.oldIps(), outcome.newIps());
-            } else if (PollResultEffects.isFirstBaseline(previousIps, outcome.currentIps())) {
+            } else if (sampleScope.targetSampled()
+                    && PollResultEffects.isFirstBaseline(previousIps, outcome.currentIps())) {
                 pollEffects.persistBaselineRouteChange(host, outcome.currentIps());
                 pollEffects.offerTelemetryRouteChange(host, List.of(), outcome.currentIps(), probeMode);
                 current.onRouteChanged(host, List.of(), outcome.currentIps());

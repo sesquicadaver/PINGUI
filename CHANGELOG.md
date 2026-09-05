@@ -14,6 +14,7 @@
 
 ### Changed
 
+- **P32-001 — MTR freshness / topology:** лише `freshHopSample` оновлює hop/telemetry; endpoint/`poll_result` лише при target sampled; discovery/timeout ≠ route change; NEXT→**P32-002**.
 - **P31-007 — accessibility pass:** іконки станів + text tooltips/a11y names; contrast severity; focus ring; NEXT→**DONE** (фаза 31).
 - **P31-006 — app status area:** durable Monitoring summary + transient ops line + progress/cancel; feedback no longer wipes monitoring; NEXT→**P31-007**.
 - **P31-005 — host list navigation:** text filter, sort (config/severity/RTT/loss/last change), problems-first, header counters, persisted prefs; NEXT→**P31-006**.

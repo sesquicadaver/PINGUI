@@ -36,17 +36,28 @@ final class TelemetryEmission {
     }
 
     void offerSuccess(String host, HostProbeMode probeMode, RouteSnapshot snapshot, double durationMs) {
+        offerSuccess(host, probeMode, snapshot, durationMs, PollSampleScope.FULL);
+    }
+
+    void offerSuccess(
+            String host, HostProbeMode probeMode, RouteSnapshot snapshot, double durationMs, PollSampleScope scope) {
         TelemetryBus bus = telemetryBus;
         if (bus == null) {
             return;
         }
+        PollSampleScope safe = scope != null ? scope : PollSampleScope.FULL;
         Instant ts = Instant.now();
         Map<String, String> labels = telemetryLabels(probeMode);
         try {
-            bus.offerSample(new MetricSample(
-                    MetricNames.TARGET_REACHABLE, isTargetReachable(snapshot) ? 1.0 : 0.0, host, null, labels, ts));
+            if (safe.targetSampled()) {
+                bus.offerSample(new MetricSample(
+                        MetricNames.TARGET_REACHABLE, isTargetReachable(snapshot) ? 1.0 : 0.0, host, null, labels, ts));
+            }
             bus.offerSample(new MetricSample(MetricNames.TRACE_DURATION_MS, durationMs, host, null, labels, ts));
             for (HopNode node : snapshot.nodes()) {
+                if (!safe.allHopsFresh() && (safe.freshHop() == null || node.hop() != safe.freshHop())) {
+                    continue;
+                }
                 double lossPct = node.isReachable() && node.pingMs() != null ? 0.0 : 100.0;
                 bus.offerSample(new MetricSample(MetricNames.HOP_LOSS_PCT, lossPct, host, node.hop(), labels, ts));
                 if (node.pingMs() != null && node.isReachable()) {
