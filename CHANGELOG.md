@@ -14,6 +14,7 @@
 
 ### Changed
 
+- **P32-005 — bounded side-effect consumers:** `BoundedForwardDnsLookup` (executor+timeout+TTL cache); async webhook posts; `applyPollSnapshot` / deferred persist; `ensureHostExists` без повного `load()`; NEXT→**P32-006**.
 - **P32-004 — schema v14 rollup + atomic retention:** additive `*_samples`/`*_sum` у `metric_rollup` (avg на читанні); retention в одній транзакції; migrate **v13→v14**; NEXT→**P32-005**.
 - **P32-003 — structured PollResult + TCP outcomes:** `ProbeOutcome` SUCCESS/TIMEOUT/REFUSED/DNS_ERROR/NETWORK_ERROR; `loss=NULL` без вимірювання; jitter лише з RTT series; schema **v13** (`probe_outcome`, `target_sampled`); NEXT→**P32-004**.
 - **P32-002 — MTR concurrency / lifecycle:** `ConcurrentHashMap` + generation token у `MtrProbe`; clear на remove/rename; NEXT→**P32-003**.

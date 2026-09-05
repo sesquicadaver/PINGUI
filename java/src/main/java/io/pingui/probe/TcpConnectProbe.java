@@ -3,6 +3,7 @@ package io.pingui.probe;
 import io.pingui.config.HostAddressKind;
 import io.pingui.config.HostAddressParser;
 import io.pingui.config.TcpEndpoint;
+import io.pingui.dns.BoundedForwardDnsLookup;
 import io.pingui.dns.DnsControl;
 import io.pingui.dns.DnsLookupOutcome;
 import io.pingui.dns.DnsObservation;
@@ -27,6 +28,8 @@ import java.util.concurrent.TimeUnit;
  * <p>Complement to {@code ping_only}: measures connect latency / refusal / timeout, not ICMP RTT.
  */
 public final class TcpConnectProbe {
+    private static final BoundedForwardDnsLookup SHARED_FORWARD_DNS = BoundedForwardDnsLookup.systemDefault();
+
     @FunctionalInterface
     public interface TcpDialer {
         /**
@@ -43,7 +46,7 @@ public final class TcpConnectProbe {
     private final TcpDialer dialer;
 
     public TcpConnectProbe() {
-        this(DnsControl.systemLookup(), TcpConnectProbe::systemDial);
+        this(SHARED_FORWARD_DNS, TcpConnectProbe::systemDial);
     }
 
     public TcpConnectProbe(ForwardDnsLookup dnsLookup, TcpDialer dialer) {

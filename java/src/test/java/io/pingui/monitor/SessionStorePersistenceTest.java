@@ -16,6 +16,28 @@ class SessionStorePersistenceTest {
     Path tempDir;
 
     @Test
+    void applyPollSnapshotPersistsOnceAcrossReopen() {
+        Path dbPath = tempDir.resolve("poll-batch.db");
+        try (SessionDatabase db = new SessionDatabase(dbPath)) {
+            SessionStore store = new SessionStore(List.of("8.8.8.8"), db);
+            int before = store.flushPersistCountForTests();
+            RouteSnapshot snapshot =
+                    new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 4.0, false)));
+            store.applyPollSnapshot("8.8.8.8", snapshot, null);
+            assertEquals(1, store.flushPersistCountForTests() - before);
+            store.close();
+        }
+
+        try (SessionDatabase db2 = new SessionDatabase(dbPath)) {
+            SessionStore restored = new SessionStore(List.of("8.8.8.8"), db2);
+            assertEquals(
+                    "10.0.0.1", restored.get("8.8.8.8").getCurrentRoute().get(0).ip());
+            assertEquals(List.of(4.0), restored.get("8.8.8.8").getPingHistory().get("10.0.0.1"));
+            restored.close();
+        }
+    }
+
+    @Test
     void updateRoutePersistsAcrossReopen() {
         Path dbPath = tempDir.resolve("session.db");
         try (SessionDatabase db = new SessionDatabase(dbPath)) {

@@ -223,8 +223,7 @@ public final class DaemonRunner implements AutoCloseable {
                         if (!store.containsHost(host)) {
                             return;
                         }
-                        store.updateRoute(host, snapshot);
-                        store.appendPingSamples(host, snapshot, sampleScope);
+                        store.applyPollSnapshot(host, snapshot, sampleScope);
                     }
 
                     @Override

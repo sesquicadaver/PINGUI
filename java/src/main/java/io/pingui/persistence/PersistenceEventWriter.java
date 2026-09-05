@@ -214,9 +214,7 @@ public final class PersistenceEventWriter {
     }
 
     private void ensureHostRow(String host) {
-        if (database.load(host) == null) {
-            database.save(host, new io.pingui.model.Models.HostSessionData());
-        }
+        database.ensureHostExists(host);
     }
 
     /** Wire-shaped probe_error JSON for reconstructed {@link PersistenceEventRecord#payloadJson()}. */
