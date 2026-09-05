@@ -2,7 +2,7 @@
 
 # PINGUI documentation
 
-On **`main`** and **`beta`** — full package (Java Pro + Python) after merge; **`beta`** is the development branch, **`main`** is the last stable snapshot. Linear ROADMAP queue: **NEXT = P32-008** (phase 32 — [ROADMAP.md § NEXT](ROADMAP.md#next--single-source-of-truth)). Branches: [README.en.md](../README.en.md).
+On **`main`** and **`beta`** — full package (Java Pro + Python) after merge; **`beta`** is the development branch, **`main`** is the last stable snapshot. Linear ROADMAP queue: **NEXT = DONE** (phase 32 — [ROADMAP.md § NEXT](ROADMAP.md#next--single-source-of-truth)). Branches: [README.en.md](../README.en.md).
 
 ## Navigation
 
@@ -11,7 +11,7 @@ On **`main`** and **`beta`** — full package (Java Pro + Python) after merge; *
 | [CHECKLIST.md](CHECKLIST.md) | Admin / DevOps | Checklist Linux / Windows / macOS |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Admin / DevOps | JDK 21, venv, cap_net_raw, systemd |
 | [JAVA.md](JAVA.md) | Developer | Probe, monitor, UI, YAML |
-| [ROADMAP.md](ROADMAP.md) | Developer | Official plan: phases 0–32; NEXT=P32-008 |
+| [ROADMAP.md](ROADMAP.md) | Developer | Official plan: phases 0–32; NEXT=DONE |
 | [pingui-stabilization.md](pingui-stabilization.md) | Developer | Stabilization audit → phase 32 |
 | [pingui-evo-gui.md](pingui-evo-gui.md) | Developer | GUI evolution (phase 31) |
 | [LIVING_SPEC.md](LIVING_SPEC.md) | Developer | Module → tests matrix |
