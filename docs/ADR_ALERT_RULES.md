@@ -47,7 +47,7 @@ OK → PENDING → FIRING → (cooldown while still bad) → OK
 | **FIRING** | умова підтверджена; **один** emit на вхід у FIRING |
 | після clear | `clear_after` успіхів → OK; якщо `notify_resolved` — один emit RESOLVED |
 
-**Cooldownoff** (`cooldown_minutes`): поки умова true після FIRING — **не** повторювати FIRING (journal/telemetry можуть оновлюватись без toast/webhook-дубля). Глобальний `alerts.rate_limit` (ADR_ALERTS) лишається запасним запобіжником.
+**Cooldownoff** (`cooldown_minutes`): поки умова true після FIRING — **не** повторювати *доставку* FIRING (lifecycle edge і persistence завжди). Глобальний `alerts.rate_limit` (ADR_ALERTS) лишається запасним запобіжником. Silence/cooldown лише в delivery (`PollResultEffects` / `QualityAlertDelivery`, P32-006): приглушений FIRING → pending notification → після expiry один раз, якщо умова ще активна.
 
 ### 3. Правило v1 — `endpoint_down`
 

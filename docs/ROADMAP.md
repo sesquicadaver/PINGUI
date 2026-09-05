@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P32-006** |
+| **Поточна задача** | **P32-007** |
 | **Фаза** | 32 — Stabilization (MTR / history / side-effects) |
-| **DoD (коротко)** | Alert lifecycle окремо від silence/cooldown |
+| **DoD (коротко)** | Runtime i18n та залишки accessibility |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -184,11 +184,11 @@
 | 138 | **P32-003** | [x] | Структурований PollResult і TCP outcomes |
 | 139 | **P32-004** | [x] | Schema v14 rollup + atomic retention |
 | 140 | **P32-005** | [x] | Bounded side-effect consumers і persistence batching |
-| 141 | **P32-006** | [ ] | Alert lifecycle окремо від silence/cooldown |
+| 141 | **P32-006** | [x] | Alert lifecycle окремо від silence/cooldown |
 | 142 | **P32-007** | [ ] | Runtime i18n та залишки accessibility |
 | 143 | **P32-008** | [ ] | Локальний поділ DB/monitor hotspot-ів і документація |
 
-**Стан черги:** **NEXT = P32-006** (фаза 32; P31 DONE; Java-first; [pingui-stabilization.md](pingui-stabilization.md)).
+**Стан черги:** **NEXT = P32-007** (фаза 32; P31 DONE; Java-first; [pingui-stabilization.md](pingui-stabilization.md)).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -1007,7 +1007,7 @@ flowchart TD
 
 **Контекст:** [pingui-stabilization.md](pingui-stabilization.md). Стабілізація семантики даних і критичних потоків — **не** нове функціональне розширення. Java-first; TRACE/PING_ONLY вже зрілі.
 
-**Черга:** після P31; **NEXT = P32-006** (P32-001…005 [x]).
+**Черга:** після P31; **NEXT = P32-007** (P32-001…006 [x]).
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
@@ -1016,7 +1016,7 @@ flowchart TD
 | **P32-003** | [x] Structured PollResult + TCP | `PollResultEffects`, `RoutePoller`, probe outcomes | `loss=NULL` якщо не виміряно; `probe_outcome` SUCCESS/TIMEOUT/REFUSED/DNS_ERROR/NETWORK_ERROR; `target_sampled`; jitter лише з серії RTT |
 | **P32-004** | [x] Schema v14 rollup + atomic retention | `SessionDatabase`, `PollResultRetentionJob` | окремі `*_samples`/`*_sum`; avg на читанні; retention одна транзакція; crash-safe + idempotent; migrate v13→v14 (не delete DB); v13 уже має probe_outcome |
 | **P32-005** | [x] Bounded side-effect consumers | Monitor/DNS/webhook/DB writer | DNS executor+timeout+cache; webhook/telemetry off probe/UI thread; один persistence update / poll; `ensureHostRow` без повного `load()` |
-| **P32-006** | [ ] Alert lifecycle vs silence | `AlertRuleEngine`, dispatcher | FIRING/RESOLVED завжди; silence лише delivery; pending notification після expiry один раз |
+| **P32-006** | [x] Alert lifecycle vs silence | `AlertRuleEngine`, dispatcher | FIRING/RESOLVED завжди; silence лише delivery; pending notification після expiry один раз |
 | **P32-007** | [ ] Runtime i18n + a11y leftovers | `HostListPresenter`, bundles, CSS | `configureOnce` + idempotent `retranslate`; bundle key parity; problemsFirst keyboard; без дублів ключів |
 | **P32-008** | [ ] Split SessionDatabase + docs | persistence split, ADR/docs | facade + Schema/Session/History; Java canonical / Python bugfix-only note; LIVING_SPEC + phase close |
 
@@ -1109,7 +1109,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P32-006**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P32-007**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

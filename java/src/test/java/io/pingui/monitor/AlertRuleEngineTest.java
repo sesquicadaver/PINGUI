@@ -68,30 +68,20 @@ class AlertRuleEngineTest {
     }
 
     @Test
-    void cooldownBlocksImmediateRefireAfterRecovery() {
+    void cooldownDoesNotSuppressLifecycleFiringEdge() {
         fireOnce();
         // recover
         engine.observeEndpointDown("h", false, t0.plusSeconds(11), "p", rule);
         engine.observeEndpointDown("h", false, t0.plusSeconds(12), "p", rule);
-        // down again within cooldown
+        // down again within former cooldown window — lifecycle FIRING always emitted (P32-006)
         assertTrue(engine.observeEndpointDown("h", true, t0.plusSeconds(13), "p", rule)
                 .isEmpty());
         assertTrue(engine.observeEndpointDown("h", true, t0.plusSeconds(14), "p", rule)
                 .isEmpty());
-        Optional<QualityAlertEvent> blocked = engine.observeEndpointDown("h", true, t0.plusSeconds(15), "p", rule);
-        assertTrue(blocked.isEmpty());
-        // after cooldown
-        Instant later = t0.plusSeconds(15).plusSeconds(15 * 60L);
-        // already in FIRING from blocked transition — need recover then fail again after cooldown
-        engine.observeEndpointDown("h", false, later, "p", rule);
-        engine.observeEndpointDown("h", false, later.plusSeconds(1), "p", rule);
-        assertTrue(engine.observeEndpointDown("h", true, later.plusSeconds(2), "p", rule)
-                .isEmpty());
-        assertTrue(engine.observeEndpointDown("h", true, later.plusSeconds(3), "p", rule)
-                .isEmpty());
-        Optional<QualityAlertEvent> again = engine.observeEndpointDown("h", true, later.plusSeconds(4), "p", rule);
+        Optional<QualityAlertEvent> again = engine.observeEndpointDown("h", true, t0.plusSeconds(15), "p", rule);
         assertTrue(again.isPresent());
         assertEquals(QualityAlertEvent.STATE_FIRING, again.get().state());
+        assertTrue(engine.isRuleFiring("h", QualityAlertEvent.EVENT_ENDPOINT_DOWN));
     }
 
     @Test
@@ -143,8 +133,8 @@ class AlertRuleEngineTest {
         assertEquals(1, acked.fireCount());
         assertEquals(Duration.ofSeconds(99), acked.maxDuration());
 
-        // second FIRING after cooldown window
-        Instant later = t0.plusSeconds(101).plusSeconds(15 * 60L);
+        // second FIRING after recovery (lifecycle always; delivery cooldown is PollResultEffects)
+        Instant later = t0.plusSeconds(101).plusSeconds(60L);
         engine.observeEndpointDown("h", true, later, "p", rule);
         engine.observeEndpointDown("h", true, later.plusSeconds(1), "p", rule);
         Optional<QualityAlertEvent> again = engine.observeEndpointDown("h", true, later.plusSeconds(2), "p", rule);

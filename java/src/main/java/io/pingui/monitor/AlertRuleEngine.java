@@ -10,10 +10,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Pure quality-alert state machine for {@code endpoint_down} and {@code latency_high} (P21-002 /
- * P22-002 / P23 / ADR_ALERT_RULES + ADR_HOST_PROBLEM_INDICATOR).
+ * P22-002 / P23 / P32-006 / ADR_ALERT_RULES + ADR_HOST_PROBLEM_INDICATOR).
  *
  * <p>Thread-safe per host. Probe errors are not observed here. Session problem stats ({@link
- * HostProblemSummary}) survive channel suppressions and {@link #ack}.
+ * HostProblemSummary}) survive channel suppressions and {@link #ack}. Lifecycle FIRING/RESOLVED edges
+ * are always emitted; silence and cooldown gate <em>delivery</em> in {@link PollResultEffects}.
  */
 public final class AlertRuleEngine {
     /**
@@ -55,7 +56,6 @@ public final class AlertRuleEngine {
                         profile,
                         rule.failAfter(),
                         rule.clearAfter(),
-                        rule.cooldownMinutes(),
                         state,
                         QualityAlertEvent::endpointDownFiring,
                         QualityAlertEvent::endpointDownResolved);
@@ -106,7 +106,6 @@ public final class AlertRuleEngine {
                         profile,
                         rule.failAfter(),
                         rule.clearAfter(),
-                        rule.cooldownMinutes(),
                         state,
                         (h, p, t, d) ->
                                 QualityAlertEvent.latencyHighFiring(h, p, t, withLatencyDetail(d, rttMs, state, rule)),
@@ -199,6 +198,25 @@ public final class AlertRuleEngine {
         clearLatencyHost(host);
     }
 
+    /**
+     * Whether the named quality rule is currently in lifecycle {@code FIRING} for {@code host}
+     * (P32-006 delivery flush).
+     */
+    public boolean isRuleFiring(String host, String ruleEvent) {
+        if (host == null || host.isBlank() || ruleEvent == null || ruleEvent.isBlank()) {
+            return false;
+        }
+        HostState state = QualityAlertEvent.EVENT_LATENCY_HIGH.equals(ruleEvent)
+                ? latencyStates.get(host)
+                : endpointStates.get(host);
+        if (state == null) {
+            return false;
+        }
+        synchronized (state) {
+            return state.phase == Phase.FIRING;
+        }
+    }
+
     public void clearAll() {
         endpointStates.clear();
         latencyStates.clear();
@@ -260,7 +278,6 @@ public final class AlertRuleEngine {
             String profile,
             int failAfter,
             int clearAfter,
-            int cooldownMinutes,
             HostState state,
             EdgeFactory firingFactory,
             EdgeFactory resolvedFactory) {
@@ -273,11 +290,8 @@ public final class AlertRuleEngine {
             state.phase = Phase.PENDING;
             return Optional.empty();
         }
+        // Lifecycle FIRING always; cooldown/silence gate delivery only (P32-006).
         enterFiring(state, now);
-        if (!cooldownElapsed(state, now, cooldownMinutes)) {
-            return Optional.empty();
-        }
-        state.lastFiringEmit = now;
         Map<String, Object> detail = QualityAlertEvent.detailOf(failAfter, state.failStreak, clearAfter);
         return Optional.of(firingFactory.create(host, profile, now, detail));
     }
@@ -328,14 +342,6 @@ public final class AlertRuleEngine {
         state.lastState = HostProblemSummary.STATE_RESOLVED;
     }
 
-    private static boolean cooldownElapsed(HostState state, Instant now, int cooldownMinutes) {
-        if (state.lastFiringEmit == null || cooldownMinutes <= 0) {
-            return true;
-        }
-        Duration elapsed = Duration.between(state.lastFiringEmit, now);
-        return !elapsed.isNegative() && elapsed.toMinutes() >= cooldownMinutes;
-    }
-
     private static void ackState(HostState state) {
         state.unread = false;
         if (state.phase != Phase.FIRING) {
@@ -379,7 +385,6 @@ public final class AlertRuleEngine {
         private Phase phase = Phase.OK;
         private int failStreak;
         private int okStreak;
-        private Instant lastFiringEmit;
         private boolean unread;
         private int fireCount;
         private Duration maxDuration = Duration.ZERO;
