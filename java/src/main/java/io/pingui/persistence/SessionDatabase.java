@@ -29,12 +29,12 @@ import java.util.OptionalDouble;
 import java.util.OptionalLong;
 
 /**
- * SQLite persistence for per-host session metrics (P11-010 / P27 / P30 / P32-003) and telemetry archive
+ * SQLite persistence for per-host session metrics (P11-010 / P27 / P30 / P32) and telemetry archive
  * (P16).
  *
- * <p>Schema v13: v12 plus structured {@code poll_result.probe_outcome} / {@code target_sampled}. Public
- * API remains address-keyed. Legacy schema versions are rejected (delete and recreate the DB file;
- * transactional migrate arrives with P32-004).
+ * <p>Schema v14: additive {@code metric_rollup} counters ({@code *_samples}/{@code *_sum}); averages on
+ * read. Public API remains address-keyed. Opens migrate {@code 13 → 14} in-place; older versions are
+ * still rejected.
  */
 public final class SessionDatabase implements AutoCloseable {
     /** How the SQLite file is opened (P30-006). */
@@ -45,8 +45,11 @@ public final class SessionDatabase implements AutoCloseable {
         READ_ONLY
     }
 
-    /** Current Java session DB schema (v13 = poll_result probe_outcome + target_sampled, P32-003). */
-    public static final int SCHEMA_VERSION = 13;
+    /** Current Java session DB schema (v14 = accurate metric_rollup + atomic retention, P32-004). */
+    public static final int SCHEMA_VERSION = 14;
+
+    /** Minimum version that can be migrated forward (v13 has probe_outcome). */
+    public static final int MIN_MIGRATE_FROM = 13;
 
     private static final String ROUTE_CURRENT = "current";
     private static final String ROUTE_PREVIOUS = "previous";
@@ -57,6 +60,8 @@ public final class SessionDatabase implements AutoCloseable {
     private final Path path;
     private final OpenMode openMode;
     private final Connection connection;
+    /** When true, mutation helpers skip {@code commit} (outer {@link #inTransaction}). */
+    private boolean deferCommit;
 
     /** Opens {@code path} for read/write (creates schema when missing). */
     public SessionDatabase(Path path) {
@@ -213,7 +218,7 @@ public final class SessionDatabase implements AutoCloseable {
             insertLastKnown(hostId, data.getLastKnownByHop());
             insertPingHistory(hostId, data.getPingHistory());
             insertHopStats(hostId, data.getHopStats());
-            connection.commit();
+            maybeCommit();
         } catch (SQLException ex) {
             rollbackQuietly();
             throw new PersistenceException("Failed to save host session: " + host, ex);
@@ -225,7 +230,7 @@ public final class SessionDatabase implements AutoCloseable {
         try (PreparedStatement ps = connection.prepareStatement("DELETE FROM host_session WHERE address = ?")) {
             ps.setString(1, host);
             ps.executeUpdate();
-            connection.commit();
+            maybeCommit();
         } catch (SQLException ex) {
             rollbackQuietly();
             throw new PersistenceException("Failed to delete host session: " + host, ex);
@@ -259,7 +264,7 @@ public final class SessionDatabase implements AutoCloseable {
                 ps.setLong(3, id.getAsLong());
                 ps.executeUpdate();
             }
-            connection.commit();
+            maybeCommit();
         } catch (SQLException ex) {
             rollbackQuietly();
             throw new PersistenceException("Failed to rename host session: " + oldHost + " -> " + newHost, ex);
@@ -318,7 +323,7 @@ public final class SessionDatabase implements AutoCloseable {
                 ps.setString(9, ISO_UTC.format(when));
                 ps.executeUpdate();
             }
-            connection.commit();
+            maybeCommit();
         } catch (SQLException ex) {
             rollbackQuietly();
             throw new PersistenceException("Failed to insert persistence event for " + host, ex);
@@ -346,7 +351,7 @@ public final class SessionDatabase implements AutoCloseable {
         try (PreparedStatement ps = connection.prepareStatement("DELETE FROM persistence_event WHERE event_type = ?")) {
             ps.setString(1, eventType.id());
             int deleted = ps.executeUpdate();
-            connection.commit();
+            maybeCommit();
             return deleted;
         } catch (SQLException ex) {
             rollbackQuietly();
@@ -475,7 +480,7 @@ public final class SessionDatabase implements AutoCloseable {
                     ps.setLong(5, openId.getAsLong());
                     ps.executeUpdate();
                 }
-                connection.commit();
+                maybeCommit();
                 return openId.getAsLong();
             }
             try (PreparedStatement ps = connection.prepareStatement(
@@ -504,7 +509,7 @@ public final class SessionDatabase implements AutoCloseable {
                 rs.next();
                 id = rs.getLong(1);
             }
-            connection.commit();
+            maybeCommit();
             return id;
         } catch (SQLException ex) {
             rollbackQuietly();
@@ -540,7 +545,7 @@ public final class SessionDatabase implements AutoCloseable {
                 ps.setString(2, ISO_UTC.format(when));
                 ps.setLong(3, openId.getAsLong());
                 int updated = ps.executeUpdate();
-                connection.commit();
+                maybeCommit();
                 return updated > 0;
             }
         } catch (SQLException ex) {
@@ -572,7 +577,7 @@ public final class SessionDatabase implements AutoCloseable {
                 ps.setLong(2, hostId.getAsLong());
                 ps.setString(3, IncidentRecord.STATE_FIRING);
                 int updated = ps.executeUpdate();
-                connection.commit();
+                maybeCommit();
                 return updated;
             }
         } catch (SQLException ex) {
@@ -719,7 +724,7 @@ public final class SessionDatabase implements AutoCloseable {
                 rs.next();
                 id = rs.getLong(1);
             }
-            connection.commit();
+            maybeCommit();
             return id;
         } catch (SQLException ex) {
             rollbackQuietly();
@@ -804,7 +809,7 @@ public final class SessionDatabase implements AutoCloseable {
                     id = rs.getLong(1);
                 }
             }
-            connection.commit();
+            maybeCommit();
             return id;
         } catch (SQLException ex) {
             rollbackQuietly();
@@ -868,7 +873,7 @@ public final class SessionDatabase implements AutoCloseable {
         try (PreparedStatement ps = connection.prepareStatement("DELETE FROM poll_result WHERE observed_at < ?")) {
             ps.setString(1, cutoffIso);
             int deleted = ps.executeUpdate();
-            connection.commit();
+            maybeCommit();
             return deleted;
         } catch (SQLException ex) {
             rollbackQuietly();
@@ -877,41 +882,50 @@ public final class SessionDatabase implements AutoCloseable {
     }
 
     /**
-     * Upserts a metric rollup bucket (P30-005). Weighted merge when the bucket already exists.
+     * Upserts a metric rollup bucket with additive counters (P32-004). Averages are derived on read.
      */
     public synchronized void upsertMetricRollup(
             long hostId,
             Instant bucketStart,
             int bucketSizeSeconds,
-            int samples,
-            Double uptimeRatio,
+            int sampleCount,
+            int reachableSamples,
+            int reachableCount,
+            int rttSamples,
+            double rttSum,
             Double rttMin,
-            Double rttAvg,
             Double rttMax,
-            Double lossAvg) {
+            int lossSamples,
+            double lossSum) {
         Objects.requireNonNull(bucketStart, "bucketStart");
         if (bucketSizeSeconds < 1) {
             throw new IllegalArgumentException("bucketSizeSeconds must be >= 1");
         }
-        if (samples < 1) {
-            throw new IllegalArgumentException("samples must be >= 1");
+        if (sampleCount < 1) {
+            throw new IllegalArgumentException("sampleCount must be >= 1");
+        }
+        if (reachableSamples < 0
+                || reachableCount < 0
+                || rttSamples < 0
+                || lossSamples < 0
+                || reachableCount > reachableSamples) {
+            throw new IllegalArgumentException("invalid rollup counters");
         }
         String startIso = ISO_UTC.format(bucketStart);
         try (PreparedStatement ps = connection.prepareStatement(
                 """
                 INSERT INTO metric_rollup(
-                    host_id, bucket_start, bucket_size, samples,
-                    uptime_ratio, rtt_min, rtt_avg, rtt_max, loss_avg)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    host_id, bucket_start, bucket_size, sample_count,
+                    reachable_samples, reachable_count,
+                    rtt_samples, rtt_sum, rtt_min, rtt_max,
+                    loss_samples, loss_sum)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(host_id, bucket_start, bucket_size) DO UPDATE SET
-                    samples = metric_rollup.samples + excluded.samples,
-                    uptime_ratio = CASE
-                        WHEN metric_rollup.uptime_ratio IS NULL THEN excluded.uptime_ratio
-                        WHEN excluded.uptime_ratio IS NULL THEN metric_rollup.uptime_ratio
-                        ELSE (metric_rollup.uptime_ratio * metric_rollup.samples
-                              + excluded.uptime_ratio * excluded.samples)
-                             / (metric_rollup.samples + excluded.samples)
-                    END,
+                    sample_count = metric_rollup.sample_count + excluded.sample_count,
+                    reachable_samples = metric_rollup.reachable_samples + excluded.reachable_samples,
+                    reachable_count = metric_rollup.reachable_count + excluded.reachable_count,
+                    rtt_samples = metric_rollup.rtt_samples + excluded.rtt_samples,
+                    rtt_sum = metric_rollup.rtt_sum + excluded.rtt_sum,
                     rtt_min = CASE
                         WHEN metric_rollup.rtt_min IS NULL THEN excluded.rtt_min
                         WHEN excluded.rtt_min IS NULL THEN metric_rollup.rtt_min
@@ -922,32 +936,23 @@ public final class SessionDatabase implements AutoCloseable {
                         WHEN excluded.rtt_max IS NULL THEN metric_rollup.rtt_max
                         ELSE MAX(metric_rollup.rtt_max, excluded.rtt_max)
                     END,
-                    rtt_avg = CASE
-                        WHEN metric_rollup.rtt_avg IS NULL THEN excluded.rtt_avg
-                        WHEN excluded.rtt_avg IS NULL THEN metric_rollup.rtt_avg
-                        ELSE (metric_rollup.rtt_avg * metric_rollup.samples
-                              + excluded.rtt_avg * excluded.samples)
-                             / (metric_rollup.samples + excluded.samples)
-                    END,
-                    loss_avg = CASE
-                        WHEN metric_rollup.loss_avg IS NULL THEN excluded.loss_avg
-                        WHEN excluded.loss_avg IS NULL THEN metric_rollup.loss_avg
-                        ELSE (metric_rollup.loss_avg * metric_rollup.samples
-                              + excluded.loss_avg * excluded.samples)
-                             / (metric_rollup.samples + excluded.samples)
-                    END
+                    loss_samples = metric_rollup.loss_samples + excluded.loss_samples,
+                    loss_sum = metric_rollup.loss_sum + excluded.loss_sum
                 """)) {
             ps.setLong(1, hostId);
             ps.setString(2, startIso);
             ps.setInt(3, bucketSizeSeconds);
-            ps.setInt(4, samples);
-            setNullableDouble(ps, 5, uptimeRatio);
-            setNullableDouble(ps, 6, rttMin);
-            setNullableDouble(ps, 7, rttAvg);
-            setNullableDouble(ps, 8, rttMax);
-            setNullableDouble(ps, 9, lossAvg);
+            ps.setInt(4, sampleCount);
+            ps.setInt(5, reachableSamples);
+            ps.setInt(6, reachableCount);
+            ps.setInt(7, rttSamples);
+            ps.setDouble(8, rttSum);
+            setNullableDouble(ps, 9, rttMin);
+            setNullableDouble(ps, 10, rttMax);
+            ps.setInt(11, lossSamples);
+            ps.setDouble(12, lossSum);
             ps.executeUpdate();
-            connection.commit();
+            maybeCommit();
         } catch (SQLException ex) {
             rollbackQuietly();
             throw new PersistenceException("Failed to upsert metric_rollup for host_id=" + hostId, ex);
@@ -965,8 +970,10 @@ public final class SessionDatabase implements AutoCloseable {
         }
         try (PreparedStatement ps = connection.prepareStatement(
                 """
-                SELECT m.host_id, hs.address, m.bucket_start, m.bucket_size, m.samples,
-                       m.uptime_ratio, m.rtt_min, m.rtt_avg, m.rtt_max, m.loss_avg
+                SELECT m.host_id, hs.address, m.bucket_start, m.bucket_size, m.sample_count,
+                       m.reachable_samples, m.reachable_count,
+                       m.rtt_samples, m.rtt_sum, m.rtt_min, m.rtt_max,
+                       m.loss_samples, m.loss_sum
                 FROM metric_rollup m
                 JOIN host_session hs ON hs.id = m.host_id
                 WHERE hs.address = ? AND m.bucket_size = ?
@@ -991,8 +998,10 @@ public final class SessionDatabase implements AutoCloseable {
         String cutoffIso = ISO_UTC.format(cutoff);
         try (PreparedStatement ps = connection.prepareStatement(
                 """
-                SELECT m.host_id, hs.address, m.bucket_start, m.bucket_size, m.samples,
-                       m.uptime_ratio, m.rtt_min, m.rtt_avg, m.rtt_max, m.loss_avg
+                SELECT m.host_id, hs.address, m.bucket_start, m.bucket_size, m.sample_count,
+                       m.reachable_samples, m.reachable_count,
+                       m.rtt_samples, m.rtt_sum, m.rtt_min, m.rtt_max,
+                       m.loss_samples, m.loss_sum
                 FROM metric_rollup m
                 JOIN host_session hs ON hs.id = m.host_id
                 WHERE m.bucket_size = ? AND m.bucket_start < ?
@@ -1021,7 +1030,7 @@ public final class SessionDatabase implements AutoCloseable {
             ps.setInt(1, bucketSizeSeconds);
             ps.setString(2, cutoffIso);
             int deleted = ps.executeUpdate();
-            connection.commit();
+            maybeCommit();
             return deleted;
         } catch (SQLException ex) {
             rollbackQuietly();
@@ -1055,7 +1064,7 @@ public final class SessionDatabase implements AutoCloseable {
             ps.setString(5, sample.labelsJson());
             ps.setString(6, ISO_UTC.format(sample.timestamp()));
             ps.executeUpdate();
-            connection.commit();
+            maybeCommit();
         } catch (SQLException ex) {
             rollbackQuietly();
             throw new PersistenceException("Failed to insert telemetry sample for " + sample.host(), ex);
@@ -1079,7 +1088,7 @@ public final class SessionDatabase implements AutoCloseable {
             ps.setString(6, event.newIpsJson());
             ps.setString(7, ISO_UTC.format(event.timestamp()));
             ps.executeUpdate();
-            connection.commit();
+            maybeCommit();
         } catch (SQLException ex) {
             rollbackQuietly();
             throw new PersistenceException("Failed to insert telemetry event for " + event.host(), ex);
@@ -1233,7 +1242,7 @@ public final class SessionDatabase implements AutoCloseable {
         try (PreparedStatement ps = connection.prepareStatement("DELETE FROM " + table + " WHERE observed_at < ?")) {
             ps.setString(1, iso);
             int deleted = ps.executeUpdate();
-            connection.commit();
+            maybeCommit();
             return deleted;
         } catch (SQLException ex) {
             rollbackQuietly();
@@ -1273,12 +1282,27 @@ public final class SessionDatabase implements AutoCloseable {
                     """);
         }
         Integer existingVersion = readSchemaVersionOrNull();
-        if (existingVersion != null && existingVersion != SCHEMA_VERSION) {
+        if (existingVersion != null && existingVersion > SCHEMA_VERSION) {
             throw new PersistenceException("Unsupported session DB schema version "
                     + existingVersion
                     + " (required "
                     + SCHEMA_VERSION
-                    + "). Delete the database file and recreate.");
+                    + " or migrate from "
+                    + MIN_MIGRATE_FROM
+                    + ").");
+        }
+        if (existingVersion != null && existingVersion < MIN_MIGRATE_FROM) {
+            throw new PersistenceException("Unsupported session DB schema version "
+                    + existingVersion
+                    + " (required "
+                    + SCHEMA_VERSION
+                    + "). Delete the database file and recreate, or upgrade through v"
+                    + MIN_MIGRATE_FROM
+                    + " first.");
+        }
+        if (existingVersion != null && existingVersion == 13) {
+            migrateV13ToV14();
+            existingVersion = SCHEMA_VERSION;
         }
         try (Statement statement = connection.createStatement()) {
             statement.execute(
@@ -1322,7 +1346,7 @@ public final class SessionDatabase implements AutoCloseable {
         if (existingVersion == null) {
             seedSchemaVersion();
         }
-        connection.commit();
+        maybeCommit();
     }
 
     private void initSchemaReadOnly(Integer existingVersion) {
@@ -1334,7 +1358,7 @@ public final class SessionDatabase implements AutoCloseable {
                     + existingVersion
                     + " (required "
                     + SCHEMA_VERSION
-                    + "). Delete the database file and recreate.");
+                    + "). Open read/write once to migrate, or recreate the database file.");
         }
     }
 
@@ -1694,12 +1718,15 @@ public final class SessionDatabase implements AutoCloseable {
                     host_id INTEGER NOT NULL,
                     bucket_start TEXT NOT NULL,
                     bucket_size INTEGER NOT NULL,
-                    samples INTEGER NOT NULL,
-                    uptime_ratio REAL,
+                    sample_count INTEGER NOT NULL,
+                    reachable_samples INTEGER NOT NULL DEFAULT 0,
+                    reachable_count INTEGER NOT NULL DEFAULT 0,
+                    rtt_samples INTEGER NOT NULL DEFAULT 0,
+                    rtt_sum REAL NOT NULL DEFAULT 0,
                     rtt_min REAL,
-                    rtt_avg REAL,
                     rtt_max REAL,
-                    loss_avg REAL,
+                    loss_samples INTEGER NOT NULL DEFAULT 0,
+                    loss_sum REAL NOT NULL DEFAULT 0,
                     PRIMARY KEY(host_id, bucket_start, bucket_size),
                     FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
                 )
@@ -1721,11 +1748,14 @@ public final class SessionDatabase implements AutoCloseable {
                         Instant.parse(rs.getString(3)),
                         rs.getInt(4),
                         rs.getInt(5),
-                        nullableDouble(rs, 6),
-                        nullableDouble(rs, 7),
-                        nullableDouble(rs, 8),
-                        nullableDouble(rs, 9),
-                        nullableDouble(rs, 10)));
+                        rs.getInt(6),
+                        rs.getInt(7),
+                        rs.getInt(8),
+                        rs.getDouble(9),
+                        nullableDouble(rs, 10),
+                        nullableDouble(rs, 11),
+                        rs.getInt(12),
+                        rs.getDouble(13)));
             }
             return List.copyOf(rows);
         }
@@ -1976,6 +2006,133 @@ public final class SessionDatabase implements AutoCloseable {
             ps.setInt(1, SCHEMA_VERSION);
             ps.executeUpdate();
         }
+    }
+
+    private void updateSchemaVersion(int version) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement("UPDATE schema_meta SET version = ?")) {
+            ps.setInt(1, version);
+            int updated = ps.executeUpdate();
+            if (updated == 0) {
+                try (PreparedStatement insert =
+                        connection.prepareStatement("INSERT INTO schema_meta(version) VALUES (?)")) {
+                    insert.setInt(1, version);
+                    insert.executeUpdate();
+                }
+            }
+        }
+    }
+
+    /**
+     * Runs {@code work} with deferred commits — one commit on success, full rollback on failure
+     * (P32-004 atomic retention).
+     */
+    public synchronized <T> T inTransaction(TransactionWork<T> work) {
+        Objects.requireNonNull(work, "work");
+        if (openMode == OpenMode.READ_ONLY) {
+            throw new PersistenceException("Cannot begin a write transaction on a read-only session database");
+        }
+        if (deferCommit) {
+            throw new PersistenceException("Nested SessionDatabase transactions are not supported");
+        }
+        deferCommit = true;
+        try {
+            T result = work.execute();
+            connection.commit();
+            return result;
+        } catch (PersistenceException ex) {
+            rollbackQuietly();
+            throw ex;
+        } catch (RuntimeException ex) {
+            rollbackQuietly();
+            throw ex;
+        } catch (Exception ex) {
+            rollbackQuietly();
+            throw new PersistenceException("Session transaction failed", ex);
+        } finally {
+            deferCommit = false;
+        }
+    }
+
+    @FunctionalInterface
+    public interface TransactionWork<T> {
+        T execute() throws Exception;
+    }
+
+    private void maybeCommit() throws SQLException {
+        if (!deferCommit) {
+            connection.commit();
+        }
+    }
+
+    /**
+     * In-place v13 → v14: reshape {@code metric_rollup} to additive counters. Best-effort conversion of
+     * legacy averages (assumes every sample contributed when an average was present).
+     */
+    private void migrateV13ToV14() throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            boolean hasLegacyAvg = false;
+            try (ResultSet rs = statement.executeQuery("PRAGMA table_info(metric_rollup)")) {
+                while (rs.next()) {
+                    if ("rtt_avg".equalsIgnoreCase(rs.getString("name"))) {
+                        hasLegacyAvg = true;
+                        break;
+                    }
+                }
+            }
+            if (hasLegacyAvg) {
+                statement.execute(
+                        """
+                        CREATE TABLE metric_rollup_v14 (
+                            host_id INTEGER NOT NULL,
+                            bucket_start TEXT NOT NULL,
+                            bucket_size INTEGER NOT NULL,
+                            sample_count INTEGER NOT NULL,
+                            reachable_samples INTEGER NOT NULL DEFAULT 0,
+                            reachable_count INTEGER NOT NULL DEFAULT 0,
+                            rtt_samples INTEGER NOT NULL DEFAULT 0,
+                            rtt_sum REAL NOT NULL DEFAULT 0,
+                            rtt_min REAL,
+                            rtt_max REAL,
+                            loss_samples INTEGER NOT NULL DEFAULT 0,
+                            loss_sum REAL NOT NULL DEFAULT 0,
+                            PRIMARY KEY(host_id, bucket_start, bucket_size),
+                            FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
+                        )
+                        """);
+                statement.execute(
+                        """
+                        INSERT INTO metric_rollup_v14(
+                            host_id, bucket_start, bucket_size, sample_count,
+                            reachable_samples, reachable_count,
+                            rtt_samples, rtt_sum, rtt_min, rtt_max,
+                            loss_samples, loss_sum)
+                        SELECT
+                            host_id,
+                            bucket_start,
+                            bucket_size,
+                            samples,
+                            CASE WHEN uptime_ratio IS NULL THEN 0 ELSE samples END,
+                            CASE WHEN uptime_ratio IS NULL THEN 0
+                                 ELSE CAST(ROUND(uptime_ratio * samples) AS INTEGER) END,
+                            CASE WHEN rtt_avg IS NULL THEN 0 ELSE samples END,
+                            CASE WHEN rtt_avg IS NULL THEN 0 ELSE rtt_avg * samples END,
+                            rtt_min,
+                            rtt_max,
+                            CASE WHEN loss_avg IS NULL THEN 0 ELSE samples END,
+                            CASE WHEN loss_avg IS NULL THEN 0 ELSE loss_avg * samples END
+                        FROM metric_rollup
+                        """);
+                statement.execute("DROP TABLE metric_rollup");
+                statement.execute("ALTER TABLE metric_rollup_v14 RENAME TO metric_rollup");
+                statement.execute(
+                        """
+                        CREATE INDEX IF NOT EXISTS idx_rollup_host_bucket
+                            ON metric_rollup(host_id, bucket_size, bucket_start DESC)
+                        """);
+            }
+        }
+        updateSchemaVersion(SCHEMA_VERSION);
+        connection.commit();
     }
 
     private void rollbackQuietly() {
