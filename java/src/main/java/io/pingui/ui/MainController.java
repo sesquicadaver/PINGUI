@@ -131,7 +131,7 @@ public final class MainController {
      */
     public Scene createScene() {
         initCoordinators();
-        hostListPresenter.configure();
+        hostListPresenter.configureOnce();
         mainView.monitorModeToolbar().bindExpertMode(expertMode);
         if (!mainView.monitorModeToolbar().expertCheck().isDisable()) {
             expertMode.addListener((obs, was, on) -> mainView.hostList().refresh());
@@ -255,7 +255,7 @@ public final class MainController {
         mainView.retranslateChrome();
         updateDirtyUi();
         if (hostListPresenter != null) {
-            hostListPresenter.configure();
+            hostListPresenter.retranslate();
         }
         viewModeController.apply();
     }
