@@ -9,6 +9,7 @@
 
 ### Added
 
+- **P32 NEXT activated:** ROADMAP **NEXT = P32-001** (Stabilization: MTR freshness / history / side-effects); черга P32-001…008; [pingui-stabilization.md](docs/pingui-stabilization.md).
 - **P31 NEXT activated:** ROADMAP **NEXT = P31-001** (GUI information hierarchy); черга P31-001…007; evo [pingui-evo-gui.md](docs/pingui-evo-gui.md).
 
 ### Changed

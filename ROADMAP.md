@@ -8,10 +8,10 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **[DONE](docs/ROADMAP.md#next--єдине-джерело-правди)** |
+| **Поточна задача** | **[P32-001](docs/ROADMAP.md#next--єдине-джерело-правди)** |
 | **Правило** | якщо не `DONE` — `/autopilot` = цей ID; якщо `DONE` — зупинитись / чекати явного нового ID. **Не питати** «який пункт?». |
 
-Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна) (фаза 31; NEXT=**DONE**).
+Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна) (фаза 32; NEXT=**P32-001**).
 
 **Статус MVP:** ✅ реалізовано (2026-06-26)
 
@@ -53,6 +53,7 @@
 | **29** | Diagnostic evolution (correlation / timeline / silence / DNS / TCP) | ✅ **DONE** |
 | **30** | SQLite schema evolution (stable host id / incident / poll / route) | ✅ **DONE** |
 | **31** | GUI information hierarchy (host row → a11y) | ✅ **DONE** |
+| **32** | Stabilization (MTR / history / side-effects) | 🔄 **P32-001** |
 
 ---
 

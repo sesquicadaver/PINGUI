@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **DONE** |
-| **Фаза** | 31 — GUI information hierarchy |
-| **DoD (коротко)** | лінійна черга фази 31 вичерпана |
+| **Поточна задача** | **P32-001** |
+| **Фаза** | 32 — Stabilization (MTR / history / side-effects) |
+| **DoD (коротко)** | MTR freshness і topology completeness |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -179,8 +179,16 @@
 | 133 | **P31-005** | [x] | Filter, sort, problems-first |
 | 134 | **P31-006** | [x] | Centralized application status |
 | 135 | **P31-007** | [x] | Accessibility pass |
+| 136 | **P32-001** | [ ] | MTR freshness і topology completeness |
+| 137 | **P32-002** | [ ] | MTR concurrency та lifecycle |
+| 138 | **P32-003** | [ ] | Структурований PollResult і TCP outcomes |
+| 139 | **P32-004** | [ ] | Schema v13, точні rollups, атомарний retention |
+| 140 | **P32-005** | [ ] | Bounded side-effect consumers і persistence batching |
+| 141 | **P32-006** | [ ] | Alert lifecycle окремо від silence/cooldown |
+| 142 | **P32-007** | [ ] | Runtime i18n та залишки accessibility |
+| 143 | **P32-008** | [ ] | Локальний поділ DB/monitor hotspot-ів і документація |
 
-**Стан черги:** **NEXT = DONE** (фаза 31 закрита; P31-007 [x]; Java-first; [pingui-evo-gui.md](pingui-evo-gui.md)).
+**Стан черги:** **NEXT = P32-001** (фаза 32; P31 DONE; Java-first; [pingui-stabilization.md](pingui-stabilization.md)).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -995,6 +1003,27 @@ flowchart TD
 
 ---
 
+## Фаза 32 — Stabilization: MTR / history / side-effects (`beta`, P0)
+
+**Контекст:** [pingui-stabilization.md](pingui-stabilization.md). Стабілізація семантики даних і критичних потоків — **не** нове функціональне розширення. Java-first; TRACE/PING_ONLY вже зрілі.
+
+**Черга:** після P31; **NEXT = P32-001**.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P32-001** | [ ] MTR freshness / topology | `MtrProbe`, `SessionStore`, telemetry, alerts | Лише `freshHopSample` оновлює hop/telemetry; endpoint/`poll_result` лише коли target sampled; discovery prefix ≠ route change; timeout ≠ topology change |
+| **P32-002** | [ ] MTR concurrency / lifecycle | `MtrProbe` state | `ConcurrentHashMap` / atomic update; generation token; clear on remove/rename host |
+| **P32-003** | [ ] Structured PollResult + TCP | `PollResultEffects`, `RoutePoller`, probe outcomes | `loss=NULL` якщо не виміряно; `probe_outcome` SUCCESS/TIMEOUT/REFUSED/DNS_ERROR/NETWORK_ERROR; `target_sampled`; jitter лише з серії RTT |
+| **P32-004** | [ ] Schema v13 rollup + atomic retention | `SessionDatabase`, `PollResultRetentionJob` | окремі `*_samples`/`*_sum`; avg на читанні; retention одна транзакція; crash-safe + idempotent; migrate v12→v13 (не delete DB) |
+| **P32-005** | [ ] Bounded side-effect consumers | Monitor/DNS/webhook/DB writer | DNS executor+timeout+cache; webhook/telemetry off probe/UI thread; один persistence update / poll; `ensureHostRow` без повного `load()` |
+| **P32-006** | [ ] Alert lifecycle vs silence | `AlertRuleEngine`, dispatcher | FIRING/RESOLVED завжди; silence лише delivery; pending notification після expiry один раз |
+| **P32-007** | [ ] Runtime i18n + a11y leftovers | `HostListPresenter`, bundles, CSS | `configureOnce` + idempotent `retranslate`; bundle key parity; problemsFirst keyboard; без дублів ключів |
+| **P32-008** | [ ] Split SessionDatabase + docs | persistence split, ADR/docs | facade + Schema/Session/History; Java canonical / Python bugfix-only note; LIVING_SPEC + phase close |
+
+**Поза scope:** ORM; Kafka/reactive bus; окремий dashboard; silent delete `.db` для v13.
+
+---
+
 ## Поза scope (опційно, в перспективі)
 
 | ID | Ідея | Чому ні |
@@ -1080,7 +1109,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **DONE**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P32-001**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 
