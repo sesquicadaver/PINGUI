@@ -73,7 +73,7 @@ public final class MainView {
         profileToolbar.bar().getStyleClass().add("pingui-toolbar");
         modeToolbar.bar().getStyleClass().add("pingui-toolbar");
         hostListPanel.hostList().getStyleClass().add("pingui-host-list");
-        statusPanel.statusLabel().getStyleClass().add("pingui-status");
+        statusPanel.monitoringLabel().getStyleClass().add("pingui-status");
         statusPanel.logArea().getStyleClass().add("pingui-log");
         if (navigationChrome != null) {
             navigationChrome.getStyleClass().add("pingui-toolbar");
@@ -85,8 +85,7 @@ public final class MainView {
         for (Node node : hostListPanel.chromeWithNavigation(navigationChrome)) {
             leftChildren.add(node);
         }
-        leftChildren.add(statusPanel.statusLabel());
-        leftChildren.add(statusPanel.logArea());
+        leftChildren.add(statusPanel.chrome());
         leftPanel.getChildren().setAll(leftChildren);
 
         routeGraphPanel.installInto(graphPanel);

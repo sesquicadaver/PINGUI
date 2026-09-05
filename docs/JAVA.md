@@ -224,4 +224,4 @@ pingui-java.bat --package    REM .msi
 
 ## Майбутнє
 
-Лінійна черга ROADMAP: **NEXT = P31-006** (фаза 31 — GUI information hierarchy). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT; evo: [pingui-evo-gui.md](pingui-evo-gui.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
+Лінійна черга ROADMAP: **NEXT = P31-007** (фаза 31 — GUI information hierarchy). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT; evo: [pingui-evo-gui.md](pingui-evo-gui.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).

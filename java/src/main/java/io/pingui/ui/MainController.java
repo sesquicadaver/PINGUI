@@ -88,6 +88,7 @@ public final class MainController {
     private PersistenceSessionCoordinator persistenceSession;
     private EasterEggController easterEgg;
     private MonitorUiHandler monitorUi;
+    private AppStatusPresenter appStatus;
     private final HistoryHostSync historyHostSync = new HistoryHostSync();
 
     /**
@@ -173,7 +174,7 @@ public final class MainController {
             }
             routeGraphPresenter.redrawIfExtended();
         });
-        mainView.statusLabel().setText(UiI18n.get("status.loading"));
+        appStatus.setBootstrap(UiI18n.get("status.loading"));
         setShellBusy(true);
         Scene scene = new Scene(mainView.root());
         UiPalette.applyTo(scene);
@@ -206,10 +207,7 @@ public final class MainController {
         hostListPresenter.syncInputLimits();
         viewModeController.apply();
         setShellBusy(false);
-        if (EmptyStateHints.isReplaceableSimpleStatus(mainView.statusLabel().getText())
-                || UiI18n.get("status.loading").equals(mainView.statusLabel().getText())) {
-            mainView.statusLabel().setText(EmptyStateHints.waitingForData());
-        }
+        appStatus.onServicesReady();
         redrawRouteGraph();
     }
 
@@ -229,7 +227,7 @@ public final class MainController {
         mainView.graphPanel().setDisable(true);
         mainView.mainSplit().setDisable(true);
         String message = error.getMessage() != null ? error.getMessage() : error.toString();
-        mainView.statusLabel().setText(UiI18n.get("status.load_error", message));
+        appStatus.setBootstrap(UiI18n.get("status.load_error", message));
         if (viewModeController != null && viewModeController.isExtended()) {
             mainView.logArea()
                     .appendText("[" + TIME_FMT.format(java.time.Instant.now()) + "] "
@@ -242,12 +240,12 @@ public final class MainController {
         return servicesReady;
     }
 
-    /** Package-visible for startup tests. */
     String statusTextForTest() {
-        return mainView.statusLabel().getText();
+        return appStatus != null
+                ? appStatus.monitoringText()
+                : mainView.statusLabel().getText();
     }
 
-    /** Persist locale, refresh chrome labels, update Stage title (P25). */
     void applyUiLocale(UiLocale locale) {
         if (locale == null || locale == UiI18n.locale()) {
             return;
@@ -293,6 +291,9 @@ public final class MainController {
 
     public void shutdown() {
         shutdownRequested = true;
+        if (appStatus != null) {
+            appStatus.stop();
+        }
         if (easterEgg != null) {
             easterEgg.dismiss();
         }
@@ -358,6 +359,7 @@ public final class MainController {
                 historyHostSync));
         viewModeController = wired.viewMode;
         userFeedback = wired.userFeedback;
+        appStatus = wired.appStatus;
         stageGeometry = wired.stageGeometry;
         persistenceSession = wired.persistenceSession;
         profileUi = wired.profileUi;
@@ -538,7 +540,6 @@ public final class MainController {
         return ConfirmDialogs.confirmUnsaved(dialogOwner());
     }
 
-    /** Modal error for Simple mode only (injected into {@link UiFeedbackRouter}). */
     private void showSimpleErrorAlert(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
         alert.setTitle(UiI18n.get("error.title"));

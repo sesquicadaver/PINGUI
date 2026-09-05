@@ -224,4 +224,4 @@ Tests and CI — on **`main`** and **`beta`** (ROADMAP development on `beta`).
 
 ## Future
 
-The linear ROADMAP queue: **NEXT = P31-006** (phase 31 — GUI information hierarchy). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT; evo: [pingui-evo-gui.md](pingui-evo-gui.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
+The linear ROADMAP queue: **NEXT = P31-007** (phase 31 — GUI information hierarchy). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT; evo: [pingui-evo-gui.md](pingui-evo-gui.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).

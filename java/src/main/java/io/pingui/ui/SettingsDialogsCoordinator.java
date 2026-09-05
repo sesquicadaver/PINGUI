@@ -10,7 +10,6 @@ import io.pingui.i18n.UiI18n;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
 import io.pingui.persistence.PersistencePolicy;
-import io.pingui.ui.view.MainView;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
@@ -27,6 +26,7 @@ final class SettingsDialogsCoordinator {
     private final AppOptions options;
     private final Supplier<Window> dialogOwner;
     private final UserFeedback userFeedback;
+    private final AppStatusPresenter appStatus;
     private final Runnable markDirty;
     private final Consumer<List<HostEntry>> recreateMonitor;
     private final Runnable attachTelemetry;
@@ -36,8 +36,6 @@ final class SettingsDialogsCoordinator {
     private final Supplier<Optional<PersistencePolicy>> sessionPersistenceOverride;
     private final Consumer<Optional<Path>> setSessionGuiDbOverride;
     private final Consumer<Optional<PersistencePolicy>> setSessionPersistenceOverride;
-    private final Supplier<ViewModeController> viewModeController;
-    private final MainView mainView;
 
     SettingsDialogsCoordinator(
             Supplier<SessionStore> store,
@@ -46,6 +44,7 @@ final class SettingsDialogsCoordinator {
             AppOptions options,
             Supplier<Window> dialogOwner,
             UserFeedback userFeedback,
+            AppStatusPresenter appStatus,
             Runnable markDirty,
             Consumer<List<HostEntry>> recreateMonitor,
             Runnable attachTelemetry,
@@ -54,15 +53,14 @@ final class SettingsDialogsCoordinator {
             Supplier<Optional<Path>> resolveSessionDbPath,
             Supplier<Optional<PersistencePolicy>> sessionPersistenceOverride,
             Consumer<Optional<Path>> setSessionGuiDbOverride,
-            Consumer<Optional<PersistencePolicy>> setSessionPersistenceOverride,
-            Supplier<ViewModeController> viewModeController,
-            MainView mainView) {
+            Consumer<Optional<PersistencePolicy>> setSessionPersistenceOverride) {
         this.store = store;
         this.monitor = monitor;
         this.profileDocument = profileDocument;
         this.options = options;
         this.dialogOwner = dialogOwner;
         this.userFeedback = userFeedback;
+        this.appStatus = appStatus;
         this.markDirty = markDirty;
         this.recreateMonitor = recreateMonitor;
         this.attachTelemetry = attachTelemetry;
@@ -72,8 +70,6 @@ final class SettingsDialogsCoordinator {
         this.sessionPersistenceOverride = sessionPersistenceOverride;
         this.setSessionGuiDbOverride = setSessionGuiDbOverride;
         this.setSessionPersistenceOverride = setSessionPersistenceOverride;
-        this.viewModeController = viewModeController;
-        this.mainView = mainView;
     }
 
     void onExportNow() {
@@ -82,11 +78,14 @@ final class SettingsDialogsCoordinator {
             userFeedback.error(SessionExportUi.noSqliteMessage());
             return;
         }
+        appStatus.beginProgress(UiI18n.get("status.exporting"), null);
         try {
             Optional<Path> written = SessionExportUi.chooseAndExport(dialogOwner.get(), sessionStore.database());
             written.ifPresent(path -> userFeedback.info(SessionExportUi.successMessage(path)));
         } catch (IOException | RuntimeException ex) {
             userFeedback.error(SessionExportUi.failureMessage(ex));
+        } finally {
+            appStatus.endProgress();
         }
     }
 
@@ -194,16 +193,10 @@ final class SettingsDialogsCoordinator {
                 : UiI18n.get("status.no_sinks");
         userFeedback.info(
                 UiI18n.get("status.telemetry_updated", sinks, result.telemetry().toRedactedString()));
-        if (viewModeController.get().isExtended()) {
-            mainView.statusLabel().setText(UiI18n.get("status.telemetry", sinks));
-        }
         markDirty.run();
     }
 
     private void notifyPersistenceConnected(Path dbPath) {
         userFeedback.info(UiI18n.get("status.sqlite_connected", dbPath.toAbsolutePath()));
-        if (viewModeController.get().isExtended()) {
-            mainView.statusLabel().setText(UiI18n.get("status.sqlite", dbPath.toAbsolutePath()));
-        }
     }
 }

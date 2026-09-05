@@ -115,7 +115,6 @@ final class ViewModeController {
             root.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
             detachSimpleLayout();
             root.setCenter(leftPanel);
-            // P20-007: Simple hides the log — idle status points to Extended (keep live feedback).
             if (EmptyStateHints.isReplaceableSimpleStatus(statusLabel.getText())) {
                 statusLabel.setText(EmptyStateHints.simpleNoLog());
             }
