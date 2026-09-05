@@ -24,4 +24,12 @@ class SeverityThemeTest {
         assertEquals("pingui-severity-info", SeverityTheme.styleClass(Severity.INFO));
         assertEquals("pingui-severity-muted", SeverityTheme.styleClass(Severity.MUTED));
     }
+
+    @Test
+    void accentColorsPreferContrastOverPastelYellow() {
+        assertEquals("#b71c1c", SeverityTheme.accentColor(Severity.CRITICAL));
+        assertEquals("#bf360c", SeverityTheme.accentColor(Severity.WARNING));
+        assertEquals("#7a5c00", SeverityTheme.accentColor(Severity.NOTICE));
+        assertFalse(SeverityTheme.accentColor(Severity.NOTICE).equalsIgnoreCase("#f9a825"));
+    }
 }

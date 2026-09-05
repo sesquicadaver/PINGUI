@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P31-007** |
+| **Current task** | **DONE** |
 | **Phase** | 31 — GUI information hierarchy |
-| **DoD (short)** | accessibility pass |
+| **DoD (short)** | phase 31 linear queue exhausted |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -178,9 +178,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 132 | **P31-004** | [x] | Unified severity model |
 | 133 | **P31-005** | [x] | Filter, sort, problems-first |
 | 134 | **P31-006** | [x] | Centralized application status |
-| 135 | **P31-007** | [ ] | Accessibility pass |
+| 135 | **P31-007** | [x] | Accessibility pass |
 
-**Queue status:** **NEXT = P31-007** (phase 31; P31-006 [x]; Java-first; [pingui-evo-gui.md](pingui-evo-gui.md)).
+**Queue status:** **NEXT = DONE** (phase 31 closed; P31-007 [x]; Java-first; [pingui-evo-gui.md](pingui-evo-gui.md)).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -979,7 +979,7 @@ flowchart TD
 
 **Context:** [pingui-evo-gui.md](pingui-evo-gui.md). Do not change window geometry ([ADR_GUI_PAINT.md](ADR_GUI_PAINT.md)). Java-first.
 
-**Queue:** after P30; **NEXT = P31-007**.
+**Queue:** after P30; **NEXT = DONE** (phase 31 closed).
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
@@ -989,7 +989,7 @@ flowchart TD
 | **P31-004** | [x] Severity model | UI theme, timeline, alerts | Critical/Warning/Notice/Info/Muted → color, icon, sort, badge, timeline, alert |
 | **P31-005** | [x] Host list navigation | `HostListPresenter` | Text filter; sort; problems-first; header counters; persist filter/sort |
 | **P31-006** | [x] App status area | `MainController`, coordinators | Monitoring summary + transient ops (profile, DB, export, MTU…) without extra popups |
-| **P31-007** | [ ] Accessibility pass | CSS, controls | Not color-only; state icons; contrast; focus; a11y names |
+| **P31-007** | [x] Accessibility pass | CSS, controls | Not color-only; state icons; contrast; focus; a11y names |
 
 **Backlog (not in queue):** settings grouping (§7); graph legend/tweaks (§8); structured errors (§9).
 
@@ -1080,7 +1080,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P31-007**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **DONE**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 
