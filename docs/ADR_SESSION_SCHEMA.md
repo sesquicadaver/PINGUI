@@ -162,3 +162,6 @@ CREATE TABLE metric_rollup (
 - `target_sampled INTEGER NOT NULL` — чи цього циклу перевірено target.
 
 `loss_percent` / `jitter_ms` більше не синтезуються з reachability (NULL, якщо не виміряно; jitter — лише з серії RTT). Транзакційна міграція зі старих версій — **P32-004**.
+### P32-004 (зроблено, schema v14)
+
+`metric_rollup` зберігає адитивні лічильники (`sample_count`, `reachable_*`, `rtt_samples`/`rtt_sum`, `loss_samples`/`loss_sum`); середні обчислюються на читанні. `PollResultRetentionJob` виконує upsert+delete в **одній** транзакції. Відкриття БД мігрує **v13→v14** in-place.

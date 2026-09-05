@@ -8,10 +8,10 @@
 
 | Field | Value |
 |------|----------|
-| **Current task** | **[P32-004](docs/en/ROADMAP.md#next--single-source-of-truth)** |
+| **Current task** | **[P32-005](docs/en/ROADMAP.md#next--single-source-of-truth)** |
 | **Rule** | if not `DONE` — `/autopilot` = this ID; if `DONE` — stop / wait for an explicit new ID. **Do not ask** “which item?”. |
 
-Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (phase 32; NEXT=**P32-004**).
+Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (phase 32; NEXT=**P32-005**).
 
 **MVP status:** ✅ implemented (2026-06-26)
 
@@ -53,7 +53,7 @@ Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#e
 | **29** | Diagnostic evolution (correlation / timeline / silence / DNS / TCP) | ✅ **DONE** |
 | **30** | SQLite schema evolution (stable host id / incident / poll / route) | ✅ **DONE** |
 | **31** | GUI information hierarchy (host row → a11y) | ✅ **DONE** |
-| **32** | Stabilization (MTR / history / side-effects) | 🔄 **P32-004** |
+| **32** | Stabilization (MTR / history / side-effects) | 🔄 **P32-005** |
 
 ---
 

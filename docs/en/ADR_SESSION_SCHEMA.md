@@ -162,3 +162,6 @@ CREATE TABLE metric_rollup (
 - `target_sampled INTEGER NOT NULL` — whether this cycle sampled the target.
 
 `loss_percent` / `jitter_ms` are no longer synthesized from reachability (NULL when unmeasured; jitter only from an RTT series). Transactional migrate from older versions — **P32-004**.
+### P32-004 (done, schema v14)
+
+`metric_rollup` stores additive counters (`sample_count`, `reachable_*`, `rtt_samples`/`rtt_sum`, `loss_samples`/`loss_sum`); averages are computed on read. `PollResultRetentionJob` runs upsert+delete in **one** transaction. Opening a DB migrates **v13→v14** in-place.

@@ -65,12 +65,9 @@ MTR state потокобезпечний (P32-002): `ConcurrentHashMap`, generat
 
 ## 2. Переробити rollup без надмірного ускладнення БД
 
-Підтверджені дві проблеми:
+P32-004 зроблено (schema v14): retention в одній транзакції; nullable-метрики зважуються через `*_samples`/`*_sum`.
 
-1. `upsert rollup → delete source` виконується різними транзакціями.
-2. При merge nullable-метрики зважуються через загальний `samples`, а не кількість samples конкретної метрики.
-
-Практичний варіант schema v13:
+Канонічні поля:
 
 | Поле                 | Призначення                   |
 | -------------------- | ----------------------------- |
@@ -204,7 +201,7 @@ P31-007 реально покращив accessibility, але залишилис
 1. **P32-001 — MTR freshness і topology completeness**
 2. **P32-002 — MTR concurrency та lifecycle**
 3. **P32-003 — структурований `PollResult` і TCP outcomes**
-4. **P32-004 — schema v13, точні rollups, атомарний retention**
+4. **P32-004 — schema v14, точні rollups, атомарний retention**
 5. **P32-005 — bounded side-effect consumers і persistence batching**
 6. **P32-006 — alert lifecycle окремо від silence/cooldown**
 7. **P32-007 — runtime i18n та залишки accessibility**
