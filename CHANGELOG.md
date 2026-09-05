@@ -15,6 +15,7 @@
 
 ### Changed
 
+- **P33-002 — MTR/projection semantics:** authoritative `routeChanged` у `SessionStore.applyPollSnapshot`; `targetStats` / classifier за `targetIp`+`targetHop` (не last hop discovery); NEXT→**P33-003**.
 - **P33-001 — MTR stable `targetHop` / monitoring span:** cursor обертається в `1..targetHop` (не reachable-prefix); intermediate timeout не пропускає target; target slot за номером hop; NEXT→**P33-002**.
 - **P32-008 — SessionDatabase split + phase close:** facade `SessionDatabase` + `SchemaManager` / `SessionStateRepository` / `HistoryRepository` / `DbCommit`; Java канон, Python bugfix-only; фаза 32 **closed**.
 - **P32-007 — runtime i18n + a11y leftovers:** `configureOnce`/`retranslate`; problemsFirst keyboard; bundle key parity + без дубля `history.initial_route`; NEXT→**P32-008**.

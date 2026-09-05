@@ -93,6 +93,10 @@ public final class Models {
         private Double intervalSecondsOverride;
         private java.util.List<String> tags = java.util.List.of();
         private PingExpertEntry pingExpert = PingExpertEntry.empty();
+        /** Resolved target IP from the latest poll snapshot (P33-002). */
+        private String lastTargetIp;
+        /** 1-based hop index of the target when known (P33-002). */
+        private Integer lastTargetHop;
 
         public List<HopNode> getCurrentRoute() {
             return currentRoute;
@@ -120,6 +124,27 @@ public final class Models {
 
         public java.util.Map<Integer, HopProbeStats> getHopStats() {
             return hopStats;
+        }
+
+        public String getLastTargetIp() {
+            return lastTargetIp;
+        }
+
+        public void setLastTargetIp(String lastTargetIp) {
+            this.lastTargetIp = lastTargetIp;
+        }
+
+        public Integer getLastTargetHop() {
+            return lastTargetHop;
+        }
+
+        public void setLastTargetHop(Integer lastTargetHop) {
+            this.lastTargetHop = lastTargetHop;
+        }
+
+        public void clearTargetIdentity() {
+            lastTargetIp = null;
+            lastTargetHop = null;
         }
 
         public boolean isEnabled() {

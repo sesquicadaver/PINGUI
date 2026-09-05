@@ -214,16 +214,25 @@ public final class DaemonRunner implements AutoCloseable {
                 new MonitorService.Listener() {
                     @Override
                     public void onDataReceived(String host, RouteSnapshot snapshot) {
-                        onDataReceived(host, snapshot, io.pingui.monitor.PollSampleScope.FULL);
+                        onDataReceived(host, snapshot, io.pingui.monitor.PollSampleScope.FULL, false);
                     }
 
                     @Override
                     public void onDataReceived(
                             String host, RouteSnapshot snapshot, io.pingui.monitor.PollSampleScope sampleScope) {
+                        onDataReceived(host, snapshot, sampleScope, false);
+                    }
+
+                    @Override
+                    public void onDataReceived(
+                            String host,
+                            RouteSnapshot snapshot,
+                            io.pingui.monitor.PollSampleScope sampleScope,
+                            boolean routeChanged) {
                         if (!store.containsHost(host)) {
                             return;
                         }
-                        store.applyPollSnapshot(host, snapshot, sampleScope);
+                        store.applyPollSnapshot(host, snapshot, sampleScope, routeChanged);
                     }
 
                     @Override

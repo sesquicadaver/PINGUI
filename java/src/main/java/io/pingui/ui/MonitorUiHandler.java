@@ -47,15 +47,20 @@ final class MonitorUiHandler {
     }
 
     void handleData(String host, RouteSnapshot snapshot) {
-        handleData(host, snapshot, PollSampleScope.FULL);
+        handleData(host, snapshot, PollSampleScope.FULL, null);
     }
 
     void handleData(String host, RouteSnapshot snapshot, PollSampleScope sampleScope) {
+        handleData(host, snapshot, sampleScope, null);
+    }
+
+    void handleData(String host, RouteSnapshot snapshot, PollSampleScope sampleScope, Boolean routeChanged) {
         var sessionStore = store.get();
         if (!sessionStore.containsHost(host)) {
             return;
         }
-        sessionStore.applyPollSnapshot(host, snapshot, sampleScope != null ? sampleScope : PollSampleScope.FULL);
+        sessionStore.applyPollSnapshot(
+                host, snapshot, sampleScope != null ? sampleScope : PollSampleScope.FULL, routeChanged);
         HostItem item = hostListPresenter.findItem(host);
         if (item != null) {
             item.clearRouteChangedLatch();

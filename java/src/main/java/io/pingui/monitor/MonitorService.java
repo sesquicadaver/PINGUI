@@ -49,6 +49,15 @@ public final class MonitorService implements AutoCloseable {
             onDataReceived(host, snapshot);
         }
 
+        /**
+         * Authoritative poll projection (P33-002): freshness scope plus confirmed route-change flag from
+         * the probe outcome (SessionStore must not re-derive topology from partial MTR snapshots).
+         */
+        default void onDataReceived(
+                String host, RouteSnapshot snapshot, PollSampleScope sampleScope, boolean routeChanged) {
+            onDataReceived(host, snapshot, sampleScope);
+        }
+
         void onRouteChanged(String host, List<String> oldIps, List<String> newIps);
 
         void onProbeError(String host, String message);
@@ -526,7 +535,7 @@ public final class MonitorService implements AutoCloseable {
                     }
                 }
                 pollEffects.offerTelemetrySuccess(host, probeMode, snapshot, durationMs, sampleScope);
-                current.onDataReceived(host, snapshot, sampleScope);
+                current.onDataReceived(host, snapshot, sampleScope, outcome.routeChanged());
                 deliveredSnapshot = true;
                 if (sampleScope.targetSampled()) {
                     pollEffects.recordPollResult(

@@ -272,4 +272,69 @@ class SessionStoreTest {
         assertEquals("10.0.0.1", backend.pingSamples().get(0).hopIp());
         store.close();
     }
+
+    @Test
+    void discoveryGrowthDoesNotConfirmRouteChange() {
+        io.pingui.persistence.timeseries.MemoryTimeSeriesBackend backend =
+                new io.pingui.persistence.timeseries.MemoryTimeSeriesBackend();
+        SessionStore store = new SessionStore(List.of("8.8.8.8"));
+        store.setTimeSeriesBackend(backend);
+        store.setEnabled("8.8.8.8", true);
+        RouteSnapshot hop1 = new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 4.0, false)));
+        RouteSnapshot hop2 = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 4.0, false), new HopNode(2, "10.0.0.2", 6.0, false)));
+        store.applyPollSnapshot("8.8.8.8", hop1, PollSampleScope.mtr(1, false), false);
+        store.applyPollSnapshot("8.8.8.8", hop2, PollSampleScope.mtr(2, false), false);
+        assertTrue(store.get("8.8.8.8").getPreviousRoute().isEmpty());
+        assertEquals(2, backend.routeEvents().size());
+        assertFalse(backend.routeEvents().get(0).routeChanged());
+        assertFalse(backend.routeEvents().get(1).routeChanged());
+        assertNull(store.targetStats("8.8.8.8"));
+    }
+
+    @Test
+    void intermediateTimeoutDoesNotConfirmRouteChange() {
+        SessionStore store = new SessionStore(List.of("8.8.8.8"));
+        store.setEnabled("8.8.8.8", true);
+        RouteSnapshot complete = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(
+                        new HopNode(1, "10.0.0.1", 4.0, false),
+                        new HopNode(2, "10.0.0.2", 6.0, false),
+                        new HopNode(3, "8.8.8.8", 8.0, false)));
+        store.applyPollSnapshot("8.8.8.8", complete, PollSampleScope.mtr(3, true), false);
+        assertNotNull(store.targetStats("8.8.8.8"));
+        assertEquals(8.0, store.targetStats("8.8.8.8").avgMs());
+
+        RouteSnapshot midTimeout = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(
+                        new HopNode(1, "10.0.0.1", 4.0, false),
+                        Models.timeout(2),
+                        new HopNode(3, "8.8.8.8", 8.0, false)));
+        store.applyPollSnapshot("8.8.8.8", midTimeout, PollSampleScope.mtr(2, false), false);
+        assertTrue(store.get("8.8.8.8").getPreviousRoute().isEmpty());
+        assertEquals(3, store.get("8.8.8.8").getLastTargetHop());
+        assertNotNull(store.targetStats("8.8.8.8"));
+    }
+
+    @Test
+    void confirmedRouteChangeUpdatesPreviousRoute() {
+        SessionStore store = new SessionStore(List.of("8.8.8.8"));
+        RouteSnapshot first = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 4.0, false), new HopNode(2, "8.8.8.8", 8.0, false)));
+        RouteSnapshot second = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "9.9.9.9", 4.0, false), new HopNode(2, "8.8.8.8", 8.0, false)));
+        store.applyPollSnapshot("8.8.8.8", first, PollSampleScope.mtr(2, true), false);
+        store.applyPollSnapshot("8.8.8.8", second, PollSampleScope.mtr(1, false), true);
+        assertEquals("10.0.0.1", store.get("8.8.8.8").getPreviousRoute().get(0).ip());
+    }
 }
