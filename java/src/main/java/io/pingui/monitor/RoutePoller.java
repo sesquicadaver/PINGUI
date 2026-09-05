@@ -111,6 +111,13 @@ public final class RoutePoller {
         }
     }
 
+    /** Clears MTR state on host rename (P32-002); new name rediscovers from scratch. */
+    public void renameMtrHost(String oldHost, String newHost) {
+        if (mtrProbe != null) {
+            mtrProbe.renameHost(oldHost, newHost);
+        }
+    }
+
     public HostPollOutcome pollHostRoute(String host, List<String> previousIps, int maxHops, double timeoutSeconds) {
         try {
             RouteSnapshot snapshot = probe.trace(host, maxHops, timeoutSeconds);

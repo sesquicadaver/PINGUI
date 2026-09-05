@@ -14,6 +14,7 @@
 
 ### Changed
 
+- **P32-002 — MTR concurrency / lifecycle:** `ConcurrentHashMap` + generation token у `MtrProbe`; clear на remove/rename; NEXT→**P32-003**.
 - **P32-001 — MTR freshness / topology:** лише `freshHopSample` оновлює hop/telemetry; endpoint/`poll_result` лише при target sampled; discovery/timeout ≠ route change; NEXT→**P32-002**.
 - **P31-007 — accessibility pass:** іконки станів + text tooltips/a11y names; contrast severity; focus ring; NEXT→**DONE** (фаза 31).
 - **P31-006 — app status area:** durable Monitoring summary + transient ops line + progress/cancel; feedback no longer wipes monitoring; NEXT→**P31-007**.

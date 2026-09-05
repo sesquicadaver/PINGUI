@@ -3,6 +3,7 @@ package io.pingui.probe;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.probe.icmp.ProbeResult;
@@ -10,6 +11,9 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -122,7 +126,40 @@ class MtrProbeTest {
         assertNotNull(mtrProbe.stateFor("8.8.8.8"));
 
         mtrProbe.resetHost("8.8.8.8");
-        assertEquals(null, mtrProbe.stateFor("8.8.8.8"));
+        assertNull(mtrProbe.stateFor("8.8.8.8"));
+    }
+
+    @Test
+    void renameHostClearsOldAndNewKeys() {
+        prober.enqueue(new ProbeResult("10.0.0.1", 4.0, false));
+        mtrProbe.poll("old.example", 20, 0.5);
+        assertNotNull(mtrProbe.stateFor("old.example"));
+
+        mtrProbe.renameHost("old.example", "new.example");
+        assertNull(mtrProbe.stateFor("old.example"));
+        assertNull(mtrProbe.stateFor("new.example"));
+    }
+
+    @Test
+    void resetDuringInFlightPollDoesNotResurrectState() throws Exception {
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        BlockingMtrHopProber blocking = new BlockingMtrHopProber("8.8.8.8", entered, release);
+        MtrProbe concurrent = new MtrProbe(blocking);
+
+        AtomicReference<MtrPollOutcome> outcome = new AtomicReference<>();
+        Thread poller = new Thread(() -> outcome.set(concurrent.poll("8.8.8.8", 20, 0.5)), "mtr-poll");
+        poller.start();
+        assertTrue(entered.await(3, TimeUnit.SECONDS));
+
+        concurrent.resetHost("8.8.8.8");
+        assertNull(concurrent.stateFor("8.8.8.8"));
+
+        release.countDown();
+        poller.join(3_000);
+        assertFalse(poller.isAlive());
+        assertNotNull(outcome.get());
+        assertNull(concurrent.stateFor("8.8.8.8"));
     }
 
     @Test
@@ -162,6 +199,37 @@ class MtrProbeTest {
                 throw new IllegalStateException("No scripted probe for hop " + hop);
             }
             return script.removeFirst();
+        }
+    }
+
+    private static final class BlockingMtrHopProber implements MtrHopProber {
+        private final String targetIp;
+        private final CountDownLatch entered;
+        private final CountDownLatch release;
+
+        BlockingMtrHopProber(String targetIp, CountDownLatch entered, CountDownLatch release) {
+            this.targetIp = targetIp;
+            this.entered = entered;
+            this.release = release;
+        }
+
+        @Override
+        public String resolveTargetIp(String targetHost) {
+            return targetIp;
+        }
+
+        @Override
+        public Optional<ProbeResult> probeHop(String targetHost, String targetIp, int hop, double timeoutSeconds) {
+            entered.countDown();
+            try {
+                if (!release.await(5, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("probe not released");
+                }
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("probe interrupted", ex);
+            }
+            return Optional.of(new ProbeResult("10.0.0.1", 4.0, false));
         }
     }
 }

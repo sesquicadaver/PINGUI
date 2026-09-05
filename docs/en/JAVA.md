@@ -224,4 +224,4 @@ Tests and CI — on **`main`** and **`beta`** (ROADMAP development on `beta`).
 
 ## Future
 
-The linear ROADMAP queue: **NEXT = P32-002** (phase 32 — Stabilization). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT; [pingui-stabilization.md](pingui-stabilization.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
+The linear ROADMAP queue: **NEXT = P32-003** (phase 32 — Stabilization). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT; [pingui-stabilization.md](pingui-stabilization.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).

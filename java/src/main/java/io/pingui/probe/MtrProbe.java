@@ -6,21 +6,20 @@ import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.probe.icmp.ProbeResult;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * MTR-style per-hop poll state machine (P13-010 / P32-001).
+ * MTR-style per-hop poll state machine (P13-010 / P32-001 / P32-002).
  *
- * <p>One hop per {@link #poll} call: DISCOVERING builds the route incrementally; MONITORING
- * round-robins RTT refresh on known hops. Consumers must treat only {@link
- * MtrPollOutcome#freshHopSample()} as a new measurement.
+ * <p>One hop per {@link #poll} call. Per-host state lives in a {@link ConcurrentHashMap}; a
+ * generation token drops in-flight writes after {@link #resetHost(String)} / rename so a finished
+ * poll cannot resurrect cleared state.
  */
 public final class MtrProbe {
     private final MtrHopProber hopProber;
-    private final Map<String, MtrProbeState> states = new HashMap<>();
+    private final ConcurrentHashMap<String, HostSlot> states = new ConcurrentHashMap<>();
 
     public MtrProbe(MtrHopProber hopProber) {
         this.hopProber = hopProber;
@@ -29,9 +28,22 @@ public final class MtrProbe {
     /** Probes one hop for {@code host}. */
     public MtrPollOutcome poll(String host, int maxHops, double timeoutSeconds) {
         try {
-            MtrProbeState state = states.computeIfAbsent(host, h -> MtrProbeState.initial(h, maxHops));
-            StepResult step = advance(state, maxHops, timeoutSeconds);
-            states.put(host, step.state());
+            HostSlot slot = states.computeIfAbsent(host, ignored -> new HostSlot());
+            long generation;
+            MtrProbeState start;
+            synchronized (slot) {
+                generation = slot.generation;
+                if (slot.state == null) {
+                    slot.state = MtrProbeState.initial(host, maxHops);
+                }
+                start = slot.state;
+            }
+            StepResult step = advance(start, maxHops, timeoutSeconds);
+            synchronized (slot) {
+                if (slot.generation == generation) {
+                    slot.state = step.state();
+                }
+            }
             return step.outcome();
         } catch (IOException ex) {
             return MtrPollOutcome.failure(ex.getMessage());
@@ -40,12 +52,49 @@ public final class MtrProbe {
         }
     }
 
+    /** Drops state and bumps generation so an in-flight poll cannot write back (P32-002). */
     public void resetHost(String host) {
-        states.remove(host);
+        if (host == null || host.isBlank()) {
+            return;
+        }
+        HostSlot removed = states.remove(host);
+        if (removed != null) {
+            synchronized (removed) {
+                removed.generation++;
+                removed.state = null;
+            }
+        }
+    }
+
+    /**
+     * Clears MTR state for a renamed host. The new name starts discovery from scratch (P32-002).
+     */
+    public void renameHost(String oldHost, String newHost) {
+        resetHost(oldHost);
+        if (newHost != null && !newHost.isBlank() && !newHost.equals(oldHost)) {
+            resetHost(newHost);
+        }
     }
 
     MtrProbeState stateFor(String host) {
-        return states.get(host);
+        HostSlot slot = states.get(host);
+        if (slot == null) {
+            return null;
+        }
+        synchronized (slot) {
+            return slot.state;
+        }
+    }
+
+    /** Test hook: generation for {@code host}, or empty when absent. */
+    Optional<Long> generationFor(String host) {
+        HostSlot slot = states.get(host);
+        if (slot == null) {
+            return Optional.empty();
+        }
+        synchronized (slot) {
+            return Optional.of(slot.generation);
+        }
     }
 
     private StepResult advance(MtrProbeState state, int maxHops, double timeoutSeconds) throws IOException {
@@ -108,7 +157,6 @@ public final class MtrProbe {
             MtrProbeState next = state.withNodes(route).withCursor(nextHop);
             return toStepResult(next, hop, fresh, false, targetOutcome);
         }
-        // Max hops without seeing target: enter MONITORING on incomplete path; no complete baseline.
         List<HopNode> trimmed = trimTrailingEmpty(nodes);
         MtrProbeState next = state.withNodes(trimmed)
                 .withPhase(MtrProbeState.Phase.MONITORING)
@@ -129,7 +177,6 @@ public final class MtrProbe {
         if (probe.isEmpty()) {
             HopNode fresh = Models.timeout(hop);
             nodes.set(hop - 1, fresh);
-            // Timeout is not a topology change — keep lastCompleteRouteIps unchanged.
             MtrProbeState next = state.withNodes(nodes).withCursor(nextMonitoringCursor(state, hop));
             MtrTargetOutcome outcome = probingTarget ? MtrTargetOutcome.UNREACHABLE : MtrTargetOutcome.NOT_SAMPLED;
             return toStepResult(next, hop, fresh, probingTarget, outcome);
@@ -143,7 +190,6 @@ public final class MtrProbe {
             MtrProbeState next = state.withNodes(truncated)
                     .withPhase(MtrProbeState.Phase.DISCOVERING)
                     .withCursor(hop + 1);
-            // Topology broke relative to last complete route; discovery resumes.
             return toStepResult(
                     next, hop, fresh, isTarget, isTarget ? MtrTargetOutcome.REACHABLE : MtrTargetOutcome.NOT_SAMPLED);
         }
@@ -163,7 +209,6 @@ public final class MtrProbe {
 
     private static boolean isTargetHop(MtrProbeState state, HopNode hop) {
         if (hop == null || !hop.isReachable() || hop.ip() == null) {
-            // Last hop slot may be the destination even when previously timed out.
             return false;
         }
         return hop.ip().equals(state.targetIp());
@@ -214,4 +259,10 @@ public final class MtrProbe {
     }
 
     private record StepResult(MtrProbeState state, MtrPollOutcome outcome) {}
+
+    /** Per-host mutable slot: generation invalidates in-flight commits after reset. */
+    private static final class HostSlot {
+        private long generation;
+        private MtrProbeState state;
+    }
 }
