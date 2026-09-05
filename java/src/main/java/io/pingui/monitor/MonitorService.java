@@ -304,6 +304,23 @@ public final class MonitorService implements AutoCloseable {
         return registry.enabledHosts();
     }
 
+    /** True while the poll scheduler has not been closed. */
+    public boolean isRunning() {
+        return running.get();
+    }
+
+    /** Latest poll timestamp across all hosts, if any. */
+    public Optional<Instant> latestPollAt() {
+        Instant best = null;
+        for (String host : registry.hosts()) {
+            Instant at = registry.lastPollAt(host);
+            if (at != null && (best == null || at.isAfter(best))) {
+                best = at;
+            }
+        }
+        return Optional.ofNullable(best);
+    }
+
     public boolean canAddHost() {
         return registry.canAdd();
     }

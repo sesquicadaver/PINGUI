@@ -10,50 +10,51 @@ import org.junit.jupiter.api.Test;
 
 class UiFeedbackRouterTest {
     @Test
-    void simpleInfoUpdatesStatusOnly() {
+    void simpleInfoUpdatesOpsOnly() {
         Recording rec = new Recording(false);
         rec.router.info("ok");
-        assertEquals(List.of("ok"), rec.status);
+        assertEquals(List.of("ok"), rec.ops);
         assertTrue(rec.log.isEmpty());
         assertTrue(rec.alerts.isEmpty());
     }
 
     @Test
-    void extendedInfoUpdatesLogOnly() {
+    void extendedInfoUpdatesLogAndOps() {
         Recording rec = new Recording(true);
         rec.router.info("ok");
         assertEquals(List.of("ok"), rec.log);
-        assertTrue(rec.status.isEmpty());
+        assertEquals(List.of("ok"), rec.ops);
         assertTrue(rec.alerts.isEmpty());
     }
 
     @Test
-    void simpleErrorUpdatesStatusAndAlert() {
+    void simpleErrorUpdatesOpsAndAlert() {
         Recording rec = new Recording(false);
         rec.router.error("fail");
-        assertEquals(List.of("fail"), rec.status);
+        assertEquals(List.of("fail"), rec.errors);
         assertEquals(List.of("fail"), rec.alerts);
         assertTrue(rec.log.isEmpty());
     }
 
     @Test
-    void extendedErrorUpdatesLogWithoutAlert() {
+    void extendedErrorUpdatesLogAndOpsWithoutAlert() {
         Recording rec = new Recording(true);
         rec.router.error("fail");
         assertEquals(List.of("fail"), rec.log);
-        assertTrue(rec.status.isEmpty());
+        assertEquals(List.of("fail"), rec.errors);
         assertTrue(rec.alerts.isEmpty());
     }
 
     private static final class Recording {
-        final List<String> status = new ArrayList<>();
+        final List<String> ops = new ArrayList<>();
+        final List<String> errors = new ArrayList<>();
         final List<String> log = new ArrayList<>();
         final List<String> alerts = new ArrayList<>();
         final UiFeedbackRouter router;
 
         Recording(boolean extended) {
             AtomicBoolean mode = new AtomicBoolean(extended);
-            this.router = new UiFeedbackRouter(mode::get, status::add, log::add, alerts::add);
+            this.router = new UiFeedbackRouter(mode::get, ops::add, errors::add, log::add, alerts::add);
         }
     }
 }

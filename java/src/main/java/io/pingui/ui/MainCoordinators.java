@@ -22,6 +22,7 @@ import javafx.stage.Window;
 final class MainCoordinators {
     final ViewModeController viewMode;
     final UserFeedback userFeedback;
+    final AppStatusPresenter appStatus;
     final StageGeometryCoordinator stageGeometry;
     final PersistenceSessionCoordinator persistenceSession;
     final ProfileUiCoordinator profileUi;
@@ -36,6 +37,7 @@ final class MainCoordinators {
     private MainCoordinators(
             ViewModeController viewMode,
             UserFeedback userFeedback,
+            AppStatusPresenter appStatus,
             StageGeometryCoordinator stageGeometry,
             PersistenceSessionCoordinator persistenceSession,
             ProfileUiCoordinator profileUi,
@@ -48,6 +50,7 @@ final class MainCoordinators {
             SettingsDialogsCoordinator settingsDialogs) {
         this.viewMode = viewMode;
         this.userFeedback = userFeedback;
+        this.appStatus = appStatus;
         this.stageGeometry = stageGeometry;
         this.persistenceSession = persistenceSession;
         this.profileUi = profileUi;
@@ -61,6 +64,7 @@ final class MainCoordinators {
     }
 
     static MainCoordinators wire(Wiring wiring) {
+        AppStatusPresenter appStatus = new AppStatusPresenter(wiring.mainView.statusPanel(), wiring.monitor);
         ViewModeController viewMode = new ViewModeController(
                 wiring.mainView.graphPanel(),
                 wiring.mainView.leftPanel(),
@@ -73,7 +77,8 @@ final class MainCoordinators {
                 wiring.easterEggActive);
         UserFeedback userFeedback = new UiFeedbackRouter(
                 () -> viewMode.isExtended(),
-                wiring.mainView.statusLabel()::setText,
+                appStatus::showTransient,
+                appStatus::showError,
                 message -> wiring.mainView
                         .logArea()
                         .appendText("[" + wiring.timeFmt.format(java.time.Instant.now()) + "] " + message + "\n"),
@@ -162,6 +167,7 @@ final class MainCoordinators {
                 routeGraph,
                 routeHistory,
                 userFeedback,
+                appStatus,
                 wiring.redrawRouteGraph);
         SettingsDialogsCoordinator settingsDialogs = new SettingsDialogsCoordinator(
                 wiring.store,
@@ -170,6 +176,7 @@ final class MainCoordinators {
                 wiring.options,
                 wiring.dialogOwner,
                 userFeedback,
+                appStatus,
                 wiring.markDirty,
                 wiring.recreateMonitorForProfileParams,
                 wiring.attachTelemetry,
@@ -181,9 +188,7 @@ final class MainCoordinators {
                 persistenceSession::resolveSessionDbPath,
                 persistenceSession::sessionPersistenceOverride,
                 persistenceSession::setSessionGuiDbOverride,
-                persistenceSession::setSessionPersistenceOverride,
-                () -> viewMode,
-                wiring.mainView);
+                persistenceSession::setSessionPersistenceOverride);
         HistoryPanelWiring.wire(
                 wiring.hostItems,
                 wiring.mainView,
@@ -193,9 +198,11 @@ final class MainCoordinators {
                 wiring.syncHistoryHostFilter,
                 wiring.redrawRouteGraph);
         wiring.syncHistoryHostFilter.run();
+        appStatus.start();
         return new MainCoordinators(
                 viewMode,
                 userFeedback,
+                appStatus,
                 stageGeometry,
                 persistenceSession,
                 profileUi,

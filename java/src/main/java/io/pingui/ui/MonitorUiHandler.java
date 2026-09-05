@@ -1,20 +1,13 @@
 package io.pingui.ui;
 
-import io.pingui.i18n.UiI18n;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.ui.view.MainView;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
-import javafx.scene.control.Label;
 
 /** Live monitor callbacks: status tick, route graph redraw, history on route change. */
 final class MonitorUiHandler {
-    private static final DateTimeFormatter TIME_FMT =
-            DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
-
     private final Supplier<io.pingui.monitor.SessionStore> store;
     private final HostListPresenter hostListPresenter;
     private final HostInspectorPresenter hostInspectorPresenter;
@@ -24,6 +17,7 @@ final class MonitorUiHandler {
     private final RouteGraphPresenter routeGraphPresenter;
     private final RouteHistoryPresenter routeHistoryPresenter;
     private final UserFeedback userFeedback;
+    private final AppStatusPresenter appStatus;
     private final Runnable redrawRouteGraph;
 
     MonitorUiHandler(
@@ -36,6 +30,7 @@ final class MonitorUiHandler {
             RouteGraphPresenter routeGraphPresenter,
             RouteHistoryPresenter routeHistoryPresenter,
             UserFeedback userFeedback,
+            AppStatusPresenter appStatus,
             Runnable redrawRouteGraph) {
         this.store = store;
         this.hostListPresenter = hostListPresenter;
@@ -46,6 +41,7 @@ final class MonitorUiHandler {
         this.routeGraphPresenter = routeGraphPresenter;
         this.routeHistoryPresenter = routeHistoryPresenter;
         this.userFeedback = userFeedback;
+        this.appStatus = appStatus;
         this.redrawRouteGraph = redrawRouteGraph;
     }
 
@@ -63,12 +59,15 @@ final class MonitorUiHandler {
             hostListPresenter.syncProblem(item);
             hostInspectorPresenter.refreshIfHost(host);
         }
+        if (snapshot != null) {
+            appStatus.notePollCycle(snapshot.timestamp());
+        } else {
+            appStatus.refreshMonitoring();
+        }
         ViewModeController mode = viewModeController.get();
         if (mode.isExtended() && !easterEggActive.getAsBoolean()) {
             String activeHost = viewHost();
             if (activeHost != null && host.equals(activeHost)) {
-                Label status = mainView.statusLabel();
-                status.setText(UiI18n.get("status.last_update", host, TIME_FMT.format(snapshot.timestamp())));
                 redrawRouteGraph.run();
             }
         }
@@ -88,7 +87,8 @@ final class MonitorUiHandler {
         if (mode.isExtended() && !easterEggActive.getAsBoolean()) {
             if (!oldIps.isEmpty()) {
                 String oldStr = String.join(" -> ", oldIps);
-                userFeedback.info(UiI18n.get("status.route_change", host, oldStr, String.join(" -> ", newIps)));
+                userFeedback.info(
+                        io.pingui.i18n.UiI18n.get("status.route_change", host, oldStr, String.join(" -> ", newIps)));
             }
             routeHistoryPresenter.onRouteChanged(host);
             String activeHost = viewHost();
