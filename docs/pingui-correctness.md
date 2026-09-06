@@ -99,3 +99,13 @@ P32 закрито якісно (fresh-hop, `target_sampled`, rollup v14, bounde
 * `PollResultEffects.setAlertDispatcher` закриває previous; `MonitorService.close` → noop (закриває pipeline).
 
 **Тести:** saturation reject; close reject; replace closes previous; `AlertDispatchersTest.closeClosesOwnedWebhookPipeline`.
+
+## P33-007 (зроблено) — DB migrate + chunked retention
+
+**Проблема:** v12 `.db` відхилялись; retention тримав усі old polls в одній транзакції → довгий lock / памʼять на великих історіях.
+
+**Виправлення:**
+
+* `SchemaManager.MIN_MIGRATE_FROM = 12`; `migrateV12ToV13` (probe_outcome/target_sampled backfill) → `migrateV13ToV14`;
+* `PollResultRetentionJob` — chunked transactions (`DEFAULT_CHUNK_SIZE=500`); delete by ids/keys;
+* тести: `migratesV12PollResultAndRollupToV14`, `processesLargeHistoryInChunks`.

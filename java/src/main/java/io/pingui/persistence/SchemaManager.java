@@ -10,16 +10,16 @@ import java.sql.Statement;
  * Manages DDL setup and schema migration for the session SQLite database.
  *
  * <p>Handles {@code CREATE TABLE IF NOT EXISTS}, version seeding, read-only version assertion,
- * and the in-place v13 → v14 migration. Package-private — all external access goes through
- * {@link SessionDatabase}.
+ * and in-place migrations {@code v12 → v13 → v14} (P32-004 / P33-007). Package-private — all
+ * external access goes through {@link SessionDatabase}.
  */
 final class SchemaManager {
 
     /** Current Java session DB schema (v14 = accurate metric_rollup + atomic retention, P32-004). */
     static final int SCHEMA_VERSION = 14;
 
-    /** Minimum version that can be migrated forward (v13 has probe_outcome). */
-    static final int MIN_MIGRATE_FROM = 13;
+    /** Minimum version that can be migrated forward (v12 has metric_rollup + poll_result). */
+    static final int MIN_MIGRATE_FROM = 12;
 
     private final DbCommit commit;
     private final Path path;
@@ -81,10 +81,6 @@ final class SchemaManager {
                     + MIN_MIGRATE_FROM
                     + " first.");
         }
-        if (existingVersion != null && existingVersion == 13) {
-            migrateV13ToV14();
-            existingVersion = SCHEMA_VERSION;
-        }
         try (Statement statement = commit.connection.createStatement()) {
             statement.execute(
                     """
@@ -123,6 +119,23 @@ final class SchemaManager {
             createPollResultTable(statement);
             createMetricRollupTable(statement);
             createTelemetryTables(statement);
+        }
+        // Migrate after CREATE IF NOT EXISTS so additive ALTERs apply to existing v12/v13 tables
+        // without rewriting fresh v14 DDL (P33-007).
+        if (existingVersion != null && existingVersion == 12) {
+            migrateV12ToV13();
+            existingVersion = 13;
+        }
+        if (existingVersion != null && existingVersion == 13) {
+            migrateV13ToV14();
+            existingVersion = SCHEMA_VERSION;
+        }
+        try (Statement statement = commit.connection.createStatement()) {
+            statement.execute(
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_poll_outcome_time
+                        ON poll_result(probe_outcome, observed_at DESC)
+                    """);
         }
         if (existingVersion == null) {
             seedSchemaVersion();
@@ -274,11 +287,7 @@ final class SchemaManager {
                 CREATE INDEX IF NOT EXISTS idx_poll_reachable_time
                     ON poll_result(reachable, observed_at DESC)
                 """);
-        statement.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_poll_outcome_time
-                    ON poll_result(probe_outcome, observed_at DESC)
-                """);
+        // idx_poll_outcome_time is created after v12→v13 migrate (column may be absent on v12).
     }
 
     private static void createMetricRollupTable(Statement statement) throws SQLException {
@@ -375,6 +384,52 @@ final class SchemaManager {
                 }
             }
         }
+    }
+
+    /**
+     * In-place v12 → v13: add {@code poll_result.probe_outcome} / {@code target_sampled} and
+     * backfill from legacy reachability (P33-007).
+     */
+    private void migrateV12ToV13() throws SQLException {
+        try (Statement statement = commit.connection.createStatement()) {
+            boolean hasProbeOutcome = false;
+            boolean hasTargetSampled = false;
+            try (ResultSet rs = statement.executeQuery("PRAGMA table_info(poll_result)")) {
+                while (rs.next()) {
+                    String name = rs.getString("name");
+                    if ("probe_outcome".equalsIgnoreCase(name)) {
+                        hasProbeOutcome = true;
+                    } else if ("target_sampled".equalsIgnoreCase(name)) {
+                        hasTargetSampled = true;
+                    }
+                }
+            }
+            if (!hasProbeOutcome) {
+                statement.execute("ALTER TABLE poll_result ADD COLUMN probe_outcome TEXT");
+            }
+            if (!hasTargetSampled) {
+                statement.execute("ALTER TABLE poll_result ADD COLUMN target_sampled INTEGER");
+            }
+            // v12 treated finished polls as sampled; map reachable/error_code onto ProbeOutcome wire.
+            statement.execute(
+                    """
+                    UPDATE poll_result SET
+                        probe_outcome = CASE
+                            WHEN reachable = 1 THEN 'SUCCESS'
+                            WHEN error_code IS NOT NULL AND error_code != '' THEN 'NETWORK_ERROR'
+                            ELSE 'TIMEOUT'
+                        END,
+                        target_sampled = 1
+                    WHERE probe_outcome IS NULL OR target_sampled IS NULL
+                    """);
+            statement.execute(
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_poll_outcome_time
+                        ON poll_result(probe_outcome, observed_at DESC)
+                    """);
+        }
+        updateSchemaVersion(13);
+        commit.connection.commit();
     }
 
     /**
