@@ -15,6 +15,7 @@
 
 ### Changed
 
+- **P33-008 — docs / branch sync + phase close:** фази/NEXT/`main`≡`beta` узгоджені; архівні notes P32+P33; ROADMAP **NEXT=DONE** (фаза 33 closed).
 - **P33-007 — DB migrate + chunked retention:** in-place **v12→v13→v14**; `PollResultRetentionJob` порціями (default 500); NEXT→**P33-008**.
 - **P33-006 — webhook lifecycle:** bounded `ArrayBlockingQueue` + AbortPolicy + `rejectedCount`; `AlertDispatcher` closeable; close on replace/`MonitorService.close`; NEXT→**P33-007**.
 - **P33-005 — latency baseline reset:** EWMA скидання на confirmed route change і `setHostProbeMode`; перший RTT на новому шляху — warm-up без false `latency_high`; NEXT→**P33-006**.

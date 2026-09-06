@@ -2,7 +2,7 @@
 
 # Stabilization — MTR / history / side-effects (P32)
 
-> **Archival:** phase 32 closed. Current phase 33 — [pingui-correctness.md](pingui-correctness.md).
+> **Archival:** phase 32 closed. Phase 33 (correctness) is also **closed** — [pingui-correctness.md](pingui-correctness.md); ROADMAP **NEXT=DONE**.
 
 **Historical source for phase 32.** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
 

@@ -2,6 +2,8 @@
 
 # Correctness — MTR / projection / side-effects (P33)
 
+> **Archival:** phase 33 **closed** (P33-001…008). Linear queue — **NEXT=DONE**. Stabilization audit: [pingui-stabilization.md](pingui-stabilization.md).
+
 **Source for phase 33.** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
 
 Audit of `main` @ `28bdb41` (after P32 close). Correctness phase — **not** feature expansion.
@@ -109,3 +111,15 @@ P32 landed well (fresh-hop, `target_sampled`, rollup v14, bounded DNS/webhook te
 * `SchemaManager.MIN_MIGRATE_FROM = 12`; `migrateV12ToV13` (probe_outcome/target_sampled backfill) → `migrateV13ToV14`;
 * `PollResultRetentionJob` — chunked transactions (`DEFAULT_CHUNK_SIZE=500`); delete by ids/keys;
 * Tests: `migratesV12PollResultAndRollupToV14`, `processesLargeHistoryInChunks`.
+
+## P33-008 (done) — Docs / branch sync
+
+**Goal:** align README/ROADMAP/indexes with actual `main`≡`beta`, mark phase 33 **closed**, keep archival links to the P32/P33 audits.
+
+**Done:**
+
+* ROADMAP **NEXT=DONE**; all P33-001…008 `[x]`; phase index ✅ DONE;
+* README no longer references stale P29-001;
+* `pingui-stabilization.md` / `pingui-correctness.md` — archival banners; LIVING_SPEC + JAVA + docs index.
+
+**Branches:** `main` ≡ `beta` after this PR merges.

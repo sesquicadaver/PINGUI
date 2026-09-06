@@ -2,7 +2,7 @@
 
 # Stabilization — MTR / history / side-effects (P32)
 
-> **Архів:** фаза 32 закрита. Актуальна фаза 33 — [pingui-correctness.md](pingui-correctness.md).
+> **Архів:** фаза 32 закрита. Фаза 33 (correctness) також **closed** — [pingui-correctness.md](pingui-correctness.md); ROADMAP **NEXT=DONE**.
 
 **Джерело для фази 32 (історичне).** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
 
