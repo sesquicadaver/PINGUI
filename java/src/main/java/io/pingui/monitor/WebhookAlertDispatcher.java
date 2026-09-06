@@ -6,9 +6,10 @@ import java.time.Duration;
 
 /**
  * Alert channel that POSTs JSON {@link RouteChangeEvent} via {@link WebhookTelemetrySink} (P10-030 /
- * P16-050 / ADR_ALERTS).
+ * P16-050 / ADR_ALERTS / P33-006).
  *
- * <p>HTTP emit lives in the telemetry sink — no second client next to the bus.
+ * <p>HTTP emit lives in the telemetry sink — no second client next to the bus. Closing the
+ * dispatcher shuts down the owned webhook executor.
  */
 public final class WebhookAlertDispatcher implements AlertDispatcher {
     private final WebhookTelemetrySink sink;
@@ -44,5 +45,10 @@ public final class WebhookAlertDispatcher implements AlertDispatcher {
             return;
         }
         sink.postJson(event.toJson(), event.host());
+    }
+
+    @Override
+    public void close() {
+        sink.close();
     }
 }

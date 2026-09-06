@@ -304,6 +304,17 @@ class PollResultEffectsTest {
         registry.close();
     }
 
+    @Test
+    void setAlertDispatcherClosesPreviousWebhookPipeline() {
+        AlertRuleEngine engine = new AlertRuleEngine();
+        PollResultEffects effects = new PollResultEffects(engine);
+        WebhookAlertDispatcher first = new WebhookAlertDispatcher("http://127.0.0.1/hook-a");
+        effects.setAlertDispatcher(first);
+        effects.setAlertDispatcher(AlertDispatcher.noop());
+        first.telemetrySink().postJson("{\"event\":\"route_change\",\"host\":\"x\"}", "x");
+        assertEquals(1, first.telemetrySink().rejectedCount());
+    }
+
     private static boolean await(Check check, long timeoutMs) throws InterruptedException {
         long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMs);
         while (System.nanoTime() < deadline) {

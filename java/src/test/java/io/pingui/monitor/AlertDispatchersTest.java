@@ -54,4 +54,15 @@ class AlertDispatchersTest {
         assertEquals(1, inner.events().size());
         assertTrue(inner.events().get(0).host().equals("8.8.8.8"));
     }
+
+    @Test
+    void closeClosesOwnedWebhookPipeline() {
+        AlertConfig config = new AlertConfig(false, "https://example.com/hook", 5);
+        AlertDispatcher dispatcher = AlertDispatchers.build(config);
+        assertInstanceOf(RateLimitedAlertDispatcher.class, dispatcher);
+        dispatcher.close();
+        // Rebuilding after close must not throw; previous pool is released.
+        AlertDispatcher replacement = AlertDispatchers.build(config);
+        replacement.close();
+    }
 }

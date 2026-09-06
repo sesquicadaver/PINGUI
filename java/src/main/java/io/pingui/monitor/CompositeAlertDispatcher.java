@@ -41,4 +41,15 @@ public final class CompositeAlertDispatcher implements AlertDispatcher {
             }
         }
     }
+
+    @Override
+    public void close() {
+        for (AlertDispatcher dispatcher : dispatchers) {
+            try {
+                dispatcher.close();
+            } catch (RuntimeException ex) {
+                LOG.warn("Alert dispatcher close failed: {}", ex.getMessage());
+            }
+        }
+    }
 }

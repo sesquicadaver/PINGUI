@@ -59,4 +59,12 @@ class WebhookAlertDispatcherTest {
         String redacted = AlertWebhookSupport.redactWebhookUrl("https://user:pass@hooks.example.com/path?token=abc");
         assertEquals("https://hooks.example.com/path", redacted);
     }
+
+    @Test
+    void closeShutsDownOwnedWebhookPool() {
+        WebhookAlertDispatcher dispatcher = new WebhookAlertDispatcher("http://127.0.0.1/hook");
+        dispatcher.close();
+        dispatcher.telemetrySink().postJson("{\"event\":\"route_change\",\"host\":\"x\"}", "x");
+        assertEquals(1, dispatcher.telemetrySink().rejectedCount());
+    }
 }

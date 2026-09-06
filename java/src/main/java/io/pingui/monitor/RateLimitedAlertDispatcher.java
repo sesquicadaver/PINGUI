@@ -41,4 +41,9 @@ public final class RateLimitedAlertDispatcher implements AlertDispatcher {
         }
         inner.dispatchQuality(event);
     }
+
+    @Override
+    public void close() {
+        inner.close();
+    }
 }
