@@ -648,5 +648,7 @@ public final class MonitorService implements AutoCloseable {
         }
         // Bus lifecycle is owned by TelemetryAttachment / caller — drop the pointer only.
         pollEffects.clearTelemetry();
+        // Shut down webhook HTTP pools owned by the alert pipeline (P33-006).
+        pollEffects.setAlertDispatcher(AlertDispatcher.noop());
     }
 }

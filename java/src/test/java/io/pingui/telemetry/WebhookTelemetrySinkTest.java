@@ -12,6 +12,8 @@ import java.net.http.HttpClient;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
@@ -99,9 +101,58 @@ class WebhookTelemetrySinkTest {
             RouteChangeEvent parsed = RouteChangeEvent.fromJson(body.get());
             assertEquals(event.host(), parsed.host());
             assertEquals(event.profile(), parsed.profile());
+            assertEquals(0, sink.rejectedCount());
+            assertEquals(WebhookTelemetrySink.DEFAULT_QUEUE_CAPACITY, sink.queueCapacity());
             sink.close();
         } finally {
             server.stop(0);
         }
+    }
+
+    @Test
+    void rejectsWhenBoundedQueueIsFull() throws Exception {
+        CountDownLatch hold = new CountDownLatch(1);
+        CountDownLatch entered = new CountDownLatch(1);
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/hook", exchange -> {
+            entered.countDown();
+            try {
+                hold.await(10, TimeUnit.SECONDS);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+            }
+            exchange.sendResponseHeaders(204, -1);
+            try (OutputStream out = exchange.getResponseBody()) {
+                // empty
+            }
+        });
+        server.start();
+        try {
+            int port = server.getAddress().getPort();
+            // One worker + one queued slot → third post must AbortPolicy-reject.
+            WebhookTelemetrySink sink = new WebhookTelemetrySink(
+                    "http://127.0.0.1:" + port + "/hook", HttpClient.newHttpClient(), Duration.ofSeconds(10), 1, 1);
+            sink.postJson("{\"event\":\"route_change\",\"host\":\"a\"}", "a");
+            assertTrue(entered.await(5, TimeUnit.SECONDS));
+            sink.postJson("{\"event\":\"route_change\",\"host\":\"b\"}", "b");
+            sink.postJson("{\"event\":\"route_change\",\"host\":\"c\"}", "c");
+            assertTrue(sink.rejectedCount() >= 1, "expected AbortPolicy rejection under full queue");
+            hold.countDown();
+            sink.awaitIdleForTests(Duration.ofSeconds(5));
+            sink.close();
+        } finally {
+            hold.countDown();
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void closeRejectsFurtherPosts() {
+        WebhookTelemetrySink sink = new WebhookTelemetrySink("http://127.0.0.1/hook");
+        sink.close();
+        sink.postJson("{\"event\":\"route_change\",\"host\":\"x\"}", "x");
+        assertEquals(1, sink.rejectedCount());
+        sink.close(); // idempotent
+        assertEquals(1, sink.rejectedCount());
     }
 }

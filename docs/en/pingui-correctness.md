@@ -87,3 +87,15 @@ P32 landed well (fresh-hop, `target_sampled`, rollup v14, bounded DNS/webhook te
 * `setHostProbeMode` clears latency baseline for that host.
 
 **Tests:** `AlertRuleEngineTest.clearLatencyHostDropsBaselineForWarmup`, `PollResultEffectsTest.resetLatencyBaselineWarmsUpWithoutFalseHigh`.
+
+## P33-006 (done) — Webhook lifecycle
+
+**Bug:** the webhook executor used an unbounded queue; replacing or stopping alerts did not close the previous pool → leak and unbounded backlog under burst.
+
+**Fix:**
+
+* `WebhookTelemetrySink` — `ThreadPoolExecutor` + `ArrayBlockingQueue` + AbortPolicy; `rejectedCount()` / `queueCapacity()`;
+* `AlertDispatcher extends AutoCloseable`; `WebhookAlertDispatcher` / composite / rate-limited close the sink;
+* `PollResultEffects.setAlertDispatcher` closes the previous pipeline; `MonitorService.close` → noop (closes pipeline).
+
+**Tests:** saturation reject; close reject; replace closes previous; `AlertDispatchersTest.closeClosesOwnedWebhookPipeline`.

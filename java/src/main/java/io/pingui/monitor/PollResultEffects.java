@@ -41,7 +41,17 @@ final class PollResultEffects {
     }
 
     void setAlertDispatcher(AlertDispatcher alertDispatcher) {
-        this.alertDispatcher = alertDispatcher != null ? alertDispatcher : AlertDispatcher.noop();
+        AlertDispatcher next = alertDispatcher != null ? alertDispatcher : AlertDispatcher.noop();
+        AlertDispatcher previous = this.alertDispatcher;
+        this.alertDispatcher = next;
+        // Close the previous pipeline so webhook pools do not leak on replace/stop (P33-006).
+        if (previous != null && previous != next) {
+            try {
+                previous.close();
+            } catch (RuntimeException ex) {
+                LOG.warn("Previous alert dispatcher close failed: {}", ex.getMessage());
+            }
+        }
     }
 
     void setEndpointDownRule(EndpointDownRuleConfig endpointDownRule) {

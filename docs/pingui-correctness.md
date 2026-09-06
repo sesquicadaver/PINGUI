@@ -87,3 +87,15 @@ P32 закрито якісно (fresh-hop, `target_sampled`, rollup v14, bounde
 * `setHostProbeMode` — `clearLatencyHost` для цього хоста.
 
 **Тести:** `AlertRuleEngineTest.clearLatencyHostDropsBaselineForWarmup`, `PollResultEffectsTest.resetLatencyBaselineWarmsUpWithoutFalseHigh`.
+
+## P33-006 (зроблено) — Webhook lifecycle
+
+**Проблема:** webhook executor мав unbounded queue; при `applyAlertDispatcher` / stop попередній pool не закривався → leak і неконтрольований backlog під burst.
+
+**Виправлення:**
+
+* `WebhookTelemetrySink` — `ThreadPoolExecutor` + `ArrayBlockingQueue` + AbortPolicy; `rejectedCount()` / `queueCapacity()`;
+* `AlertDispatcher extends AutoCloseable`; `WebhookAlertDispatcher` / composite / rate-limited закривають sink;
+* `PollResultEffects.setAlertDispatcher` закриває previous; `MonitorService.close` → noop (закриває pipeline).
+
+**Тести:** saturation reject; close reject; replace closes previous; `AlertDispatchersTest.closeClosesOwnedWebhookPipeline`.
