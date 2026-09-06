@@ -118,7 +118,7 @@ Module → unit test matrix. Update when adding features.
 | SQLite schema evolution (P30) | schema v8–v12 complete | P30-006 [x]; NEXT→**P31-001** |
 | GUI information hierarchy (P31) | a11y [x] | [pingui-evo-gui.md](pingui-evo-gui.md); P31-007 [x]; phase closed |
 | Stabilization MTR/history (P32) | phase closed [x] | [pingui-stabilization.md](pingui-stabilization.md) — archival; P32-008 [x] |
-| Correctness MTR/projection (P33) | P33-001…006 [x]; NEXT=P33-007 | [pingui-correctness.md](pingui-correctness.md); webhook bounded queue + closeable dispatcher |
+| Correctness MTR/projection (P33) | P33-001…007 [x]; NEXT=P33-008 | [pingui-correctness.md](pingui-correctness.md); v12→v14 migrate + chunked retention |
 | Runtime hardening follow-up (P28) | SinkRegistry hang [x]; inFlight before pool [x]; Python schema `!=` gate [x] | phase 28 closed |
 | Diagnostic evolution (P29) | multi-host correlation [x]; incident timeline [x]; alert silence [x]; DNS control [x]; TCP connect [x] | NEXT=`DONE`; Java-first |
 | TCP connect (P29-005) | `TcpEndpoint`, `TcpConnectProbe`, `HostProbeMode.TCP_CONNECT`, `RoutePoller.pollHostTcpConnect` | `TcpEndpointTest`, `TcpConnectProbeTest`, `RoutePollerTcpConnectTest`, `ProfilesConfigTest.loadTcpConnect*` |
@@ -136,7 +136,7 @@ Module → unit test matrix. Update when adding features.
 | Python persistence events (PY-P11) | `persistence/policy.py`, `persistence/events.py`, `session_db.py`, `__main__.py` | `test_persistence_events.py` |
 | Route-change alerts | `RouteChangeEvent`, `AlertDispatcher`, `AlertDispatchers`, `WebhookAlertDispatcher`, `DesktopAlertDispatcher`, `DesktopAlertSink`, `JavaFxDesktopAlertSink` (one popup per host), `AlertRateLimiter`, `RouteChangeNotifier` | `RouteChangeEventTest`, `MonitorServiceTest.dispatchesAlertOnRouteChange`, `WebhookAlertDispatcherTest`, `DesktopAlertDispatcherTest`, `JavaFxDesktopAlertSinkTest`, `AlertRateLimiterTest`, `AlertDispatchersTest`, `ProfilesConfigTest.loadAlertsSection` |
 | Session metrics (P33-002/003) | `SessionStore` + `SessionPersistenceWriter`, `HostTargetStats`, `HostNetworkStateClassifier` | `SessionStoreTest`, `SessionPersistenceWriterTest`, `HostNetworkStateClassifierTest`, `HopStatsTest` |
-| SQLite session (P11… / P32-004) | `SessionDatabase` v14 (additive `metric_rollup`; migrate 13→14); `readOnly()` + `integrityCheck()` | `SessionDatabaseMetricRollupTest`, `PollResultRetentionJobTest` |
+| SQLite session (P11… / P32-004 / P33-007) | `SessionDatabase` v14 (migrate 12→13→14); chunked `PollResultRetentionJob` | `SessionDatabaseMetricRollupTest`, `PollResultRetentionJobTest` |
 | Persistence wire (P11-011) | `SessionStore`, `PersistenceEventWriter`, `MonitorService` | `SessionStorePersistenceTest`, `PersistenceEventWriterTest`, `MonitorServiceTest.persistsRouteChangeAndProbeErrorEvents` |
 | CLI `--session-db` (P11-012) | `PinguiApplication`, `AppOptions`, `MainController` | `PinguiApplicationTest.parseOptions_sessionDbPath` |
 | Persistence policy (P11-013) | `PersistencePolicy`, `PersistencePolicyHolder`, `PersistenceEventWriter`, `MonitorService` | `PersistencePolicyTest`, `PersistencePolicyHolderTest`, `PersistenceEventWriterTest`, `MonitorServiceTest.appliesPersistencePolicyAfterPollCycle` |

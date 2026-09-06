@@ -431,6 +431,17 @@ final class HistoryRepository {
 
     /** All poll_result rows with {@code observed_at} strictly before {@code cutoff} (oldest first). */
     List<PollResultRecord> listPollResultsBefore(Instant cutoff) throws SQLException {
+        return listPollResultsBefore(cutoff, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Oldest {@code poll_result} rows before {@code cutoff}, capped at {@code limit} (P33-007
+     * chunked retention).
+     */
+    List<PollResultRecord> listPollResultsBefore(Instant cutoff, int limit) throws SQLException {
+        if (limit < 1) {
+            throw new IllegalArgumentException("limit must be >= 1");
+        }
         String cutoffIso = DbCommit.ISO_UTC.format(cutoff);
         try (PreparedStatement ps = commit.connection.prepareStatement(
                 """
@@ -441,8 +452,10 @@ final class HistoryRepository {
                 JOIN host_session hs ON hs.id = p.host_id
                 WHERE p.observed_at < ?
                 ORDER BY p.observed_at ASC, p.id ASC
+                LIMIT ?
                 """)) {
             ps.setString(1, cutoffIso);
+            ps.setInt(2, limit);
             return readPollResultRows(ps);
         }
     }
@@ -450,6 +463,25 @@ final class HistoryRepository {
     /** Deletes poll_result rows with {@code observed_at} strictly before {@code cutoff}. */
     int deletePollResultsBefore(Instant cutoff) throws SQLException {
         return deleteBefore("poll_result", cutoff);
+    }
+
+    /** Deletes {@code poll_result} rows by primary key (chunked retention, P33-007). */
+    int deletePollResultsByIds(List<Long> ids) throws SQLException {
+        if (ids == null || ids.isEmpty()) {
+            return 0;
+        }
+        int deleted = 0;
+        try (PreparedStatement ps = commit.connection.prepareStatement("DELETE FROM poll_result WHERE id = ?")) {
+            for (Long id : ids) {
+                if (id == null) {
+                    continue;
+                }
+                ps.setLong(1, id);
+                deleted += ps.executeUpdate();
+            }
+            commit.maybeCommit();
+        }
+        return deleted;
     }
 
     // -------------------------------------------------------------------------
@@ -611,6 +643,18 @@ final class HistoryRepository {
 
     /** Rollups of {@code bucketSizeSeconds} with {@code bucket_start} strictly before {@code cutoff}. */
     List<MetricRollupRecord> listMetricRollupsBefore(int bucketSizeSeconds, Instant cutoff) throws SQLException {
+        return listMetricRollupsBefore(bucketSizeSeconds, cutoff, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Oldest metric_rollup rows before {@code cutoff}, capped at {@code limit} (P33-007 chunked
+     * retention).
+     */
+    List<MetricRollupRecord> listMetricRollupsBefore(int bucketSizeSeconds, Instant cutoff, int limit)
+            throws SQLException {
+        if (limit < 1) {
+            throw new IllegalArgumentException("limit must be >= 1");
+        }
         String cutoffIso = DbCommit.ISO_UTC.format(cutoff);
         try (PreparedStatement ps = commit.connection.prepareStatement(
                 """
@@ -622,9 +666,11 @@ final class HistoryRepository {
                 JOIN host_session hs ON hs.id = m.host_id
                 WHERE m.bucket_size = ? AND m.bucket_start < ?
                 ORDER BY m.bucket_start ASC
+                LIMIT ?
                 """)) {
             ps.setInt(1, bucketSizeSeconds);
             ps.setString(2, cutoffIso);
+            ps.setInt(3, limit);
             return readMetricRollupRows(ps);
         }
     }
@@ -643,6 +689,31 @@ final class HistoryRepository {
             commit.maybeCommit();
             return deleted;
         }
+    }
+
+    /** Deletes specific metric_rollup primary keys (chunked retention, P33-007). */
+    int deleteMetricRollups(List<MetricRollupRecord> rows) throws SQLException {
+        if (rows == null || rows.isEmpty()) {
+            return 0;
+        }
+        int deleted = 0;
+        try (PreparedStatement ps = commit.connection.prepareStatement(
+                """
+                DELETE FROM metric_rollup
+                WHERE host_id = ? AND bucket_start = ? AND bucket_size = ?
+                """)) {
+            for (MetricRollupRecord row : rows) {
+                if (row == null) {
+                    continue;
+                }
+                ps.setLong(1, row.hostId());
+                ps.setString(2, DbCommit.ISO_UTC.format(row.bucketStart()));
+                ps.setInt(3, row.bucketSizeSeconds());
+                deleted += ps.executeUpdate();
+            }
+            commit.maybeCommit();
+        }
+        return deleted;
     }
 
     /** Count of metric_rollup rows (tests / diagnostics). */

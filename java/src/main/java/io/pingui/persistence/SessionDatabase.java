@@ -23,8 +23,8 @@ import java.util.OptionalLong;
  * archive (P16).
  *
  * <p>Schema v14: additive {@code metric_rollup} counters ({@code *_samples}/{@code *_sum});
- * averages on read. Public API remains address-keyed. Opens migrate {@code 13 → 14} in-place;
- * older versions are still rejected.
+ * averages on read. Public API remains address-keyed. Opens migrate {@code 12 → 13 → 14}
+ * in-place (P33-007); versions older than v12 are still rejected.
  *
  * <p>This class is the public facade: it owns the {@link Connection}, manages the transaction
  * boundary via {@link #inTransaction}, and delegates all SQL work to package-private repositories.
@@ -42,7 +42,7 @@ public final class SessionDatabase implements AutoCloseable {
     /** Current Java session DB schema (v14 = accurate metric_rollup + atomic retention, P32-004). */
     public static final int SCHEMA_VERSION = SchemaManager.SCHEMA_VERSION;
 
-    /** Minimum version that can be migrated forward (v13 has probe_outcome). */
+    /** Minimum version that can be migrated forward (v12 → v13 → v14, P33-007). */
     public static final int MIN_MIGRATE_FROM = SchemaManager.MIN_MIGRATE_FROM;
 
     private final Path path;
@@ -565,9 +565,17 @@ public final class SessionDatabase implements AutoCloseable {
 
     /** All poll_result rows with {@code observed_at} strictly before {@code cutoff} (oldest first). */
     public synchronized List<PollResultRecord> listPollResultsBefore(Instant cutoff) {
+        return listPollResultsBefore(cutoff, Integer.MAX_VALUE);
+    }
+
+    /** Oldest poll_result rows before {@code cutoff}, capped at {@code limit} (P33-007). */
+    public synchronized List<PollResultRecord> listPollResultsBefore(Instant cutoff, int limit) {
         Objects.requireNonNull(cutoff, "cutoff");
+        if (limit < 1) {
+            throw new IllegalArgumentException("limit must be >= 1");
+        }
         try {
-            return historyRepo.listPollResultsBefore(cutoff);
+            return historyRepo.listPollResultsBefore(cutoff, limit);
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to list poll_result before " + DbCommit.ISO_UTC.format(cutoff), ex);
         }
@@ -582,6 +590,16 @@ public final class SessionDatabase implements AutoCloseable {
             dbCommit.rollbackQuietly();
             throw new PersistenceException(
                     "Failed to delete poll_result before " + DbCommit.ISO_UTC.format(cutoff), ex);
+        }
+    }
+
+    /** Deletes {@code poll_result} rows by id (chunked retention, P33-007). */
+    public synchronized int deletePollResultsByIds(List<Long> ids) {
+        try {
+            return historyRepo.deletePollResultsByIds(ids);
+        } catch (SQLException ex) {
+            dbCommit.rollbackQuietly();
+            throw new PersistenceException("Failed to delete poll_result by ids", ex);
         }
     }
 
@@ -705,12 +723,21 @@ public final class SessionDatabase implements AutoCloseable {
 
     /** Rollups of {@code bucketSizeSeconds} with {@code bucket_start} strictly before {@code cutoff}. */
     public synchronized List<MetricRollupRecord> listMetricRollupsBefore(int bucketSizeSeconds, Instant cutoff) {
+        return listMetricRollupsBefore(bucketSizeSeconds, cutoff, Integer.MAX_VALUE);
+    }
+
+    /** Oldest metric_rollup rows before {@code cutoff}, capped at {@code limit} (P33-007). */
+    public synchronized List<MetricRollupRecord> listMetricRollupsBefore(
+            int bucketSizeSeconds, Instant cutoff, int limit) {
         Objects.requireNonNull(cutoff, "cutoff");
         if (bucketSizeSeconds < 1) {
             throw new IllegalArgumentException("bucketSizeSeconds must be >= 1");
         }
+        if (limit < 1) {
+            throw new IllegalArgumentException("limit must be >= 1");
+        }
         try {
-            return historyRepo.listMetricRollupsBefore(bucketSizeSeconds, cutoff);
+            return historyRepo.listMetricRollupsBefore(bucketSizeSeconds, cutoff, limit);
         } catch (SQLException ex) {
             throw new PersistenceException(
                     "Failed to list metric_rollup before " + DbCommit.ISO_UTC.format(cutoff), ex);
@@ -729,6 +756,16 @@ public final class SessionDatabase implements AutoCloseable {
             dbCommit.rollbackQuietly();
             throw new PersistenceException(
                     "Failed to delete metric_rollup before " + DbCommit.ISO_UTC.format(cutoff), ex);
+        }
+    }
+
+    /** Deletes specific metric_rollup primary keys (chunked retention, P33-007). */
+    public synchronized int deleteMetricRollups(List<MetricRollupRecord> rows) {
+        try {
+            return historyRepo.deleteMetricRollups(rows);
+        } catch (SQLException ex) {
+            dbCommit.rollbackQuietly();
+            throw new PersistenceException("Failed to delete metric_rollup rows", ex);
         }
     }
 

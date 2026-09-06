@@ -15,6 +15,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P33-007 — DB migrate + chunked retention:** in-place **v12→v13→v14**; `PollResultRetentionJob` in chunks (default 500); NEXT→**P33-008**.
 - **P33-006 — webhook lifecycle:** bounded `ArrayBlockingQueue` + AbortPolicy + `rejectedCount`; `AlertDispatcher` closeable; close on replace/`MonitorService.close`; NEXT→**P33-007**.
 - **P33-005 — latency baseline reset:** clear EWMA on confirmed route change and `setHostProbeMode`; first RTT on the new path is warm-up without a false `latency_high`; NEXT→**P33-006**.
 - **P33-004 — poll_result tri-state:** monitor/DNS/internal error → `target_sampled=false`, `reachable=null` (not downtime); target timeout stays sampled+unreachable; NEXT→**P33-005**.

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.model.Models.HostSessionData;
+import io.pingui.probe.ProbeOutcome;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -147,14 +148,106 @@ class SessionDatabaseMetricRollupTest {
     }
 
     @Test
-    void rejectsSchemaOlderThanV13() throws Exception {
+    void migratesV12PollResultAndRollupToV14() throws Exception {
         Path dbPath = tempDir.resolve("v12.db");
         try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + dbPath.toAbsolutePath());
                 Statement st = c.createStatement()) {
+            st.execute("PRAGMA foreign_keys = ON");
             st.execute("CREATE TABLE schema_meta (version INTEGER NOT NULL)");
             st.execute("INSERT INTO schema_meta(version) VALUES (12)");
+            st.execute(
+                    """
+                    CREATE TABLE host_session (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        address TEXT NOT NULL UNIQUE,
+                        enabled INTEGER NOT NULL,
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL
+                    )
+                    """);
+            st.execute(
+                    """
+                    INSERT INTO host_session(address, enabled, created_at, updated_at)
+                    VALUES ('8.8.8.8', 1, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')
+                    """);
+            st.execute(
+                    """
+                    CREATE TABLE poll_result (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        host_id INTEGER NOT NULL,
+                        observed_at TEXT NOT NULL,
+                        probe_mode TEXT NOT NULL,
+                        reachable INTEGER,
+                        terminal_rtt_ms REAL,
+                        jitter_ms REAL,
+                        loss_percent REAL,
+                        duration_ms REAL,
+                        route_id INTEGER,
+                        error_code TEXT,
+                        FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
+                    )
+                    """);
+            st.execute(
+                    """
+                    INSERT INTO poll_result(
+                        host_id, observed_at, probe_mode, reachable, terminal_rtt_ms,
+                        jitter_ms, loss_percent, duration_ms, route_id, error_code)
+                    VALUES
+                        (1, '2026-08-01T10:00:00Z', 'ping_only', 1, 12.0, NULL, 0.0, 40.0, NULL, NULL),
+                        (1, '2026-08-01T10:01:00Z', 'ping_only', 0, NULL, NULL, NULL, 40.0, NULL, NULL),
+                        (1, '2026-08-01T10:02:00Z', 'ping_only', 0, NULL, NULL, NULL, 40.0, NULL, 'dns')
+                    """);
+            st.execute(
+                    """
+                    CREATE TABLE metric_rollup (
+                        host_id INTEGER NOT NULL,
+                        bucket_start TEXT NOT NULL,
+                        bucket_size INTEGER NOT NULL,
+                        samples INTEGER NOT NULL,
+                        uptime_ratio REAL,
+                        rtt_min REAL,
+                        rtt_avg REAL,
+                        rtt_max REAL,
+                        loss_avg REAL,
+                        PRIMARY KEY(host_id, bucket_start, bucket_size)
+                    )
+                    """);
+            st.execute(
+                    """
+                    INSERT INTO metric_rollup(
+                        host_id, bucket_start, bucket_size, samples,
+                        uptime_ratio, rtt_min, rtt_avg, rtt_max, loss_avg)
+                    VALUES (1, '2026-08-01T10:00:00Z', 300, 4, 0.75, 8.0, 14.0, 20.0, 1.0)
+                    """);
+        }
+        try (SessionDatabase db = new SessionDatabase(dbPath)) {
+            assertEquals(14, db.schemaVersion());
+            List<PollResultRecord> polls = db.listPollResults("8.8.8.8", 10);
+            assertEquals(3, polls.size());
+            // listPollResults is newest-first
+            assertEquals(ProbeOutcome.NETWORK_ERROR, polls.get(0).probeOutcome());
+            assertEquals(ProbeOutcome.TIMEOUT, polls.get(1).probeOutcome());
+            assertEquals(ProbeOutcome.SUCCESS, polls.get(2).probeOutcome());
+            assertTrue(polls.get(2).targetSampled());
+            MetricRollupRecord row = db.listMetricRollups("8.8.8.8", 300, 1).get(0);
+            assertEquals(4, row.sampleCount());
+            assertEquals(0.75, row.uptimeRatio());
+            assertEquals(14.0, row.rttAvg());
+            assertEquals(1.0, row.lossAvg());
+            assertEquals(4, row.rttSamples());
+            assertEquals(4, row.lossSamples());
+        }
+    }
+
+    @Test
+    void rejectsSchemaOlderThanV12() throws Exception {
+        Path dbPath = tempDir.resolve("v11.db");
+        try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + dbPath.toAbsolutePath());
+                Statement st = c.createStatement()) {
+            st.execute("CREATE TABLE schema_meta (version INTEGER NOT NULL)");
+            st.execute("INSERT INTO schema_meta(version) VALUES (11)");
         }
         PersistenceException ex = assertThrows(PersistenceException.class, () -> new SessionDatabase(dbPath));
-        assertTrue(ex.getMessage().contains("12"));
+        assertTrue(ex.getMessage().contains("11"));
     }
 }

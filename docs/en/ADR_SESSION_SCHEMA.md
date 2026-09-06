@@ -164,7 +164,7 @@ CREATE TABLE metric_rollup (
 `loss_percent` / `jitter_ms` are no longer synthesized from reachability (NULL when unmeasured; jitter only from an RTT series). Transactional migrate from older versions — **P32-004**.
 ### P32-004 (done, schema v14)
 
-`metric_rollup` stores additive counters (`sample_count`, `reachable_*`, `rtt_samples`/`rtt_sum`, `loss_samples`/`loss_sum`); averages are computed on read. `PollResultRetentionJob` runs upsert+delete in **one** transaction. Opening a DB migrates **v13→v14** in-place.
+`metric_rollup` stores additive counters (`sample_count`, `reachable_*`, `rtt_samples`/`rtt_sum`, `loss_samples`/`loss_sum`); averages are computed on read. `PollResultRetentionJob` runs upsert+delete in **chunked** transactions (P33-007). Opening a DB migrates **v12→v13→v14** in-place.
 
 ### P32-008 (done) — persistence hotspot split
 
@@ -173,7 +173,7 @@ Public API remains `SessionDatabase` (connection + transactions). SQL lives in p
 | Class | Role |
 |------|------|
 | `DbCommit` | `Connection`, `deferCommit`, `maybeCommit` / `rollbackQuietly` |
-| `SchemaManager` | DDL, `schema_meta`, migrate v13→v14 |
+| `SchemaManager` | DDL, `schema_meta`, migrate v12→v13→v14 |
 | `SessionStateRepository` | `host_session` + child hop/ping/stats tables |
 | `HistoryRepository` | events, incident, poll_result, route, rollup, telemetry |
 
