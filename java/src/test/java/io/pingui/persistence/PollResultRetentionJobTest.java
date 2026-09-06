@@ -165,6 +165,36 @@ class PollResultRetentionJobTest {
     }
 
     @Test
+    void processesLargeHistoryInChunks() {
+        Clock clock = Clock.fixed(Instant.parse("2026-09-03T12:00:00Z"), ZoneOffset.UTC);
+        Path dbPath = tempDir.resolve("ret-chunk.db");
+        try (SessionDatabase db = new SessionDatabase(dbPath)) {
+            seedHost(db, "8.8.8.8");
+            Instant base = Instant.parse("2026-08-20T10:00:00Z");
+            for (int i = 0; i < 5; i++) {
+                db.insertPollResult(
+                        "8.8.8.8",
+                        base.plusSeconds(i * 60L),
+                        "ping_only",
+                        true,
+                        10.0 + i,
+                        null,
+                        0.0,
+                        40.0,
+                        null,
+                        null,
+                        ProbeOutcome.SUCCESS,
+                        true);
+            }
+            PollResultRetentionJob.Result result = PollResultRetentionJob.run(db, clock, 2);
+            assertEquals(5, result.deletedRawPolls());
+            assertEquals(0, db.countPollResults());
+            assertTrue(result.rolledFiveMinBuckets() >= 1);
+            assertEquals(1, db.countMetricRollups());
+        }
+    }
+
+    @Test
     void doesNotPurgeIncidentsOrRoutes() {
         Clock clock = Clock.fixed(Instant.parse("2026-09-03T12:00:00Z"), ZoneOffset.UTC);
         Path dbPath = tempDir.resolve("ret-keep.db");

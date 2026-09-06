@@ -164,7 +164,7 @@ CREATE TABLE metric_rollup (
 `loss_percent` / `jitter_ms` більше не синтезуються з reachability (NULL, якщо не виміряно; jitter — лише з серії RTT). Транзакційна міграція зі старих версій — **P32-004**.
 ### P32-004 (зроблено, schema v14)
 
-`metric_rollup` зберігає адитивні лічильники (`sample_count`, `reachable_*`, `rtt_samples`/`rtt_sum`, `loss_samples`/`loss_sum`); середні обчислюються на читанні. `PollResultRetentionJob` виконує upsert+delete в **одній** транзакції. Відкриття БД мігрує **v13→v14** in-place.
+`metric_rollup` зберігає адитивні лічильники (`sample_count`, `reachable_*`, `rtt_samples`/`rtt_sum`, `loss_samples`/`loss_sum`); середні обчислюються на читанні. `PollResultRetentionJob` виконує upsert+delete **порціями** (chunked transactions, P33-007). Відкриття БД мігрує **v12→v13→v14** in-place.
 
 ### P32-008 (зроблено) — поділ persistence hotspot
 
@@ -173,7 +173,7 @@ CREATE TABLE metric_rollup (
 | Клас | Роль |
 |------|------|
 | `DbCommit` | `Connection`, `deferCommit`, `maybeCommit` / `rollbackQuietly` |
-| `SchemaManager` | DDL, `schema_meta`, migrate v13→v14 |
+| `SchemaManager` | DDL, `schema_meta`, migrate v12→v13→v14 |
 | `SessionStateRepository` | `host_session` + дочірні hop/ping/stats |
 | `HistoryRepository` | events, incident, poll_result, route, rollup, telemetry |
 

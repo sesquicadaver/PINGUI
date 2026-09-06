@@ -2,7 +2,7 @@
 
 # Документація PINGUI
 
-На **`main`** і **`beta`** — повний пакет (Java Pro + Python) після merge; **`beta`** — гілка розробки, **`main`** — останній стабільний зріз. Лінійна черга ROADMAP: **NEXT = P33-007** (фаза 33 — [ROADMAP.md § NEXT](ROADMAP.md#next--єдине-джерело-правди)). «Гілки» — [README.md](../README.md).
+На **`main`** і **`beta`** — повний пакет (Java Pro + Python) після merge; **`beta`** — гілка розробки, **`main`** — останній стабільний зріз. Лінійна черга ROADMAP: **NEXT = P33-008** (фаза 33 — [ROADMAP.md § NEXT](ROADMAP.md#next--єдине-джерело-правди)). «Гілки» — [README.md](../README.md).
 
 ## Навігація
 
@@ -11,7 +11,7 @@
 | [CHECKLIST.md](CHECKLIST.md) | Адмін / DevOps | Checklist Linux / Windows / macOS |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Адмін / DevOps | JDK 21, venv, cap_net_raw, systemd |
 | [JAVA.md](JAVA.md) | Розробник | Probe, monitor, UI, YAML |
-| [ROADMAP.md](ROADMAP.md) | Розробник | Офіційний план: фази 0–33; NEXT=P33-007 |
+| [ROADMAP.md](ROADMAP.md) | Розробник | Офіційний план: фази 0–33; NEXT=P33-008 |
 | [pingui-evo-gui.md](pingui-evo-gui.md) | Розробник | GUI evolution (фаза 31) |
 | [pingui-correctness.md](pingui-correctness.md) | Розробник | Correctness audit → фаза 33 |
 | [pingui-stabilization.md](pingui-stabilization.md) | Розробник | Stabilization audit → фаза 32 (архів) |

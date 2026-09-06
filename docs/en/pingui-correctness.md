@@ -99,3 +99,13 @@ P32 landed well (fresh-hop, `target_sampled`, rollup v14, bounded DNS/webhook te
 * `PollResultEffects.setAlertDispatcher` closes the previous pipeline; `MonitorService.close` → noop (closes pipeline).
 
 **Tests:** saturation reject; close reject; replace closes previous; `AlertDispatchersTest.closeClosesOwnedWebhookPipeline`.
+
+## P33-007 (done) — DB migrate + chunked retention
+
+**Bug:** v12 `.db` files were rejected; retention loaded all old polls in one transaction → long locks / memory on large histories.
+
+**Fix:**
+
+* `SchemaManager.MIN_MIGRATE_FROM = 12`; `migrateV12ToV13` (probe_outcome/target_sampled backfill) → `migrateV13ToV14`;
+* `PollResultRetentionJob` — chunked transactions (`DEFAULT_CHUNK_SIZE=500`); delete by ids/keys;
+* Tests: `migratesV12PollResultAndRollupToV14`, `processesLargeHistoryInChunks`.
