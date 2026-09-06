@@ -2,6 +2,8 @@
 
 # Correctness — MTR / projection / side-effects (P33)
 
+> **Архів:** фаза 33 **closed** (P33-001…008). Лінійна черга — **NEXT=DONE**. Stabilization audit: [pingui-stabilization.md](pingui-stabilization.md).
+
 **Джерело для фази 33.** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
 
 Аудит `main` @ `28bdb41` (після закриття P32). Фаза correctness — **не** нове функціональне розширення.
@@ -109,3 +111,15 @@ P32 закрито якісно (fresh-hop, `target_sampled`, rollup v14, bounde
 * `SchemaManager.MIN_MIGRATE_FROM = 12`; `migrateV12ToV13` (probe_outcome/target_sampled backfill) → `migrateV13ToV14`;
 * `PollResultRetentionJob` — chunked transactions (`DEFAULT_CHUNK_SIZE=500`); delete by ids/keys;
 * тести: `migratesV12PollResultAndRollupToV14`, `processesLargeHistoryInChunks`.
+
+## P33-008 (зроблено) — Docs / branch sync
+
+**Мета:** узгодити README/ROADMAP/індекси з фактичним `main`≡`beta`, позначити фазу 33 **closed**, залишити архівні посилання на P32/P33 аудити.
+
+**Зроблено:**
+
+* ROADMAP **NEXT=DONE**; усі P33-001…008 `[x]`; індекс фаз ✅ DONE;
+* README більше не посилається на застарілий P29-001;
+* `pingui-stabilization.md` / `pingui-correctness.md` — архівні банери; LIVING_SPEC + JAVA + docs index.
+
+**Гілки:** `main` ≡ `beta` після merge цього PR.

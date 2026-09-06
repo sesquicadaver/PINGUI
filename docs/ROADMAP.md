@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P33-008** |
+| **Поточна задача** | **DONE** |
 | **Фаза** | 33 — Correctness (MTR / projection / side-effects) |
-| **DoD (коротко)** | Docs / branch sync |
+| **DoD (коротко)** | Лінійна черга фази 33 закрита |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -194,9 +194,9 @@
 | 148 | **P33-005** | [x] | Latency baseline reset на route/mode change |
 | 149 | **P33-006** | [x] | Webhook bounded queue + closeable dispatcher |
 | 150 | **P33-007** | [x] | DB migrate v12→v14 + chunked retention |
-| 151 | **P33-008** | [ ] | Docs / branch sync |
+| 151 | **P33-008** | [x] | Docs / branch sync |
 
-**Стан черги:** **NEXT = P33-008** (фаза 33; [pingui-correctness.md](pingui-correctness.md)).
+**Стан черги:** **NEXT = DONE** (фаза 33 закрита; [pingui-correctness.md](pingui-correctness.md)).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -1036,7 +1036,7 @@ flowchart TD
 
 **Контекст:** [pingui-correctness.md](pingui-correctness.md). Correctness після P32 — **не** нове функціональне розширення. Java-first.
 
-**Черга:** після P32; **NEXT = P33-008**.
+**Черга:** після P32; **NEXT = DONE** (P33-001…008 [x]; фаза 33 закрита).
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
@@ -1047,7 +1047,7 @@ flowchart TD
 | **P33-005** | [x] Latency baseline reset | `MonitorService` / alert EWMA | Скидання на confirmed route change і `setHostProbeMode` |
 | **P33-006** | [x] Webhook lifecycle | `WebhookTelemetrySink`, alert dispatcher | Bounded queue + rejected counter; closeable dispatcher при заміні/stop |
 | **P33-007** | [x] DB migrate + chunked retention | `SchemaManager`, retention job | v12→v14 (або offline CLI); retention порціями |
-| **P33-008** | [ ] Docs / branch sync | README, ROADMAP, indexes | Узгодити фази/NEXT/`main`≡`beta`; архівний note для P32 audit |
+| **P33-008** | [x] Docs / branch sync | README, ROADMAP, indexes | Узгодити фази/NEXT/`main`≡`beta`; архівний note для P32 audit |
 
 **Поза scope:** повний candidate-route FSM beyond P33-001 span fix; ORM; silent delete `.db`.
 
@@ -1138,7 +1138,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P33-008**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **DONE**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 
