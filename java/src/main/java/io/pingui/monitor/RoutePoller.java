@@ -15,6 +15,7 @@ import io.pingui.probe.TcpConnectResult;
 import java.io.IOException;
 import java.util.List;
 import java.util.OptionalDouble;
+import java.util.concurrent.ConcurrentHashMap;
 
 /** Pure polling logic for route monitoring (testable without UI). */
 public final class RoutePoller {
@@ -22,6 +23,8 @@ public final class RoutePoller {
     private final ProcessHostPing hostPing = new ProcessHostPing();
     private final MtrProbe mtrProbe;
     private final TcpConnectProbe tcpConnectProbe;
+    /** Per-host candidate-route FSM shared by TRACE and MTR (P34-001). */
+    private final ConcurrentHashMap<String, CandidateRouteFsm> routeFsms = new ConcurrentHashMap<>();
 
     public RoutePoller(RouteProbe probe) {
         this(probe, null);
@@ -38,10 +41,10 @@ public final class RoutePoller {
     }
 
     /**
-     * Incremental MTR-style poll: one hop per call (P13-010 / P32-001).
+     * Incremental MTR-style poll: one hop per call (P13-010 / P32-001 / P34-001).
      *
-     * <p>Discovery prefix growth and hop timeouts are not route-change events. Topology alerts use the
-     * last complete route baseline from {@link MtrPollOutcome#lastCompleteRouteIps()}.
+     * <p>Discovery prefix growth and hop timeouts are not route-change events. Topology alerts fire
+     * once when a candidate path is confirmed to the target.
      */
     public HostPollOutcome pollHostMtr(String host, List<String> previousIps, int maxHops, double timeoutSeconds) {
         if (mtrProbe == null) {
@@ -53,24 +56,24 @@ public final class RoutePoller {
         }
         RouteSnapshot snapshot = outcome.completeRoute();
         List<String> currentIps = snapshot.routeIps();
-        boolean routeChanged = detectMtrRouteChange(outcome, currentIps);
-        List<String> oldIps = routeChanged ? outcome.lastCompleteRouteIps() : List.copyOf(previousIps);
-        List<String> newIps = routeChanged ? currentIps : List.copyOf(previousIps);
-        if (routeChanged && oldIps.isEmpty()) {
-            // Mid-discovery IP rewrite with no prior complete baseline — still not a user-facing change.
-            routeChanged = false;
-            newIps = List.copyOf(previousIps);
-        }
+        boolean targetConfirmed = outcome.targetSampled() && outcome.phase() == MtrProbeState.Phase.MONITORING;
+        RouteChangeDetector.RouteChangeResult change =
+                RouteChangeDetector.observe(fsmFor(host), snapshot, targetConfirmed, previousIps);
         PollSampleScope scope = outcome.probedHop() >= 1
                 ? PollSampleScope.mtr(outcome.probedHop(), outcome.targetSampled())
                 : PollSampleScope.FULL;
         return HostPollOutcome.success(
-                snapshot, routeChanged, oldIps, newIps, currentIps, scope, icmpOrMtrOutcome(snapshot, scope));
+                snapshot,
+                change.changed(),
+                change.oldIps(),
+                change.newIps(),
+                currentIps,
+                scope,
+                icmpOrMtrOutcome(snapshot, scope));
     }
 
     /**
-     * Route change only after a complete baseline exists. Discovery prefix growth and timeouts are
-     * ignored; an IP rewrite that breaks a known path fires once.
+     * @deprecated Prefer candidate FSM via {@link #pollHostMtr}; kept for unit tests of shrink helper.
      */
     static boolean detectMtrRouteChange(MtrPollOutcome outcome, List<String> currentIps) {
         List<String> baseline = outcome.lastCompleteRouteIps();
@@ -78,16 +81,11 @@ public final class RoutePoller {
             return false;
         }
         if (outcome.phase() == MtrProbeState.Phase.DISCOVERING) {
-            int hop = outcome.probedHop();
-            HopNode fresh = outcome.freshHopSample();
-            if (hop >= 1 && hop <= baseline.size() && fresh != null && fresh.isReachable()) {
-                return !baseline.get(hop - 1).equals(fresh.ip());
-            }
+            // Mid-discovery rewrite is candidate-only (P34-001); confirm on target.
             return false;
         }
         HopNode fresh = outcome.freshHopSample();
         if (fresh != null && !fresh.isReachable()) {
-            // Timeout / miss on a known hop is not a topology change (P32-001).
             return false;
         }
         if (baseline.equals(currentIps)) {
@@ -96,7 +94,7 @@ public final class RoutePoller {
         if (isTimeoutOnlyShrink(baseline, currentIps)) {
             return false;
         }
-        return true;
+        return outcome.targetSampled();
     }
 
     static boolean isTimeoutOnlyShrink(List<String> baseline, List<String> current) {
@@ -107,6 +105,7 @@ public final class RoutePoller {
     }
 
     public void resetMtrHost(String host) {
+        resetRouteIdentity(host);
         if (mtrProbe != null) {
             mtrProbe.resetHost(host);
         }
@@ -114,16 +113,36 @@ public final class RoutePoller {
 
     /** Clears MTR state on host rename (P32-002); new name rediscovers from scratch. */
     public void renameMtrHost(String oldHost, String newHost) {
+        resetRouteIdentity(oldHost);
+        if (newHost != null && !newHost.equals(oldHost)) {
+            resetRouteIdentity(newHost);
+        }
         if (mtrProbe != null) {
             mtrProbe.renameHost(oldHost, newHost);
         }
+    }
+
+    /** Drops candidate-route FSM for {@code host} (mode change / remove / rename). */
+    public void resetRouteIdentity(String host) {
+        if (host == null || host.isBlank()) {
+            return;
+        }
+        CandidateRouteFsm removed = routeFsms.remove(host);
+        if (removed != null) {
+            removed.reset();
+        }
+    }
+
+    CandidateRouteFsm fsmFor(String host) {
+        return routeFsms.computeIfAbsent(host, ignored -> new CandidateRouteFsm());
     }
 
     public HostPollOutcome pollHostRoute(String host, List<String> previousIps, int maxHops, double timeoutSeconds) {
         try {
             RouteSnapshot snapshot = probe.trace(host, maxHops, timeoutSeconds);
             List<String> currentIps = snapshot.routeIps();
-            RouteChangeDetector.RouteChangeResult change = RouteChangeDetector.detect(previousIps, currentIps);
+            RouteChangeDetector.RouteChangeResult change = RouteChangeDetector.observe(
+                    fsmFor(host), snapshot, RouteChangeDetector.targetReached(snapshot), previousIps);
             return HostPollOutcome.success(
                     snapshot,
                     change.changed(),
@@ -149,7 +168,8 @@ public final class RoutePoller {
                     : List.of(Models.timeout(1));
             RouteSnapshot snapshot = new RouteSnapshot(host, host, nodes);
             List<String> currentIps = snapshot.routeIps();
-            RouteChangeDetector.RouteChangeResult change = RouteChangeDetector.detect(previousIps, currentIps);
+            RouteChangeDetector.RouteChangeResult change = RouteChangeDetector.observe(
+                    fsmFor(host), snapshot, RouteChangeDetector.targetReached(snapshot), previousIps);
             return HostPollOutcome.success(
                     snapshot,
                     change.changed(),
@@ -187,7 +207,8 @@ public final class RoutePoller {
             }
             RouteSnapshot snapshot = new RouteSnapshot(host, targetIp, nodes);
             List<String> currentIps = snapshot.routeIps();
-            RouteChangeDetector.RouteChangeResult change = RouteChangeDetector.detect(previousIps, currentIps);
+            RouteChangeDetector.RouteChangeResult change = RouteChangeDetector.observe(
+                    fsmFor(host), snapshot, RouteChangeDetector.targetReached(snapshot), previousIps);
             return HostPollOutcome.success(
                     snapshot,
                     change.changed(),

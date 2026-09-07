@@ -16,7 +16,7 @@ P32/P33 суттєво покращили проєкт (fresh-hop, span, tri-sta
 
 | ID | Пріоритет | Задача | DoD (коротко) |
 |----|-----------|--------|---------------|
-| **P34-001** | P0 | Route identity + candidate-route FSM | TRACE/MTR: hop-indexed `(hop, ip\|timeout)`; active/candidate; confirmation до target; transient `*` ≠ новий route |
+| **P34-001** | P0 | Route identity + candidate-route FSM | [x] TRACE/MTR: hop-indexed `(hop, ip\|timeout)`; active/candidate; confirmation до target; transient `*` ≠ новий route |
 | **P34-002** | P0 | MTR target-unknown / exhaustion | `targetHop` лише після real target match; `TARGET_UNKNOWN`/`INCOMPLETE`; bounded rediscovery; без `target_sampled` до ідентифікації |
 | **P34-003** | P0 | Current endpoint outcome vs history | Current TIMEOUT → DOWN/PENDING; session-lifetime loss не перекриває актуальний timeout |
 | **P34-004** | P0 | Reliable structural persistence + shutdown | Control lane (delete/rename/barrier) без drop; coalesced SaveHost; lossy telemetry; безпечний close |

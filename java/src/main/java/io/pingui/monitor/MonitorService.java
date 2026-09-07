@@ -229,6 +229,11 @@ public final class MonitorService implements AutoCloseable {
         pollEffects.setMeasuredHopStatsResolver(measuredHopStatsResolver);
     }
 
+    /** Supplies last-known hop IPs so transient timeouts do not create new route rows (P34-001). */
+    public void setLastKnownHopIpsResolver(Function<String, java.util.Map<Integer, String>> lastKnownHopIpsResolver) {
+        pollEffects.setLastKnownHopIpsResolver(lastKnownHopIpsResolver);
+    }
+
     /** Session quality problem summary for host-row badge (P22-002 / P23). */
     public Optional<HostProblemSummary> hostProblemSummary(String host) {
         return alertRuleEngine.problemSummary(host, Instant.now());

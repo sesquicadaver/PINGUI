@@ -28,13 +28,65 @@ class RoutePollerTest {
 
     @Test
     void pollDetectsChange() {
-        RouteSnapshot snapshot = new RouteSnapshot(
+        RouteSnapshot first = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 2.0, false), new HopNode(2, "8.8.8.8", 4.0, false)));
+        RouteSnapshot second = new RouteSnapshot(
                 "8.8.8.8",
                 "8.8.8.8",
                 List.of(new HopNode(1, "192.168.1.1", 2.0, false), new HopNode(2, "8.8.8.8", 4.0, false)));
-        RoutePoller poller = new RoutePoller(new FakeRouteProbe(snapshot));
+        RoutePoller poller = new RoutePoller(new FakeRouteProbe(first, second));
+        assertFalse(poller.pollHostRoute("8.8.8.8", List.of(), 20, 0.5).routeChanged());
         HostPollOutcome outcome = poller.pollHostRoute("8.8.8.8", List.of("10.0.0.1", "8.8.8.8"), 20, 0.5);
         assertTrue(outcome.routeChanged());
+        assertEquals(List.of("10.0.0.1", "8.8.8.8"), outcome.oldIps());
+        assertEquals(List.of("192.168.1.1", "8.8.8.8"), outcome.newIps());
+    }
+
+    @Test
+    void pollHostRouteTransientTimeoutIsNotRouteChange() {
+        RouteSnapshot stable = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(
+                        new HopNode(1, "10.0.0.1", 2.0, false),
+                        new HopNode(2, "10.0.0.2", 3.0, false),
+                        new HopNode(3, "8.8.8.8", 4.0, false)));
+        RouteSnapshot lossy = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(
+                        new HopNode(1, "10.0.0.1", 2.0, false),
+                        io.pingui.model.Models.timeout(2),
+                        new HopNode(3, "8.8.8.8", 4.0, false)));
+        RoutePoller poller = new RoutePoller(new FakeRouteProbe(stable, lossy));
+        assertFalse(poller.pollHostRoute("8.8.8.8", List.of(), 20, 0.5).routeChanged());
+        assertFalse(poller.pollHostRoute("8.8.8.8", List.of("10.0.0.1", "10.0.0.2", "8.8.8.8"), 20, 0.5)
+                .routeChanged());
+    }
+
+    @Test
+    void pollHostMtrConfirmsRouteChangeOnlyAfterTarget() {
+        ScriptMtrHopProber prober = new ScriptMtrHopProber();
+        // Baseline discovery
+        prober.enqueue(new ProbeResult("10.0.0.1", 4.0, false), new ProbeResult("8.8.8.8", 8.0, true));
+        // Monitoring hop1 rewrite → rediscovery
+        prober.enqueue(new ProbeResult("9.9.9.9", 4.0, false));
+        // Rediscovery hop2 = target
+        prober.enqueue(new ProbeResult("8.8.8.8", 8.0, true));
+        RoutePoller poller = new RoutePoller(
+                new FakeRouteProbe(new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of())), new MtrProbe(prober));
+
+        assertFalse(poller.pollHostMtr("8.8.8.8", List.of(), 20, 0.5).routeChanged());
+        assertFalse(poller.pollHostMtr("8.8.8.8", List.of(), 20, 0.5).routeChanged());
+        // Mid-path rewrite while discovering — candidate only
+        HostPollOutcome rewrite = poller.pollHostMtr("8.8.8.8", List.of("10.0.0.1", "8.8.8.8"), 20, 0.5);
+        assertFalse(rewrite.routeChanged(), "partial MTR rewrite must wait for target confirmation");
+        HostPollOutcome confirmed = poller.pollHostMtr("8.8.8.8", List.of("10.0.0.1", "8.8.8.8"), 20, 0.5);
+        assertTrue(confirmed.routeChanged());
+        assertEquals(List.of("10.0.0.1", "8.8.8.8"), confirmed.oldIps());
+        assertEquals(List.of("9.9.9.9", "8.8.8.8"), confirmed.newIps());
     }
 
     @Test

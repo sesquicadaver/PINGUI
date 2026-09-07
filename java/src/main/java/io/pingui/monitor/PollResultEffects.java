@@ -7,9 +7,11 @@ import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.HopStatsSummary;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.persistence.PersistenceEventWriter;
+import io.pingui.persistence.RouteSignature;
 import io.pingui.probe.ProbeOutcome;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.function.Function;
 import org.slf4j.Logger;
@@ -35,6 +37,8 @@ final class PollResultEffects {
     private volatile Function<String, List<String>> hostTagsResolver = host -> List.of();
     /** Optional measured hop summary (loss/jitter from RTT series); never invents values. */
     private volatile Function<String, HopStatsSummary> measuredHopStatsResolver = host -> null;
+    /** Optional last-known hop IPs for route signature stability (P34-001). */
+    private volatile Function<String, Map<Integer, String>> lastKnownHopIpsResolver = host -> Map.of();
 
     PollResultEffects(AlertRuleEngine alertRuleEngine) {
         this.alertRuleEngine = alertRuleEngine;
@@ -85,6 +89,10 @@ final class PollResultEffects {
 
     void setMeasuredHopStatsResolver(Function<String, HopStatsSummary> measuredHopStatsResolver) {
         this.measuredHopStatsResolver = measuredHopStatsResolver != null ? measuredHopStatsResolver : host -> null;
+    }
+
+    void setLastKnownHopIpsResolver(Function<String, Map<Integer, String>> lastKnownHopIpsResolver) {
+        this.lastKnownHopIpsResolver = lastKnownHopIpsResolver != null ? lastKnownHopIpsResolver : host -> Map.of();
     }
 
     void setAlertProfileName(String alertProfileName) {
@@ -171,7 +179,11 @@ final class PollResultEffects {
                 jitterMs = measured.jitterMs();
             }
             try {
-                routeId = events.observeRoute(host, snapshot.nodes(), Instant.now());
+                Map<Integer, String> known = resolveLastKnownHopIps(host);
+                if (known.isEmpty()) {
+                    known = RouteSignature.knownIpsByHop(snapshot.nodes());
+                }
+                routeId = events.observeRoute(host, snapshot.nodes(), Instant.now(), known);
             } catch (RuntimeException ex) {
                 LOG.warn("Persistence route upsert failed for {}: {}", host, ex.getMessage());
             }
@@ -205,6 +217,20 @@ final class PollResultEffects {
         } catch (RuntimeException ex) {
             LOG.warn("Measured hop stats resolve failed for {}: {}", host, ex.getMessage());
             return null;
+        }
+    }
+
+    private Map<Integer, String> resolveLastKnownHopIps(String host) {
+        Function<String, Map<Integer, String>> resolver = lastKnownHopIpsResolver;
+        if (resolver == null) {
+            return Map.of();
+        }
+        try {
+            Map<Integer, String> known = resolver.apply(host);
+            return known != null ? known : Map.of();
+        } catch (RuntimeException ex) {
+            LOG.warn("Last-known hop IPs resolve failed for {}: {}", host, ex.getMessage());
+            return Map.of();
         }
     }
 
