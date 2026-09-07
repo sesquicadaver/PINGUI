@@ -60,9 +60,19 @@ final class ReadOnlyApiJson {
         return json.toString();
     }
 
+    static String opsDocument(io.pingui.dns.DnsOpsSnapshot snapshot) {
+        Objects.requireNonNull(snapshot, "snapshot");
+        return "{\"dns\":" + dnsObject(snapshot.resolve()) + ",\"dns_control\":" + dnsObject(snapshot.control()) + "}";
+    }
+
+    /** Backward-compatible single-layer ops JSON (tests / older callers). */
     static String opsDocument(io.pingui.dns.DnsOpsStats dns) {
         Objects.requireNonNull(dns, "dns");
-        return "{\"dns\":{"
+        return opsDocument(new io.pingui.dns.DnsOpsSnapshot(dns, io.pingui.dns.DnsOpsStats.empty(0)));
+    }
+
+    private static String dnsObject(io.pingui.dns.DnsOpsStats dns) {
+        return "{"
                 + "\"queue_capacity\":"
                 + dns.queueCapacity()
                 + ",\"queued\":"
@@ -77,7 +87,7 @@ final class ReadOnlyApiJson {
                 + dns.coalescedCount()
                 + ",\"timeouts\":"
                 + dns.timeoutCount()
-                + "}}";
+                + "}";
     }
 
     /** Minimal OpenAPI 3.0 stub for the read endpoints. */
@@ -134,7 +144,7 @@ final class ReadOnlyApiJson {
                     },
                     "/ops": {
                       "get": {
-                        "summary": "Operator counters (DNS queue pressure)",
+                        "summary": "Operator counters (DNS resolve + DNS-control outer queue)",
                         "responses": {
                           "200": {
                             "description": "Ops snapshot",

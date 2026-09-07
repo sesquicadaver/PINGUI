@@ -22,6 +22,12 @@ public final class MetricNames {
     public static final String DNS_TIMEOUT_TOTAL = "pingui_dns_timeout_total";
     public static final String DNS_QUEUE_DEPTH = "pingui_dns_queue_depth";
     public static final String DNS_QUEUE_CAPACITY = "pingui_dns_queue_capacity";
+    public static final String DNS_CONTROL_REJECTED_TOTAL = "pingui_dns_control_rejected_total";
+    public static final String DNS_CONTROL_DROPPED_TOTAL = "pingui_dns_control_dropped_total";
+    public static final String DNS_CONTROL_COALESCED_TOTAL = "pingui_dns_control_coalesced_total";
+    public static final String DNS_CONTROL_QUEUE_DEPTH = "pingui_dns_control_queue_depth";
+    public static final String DNS_CONTROL_QUEUE_CAPACITY = "pingui_dns_control_queue_capacity";
+    public static final String DNS_CONTROL_PENDING = "pingui_dns_control_pending";
 
     public static final String LABEL_PROFILE = "profile";
     public static final String LABEL_PROBE_MODE = "probe_mode";

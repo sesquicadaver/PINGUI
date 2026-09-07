@@ -1,5 +1,6 @@
 package io.pingui.observability;
 
+import io.pingui.dns.DnsOpsSnapshot;
 import io.pingui.dns.DnsOpsStats;
 import io.pingui.telemetry.MetricNames;
 import java.util.Map;
@@ -9,7 +10,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 /**
- * In-process Prometheus text exposition state (P15-010 / P34-007).
+ * In-process Prometheus text exposition state (P15-010 / P34-007 / P35-005).
  *
  * <p>Thread-safe scrape snapshot for daemon {@code GET /metrics}. Not a remote_write client.
  */
@@ -18,10 +19,10 @@ public final class PrometheusExporter {
     private final ConcurrentHashMap<String, AtomicLong> routeChangeTotal = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Double> targetReachable = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<DurationKey, Double> traceDurationMs = new ConcurrentHashMap<>();
-    private volatile Supplier<DnsOpsStats> dnsOpsSupplier;
+    private volatile Supplier<DnsOpsSnapshot> dnsOpsSupplier;
 
-    /** Optional live DNS queue counters for scrape (P34-007). */
-    public void setDnsOpsSupplier(Supplier<DnsOpsStats> dnsOpsSupplier) {
+    /** Optional live DNS queue counters for scrape (P34-007 / P35-005). */
+    public void setDnsOpsSupplier(Supplier<DnsOpsSnapshot> dnsOpsSupplier) {
         this.dnsOpsSupplier = dnsOpsSupplier;
     }
 
@@ -107,40 +108,77 @@ public final class PrometheusExporter {
     }
 
     private void appendDnsOps(StringBuilder out) {
-        Supplier<DnsOpsStats> supplier = dnsOpsSupplier;
-        DnsOpsStats stats = supplier != null ? supplier.get() : null;
-        if (stats == null) {
-            stats = DnsOpsStats.empty(0);
+        Supplier<DnsOpsSnapshot> supplier = dnsOpsSupplier;
+        DnsOpsSnapshot snapshot = supplier != null ? supplier.get() : null;
+        if (snapshot == null) {
+            snapshot = DnsOpsSnapshot.empty();
         }
+        DnsOpsStats resolve = snapshot.resolve();
+        DnsOpsStats control = snapshot.control();
         writeCounterHeader(out, MetricNames.DNS_REJECTED_TOTAL, "DNS lookups rejected because the queue was full");
         out.append(MetricNames.DNS_REJECTED_TOTAL)
                 .append(' ')
-                .append(stats.rejectedCount())
+                .append(resolve.rejectedCount())
                 .append('\n');
         writeCounterHeader(out, MetricNames.DNS_DROPPED_TOTAL, "DNS lookups dropped on queue overflow");
         out.append(MetricNames.DNS_DROPPED_TOTAL)
                 .append(' ')
-                .append(stats.droppedCount())
+                .append(resolve.droppedCount())
                 .append('\n');
         writeCounterHeader(out, MetricNames.DNS_COALESCED_TOTAL, "DNS lookups coalesced onto an in-flight resolve");
         out.append(MetricNames.DNS_COALESCED_TOTAL)
                 .append(' ')
-                .append(stats.coalescedCount())
+                .append(resolve.coalescedCount())
                 .append('\n');
         writeCounterHeader(out, MetricNames.DNS_TIMEOUT_TOTAL, "DNS lookups that hit the hard timeout");
         out.append(MetricNames.DNS_TIMEOUT_TOTAL)
                 .append(' ')
-                .append(stats.timeoutCount())
+                .append(resolve.timeoutCount())
                 .append('\n');
-        writeGaugeHeader(out, MetricNames.DNS_QUEUE_DEPTH, "Current DNS executor queue depth");
+        writeGaugeHeader(out, MetricNames.DNS_QUEUE_DEPTH, "Current DNS resolve executor queue depth");
         out.append(MetricNames.DNS_QUEUE_DEPTH)
                 .append(' ')
-                .append(stats.queued())
+                .append(resolve.queued())
                 .append('\n');
-        writeGaugeHeader(out, MetricNames.DNS_QUEUE_CAPACITY, "DNS executor queue capacity");
+        writeGaugeHeader(out, MetricNames.DNS_QUEUE_CAPACITY, "DNS resolve executor queue capacity");
         out.append(MetricNames.DNS_QUEUE_CAPACITY)
                 .append(' ')
-                .append(stats.queueCapacity())
+                .append(resolve.queueCapacity())
+                .append('\n');
+        writeCounterHeader(
+                out,
+                MetricNames.DNS_CONTROL_REJECTED_TOTAL,
+                "DNS-control observes rejected because the outer queue was full");
+        out.append(MetricNames.DNS_CONTROL_REJECTED_TOTAL)
+                .append(' ')
+                .append(control.rejectedCount())
+                .append('\n');
+        writeCounterHeader(
+                out, MetricNames.DNS_CONTROL_DROPPED_TOTAL, "DNS-control observes dropped on outer queue overflow");
+        out.append(MetricNames.DNS_CONTROL_DROPPED_TOTAL)
+                .append(' ')
+                .append(control.droppedCount())
+                .append('\n');
+        writeCounterHeader(
+                out, MetricNames.DNS_CONTROL_COALESCED_TOTAL, "DNS-control observes coalesced onto a pending host job");
+        out.append(MetricNames.DNS_CONTROL_COALESCED_TOTAL)
+                .append(' ')
+                .append(control.coalescedCount())
+                .append('\n');
+        writeGaugeHeader(out, MetricNames.DNS_CONTROL_QUEUE_DEPTH, "Current DNS-control outer executor queue depth");
+        out.append(MetricNames.DNS_CONTROL_QUEUE_DEPTH)
+                .append(' ')
+                .append(control.queued())
+                .append('\n');
+        writeGaugeHeader(out, MetricNames.DNS_CONTROL_QUEUE_CAPACITY, "DNS-control outer executor queue capacity");
+        out.append(MetricNames.DNS_CONTROL_QUEUE_CAPACITY)
+                .append(' ')
+                .append(control.queueCapacity())
+                .append('\n');
+        writeGaugeHeader(out, MetricNames.DNS_CONTROL_PENDING, "Hosts with a pending or running DNS-control observe");
+        out.append(MetricNames.DNS_CONTROL_PENDING)
+                .append(' ')
+                .append(control.inFlight())
                 .append('\n');
     }
 

@@ -5,7 +5,10 @@ import io.pingui.config.EndpointDownRuleConfig;
 import io.pingui.config.LatencyHighRuleConfig;
 import io.pingui.config.PingExpertEntry;
 import io.pingui.dns.BoundedForwardDnsLookup;
+import io.pingui.dns.DnsControlDispatcher;
 import io.pingui.dns.DnsControlTracker;
+import io.pingui.dns.DnsOpsSnapshot;
+import io.pingui.dns.DnsOpsStats;
 import io.pingui.dns.ForwardDnsLookup;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.persistence.PersistenceEventWriter;
@@ -28,7 +31,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,13 +115,8 @@ public final class MonitorService implements AutoCloseable {
     private volatile Function<String, java.util.Map<Integer, String>> lastKnownHopIpsResolver;
     private volatile Function<String, Integer> targetHopLookup;
     private final BoundedForwardDnsLookup ownedForwardDns = BoundedForwardDnsLookup.systemDefault();
-    private final ExecutorService dnsControlExecutor = Executors.newSingleThreadExecutor(r -> {
-        Thread thread = new Thread(r, "pingui-dns-control-" + DNS_CONTROL_SEQ.incrementAndGet());
-        thread.setDaemon(true);
-        return thread;
-    });
+    private final DnsControlDispatcher dnsControlDispatcher = DnsControlDispatcher.createDefault();
     private volatile DnsControlTracker dnsControl = new DnsControlTracker(ownedForwardDns);
-    private static final AtomicInteger DNS_CONTROL_SEQ = new AtomicInteger();
 
     public MonitorService(double intervalSeconds, int maxHops, double timeoutSeconds) {
         this(intervalSeconds, maxHops, timeoutSeconds, ProbeMode.AUTO);
@@ -342,9 +339,19 @@ public final class MonitorService implements AutoCloseable {
         dnsControl = lookup == null ? new DnsControlTracker(ownedForwardDns) : new DnsControlTracker(lookup);
     }
 
-    /** Forward-DNS queue / coalesce / overflow counters (P34-007). */
-    public io.pingui.dns.DnsOpsStats dnsOpsStats() {
+    /** Forward-DNS resolve queue counters (P34-007). */
+    public DnsOpsStats dnsOpsStats() {
         return ownedForwardDns.opsStats();
+    }
+
+    /** Outer DNS-control dispatcher counters (P35-005). */
+    public DnsOpsStats dnsControlOpsStats() {
+        return dnsControlDispatcher.opsStats();
+    }
+
+    /** Combined resolve + DNS-control ops for {@code /ops} / Prometheus / App Status. */
+    public DnsOpsSnapshot dnsOpsSnapshot() {
+        return new DnsOpsSnapshot(ownedForwardDns.opsStats(), dnsControlDispatcher.opsStats());
     }
 
     /** Optional telemetry bus (P16-013); null disables offers. Must not block poll. */
@@ -608,28 +615,28 @@ public final class MonitorService implements AutoCloseable {
     }
 
     /**
-     * Forward-DNS control for hostname targets (P29-004 / P32-005). Runs on a dedicated executor so
-     * resolver latency never blocks probe workers. Persists distinct dns_change events only — never
-     * opens quality incidents or alert dispatch.
+     * Forward-DNS control for hostname targets (P29-004 / P32-005 / P35-005). Runs on a bounded,
+     * per-host coalesced dispatcher so resolver latency never blocks probe workers and the outer
+     * queue stays observable. Persists distinct dns_change events only — never opens quality
+     * incidents or alert dispatch.
      */
     private void observeDnsControl(String host) {
-        try {
-            dnsControlExecutor.execute(() -> {
-                try {
-                    var event = dnsControl.observe(host);
-                    if (event.isEmpty()) {
-                        return;
-                    }
-                    PersistenceEventWriter events = persistenceEvents;
-                    if (events != null) {
-                        events.writeDnsChange(event.get());
-                    }
-                } catch (RuntimeException ex) {
-                    LOG.warn("DNS control failed for {}: {}", host, ex.getMessage());
+        boolean accepted = dnsControlDispatcher.submit(host, () -> {
+            try {
+                var event = dnsControl.observe(host);
+                if (event.isEmpty()) {
+                    return;
                 }
-            });
-        } catch (RejectedExecutionException ex) {
-            LOG.warn("DNS control executor rejected observe for {}: {}", host, ex.getMessage());
+                PersistenceEventWriter events = persistenceEvents;
+                if (events != null) {
+                    events.writeDnsChange(event.get());
+                }
+            } catch (RuntimeException ex) {
+                LOG.warn("DNS control failed for {}: {}", host, ex.getMessage());
+            }
+        });
+        if (!accepted) {
+            LOG.warn("DNS control dispatcher rejected observe for {} (outer queue full)", host);
         }
     }
 
@@ -733,12 +740,11 @@ public final class MonitorService implements AutoCloseable {
         running.set(false);
         scheduler.shutdownNow();
         probePool.shutdownNow();
-        dnsControlExecutor.shutdownNow();
+        dnsControlDispatcher.close();
         ownedForwardDns.close();
         try {
             scheduler.awaitTermination(5, TimeUnit.SECONDS);
             probePool.awaitTermination(5, TimeUnit.SECONDS);
-            dnsControlExecutor.awaitTermination(2, TimeUnit.SECONDS);
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
         }
