@@ -16,6 +16,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P34-010 — soak/docs sync + phase close:** regression/soak–fault matrix (8 scenarios → tests); rename control-lane under overflow; ROADMAP **NEXT=DONE** (phase 34 closed); `main`≡`beta`.
 - **P34-009 — Python compatibility edition:** docs lock bugfix-only; `__version__`↔`pyproject` 0.2.0; idempotent `SessionDatabase.close` + daemon `atexit` cleanup; NEXT→**P34-010**.
 - **P34-008 — v12 migration repair:** `migrateV12ToV13` backfill for probe-error → `target_sampled=0`/`reachable=NULL`; idempotent repair on RW open + CLI `--repair-poll-result`; NEXT→**P34-009**.
 - **P34-007 — bounded DNS + ops counters:** `BoundedForwardDnsLookup` — bounded queue + AbortPolicy, per-host coalesce, `DnsOpsStats`; counters in App Status / `GET /ops` / Prometheus (`pingui_dns_*`); NEXT→**P34-008**.
