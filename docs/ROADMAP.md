@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P34-009** |
+| **Поточна задача** | **P34-010** |
 | **Фаза** | 34 — Correctness follow-up (route / target / persistence) |
-| **DoD (коротко)** | Python compatibility edition |
+| **DoD (коротко)** | Soak / fault matrix + docs sync |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -203,10 +203,10 @@
 | 157 | **P34-006** | [x] | loss / jitter / rollup semantics |
 | 158 | **P34-007** | [x] | Bounded DNS queues + ops counters |
 | 159 | **P34-008** | [x] | v12 migration repair |
-| 160 | **P34-009** | [ ] | Python compatibility edition |
+| 160 | **P34-009** | [x] | Python compatibility edition |
 | 161 | **P34-010** | [ ] | Soak / fault matrix + docs sync |
 
-**Стан черги:** **NEXT = P34-009** (фаза 34; [pingui-route-persistence.md](pingui-route-persistence.md)).
+**Стан черги:** **NEXT = P34-010** (фаза 34; [pingui-route-persistence.md](pingui-route-persistence.md)).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -1068,7 +1068,7 @@ flowchart TD
 
 **Контекст:** [pingui-route-persistence.md](pingui-route-persistence.md). Після P33 — NOC/unattended correctness; **не** нове функціональне розширення. Java-first.
 
-**Черга:** після P33; **NEXT = P34-009**.
+**Черга:** після P33; **NEXT = P34-010**.
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
@@ -1080,7 +1080,7 @@ flowchart TD
 | **P34-006** | [x] loss/jitter/rollup semantics | `PollResultEffects`, rollup, retention | loss NULL або явний window; jitter moments/window; availability з target_sampled/reachable |
 | **P34-007** | [x] Bounded DNS + ops counters | `BoundedForwardDnsLookup`, App Status, API/Prometheus | Bounded queues + coalesce per host; dropped/rejected counters видимі оператору |
 | **P34-008** | [x] v12 migration repair | `SchemaManager`, CLI/repair | error → `target_sampled=0`, `reachable=NULL`; repair наявних DB |
-| **P34-009** | [ ] Python compatibility | `src/pingui/`, pyproject, version | bugfix-only закріплено; shutdown harden; version align |
+| **P34-009** | [x] Python compatibility | `src/pingui/`, pyproject, version | bugfix-only закріплено; shutdown harden; version align |
 | **P34-010** | [ ] Soak/docs sync | tests, README, ROADMAP | Regression matrix з аудиту; NEXT/`main`≡`beta` |
 
 **Поза scope:** нові протоколи; ORM; великі GUI-екрани; silent delete `.db`.
@@ -1171,7 +1171,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P34-009**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P34-010**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

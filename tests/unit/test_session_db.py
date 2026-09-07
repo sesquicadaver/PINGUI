@@ -91,3 +91,17 @@ def test_rejects_schema_version_mismatch(db_path: Path, wrong_version: int) -> N
         ),
     ):
         SessionDatabase(db_path)
+
+
+def test_session_database_close_is_idempotent(db_path: Path) -> None:
+    db = SessionDatabase(db_path)
+    db.save("host", HostSessionData(enabled=True))
+    db.close()
+    db.close()
+
+
+def test_session_store_close_is_idempotent(db_path: Path) -> None:
+    db = SessionDatabase(db_path)
+    store = SessionStore(["8.8.8.8"], session_db=db)
+    store.close()
+    store.close()

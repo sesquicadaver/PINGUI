@@ -7,7 +7,7 @@ Cross-platform implementation in the [`java/`](../../java/) directory.
 ## Edition canon (P32-008)
 
 **Java** is the canonical product edition (SQLite schema v14, GUI, daemon, alerts, telemetry).
-**Python** (`src/pingui/`) is a maintenance / legacy edition: **bugfix only** (plus security patches); new features / schema evolution land in Java unless explicitly decided otherwise.
+**Python** (`src/pingui/`) is a maintenance / legacy edition: **bugfix only** (plus security patches; P32-008 / P34-009); new features / schema evolution land in Java unless explicitly decided otherwise.
 
 ## Goal
 
@@ -229,4 +229,4 @@ Tests and CI — on **`main`** and **`beta`** (ROADMAP development on `beta`).
 
 ## Future
 
-The linear ROADMAP queue: **NEXT = P34-009** (phase 34 — Correctness follow-up). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT; [pingui-route-persistence.md](pingui-route-persistence.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
+The linear ROADMAP queue: **NEXT = P34-010** (phase 34 — Correctness follow-up). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT; [pingui-route-persistence.md](pingui-route-persistence.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).

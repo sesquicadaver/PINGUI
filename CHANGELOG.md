@@ -16,6 +16,7 @@
 
 ### Changed
 
+- **P34-009 — Python compatibility edition:** bugfix-only lock у docs; `__version__`↔`pyproject` 0.2.0; ідемпотентний `SessionDatabase.close` + daemon `atexit` cleanup; NEXT→**P34-010**.
 - **P34-008 — v12 migration repair:** `migrateV12ToV13` backfill для probe-error → `target_sampled=0`/`reachable=NULL`; ідемпотентний repair на RW open + CLI `--repair-poll-result`; NEXT→**P34-009**.
 - **P34-007 — bounded DNS + ops counters:** `BoundedForwardDnsLookup` — bounded queue + AbortPolicy, coalesce per host, `DnsOpsStats`; counters у App Status / `GET /ops` / Prometheus (`pingui_dns_*`); NEXT→**P34-008**.
 - **P34-006 — loss/jitter/rollup:** `poll_result.loss` NULL до вікна ≥2 probes; jitter = stddev RTT-вікна; rollup availability лише з `target_sampled`; NEXT→**P34-007**.

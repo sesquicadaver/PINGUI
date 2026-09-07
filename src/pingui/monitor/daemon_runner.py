@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import atexit
 import logging
 import os
 import signal
@@ -199,6 +200,22 @@ def run_headless_monitor(
 
     pid = PidFile(pid_file) if pid_file is not None else None
     shutting_down = False
+    cleaned_up = False
+
+    def _cleanup() -> None:
+        """Idempotent flush of loop/telemetry/store/PID (P34-009; mirrors Java shutdown hook)."""
+        nonlocal cleaned_up
+        if cleaned_up:
+            return
+        cleaned_up = True
+        loop.stop()
+        loop.join(timeout=5.0)
+        telemetry.close()
+        if ts_sink is not None:
+            ts_sink.close()
+        store.close()
+        if pid is not None:
+            pid.release()
 
     def _shutdown(_signum: int, _frame: object) -> None:
         nonlocal shutting_down
@@ -210,6 +227,7 @@ def run_headless_monitor(
 
     signal.signal(signal.SIGINT, _shutdown)
     signal.signal(signal.SIGTERM, _shutdown)
+    atexit.register(_cleanup)
 
     try:
         if pid is not None:
@@ -227,13 +245,6 @@ def run_headless_monitor(
         while loop.is_running():
             time.sleep(0.5)
     finally:
-        loop.stop()
-        loop.join(timeout=5.0)
-        telemetry.close()
-        if ts_sink is not None:
-            ts_sink.close()
-        store.close()
-        if pid is not None:
-            pid.release()
+        _cleanup()
 
     return 0

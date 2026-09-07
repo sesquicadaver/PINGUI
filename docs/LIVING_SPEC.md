@@ -119,7 +119,7 @@
 | GUI information hierarchy (P31) | a11y [x] | [pingui-evo-gui.md](pingui-evo-gui.md); P31-007 [x]; фаза закрита |
 | Stabilization MTR/history (P32) | phase closed [x] | [pingui-stabilization.md](pingui-stabilization.md) — **архів**; P32-008 [x] |
 | Correctness MTR/projection (P33) | P33-001…008 [x]; phase closed | [pingui-correctness.md](pingui-correctness.md) — архів |
-| Correctness follow-up (P34) | NEXT=P34-009 | [pingui-route-persistence.md](pingui-route-persistence.md); route identity / target / persistence |
+| Correctness follow-up (P34) | NEXT=P34-010 | [pingui-route-persistence.md](pingui-route-persistence.md); route identity / target / persistence |
 | Route identity FSM (P34-001) | `RouteIdentity`, `CandidateRouteFsm`, `RouteChangeDetector`, `RoutePoller`, `RouteSignature` | `RouteIdentityTest`, `CandidateRouteFsmTest`, `RouteChangeDetectorTest`, `RoutePollerTest.pollHostMtrConfirmsRouteChangeOnlyAfterTarget`, `SessionDatabaseRouteTest.transientTimeoutDoesNotCreateNewRouteRow` |
 | MTR target-unknown (P34-002) | `MtrProbe`, `MtrProbeState.Phase.TARGET_UNKNOWN`, bounded rediscovery | `MtrProbeTest.maxHopsExhaustedWithoutTargetEntersTargetUnknown`, `allTimeoutsExhaustionDoesNotClaimTargetSampled`, `boundedRediscoveryFindsTargetAfterExhaustion`, `rediscoveryStopsAfterMaxAttempts` |
 | Endpoint current vs history (P34-003) | `HostNetworkStateClassifier.endpoint` | `HostNetworkStateClassifierTest.currentTimeoutIsDownEvenWithHealthyHistory`, `SessionStoreTest.timeoutAfterSuccessHistoryIsEndpointDown`, `HostItemMetricsTest.stateGlyphReflectsAvailability` |
@@ -128,6 +128,7 @@
 | loss/jitter/rollup (P34-006) | `PollResultEffects`, rollup availability | `PollResultEffectsTest` (loss NULL / jitter window / target_sampled) |
 | Bounded DNS + ops (P34-007) | `BoundedForwardDnsLookup`, `DnsOpsStats`, App Status, `/ops`, Prometheus | `BoundedForwardDnsLookupTest`, `AppStatusFormatTest.monitoringAppendsDnsPressure`, `ReadOnlyApiContractTest.opsDocumentExposesDnsCounters`, `PrometheusExporterTest.scrapeIncludesLiveDnsOpsSupplier` |
 | v12 migration repair (P34-008) | `SchemaManager.migrateV12ToV13`, `repairPollResultProbeErrorTriState`, CLI `--repair-poll-result` | `SessionDatabaseMetricRollupTest.migratesV12PollResultAndRollupToV14`, `repairsLegacyProbeErrorTriStateOnAlreadyV14Db`, `PinguiApplicationTest.parseOptions_repairPollResult*` |
+| Python compatibility (P34-009) | `src/pingui/` bugfix-only lock; idempotent `SessionDatabase.close`; daemon `atexit`; `__version__`↔`pyproject` | `test_version.py`, `test_session_db.py` (idempotent close), `test_daemon_runner.py` |
 | Runtime hardening follow-up (P28) | SinkRegistry hang [x]; inFlight before pool [x]; Python schema `!=` gate [x] | фаза 28 closed |
 | Diagnostic evolution (P29) | multi-host correlation [x]; incident timeline [x]; alert silence [x]; DNS control [x]; TCP connect [x] | NEXT=`DONE`; Java-first |
 | TCP connect (P29-005) | `TcpEndpoint`, `TcpConnectProbe`, `HostProbeMode.TCP_CONNECT`, `RoutePoller.pollHostTcpConnect` | `TcpEndpointTest`, `TcpConnectProbeTest`, `RoutePollerTcpConnectTest`, `ProfilesConfigTest.loadTcpConnect*` |
@@ -198,7 +199,7 @@
 
 ## Python (`beta`)
 
-Матриця «модуль → тести» для Python-редакції. Оновлюй при додаванні фіч (PY-013).
+Матриця «модуль → тести» для Python-редакції (**legacy / bugfix-only**, P32-008 / P34-009). Не додавати фічі / schema evolution тут — лише bugfix і безпека; канон — Java.
 
 | Модуль / ТЗ | Клас / модуль | Тести |
 |-------------|---------------|-------|
@@ -214,7 +215,8 @@
 | Route change event | `models.py` (`RouteChangeEvent`) | `test_route_change_event.py` |
 | Hop stats | `monitor/hop_stats.py` | `test_hop_stats.py` |
 | Worker | `monitor/worker.py` | `test_worker.py`, `integration/test_worker_run.py` |
-| SQLite persistence | `persistence/session_db.py` | `test_session_db.py` |
+| SQLite persistence | `persistence/session_db.py` (schema v4; idempotent close) | `test_session_db.py` |
+| Package version | `__init__.__version__` ↔ `pyproject` | `test_version.py` |
 | Time-series | `persistence/timeseries/` | `test_timeseries.py` |
 | Telemetry models | `models.py` (`MetricSample`, `TelemetryEvent`) | `test_telemetry_models.py` |
 | Telemetry YAML | `telemetry_config.py` | `test_telemetry_config.py` |
