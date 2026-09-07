@@ -2,7 +2,7 @@
 
 # Correctness follow-up — route / target / persistence (P34)
 
-> **Archive:** phase 34 **closed** (P34-001…010). Authoritative ROADMAP **NEXT=P35-006** — [pingui-unattended.md](pingui-unattended.md). Correctness: [pingui-correctness.md](pingui-correctness.md). Stabilization: [pingui-stabilization.md](pingui-stabilization.md).
+> **Archive:** phase 34 **closed** (P34-001…010). Authoritative ROADMAP **NEXT=P35-007** — [pingui-unattended.md](pingui-unattended.md). Correctness: [pingui-correctness.md](pingui-correctness.md). Stabilization: [pingui-stabilization.md](pingui-stabilization.md).
 
 **Source for phase 34.** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
 

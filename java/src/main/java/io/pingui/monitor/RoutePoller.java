@@ -111,6 +111,14 @@ public final class RoutePoller {
         }
     }
 
+    /**
+     * Invalidates MTR target IP and candidate-route FSM after a confirmed DNS address-set change
+     * (P35-006). Next poll re-resolves the hostname.
+     */
+    public void invalidateOnDnsAddressChange(String host) {
+        resetMtrHost(host);
+    }
+
     /** Clears MTR state on host rename (P32-002); new name rediscovers from scratch. */
     public void renameMtrHost(String oldHost, String newHost) {
         resetRouteIdentity(oldHost);

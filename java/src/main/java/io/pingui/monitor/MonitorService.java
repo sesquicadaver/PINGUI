@@ -6,6 +6,7 @@ import io.pingui.config.LatencyHighRuleConfig;
 import io.pingui.config.PingExpertEntry;
 import io.pingui.dns.BoundedForwardDnsLookup;
 import io.pingui.dns.DnsControlDispatcher;
+import io.pingui.dns.DnsControlEvent;
 import io.pingui.dns.DnsControlTracker;
 import io.pingui.dns.DnsOpsSnapshot;
 import io.pingui.dns.DnsOpsStats;
@@ -615,10 +616,11 @@ public final class MonitorService implements AutoCloseable {
     }
 
     /**
-     * Forward-DNS control for hostname targets (P29-004 / P32-005 / P35-005). Runs on a bounded,
-     * per-host coalesced dispatcher so resolver latency never blocks probe workers and the outer
-     * queue stays observable. Persists distinct dns_change events only — never opens quality
-     * incidents or alert dispatch.
+     * Forward-DNS control for hostname targets (P29-004 / P32-005 / P35-005 / P35-006). Runs on a
+     * bounded, per-host coalesced dispatcher so resolver latency never blocks probe workers and the
+     * outer queue stays observable. Persists distinct dns_change events only — never opens quality
+     * incidents or alert dispatch. A confirmed address-set {@code change} invalidates MTR target
+     * IP, candidate route, and latency baseline for that host.
      */
     private void observeDnsControl(String host) {
         boolean accepted = dnsControlDispatcher.submit(host, () -> {
@@ -627,10 +629,7 @@ public final class MonitorService implements AutoCloseable {
                 if (event.isEmpty()) {
                     return;
                 }
-                PersistenceEventWriter events = persistenceEvents;
-                if (events != null) {
-                    events.writeDnsChange(event.get());
-                }
+                applyDnsControlEvent(event.get());
             } catch (RuntimeException ex) {
                 LOG.warn("DNS control failed for {}: {}", host, ex.getMessage());
             }
@@ -638,6 +637,38 @@ public final class MonitorService implements AutoCloseable {
         if (!accepted) {
             LOG.warn("DNS control dispatcher rejected observe for {} (outer queue full)", host);
         }
+    }
+
+    /**
+     * Persists a DNS-control event and applies P35-006 invalidation on address-set change.
+     *
+     * <p>Package-visible for tests.
+     */
+    void applyDnsControlEvent(DnsControlEvent event) {
+        if (event == null) {
+            return;
+        }
+        PersistenceEventWriter events = persistenceEvents;
+        if (events != null) {
+            events.writeDnsChange(event);
+        }
+        if (event.isAddressSetChange()) {
+            invalidateHostAfterDnsAddressChange(event.host());
+        }
+    }
+
+    /**
+     * Clears MTR target IP / candidate route and latency EWMA after DNS failover (P35-006).
+     *
+     * <p>Package-visible for tests.
+     */
+    void invalidateHostAfterDnsAddressChange(String host) {
+        if (host == null || host.isBlank()) {
+            return;
+        }
+        poller.invalidateOnDnsAddressChange(host);
+        pollEffects.resetLatencyBaseline(host);
+        LOG.info("DNS address-set change: invalidated MTR/candidate/latency for {}", host);
     }
 
     private CompletedPoll buildCompletedPoll(

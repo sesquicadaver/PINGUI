@@ -40,6 +40,11 @@ public record DnsControlEvent(
         }
     }
 
+    /** True when forward DNS reported a new address set (P35-006 invalidation trigger). */
+    public boolean isAddressSetChange() {
+        return "change".equals(state);
+    }
+
     /** Compact JSON for {@code detail_json} column. */
     public String detailJson() {
         return "{\"resolve_ms\":" + resolveMs + ",\"outcome\":\"" + outcome.id() + "\",\"state\":\"" + state + "\"}";
