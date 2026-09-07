@@ -1,6 +1,7 @@
 package io.pingui.persistence;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -227,6 +228,42 @@ class PollResultRetentionJobTest {
             assertEquals(1, db.listIncidents("9.9.9.9", 10).size());
             assertEquals(1, db.countRoutes());
             assertEquals(0, db.countPollResults());
+        }
+    }
+
+    @Test
+    void availabilityIgnoresNonSampledPolls() {
+        Clock clock = Clock.fixed(Instant.parse("2026-09-03T12:00:00Z"), ZoneOffset.UTC);
+        Path dbPath = tempDir.resolve("ret-avail.db");
+        try (SessionDatabase db = new SessionDatabase(dbPath)) {
+            seedHost(db, "8.8.8.8");
+            Instant mid = Instant.parse("2026-08-20T10:02:30Z");
+            db.insertPollResult(
+                    "8.8.8.8", mid, "ping_only", true, 10.0, null, null, 40.0, null, null, ProbeOutcome.SUCCESS, true);
+            db.insertPollResult(
+                    "8.8.8.8",
+                    mid.plusSeconds(30),
+                    "trace",
+                    null,
+                    null,
+                    null,
+                    null,
+                    5.0,
+                    null,
+                    "dns failed",
+                    ProbeOutcome.DNS_ERROR,
+                    false);
+
+            PollResultRetentionJob.Result result = PollResultRetentionJob.run(db, clock);
+            assertEquals(1, result.rolledFiveMinBuckets());
+            assertEquals(2, result.deletedRawPolls());
+            MetricRollupRecord rollup = db.listMetricRollups("8.8.8.8", PollResultRetentionJob.BUCKET_5_MIN_SECONDS, 1)
+                    .get(0);
+            assertEquals(2, rollup.sampleCount());
+            assertEquals(1, rollup.reachableSamples());
+            assertEquals(1, rollup.reachableCount());
+            assertEquals(1.0, rollup.uptimeRatio());
+            assertNull(rollup.lossAvg());
         }
     }
 

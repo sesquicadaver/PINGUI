@@ -61,8 +61,29 @@ class CompletedPollTest {
 
         assertEquals(probesBefore, prior.getProbes(), "prior must stay immutable");
         assertNotNull(poll.measuredTerminalStats());
+        // Single success after a 2-probe prior window → loss is measured (0%).
         assertEquals(0.0, poll.measuredTerminalStats().lossPct());
         assertNotNull(poll.measuredTerminalStats().jitterMs());
+    }
+
+    @Test
+    void singlePacketPollResultLossIsNull() {
+        RouteSnapshot snapshot =
+                new RouteSnapshot("1.1.1.1", "1.1.1.1", List.of(new HopNode(1, "1.1.1.1", 9.0, false)));
+        CompletedPoll poll = CompletedPoll.success(
+                "1.1.1.1",
+                HostProbeMode.PING_ONLY,
+                snapshot,
+                12.0,
+                ProbeOutcome.SUCCESS,
+                true,
+                Instant.parse("2026-09-07T10:00:00Z"),
+                null,
+                PollSampleScope.FULL,
+                Map.of());
+        assertNotNull(poll.measuredTerminalStats());
+        assertNull(poll.measuredTerminalStats().lossPct());
+        assertNull(poll.measuredTerminalStats().jitterMs());
     }
 
     @Test
@@ -107,7 +128,7 @@ class CompletedPollTest {
             PollResultRecord row = database.listPollResults("8.8.8.8", 1).get(0);
             assertEquals(true, row.reachable());
             assertEquals(11.0, row.terminalRttMs());
-            assertEquals(0.0, row.lossPercent());
+            assertNull(row.lossPercent(), "single-packet loss must be null (P34-006)");
             assertNull(row.jitterMs());
             assertTrue(row.targetSampled());
         }
