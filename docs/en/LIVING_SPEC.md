@@ -119,11 +119,14 @@ Module → unit test matrix. Update when adding features.
 | GUI information hierarchy (P31) | a11y [x] | [pingui-evo-gui.md](pingui-evo-gui.md); P31-007 [x]; phase closed |
 | Stabilization MTR/history (P32) | phase closed [x] | [pingui-stabilization.md](pingui-stabilization.md) — archival; P32-008 [x] |
 | Correctness MTR/projection (P33) | P33-001…008 [x]; phase closed | [pingui-correctness.md](pingui-correctness.md) — archival |
-| Correctness follow-up (P34) | NEXT=P34-007 | [pingui-route-persistence.md](pingui-route-persistence.md); route identity / target / persistence |
+| Correctness follow-up (P34) | NEXT=P34-008 | [pingui-route-persistence.md](pingui-route-persistence.md); route identity / target / persistence |
 | Route identity FSM (P34-001) | `RouteIdentity`, `CandidateRouteFsm`, `RouteChangeDetector`, `RoutePoller`, `RouteSignature` | `RouteIdentityTest`, `CandidateRouteFsmTest`, `RouteChangeDetectorTest`, `RoutePollerTest.pollHostMtrConfirmsRouteChangeOnlyAfterTarget`, `SessionDatabaseRouteTest.transientTimeoutDoesNotCreateNewRouteRow` |
 | MTR target-unknown (P34-002) | `MtrProbe`, `MtrProbeState.Phase.TARGET_UNKNOWN`, bounded rediscovery | `MtrProbeTest.maxHopsExhaustedWithoutTargetEntersTargetUnknown`, `allTimeoutsExhaustionDoesNotClaimTargetSampled`, `boundedRediscoveryFindsTargetAfterExhaustion`, `rediscoveryStopsAfterMaxAttempts` |
 | Endpoint current vs history (P34-003) | `HostNetworkStateClassifier.endpoint` | `HostNetworkStateClassifierTest.currentTimeoutIsDownEvenWithHealthyHistory`, `SessionStoreTest.timeoutAfterSuccessHistoryIsEndpointDown`, `HostItemMetricsTest.stateGlyphReflectsAvailability` |
 | Persistence lanes (P34-004) | `SessionPersistenceWriter` control/coalesce/telemetry | `SessionPersistenceWriterTest.telemetryOverflowDoesNotDropDelete`, `coalescesSaveHostToLatestSnapshot`, `closeStopsWorkerBeforeReturning` |
+| Immutable CompletedPoll (P34-005) | `CompletedPoll`, `MonitorLifecycle`, GUI/daemon parity | `MonitorServiceTest` / lifecycle parity coverage |
+| loss/jitter/rollup (P34-006) | `PollResultEffects`, rollup availability | `PollResultEffectsTest` (loss NULL / jitter window / target_sampled) |
+| Bounded DNS + ops (P34-007) | `BoundedForwardDnsLookup`, `DnsOpsStats`, App Status, `/ops`, Prometheus | `BoundedForwardDnsLookupTest`, `AppStatusFormatTest.monitoringAppendsDnsPressure`, `ReadOnlyApiContractTest.opsDocumentExposesDnsCounters`, `PrometheusExporterTest.scrapeIncludesLiveDnsOpsSupplier` |
 | Runtime hardening follow-up (P28) | SinkRegistry hang [x]; inFlight before pool [x]; Python schema `!=` gate [x] | phase 28 closed |
 | Diagnostic evolution (P29) | multi-host correlation [x]; incident timeline [x]; alert silence [x]; DNS control [x]; TCP connect [x] | NEXT=`DONE`; Java-first |
 | TCP connect (P29-005) | `TcpEndpoint`, `TcpConnectProbe`, `HostProbeMode.TCP_CONNECT`, `RoutePoller.pollHostTcpConnect` | `TcpEndpointTest`, `TcpConnectProbeTest`, `RoutePollerTcpConnectTest`, `ProfilesConfigTest.loadTcpConnect*` |

@@ -143,6 +143,9 @@ public final class DaemonRunner implements AutoCloseable {
             return;
         }
         PrometheusExporter exporter = new PrometheusExporter();
+        if (monitor != null) {
+            exporter.setDnsOpsSupplier(monitor::dnsOpsStats);
+        }
         metricsServer = MetricsHttpServer.start(exporter, port.get());
         if (telemetry != null) {
             telemetry.registry().register(new PrometheusTelemetrySink(exporter));
@@ -157,7 +160,7 @@ public final class DaemonRunner implements AutoCloseable {
         if (port.isEmpty()) {
             return;
         }
-        apiServer = ReadOnlyApiServer.start(store, port.get());
+        apiServer = ReadOnlyApiServer.start(store, port.get(), monitor != null ? monitor::dnsOpsStats : null);
     }
 
     private void closeQuietly() {

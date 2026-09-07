@@ -111,7 +111,14 @@ final class AppStatusPresenter {
         if (service != null) {
             service.latestPollAt().ifPresent(t -> lastCycleAt = t);
         }
-        panel.monitoringLabel().setText(AppStatusFormat.monitoring(active, enabled, total, lastCycleAt, Instant.now()));
+        panel.monitoringLabel()
+                .setText(AppStatusFormat.monitoring(
+                        active,
+                        enabled,
+                        total,
+                        lastCycleAt,
+                        Instant.now(),
+                        service != null ? service.dnsOpsStats() : null));
     }
 
     /**

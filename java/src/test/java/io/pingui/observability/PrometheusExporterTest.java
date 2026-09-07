@@ -22,6 +22,22 @@ class PrometheusExporterTest {
         assertTrue(text.contains("pingui_route_change_total{host=\"8.8.8.8\"} 2"));
         assertTrue(text.contains("pingui_target_reachable{host=\"8.8.8.8\"} 1.0"));
         assertTrue(text.contains("pingui_trace_duration_ms{host=\"8.8.8.8\",probe_mode=\"trace\"} 42.0"));
+        assertTrue(text.contains("# TYPE pingui_dns_rejected_total counter"));
+        assertTrue(text.contains("pingui_dns_rejected_total 0"));
+        assertTrue(text.contains("pingui_dns_queue_capacity 0"));
+    }
+
+    @Test
+    void scrapeIncludesLiveDnsOpsSupplier() {
+        PrometheusExporter exporter = new PrometheusExporter();
+        exporter.setDnsOpsSupplier(() -> new io.pingui.dns.DnsOpsStats(64, 3, 1, 2, 2, 4, 5));
+        String text = exporter.scrape();
+        assertTrue(text.contains("pingui_dns_rejected_total 2"));
+        assertTrue(text.contains("pingui_dns_dropped_total 2"));
+        assertTrue(text.contains("pingui_dns_coalesced_total 4"));
+        assertTrue(text.contains("pingui_dns_timeout_total 5"));
+        assertTrue(text.contains("pingui_dns_queue_depth 3"));
+        assertTrue(text.contains("pingui_dns_queue_capacity 64"));
     }
 
     @Test
