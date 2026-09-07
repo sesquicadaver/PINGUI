@@ -8,10 +8,10 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **[P34-008](docs/ROADMAP.md#next--єдине-джерело-правди)** |
+| **Поточна задача** | **[P34-009](docs/ROADMAP.md#next--єдине-джерело-правди)** |
 | **Правило** | якщо не `DONE` — `/autopilot` = цей ID; якщо `DONE` — зупинитись / чекати явного нового ID. **Не питати** «який пункт?». |
 
-Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна) (фаза 34; NEXT=**P34-008**).
+Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна) (фаза 34; NEXT=**P34-009**).
 
 **Статус MVP:** ✅ реалізовано (2026-06-26)
 
@@ -55,7 +55,7 @@
 | **31** | GUI information hierarchy (host row → a11y) | ✅ **DONE** |
 | **32** | Stabilization (MTR / history / side-effects) | ✅ **DONE** |
 | **33** | Correctness (MTR / projection / side-effects) | ✅ **DONE** |
-| **34** | Correctness follow-up (route / target / persistence) | 🔄 NEXT=**P34-008** |
+| **34** | Correctness follow-up (route / target / persistence) | 🔄 NEXT=**P34-009** |
 
 ---
 

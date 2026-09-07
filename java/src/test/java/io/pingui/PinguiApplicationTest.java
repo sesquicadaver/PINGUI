@@ -345,6 +345,31 @@ class PinguiApplicationTest {
     }
 
     @Test
+    void parseOptions_repairPollResultWithSessionDb() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of(
+                "session-db", "data/ping.db",
+                "repair-poll-result", ""));
+        assertEquals(CliRunMode.REPAIR_POLL_RESULT, options.runMode());
+        assertEquals(Path.of("data/ping.db"), options.sessionDbPath().orElseThrow());
+    }
+
+    @Test
+    void parseOptions_repairPollResultRequiresSessionDb() {
+        assertThrows(
+                IllegalArgumentException.class, () -> PinguiApplication.parseOptions(Map.of("repair-poll-result", "")));
+    }
+
+    @Test
+    void parseOptions_repairPollResultExclusiveWithIntegrityCheck() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PinguiApplication.parseOptions(Map.of(
+                        "session-db", "data/ping.db",
+                        "integrity-check", "",
+                        "repair-poll-result", "")));
+    }
+
+    @Test
     void parseOptions_asnTimeoutMustBePositive() {
         assertThrows(
                 IllegalArgumentException.class, () -> PinguiApplication.parseOptions(Map.of("asn-timeout-ms", "0")));
