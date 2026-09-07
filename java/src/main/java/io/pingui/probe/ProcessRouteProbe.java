@@ -65,11 +65,17 @@ public final class ProcessRouteProbe implements RouteProbe {
             throw new IOException(
                     "No hops parsed for " + targetHost + " (" + lines.size() + " tracert lines); check tracert output");
         }
-        String targetIp = nodes.stream()
-                .filter(HopNode::isReachable)
-                .map(HopNode::ip)
-                .reduce((first, second) -> second)
-                .orElse(targetHost);
+        // P35-001: real target from header/literal/resolve — never last reachable hop.
+        return toSnapshot(targetHost, lines, nodes);
+    }
+
+    /**
+     * Assembles a TRACE snapshot with authoritative {@code targetIp} (P35-001).
+     *
+     * <p>Package-private for unit tests that feed fixture lines without spawning traceroute.
+     */
+    static RouteSnapshot toSnapshot(String targetHost, List<String> lines, List<HopNode> nodes) {
+        String targetIp = TraceTargetIp.resolve(targetHost, lines);
         return new RouteSnapshot(targetHost, targetIp, nodes);
     }
 
