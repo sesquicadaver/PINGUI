@@ -183,13 +183,14 @@ public final class PollResultRetentionJob {
 
         void addPoll(PollResultRecord poll) {
             sampleCount++;
-            if (poll.reachable() != null) {
+            // Availability only from target-sampled polls with known reachability (P34-006).
+            if (poll.targetSampled() && poll.reachable() != null) {
                 reachableSamples++;
                 if (poll.reachable()) {
                     reachableCount++;
                 }
             }
-            if (poll.terminalRttMs() != null) {
+            if (poll.targetSampled() && poll.terminalRttMs() != null) {
                 double rtt = poll.terminalRttMs();
                 rttMin = rttMin == null ? rtt : Math.min(rttMin, rtt);
                 rttMax = rttMax == null ? rtt : Math.max(rttMax, rtt);

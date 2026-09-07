@@ -90,7 +90,12 @@ public final class PingColor {
         if (summary.jitterMs() != null) {
             builder.append(' ');
         }
-        builder.append("loss:").append((int) summary.lossPct()).append('%');
+        builder.append("loss:");
+        if (summary.lossPct() != null) {
+            builder.append(summary.lossPct().intValue()).append('%');
+        } else {
+            builder.append("n/a");
+        }
         return builder.toString();
     }
 }

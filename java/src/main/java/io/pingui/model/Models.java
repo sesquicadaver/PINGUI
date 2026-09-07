@@ -78,7 +78,7 @@ public final class Models {
         }
     }
 
-    public record HopStatsSummary(Double jitterMs, double lossPct) {}
+    public record HopStatsSummary(Double jitterMs, Double lossPct) {}
 
     public static final class HostSessionData {
         private List<HopNode> currentRoute = List.of();

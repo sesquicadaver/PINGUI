@@ -7,7 +7,8 @@ import java.util.Objects;
  * One time-bucket aggregate ({@code metric_rollup}, P30-005 / P32-004).
  *
  * <p>Stores additive counters/sums; averages and availability are computed on read so buckets merge
- * correctly across nullable RTT/loss samples.
+ * correctly across nullable RTT/loss samples. Availability uses only {@code target_sampled}
+ * polls with non-null {@code reachable} (P32-004 / P34-006).
  */
 public record MetricRollupRecord(
         long hostId,
@@ -46,7 +47,7 @@ public record MetricRollupRecord(
         return sampleCount;
     }
 
-    /** {@code reachable_count / reachable_samples}, or {@code null} when unknown. */
+    /** {@code reachable_count / reachable_samples} from target-sampled polls only, or {@code null}. */
     public Double uptimeRatio() {
         return reachableSamples == 0 ? null : (double) reachableCount / reachableSamples;
     }
