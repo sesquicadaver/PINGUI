@@ -16,6 +16,9 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -156,6 +159,53 @@ class SessionPersistenceWriterTest {
         assertFalse(writer.workerAliveForTests());
         assertNotNull(db.load("h"));
         db.close();
+    }
+
+    /**
+     * P35-008: a stuck in-flight apply must not cause {@code close()} to drain/apply leftover jobs on
+     * the caller thread (parallel JDBC / double-apply).
+     */
+    @Test
+    void closeDoesNotCallerDrainWhileStuckWorkerAlive() throws Exception {
+        CountDownLatch enteredStuck = new CountDownLatch(1);
+        CountDownLatch releaseStuck = new CountDownLatch(1);
+        AtomicInteger secondApplied = new AtomicInteger();
+
+        SessionPersistenceWriter writer = new SessionPersistenceWriter(
+                Duration.ofMillis(150), Duration.ofMillis(50), 8, DropPolicy.DROP_OLDEST, null, null);
+
+        assertTrue(writer.offerJdbc(() -> {
+            enteredStuck.countDown();
+            // Simulate stuck JDBC that ignores interrupt until explicitly released.
+            while (releaseStuck.getCount() > 0) {
+                try {
+                    if (!releaseStuck.await(50, TimeUnit.MILLISECONDS)) {
+                        // keep spinning until release
+                    }
+                } catch (InterruptedException ignored) {
+                    Thread.interrupted();
+                }
+            }
+        }));
+        assertTrue(enteredStuck.await(2, TimeUnit.SECONDS), "worker must enter stuck job");
+
+        assertTrue(writer.offerJdbc(secondApplied::incrementAndGet));
+
+        long startedNs = System.nanoTime();
+        writer.close();
+        long closeMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNs);
+
+        assertTrue(writer.workerAliveForTests(), "stuck worker must still be alive after close");
+        assertEquals(0, secondApplied.get(), "caller must not drain/apply while stuck worker alive");
+        assertTrue(closeMs < 5_000L, "close must return within short join budget, was " + closeMs + "ms");
+
+        releaseStuck.countDown();
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        while (writer.workerAliveForTests() && System.nanoTime() < deadline) {
+            Thread.sleep(20);
+        }
+        assertFalse(writer.workerAliveForTests(), "worker should exit after stuck job is released");
+        assertEquals(1, secondApplied.get(), "worker (not caller) applies leftover after unblock");
     }
 
     @Test
