@@ -1,6 +1,9 @@
 package io.pingui.persistence;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.model.Models.HopNode;
@@ -53,10 +56,7 @@ class SessionPersistenceWriterTest {
         MemoryTimeSeriesBackend backend = new MemoryTimeSeriesBackend();
         try (SessionPersistenceWriter writer = new SessionPersistenceWriter(1, DropPolicy.DROP_NEWEST, null, backend)) {
             Instant now = Instant.now();
-            // Fill capacity with a barrier that will not be consumed until we stop... use ping jobs.
-            // Block worker by flooding faster than process — with capacity 1, second offer drops.
             writer.offerPingSamples(List.of(new PingSample("a", 1, "1.1.1.1", 1.0, now)));
-            // Keep offering until at least one drop (queue full + DROP_NEWEST).
             long drops = 0;
             for (int i = 0; i < 200; i++) {
                 writer.offerPingSamples(List.of(new PingSample("b", 1, "2.2.2.2", 2.0, now)));
@@ -68,6 +68,67 @@ class SessionPersistenceWriterTest {
             assertTrue(drops > 0, "expected overflow drops under DROP_NEWEST");
             writer.awaitIdle(Duration.ofSeconds(5));
         }
+    }
+
+    @Test
+    void telemetryOverflowDoesNotDropDelete() throws Exception {
+        Path dbPath = tempDir.resolve("control-lane.db");
+        MemoryTimeSeriesBackend backend = new MemoryTimeSeriesBackend();
+        try (SessionDatabase db = new SessionDatabase(dbPath);
+                SessionPersistenceWriter writer =
+                        new SessionPersistenceWriter(1, DropPolicy.DROP_OLDEST, db, backend)) {
+            HostSessionData data = new HostSessionData();
+            data.setEnabled(true);
+            db.save("victim.example", data);
+            assertNotNull(db.load("victim.example"));
+
+            Instant now = Instant.now();
+            long drops = 0;
+            for (int i = 0; i < 500; i++) {
+                writer.offerPingSamples(List.of(new PingSample("noise", 1, "1.1.1.1", 1.0, now)));
+                drops = writer.droppedCount();
+            }
+            assertTrue(drops > 0, "telemetry lane must drop under overflow");
+
+            assertTrue(writer.offerDelete("victim.example"));
+            assertTrue(writer.awaitIdle(Duration.ofSeconds(5)));
+            assertNull(db.load("victim.example"), "delete must survive telemetry overflow");
+        }
+    }
+
+    @Test
+    void coalescesSaveHostToLatestSnapshot() throws Exception {
+        Path dbPath = tempDir.resolve("coalesce.db");
+        try (SessionDatabase db = new SessionDatabase(dbPath);
+                SessionPersistenceWriter writer = new SessionPersistenceWriter(db, null)) {
+            for (int i = 0; i < 50; i++) {
+                HostSessionData mid = new HostSessionData();
+                mid.setEnabled(true);
+                mid.setCurrentRoute(List.of(new HopNode(1, "10.0.0." + (i % 200 + 1), 1.0, false)));
+                writer.offerSave("host", mid);
+            }
+            HostSessionData last = new HostSessionData();
+            last.setEnabled(true);
+            last.setCurrentRoute(List.of(new HopNode(1, "9.9.9.9", 9.0, false)));
+            writer.offerSave("host", last);
+            assertTrue(writer.awaitIdle(Duration.ofSeconds(5)));
+            HostSessionData loaded = db.load("host");
+            assertEquals("9.9.9.9", loaded.getCurrentRoute().get(0).ip());
+        }
+    }
+
+    @Test
+    void closeStopsWorkerBeforeReturning() throws Exception {
+        Path dbPath = tempDir.resolve("close.db");
+        SessionDatabase db = new SessionDatabase(dbPath);
+        SessionPersistenceWriter writer = new SessionPersistenceWriter(db, null);
+        HostSessionData data = new HostSessionData();
+        data.setEnabled(true);
+        writer.offerSave("h", data);
+        writer.close();
+        assertFalse(writer.workerAliveForTests());
+        assertNotNull(db.load("h"));
+        db.close();
     }
 
     @Test

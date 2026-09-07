@@ -7,10 +7,14 @@ import io.pingui.persistence.timeseries.TimeSeriesBackend;
 import io.pingui.telemetry.DropPolicy;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -19,18 +23,29 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Single-threaded bounded writer for SQLite session saves and time-series I/O (P33-003).
+ * Multi-lane session persistence writer (P33-003 / P34-004).
  *
- * <p>Callers enqueue immutable deltas without blocking on JDBC/HTTP. Overflow increments {@link
- * #droppedCount()} under {@link DropPolicy} (default {@link DropPolicy#DROP_OLDEST}).
+ * <ul>
+ *   <li><b>Control lane</b> (unbounded): delete, rename, barrier — never dropped on overflow.
+ *   <li><b>State lane</b>: coalesced {@code SaveHost} (latest snapshot per host).
+ *   <li><b>Telemetry lane</b> (bounded): ping/route samples may drop under {@link DropPolicy}.
+ * </ul>
+ *
+ * <p>{@link #close()} joins the worker until it stops so callers can safely close the DB afterward.
  */
 public final class SessionPersistenceWriter implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(SessionPersistenceWriter.class);
 
     public static final int DEFAULT_CAPACITY = 256;
+    /** Max wait for the worker to stop so SessionStore can close SQLite safely (P34-004). */
+    static final Duration CLOSE_JOIN_TIMEOUT = Duration.ofSeconds(30);
 
-    private final ArrayBlockingQueue<Job> queue;
-    private final DropPolicy dropPolicy;
+    private final LinkedBlockingQueue<Job> controlQueue = new LinkedBlockingQueue<>();
+    private final ConcurrentHashMap<String, HostSessionData> pendingSaves = new ConcurrentHashMap<>();
+    private final LinkedBlockingQueue<String> dirtyHosts = new LinkedBlockingQueue<>();
+    private final Set<String> dirtySet = ConcurrentHashMap.newKeySet();
+    private final ArrayBlockingQueue<Job> telemetryQueue;
+    private final DropPolicy telemetryDropPolicy;
     private final AtomicLong droppedCount = new AtomicLong();
     private final AtomicLong completedCount = new AtomicLong();
     private final AtomicBoolean running = new AtomicBoolean(true);
@@ -43,12 +58,12 @@ public final class SessionPersistenceWriter implements AutoCloseable {
     }
 
     public SessionPersistenceWriter(
-            int capacity, DropPolicy dropPolicy, SessionDatabase database, TimeSeriesBackend timeseries) {
-        if (capacity < 1) {
+            int telemetryCapacity, DropPolicy dropPolicy, SessionDatabase database, TimeSeriesBackend timeseries) {
+        if (telemetryCapacity < 1) {
             throw new IllegalArgumentException("capacity must be >= 1");
         }
-        this.dropPolicy = Objects.requireNonNull(dropPolicy, "dropPolicy");
-        this.queue = new ArrayBlockingQueue<>(capacity);
+        this.telemetryDropPolicy = Objects.requireNonNull(dropPolicy, "dropPolicy");
+        this.telemetryQueue = new ArrayBlockingQueue<>(telemetryCapacity);
         this.database.set(database);
         this.timeseries.set(timeseries);
         this.worker = new Thread(this::runLoop, "pingui-session-persist");
@@ -65,17 +80,19 @@ public final class SessionPersistenceWriter implements AutoCloseable {
     }
 
     public DropPolicy dropPolicy() {
-        return dropPolicy;
+        return telemetryDropPolicy;
     }
 
+    /** Telemetry queue capacity (control lane is unbounded). */
     public int capacity() {
-        return queue.remainingCapacity() + queue.size();
+        return telemetryQueue.remainingCapacity() + telemetryQueue.size();
     }
 
     public int queued() {
-        return queue.size();
+        return controlQueue.size() + dirtyHosts.size() + telemetryQueue.size();
     }
 
+    /** Telemetry (lossy) drops only — control jobs never increment this (P34-004). */
     public long droppedCount() {
         return droppedCount.get();
     }
@@ -85,34 +102,52 @@ public final class SessionPersistenceWriter implements AutoCloseable {
         return completedCount.get();
     }
 
-    /** Enqueues an immutable host snapshot for SQLite {@code save}. */
+    /** Enqueues an immutable host snapshot; coalesced per host (latest wins). */
     public boolean offerSave(String host, HostSessionData snapshot) {
         Objects.requireNonNull(host, "host");
         Objects.requireNonNull(snapshot, "snapshot");
-        return offer(new SaveHost(host, snapshot));
+        if (!running.get()) {
+            return false;
+        }
+        pendingSaves.put(host, snapshot);
+        if (dirtySet.add(host)) {
+            dirtyHosts.offer(host);
+        }
+        return true;
     }
 
     public boolean offerDelete(String host) {
         Objects.requireNonNull(host, "host");
-        return offer(new DeleteHost(host));
+        // Drop any coalesced save that would resurrect the host after delete.
+        pendingSaves.remove(host);
+        dirtySet.remove(host);
+        return offerControl(new DeleteHost(host));
     }
 
     public boolean offerRename(String oldHost, String newHost) {
         Objects.requireNonNull(oldHost, "oldHost");
         Objects.requireNonNull(newHost, "newHost");
-        return offer(new RenameHost(oldHost, newHost));
+        HostSessionData pending = pendingSaves.remove(oldHost);
+        dirtySet.remove(oldHost);
+        if (pending != null) {
+            pendingSaves.put(newHost, pending);
+            if (dirtySet.add(newHost)) {
+                dirtyHosts.offer(newHost);
+            }
+        }
+        return offerControl(new RenameHost(oldHost, newHost));
     }
 
     public boolean offerPingSamples(List<PingSample> samples) {
         if (samples == null || samples.isEmpty()) {
             return true;
         }
-        return offer(new WritePings(List.copyOf(samples)));
+        return offerTelemetry(new WritePings(List.copyOf(samples)));
     }
 
     public boolean offerRouteEvent(RouteEvent event) {
         Objects.requireNonNull(event, "event");
-        return offer(new WriteRoute(event));
+        return offerTelemetry(new WriteRoute(event));
     }
 
     /**
@@ -122,45 +157,53 @@ public final class SessionPersistenceWriter implements AutoCloseable {
     public boolean awaitIdle(Duration timeout) throws InterruptedException {
         Objects.requireNonNull(timeout, "timeout");
         CountDownLatch done = new CountDownLatch(1);
-        if (!offer(new Barrier(done))) {
+        if (!offerControl(new Barrier(done))) {
             return false;
         }
         return done.await(timeout.toMillis(), TimeUnit.MILLISECONDS);
     }
 
-    private boolean offer(Job job) {
+    private boolean offerControl(Job job) {
         if (!running.get()) {
             droppedCount.incrementAndGet();
             return false;
         }
-        if (queue.offer(job)) {
-            return true;
-        }
-        if (dropPolicy == DropPolicy.DROP_NEWEST) {
+        // Unbounded control lane — never drop structural jobs (P34-004).
+        controlQueue.offer(job);
+        return true;
+    }
+
+    private boolean offerTelemetry(Job job) {
+        if (!running.get()) {
             droppedCount.incrementAndGet();
             return false;
         }
-        Job discarded = queue.poll();
+        if (telemetryQueue.offer(job)) {
+            return true;
+        }
+        if (telemetryDropPolicy == DropPolicy.DROP_NEWEST) {
+            droppedCount.incrementAndGet();
+            return false;
+        }
+        Job discarded = telemetryQueue.poll();
         if (discarded != null) {
             droppedCount.incrementAndGet();
-            if (discarded instanceof Barrier barrier) {
-                barrier.done().countDown();
-            }
         }
-        if (queue.offer(job)) {
+        if (telemetryQueue.offer(job)) {
             return true;
         }
         droppedCount.incrementAndGet();
-        if (job instanceof Barrier barrier) {
-            barrier.done().countDown();
-        }
         return false;
     }
 
+    private boolean hasPendingWork() {
+        return !controlQueue.isEmpty() || !dirtyHosts.isEmpty() || !pendingSaves.isEmpty() || !telemetryQueue.isEmpty();
+    }
+
     private void runLoop() {
-        while (running.get() || !queue.isEmpty()) {
+        while (running.get() || hasPendingWork()) {
             try {
-                Job job = queue.poll(50, TimeUnit.MILLISECONDS);
+                Job job = nextJob(50);
                 if (job != null) {
                     apply(job);
                 }
@@ -173,14 +216,94 @@ public final class SessionPersistenceWriter implements AutoCloseable {
                 LOG.warn("Session persistence worker failed: {}", ex.getMessage());
             }
         }
-        List<Job> leftover = new ArrayList<>();
-        queue.drainTo(leftover);
-        for (Job job : leftover) {
-            try {
-                apply(job);
-            } catch (RuntimeException ex) {
-                LOG.warn("Session persistence drain failed: {}", ex.getMessage());
+        drainRemaining();
+    }
+
+    private Job nextJob(long waitMs) throws InterruptedException {
+        Job head = controlQueue.peek();
+        if (head instanceof Barrier) {
+            // Drain coalesced saves + telemetry before the barrier completes (P34-004 awaitIdle).
+            Job save = pollCoalescedSave();
+            if (save != null) {
+                return save;
             }
+            Job telemetry = telemetryQueue.poll();
+            if (telemetry != null) {
+                return telemetry;
+            }
+            return controlQueue.poll();
+        }
+        if (head != null) {
+            return controlQueue.poll();
+        }
+        Job save = pollCoalescedSave();
+        if (save != null) {
+            return save;
+        }
+        Job telemetry = telemetryQueue.poll();
+        if (telemetry != null) {
+            return telemetry;
+        }
+        return controlQueue.poll(waitMs, TimeUnit.MILLISECONDS);
+    }
+
+    private Job pollCoalescedSave() {
+        String host = dirtyHosts.poll();
+        if (host == null) {
+            return null;
+        }
+        dirtySet.remove(host);
+        HostSessionData snapshot = pendingSaves.remove(host);
+        if (snapshot == null) {
+            return null;
+        }
+        return new SaveHost(host, snapshot);
+    }
+
+    private void drainRemaining() {
+        List<Job> leftover = new ArrayList<>();
+        controlQueue.drainTo(leftover);
+        for (Job job : leftover) {
+            if (job instanceof Barrier barrier) {
+                // Finish pending work before signaling waiters during shutdown drain.
+                flushPendingSavesInline();
+                Job tel;
+                while ((tel = telemetryQueue.poll()) != null) {
+                    safeApply(tel);
+                }
+                barrier.done().countDown();
+                completedCount.incrementAndGet();
+            } else {
+                safeApply(job);
+            }
+        }
+        flushPendingSavesInline();
+        leftover.clear();
+        telemetryQueue.drainTo(leftover);
+        for (Job job : leftover) {
+            safeApply(job);
+        }
+    }
+
+    /** Applies coalesced saves currently marked dirty. */
+    private void flushPendingSavesInline() {
+        Set<String> hosts = new HashSet<>();
+        dirtyHosts.drainTo(hosts);
+        hosts.addAll(dirtySet);
+        dirtySet.clear();
+        for (String host : hosts) {
+            HostSessionData snapshot = pendingSaves.remove(host);
+            if (snapshot != null) {
+                safeApply(new SaveHost(host, snapshot));
+            }
+        }
+    }
+
+    private void safeApply(Job job) {
+        try {
+            apply(job);
+        } catch (RuntimeException ex) {
+            LOG.warn("Session persistence drain failed: {}", ex.getMessage());
         }
     }
 
@@ -227,23 +350,38 @@ public final class SessionPersistenceWriter implements AutoCloseable {
             return;
         }
         worker.interrupt();
+        long deadlineNs = System.nanoTime() + CLOSE_JOIN_TIMEOUT.toNanos();
         try {
-            worker.join(TimeUnit.SECONDS.toMillis(5));
+            while (worker.isAlive() && System.nanoTime() < deadlineNs) {
+                long remainingMs = Math.max(1L, TimeUnit.NANOSECONDS.toMillis(deadlineNs - System.nanoTime()));
+                worker.join(Math.min(500L, remainingMs));
+                if (worker.isAlive()) {
+                    worker.interrupt();
+                }
+            }
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
         }
         if (worker.isAlive()) {
-            LOG.warn("Session persistence worker did not stop within timeout");
+            LOG.error(
+                    "Session persistence worker did not stop within {}; draining remaining jobs on caller",
+                    CLOSE_JOIN_TIMEOUT);
         }
-        List<Job> leftover = new ArrayList<>();
-        queue.drainTo(leftover);
-        for (Job job : leftover) {
+        // Always drain leftovers once the loop has stopped accepting work. If the worker is still
+        // finishing an in-flight apply, wait briefly so JDBC completes before SessionStore closes DB.
+        if (worker.isAlive()) {
             try {
-                apply(job);
-            } catch (RuntimeException ex) {
-                LOG.warn("Session persistence final drain failed: {}", ex.getMessage());
+                worker.join(TimeUnit.SECONDS.toMillis(5));
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
             }
         }
+        drainRemaining();
+    }
+
+    /** Test hook: true when the background worker has terminated. */
+    boolean workerAliveForTests() {
+        return worker.isAlive();
     }
 
     private sealed interface Job permits SaveHost, DeleteHost, RenameHost, WritePings, WriteRoute, Barrier {}
