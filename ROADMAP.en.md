@@ -8,10 +8,10 @@
 
 | Field | Value |
 |------|----------|
-| **Current task** | **[P35-005](docs/en/ROADMAP.md#next--single-source-of-truth)** |
+| **Current task** | **[P35-006](docs/en/ROADMAP.md#next--single-source-of-truth)** |
 | **Rule** | if not `DONE` — `/autopilot` = this ID; if `DONE` — stop / wait for an explicit new ID. **Do not ask** “which item?”. |
 
-Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (phase 35; NEXT=**P35-005**).
+Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#execution-queue-linear) (phase 35; NEXT=**P35-006**).
 
 **MVP status:** ✅ implemented (2026-06-26)
 
@@ -56,7 +56,7 @@ Full linear queue: [docs/en/ROADMAP.md — Execution queue](docs/en/ROADMAP.md#e
 | **32** | Stabilization (MTR / history / side-effects) | ✅ **DONE** |
 | **33** | Correctness (MTR / projection / side-effects) | ✅ **DONE** |
 | **34** | Correctness follow-up (route / target / persistence) | ✅ **DONE** |
-| **35** | Unattended NOC (probe identity / loss / persistence) | 🔄 **P35-005** |
+| **35** | Unattended NOC (probe identity / loss / persistence) | 🔄 **P35-006** |
 
 ---
 

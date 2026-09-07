@@ -20,7 +20,7 @@ P34 закрила більшість route/persistence дефектів, але
 | **P35-002** | P0 | MTR TARGET_UNKNOWN scope + rediscovery | [x] `probedHop<1` ≠ `PollSampleScope.FULL`; periodic rediscovery з backoff; без downtime з UNKNOWN |
 | **P35-003** | P0 | Loss window semantics | [x] Sliding attempt window (≤50); loss=NULL при <2 probes |
 | **P35-004** | P0 | Timeout ↔ target hop | [x] Timeout атрибуція за `targetHop`/`freshHop`, не за IP `*` |
-| **P35-005** | P1 | DNS-control bounded dispatcher | Bounded/coalesce per host; метрики outer queue |
+| **P35-005** | P1 | DNS-control bounded dispatcher | [x] Bounded/coalesce per host; метрики outer queue |
 | **P35-006** | P1 | MTR invalidate on DNS change | Підтверджений address-set change скидає targetIp/candidate/latency |
 | **P35-007** | P1 | Unified SQLite persistence pipeline | CompletedPoll → один ordered write path (events+poll+route) |
 | **P35-008** | P2 | Stuck-writer fault test | close не drain-ить паралельно з живим stuck worker |

@@ -118,7 +118,7 @@ final class AppStatusPresenter {
                         total,
                         lastCycleAt,
                         Instant.now(),
-                        service != null ? service.dnsOpsStats() : null));
+                        service != null ? service.dnsOpsSnapshot() : null));
     }
 
     /**

@@ -42,4 +42,14 @@ class AppStatusFormatTest {
         assertTrue(text.contains("2"));
         assertTrue(text.contains(UiI18n.get("status.mon.dns_ops", 2L, 2L, 1L)) || text.contains("dropped"));
     }
+
+    @Test
+    void monitoringAppendsDnsControlPressure() {
+        Instant now = Instant.parse("2026-09-05T10:00:05Z");
+        Instant cycle = Instant.parse("2026-09-05T10:00:03Z");
+        var snapshot = new io.pingui.dns.DnsOpsSnapshot(
+                io.pingui.dns.DnsOpsStats.empty(64), new io.pingui.dns.DnsOpsStats(64, 0, 1, 3, 3, 4, 0));
+        String text = AppStatusFormat.monitoring(true, 1, 1, cycle, now, snapshot);
+        assertTrue(text.contains(UiI18n.get("status.mon.dns_ops", 3L, 3L, 0L)) || text.contains("dropped"));
+    }
 }
