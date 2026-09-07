@@ -134,11 +134,72 @@ final class PollResultEffects {
     }
 
     /**
-     * Writes canonical {@code poll_result} for a finished poll (P30-003 / P32-003 / P33-004). Safe no-op
-     * without DB. Does not invent loss/jitter from reachability alone.
+     * Writes canonical {@code poll_result} from an immutable {@link CompletedPoll} (P30-003 / P32-003 /
+     * P33-004 / P34-005). Safe no-op without DB. Does not invent loss/jitter from reachability alone
+     * and does not read {@link SessionStore}.
      *
      * <p>Tri-state {@code reachable}: {@code true}/{@code false} only when the target was actually
      * sampled; monitor/DNS/internal errors keep {@code reachable=null} and must not lower uptime.
+     */
+    void recordCompletedPoll(CompletedPoll poll) {
+        if (poll == null) {
+            return;
+        }
+        PersistenceEventWriter events = persistenceEvents;
+        if (events == null || poll.host().isBlank()) {
+            return;
+        }
+        // Monitor failure is not a measured target downtime (P33-004).
+        boolean sampled = poll.targetSampled() && poll.error() == null;
+        Boolean reachable = null;
+        Double terminalRtt = null;
+        Double lossPercent = null;
+        Double jitterMs = null;
+        Long routeId = null;
+        RouteSnapshot snapshot = poll.snapshot();
+        if (sampled && snapshot != null) {
+            reachable = TelemetryEmission.isTargetReachable(snapshot);
+            OptionalDouble rtt = terminalRttMs(snapshot);
+            if (rtt.isPresent()) {
+                terminalRtt = rtt.getAsDouble();
+            }
+            HopStatsSummary measured = poll.measuredTerminalStats();
+            if (measured != null) {
+                lossPercent = measured.lossPct();
+                jitterMs = measured.jitterMs();
+            }
+            try {
+                Map<Integer, String> known = poll.lastKnownHopIps();
+                if (known.isEmpty()) {
+                    known = RouteSignature.knownIpsByHop(snapshot.nodes());
+                }
+                routeId = events.observeRoute(poll.host(), snapshot.nodes(), poll.observedAt(), known);
+            } catch (RuntimeException ex) {
+                LOG.warn("Persistence route upsert failed for {}: {}", poll.host(), ex.getMessage());
+            }
+        }
+        try {
+            events.writePollResult(
+                    poll.host(),
+                    poll.probeMode().yamlValue(),
+                    poll.observedAt(),
+                    reachable,
+                    terminalRtt,
+                    jitterMs,
+                    lossPercent,
+                    poll.durationMs(),
+                    routeId,
+                    poll.error(),
+                    poll.probeOutcome(),
+                    sampled);
+        } catch (RuntimeException ex) {
+            LOG.warn("Persistence poll_result failed for {}: {}", poll.host(), ex.getMessage());
+        }
+    }
+
+    /**
+     * @deprecated Prefer {@link #recordCompletedPoll(CompletedPoll)}; kept for focused unit tests that
+     *     still inject measured stats via resolvers.
      */
     void recordPollResult(
             String host, HostProbeMode probeMode, RouteSnapshot snapshot, double durationMs, String error) {
@@ -154,57 +215,32 @@ final class PollResultEffects {
             String error,
             ProbeOutcome probeOutcome,
             boolean targetSampled) {
-        PersistenceEventWriter events = persistenceEvents;
-        if (events == null || host == null || host.isBlank() || probeMode == null) {
+        Instant observedAt = Instant.now();
+        boolean sampled = targetSampled && error == null;
+        if (sampled && snapshot != null) {
+            Map<Integer, String> known = resolveLastKnownHopIps(host);
+            HopStatsSummary measured = resolveMeasuredStats(host);
+            CompletedPoll poll = new CompletedPoll(
+                    host,
+                    probeMode,
+                    snapshot,
+                    durationMs,
+                    error,
+                    probeOutcome != null ? probeOutcome : deriveProbeOutcome(snapshot, error, null),
+                    sampled,
+                    observedAt,
+                    measured,
+                    known);
+            recordCompletedPoll(poll);
             return;
         }
-        ProbeOutcome outcome = probeOutcome != null ? probeOutcome : deriveProbeOutcome(snapshot, error, null);
-        // Monitor failure is not a measured target downtime (P33-004).
-        boolean sampled = targetSampled && error == null;
-        Boolean reachable = null;
-        Double terminalRtt = null;
-        Double lossPercent = null;
-        Double jitterMs = null;
-        Long routeId = null;
-        if (sampled && snapshot != null) {
-            reachable = TelemetryEmission.isTargetReachable(snapshot);
-            OptionalDouble rtt = terminalRttMs(snapshot);
-            if (rtt.isPresent()) {
-                terminalRtt = rtt.getAsDouble();
-            }
-            HopStatsSummary measured = resolveMeasuredStats(host);
-            if (measured != null) {
-                // Session hop stats accumulate probes → measured loss; jitter only with RTT series.
-                lossPercent = measured.lossPct();
-                jitterMs = measured.jitterMs();
-            }
-            try {
-                Map<Integer, String> known = resolveLastKnownHopIps(host);
-                if (known.isEmpty()) {
-                    known = RouteSignature.knownIpsByHop(snapshot.nodes());
-                }
-                routeId = events.observeRoute(host, snapshot.nodes(), Instant.now(), known);
-            } catch (RuntimeException ex) {
-                LOG.warn("Persistence route upsert failed for {}: {}", host, ex.getMessage());
-            }
-        }
-        try {
-            events.writePollResult(
-                    host,
-                    probeMode.yamlValue(),
-                    Instant.now(),
-                    reachable,
-                    terminalRtt,
-                    jitterMs,
-                    lossPercent,
-                    durationMs,
-                    routeId,
-                    error,
-                    outcome,
-                    sampled);
-        } catch (RuntimeException ex) {
-            LOG.warn("Persistence poll_result failed for {}: {}", host, ex.getMessage());
-        }
+        recordCompletedPoll(CompletedPoll.failure(
+                host,
+                probeMode,
+                durationMs,
+                error,
+                probeOutcome != null ? probeOutcome : deriveProbeOutcome(snapshot, error, null),
+                observedAt));
     }
 
     private HopStatsSummary resolveMeasuredStats(String host) {

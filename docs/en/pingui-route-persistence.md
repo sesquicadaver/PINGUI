@@ -20,7 +20,7 @@ P32/P33 materially improved the project (fresh-hop, span, tri-state poll_result,
 | **P34-002** | P0 | MTR target-unknown / exhaustion | [x] `targetHop` only after real target match; `TARGET_UNKNOWN`/`INCOMPLETE`; bounded rediscovery; no `target_sampled` until identified |
 | **P34-003** | P0 | Current endpoint outcome vs history | [x] Current TIMEOUT → DOWN/PENDING; session-lifetime loss must not override a live timeout |
 | **P34-004** | P0 | Reliable structural persistence + shutdown | [x] Control lane (delete/rename/barrier) never drops; coalesced SaveHost; lossy telemetry; safe close |
-| **P34-005** | P1 | Immutable `CompletedPoll` + GUI/daemon parity | One probe-derived poll_result; no mutable SessionStore from probe/FX |
+| **P34-005** | P1 | Immutable `CompletedPoll` + GUI/daemon parity | [x] One probe-derived poll_result; no mutable SessionStore from probe/FX |
 | **P34-006** | P1 | loss / jitter / rollup semantics | Single-packet loss=NULL or explicit window; jitter moments/window; availability from target_sampled/reachable |
 | **P34-007** | P1 | Bounded DNS + ops counters | Bounded DNS queues + coalesce per host; counters in App Status / API / Prometheus |
 | **P34-008** | P1 | v12 migration repair | error rows → `target_sampled=0`, `reachable=NULL`; repair CLI/online for existing DBs |
