@@ -46,6 +46,8 @@ class HostItemMetricsTest {
         assertEquals("◐", HostItem.formatStateGlyph(true, null));
         assertEquals("●", HostItem.formatStateGlyph(true, new HostTargetStats(0.0, 1.0, 12.0, 15.0, false)));
         assertEquals("✕", HostItem.formatStateGlyph(true, new HostTargetStats(100.0, null, null, null, true)));
+        // Historical avg must not keep the glyph UP when the current sample timed out (P34-003).
+        assertEquals("✕", HostItem.formatStateGlyph(true, new HostTargetStats(1.0, 10.0, 12.0, 15.0, true)));
     }
 
     @Test

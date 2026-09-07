@@ -4,11 +4,14 @@ import io.pingui.model.Models.HopNode;
 import java.util.List;
 
 /**
- * Splits host row status into endpoint vs route (P31-002 / P33-002).
+ * Splits host row status into endpoint vs route (P31-002 / P33-002 / P34-003).
  *
  * <p>{@code PING_ONLY} and {@code TCP_CONNECT} are always {@link RouteState#NOT_TRACED}; missing
  * path data is not an error. A reachable last hop counts as target only when it matches {@code
  * targetIp} (when known) — an intermediate router must not look like the endpoint.
+ *
+ * <p>Endpoint classification prefers the <em>current</em> target sample: a live timeout is {@link
+ * EndpointState#DOWN} even when historical avg RTT / session loss would otherwise look healthy.
  */
 public final class HostNetworkStateClassifier {
     static final double DOWN_LOSS_PCT = 50.0;
@@ -23,7 +26,9 @@ public final class HostNetworkStateClassifier {
         if (stats == null) {
             return EndpointState.UNKNOWN;
         }
-        if (stats.timeout() && stats.avgMs() == null) {
+        // Current target sample timed out → DOWN; do not let session-lifetime avg/loss mask it
+        // (P34-003). Historical RTT remains available for display columns.
+        if (stats.timeout()) {
             return EndpointState.DOWN;
         }
         if (stats.avgMs() == null) {
