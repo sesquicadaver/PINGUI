@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P35-007** |
+| **Current task** | **P35-008** |
 | **Phase** | 35 — Unattended NOC (probe identity / loss / persistence) |
-| **DoD (short)** | CompletedPoll → one ordered write path (events+poll+route) |
+| **DoD (short)** | close must not drain in parallel with a live stuck worker |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -211,12 +211,12 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 165 | **P35-004** | [x] | Timeout ↔ target hop attribution |
 | 166 | **P35-005** | [x] | DNS-control bounded dispatcher |
 | 167 | **P35-006** | [x] | MTR invalidate on DNS change |
-| 168 | **P35-007** | [ ] | Unified SQLite persistence pipeline |
+| 168 | **P35-007** | [x] | Unified SQLite persistence pipeline |
 | 169 | **P35-008** | [ ] | Stuck-writer fault test |
 | 170 | **P35-009** | [ ] | Route signature ≡ hops_json |
 | 171 | **P35-010** | [ ] | Python lifecycle harden |
 
-**Queue status:** **NEXT = P35-007** (phase 35; [pingui-unattended.md](pingui-unattended.md)).
+**Queue status:** **NEXT = P35-008** (phase 35; [pingui-unattended.md](pingui-unattended.md)).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -1101,7 +1101,7 @@ flowchart TD
 
 **Context:** [pingui-unattended.md](pingui-unattended.md). Post-P34 audit — TRACE/MTR identity, loss window, persistence pipeline. Java-first.
 
-**Queue:** after P34; **NEXT = P35-007**.
+**Queue:** after P34; **NEXT = P35-008**.
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
@@ -1111,7 +1111,7 @@ flowchart TD
 | **P35-004** | [x] Timeout ↔ target hop | `CompletedPoll`, `HopStats`, `MonitorService` | Attribute timeouts by `targetHop`/`freshHop`, not IP `*`; NEXT→P35-005 |
 | **P35-005** | [x] DNS-control bounded dispatcher | `DnsControlDispatcher`, `DnsOpsSnapshot` | Bounded/coalesce ≤1 pending/host; outer `/ops`+Prometheus; NEXT→P35-006 |
 | **P35-006** | [x] MTR invalidate on DNS change | `MonitorService.applyDnsControlEvent`, `RoutePoller.invalidateOnDnsAddressChange` | Address-set change clears targetIp/candidate/latency; NEXT→P35-007 |
-| **P35-007** | [ ] Unified SQLite persistence | SessionStore / writers | CompletedPoll → one ordered write path |
+| **P35-007** | [x] Unified SQLite persistence | `PollPersistenceBatch`, `SessionPersistenceWriter.offerPollHistory` | CompletedPoll → control-lane tx (events+poll+route); NEXT→P35-008 |
 | **P35-008** | [ ] Stuck-writer fault test | SessionPersistenceWriter | close must not caller-drain while stuck worker alive |
 | **P35-009** | [ ] Route signature ≡ hops_json | RouteSignature | One hop-indexed source |
 | **P35-010** | [ ] Python lifecycle harden | `src/pingui/` | join/drain without closing DB under live worker |
@@ -1204,7 +1204,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P35-007**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P35-008**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

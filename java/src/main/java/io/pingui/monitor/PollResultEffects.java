@@ -7,7 +7,9 @@ import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.HopStatsSummary;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.persistence.PersistenceEventWriter;
+import io.pingui.persistence.PollPersistenceBatch;
 import io.pingui.persistence.RouteSignature;
+import io.pingui.persistence.SessionPersistenceWriter;
 import io.pingui.probe.ProbeOutcome;
 import java.time.Instant;
 import java.util.List;
@@ -29,6 +31,7 @@ final class PollResultEffects {
     private final TelemetryEmission telemetry = new TelemetryEmission();
     private volatile AlertDispatcher alertDispatcher = AlertDispatcher.noop();
     private volatile PersistenceEventWriter persistenceEvents;
+    private volatile SessionPersistenceWriter sessionPersistence;
     private volatile EndpointDownRuleConfig endpointDownRule = EndpointDownRuleConfig.disabled();
     private volatile LatencyHighRuleConfig latencyHighRule = LatencyHighRuleConfig.disabled();
     private volatile boolean notifyResolved;
@@ -108,6 +111,22 @@ final class PollResultEffects {
         this.persistenceEvents = persistenceEvents;
     }
 
+    /**
+     * Async poll-history pipeline (P35-007). When set, {@link #recordCompletedPoll} enqueues instead
+     * of blocking the probe thread on JDBC.
+     */
+    void setSessionPersistenceWriter(SessionPersistenceWriter sessionPersistence) {
+        this.sessionPersistence = sessionPersistence;
+        if (sessionPersistence != null) {
+            sessionPersistence.setPollHistoryApplier(this::applyPollBatchSync);
+        }
+    }
+
+    /** Package-visible for MonitorService DNS / tests (P35-007). */
+    SessionPersistenceWriter sessionPersistenceWriter() {
+        return sessionPersistence;
+    }
+
     void setTelemetryBus(io.pingui.telemetry.TelemetryBus telemetryBus) {
         telemetry.setTelemetryBus(telemetryBus);
     }
@@ -135,19 +154,53 @@ final class PollResultEffects {
 
     /**
      * Writes canonical {@code poll_result} from an immutable {@link CompletedPoll} (P30-003 / P32-003 /
-     * P33-004 / P34-005). Safe no-op without DB. Does not invent loss/jitter from reachability alone
-     * and does not read {@link SessionStore}.
+     * P33-004 / P34-005 / P35-007). Safe no-op without DB. Does not invent loss/jitter from reachability
+     * alone and does not read {@link SessionStore}.
+     *
+     * <p>When a {@link SessionPersistenceWriter} is wired, work is enqueued on the control lane and
+     * applied in one SQLite transaction off the probe thread.
      *
      * <p>Tri-state {@code reachable}: {@code true}/{@code false} only when the target was actually
      * sampled; monitor/DNS/internal errors keep {@code reachable=null} and must not lower uptime.
      */
     void recordCompletedPoll(CompletedPoll poll) {
-        if (poll == null) {
+        enqueueOrApply(PollPersistenceBatch.ofPoll(poll));
+    }
+
+    /** Failure path: {@code probe_error} + failure poll_result in one batch (P35-007). */
+    void recordFailedPoll(CompletedPoll poll, String probeErrorMessage) {
+        enqueueOrApply(PollPersistenceBatch.ofFailure(poll, probeErrorMessage));
+    }
+
+    private void enqueueOrApply(PollPersistenceBatch batch) {
+        if (batch == null) {
             return;
         }
+        SessionPersistenceWriter async = sessionPersistence;
+        if (async != null) {
+            async.offerPollHistory(batch);
+            return;
+        }
+        applyPollBatchSync(batch);
+    }
+
+    /** Sync JDBC apply used by tests and by the session-persistence worker (P35-007). */
+    void applyPollBatchSync(PollPersistenceBatch batch) {
+        if (batch == null) {
+            return;
+        }
+        CompletedPoll poll = batch.poll();
         PersistenceEventWriter events = persistenceEvents;
         if (events == null || poll.host().isBlank()) {
             return;
+        }
+        String probeError = batch.probeErrorMessage();
+        if (probeError != null && !probeError.isBlank()) {
+            try {
+                events.writeProbeError(poll.host(), probeError);
+            } catch (RuntimeException ex) {
+                LOG.warn("Persistence probe_error failed for {}: {}", poll.host(), ex.getMessage());
+            }
         }
         // Monitor failure is not a measured target downtime (P33-004).
         boolean sampled = poll.targetSampled() && poll.error() == null;
@@ -194,6 +247,21 @@ final class PollResultEffects {
                     sampled);
         } catch (RuntimeException ex) {
             LOG.warn("Persistence poll_result failed for {}: {}", poll.host(), ex.getMessage());
+        }
+        RouteChangeEvent routeChange = batch.routeChange();
+        if (routeChange != null) {
+            try {
+                events.writeRouteChange(routeChange);
+            } catch (RuntimeException ex) {
+                LOG.warn("Persistence route_change failed for {}: {}", poll.host(), ex.getMessage());
+            }
+        }
+        for (QualityAlertEvent alert : batch.qualityAlerts()) {
+            try {
+                events.writeQualityAlert(alert);
+            } catch (RuntimeException ex) {
+                LOG.warn("Persistence quality alert failed for {}: {}", poll.host(), ex.getMessage());
+            }
         }
     }
 
@@ -338,27 +406,33 @@ final class PollResultEffects {
         RouteChangeEvent event =
                 RouteChangeEvent.fromRouteChange(host, List.of(), currentIps, alertProfileName, Instant.now());
         PersistenceEventWriter events = persistenceEvents;
-        if (events == null || events.hasRouteChangeEvents(host)) {
+        if (events == null) {
             return;
         }
-        try {
-            events.writeRouteChange(event);
-        } catch (RuntimeException ex) {
-            LOG.warn("Persistence baseline route_change failed for {}: {}", host, ex.getMessage());
+        SessionPersistenceWriter async = sessionPersistence;
+        if (async != null) {
+            async.offerJdbc(() -> {
+                try {
+                    if (events.hasRouteChangeEvents(host)) {
+                        return;
+                    }
+                    events.writeRouteChange(event);
+                } catch (RuntimeException ex) {
+                    LOG.warn("Persistence baseline route_change failed for {}: {}", host, ex.getMessage());
+                }
+            });
+            return;
         }
+        if (events.hasRouteChangeEvents(host)) {
+            return;
+        }
+        persistRouteChange(event);
     }
 
     void dispatchRouteChangeAlert(String host, List<String> oldIps, List<String> newIps) {
         RouteChangeEvent event =
                 RouteChangeEvent.fromRouteChange(host, oldIps, newIps, alertProfileName, Instant.now());
-        PersistenceEventWriter events = persistenceEvents;
-        if (events != null) {
-            try {
-                events.writeRouteChange(event);
-            } catch (RuntimeException ex) {
-                LOG.warn("Persistence route_change failed for {}: {}", host, ex.getMessage());
-            }
-        }
+        persistRouteChange(event);
         if (isSilenced(host)) {
             return;
         }
@@ -370,6 +444,29 @@ final class PollResultEffects {
             dispatcher.dispatch(event);
         } catch (RuntimeException ex) {
             LOG.warn("Alert dispatch failed for {}: {}", host, ex.getMessage());
+        }
+    }
+
+    private void persistRouteChange(RouteChangeEvent event) {
+        PersistenceEventWriter events = persistenceEvents;
+        if (events == null || event == null) {
+            return;
+        }
+        SessionPersistenceWriter async = sessionPersistence;
+        if (async != null) {
+            async.offerJdbc(() -> {
+                try {
+                    events.writeRouteChange(event);
+                } catch (RuntimeException ex) {
+                    LOG.warn("Persistence route_change failed for {}: {}", event.host(), ex.getMessage());
+                }
+            });
+            return;
+        }
+        try {
+            events.writeRouteChange(event);
+        } catch (RuntimeException ex) {
+            LOG.warn("Persistence route_change failed for {}: {}", event.host(), ex.getMessage());
         }
     }
 
@@ -441,6 +538,17 @@ final class PollResultEffects {
     private void persistQualityAlert(QualityAlertEvent event) {
         PersistenceEventWriter events = persistenceEvents;
         if (events == null || event == null) {
+            return;
+        }
+        SessionPersistenceWriter async = sessionPersistence;
+        if (async != null) {
+            async.offerJdbc(() -> {
+                try {
+                    events.writeQualityAlert(event);
+                } catch (RuntimeException ex) {
+                    LOG.warn("Persistence endpoint_down failed for {}: {}", event.host(), ex.getMessage());
+                }
+            });
             return;
         }
         try {

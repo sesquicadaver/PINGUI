@@ -19,19 +19,23 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Multi-lane session persistence writer (P33-003 / P34-004).
+ * Multi-lane session persistence writer (P33-003 / P34-004 / P35-007).
  *
  * <ul>
- *   <li><b>Control lane</b> (unbounded): delete, rename, barrier — never dropped on overflow.
+ *   <li><b>Control lane</b> (unbounded): delete, rename, barrier, poll history — never dropped on
+ *       overflow.
  *   <li><b>State lane</b>: coalesced {@code SaveHost} (latest snapshot per host).
  *   <li><b>Telemetry lane</b> (bounded): ping/route samples may drop under {@link DropPolicy}.
  * </ul>
  *
  * <p>{@link #close()} joins the worker until it stops so callers can safely close the DB afterward.
+ * Poll history ({@link #offerPollHistory}) runs inside {@link SessionDatabase#inTransaction} via an
+ * injected applier so probe threads never block on JDBC for events+poll+route.
  */
 public final class SessionPersistenceWriter implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(SessionPersistenceWriter.class);
@@ -51,6 +55,7 @@ public final class SessionPersistenceWriter implements AutoCloseable {
     private final AtomicBoolean running = new AtomicBoolean(true);
     private final AtomicReference<SessionDatabase> database = new AtomicReference<>();
     private final AtomicReference<TimeSeriesBackend> timeseries = new AtomicReference<>();
+    private final AtomicReference<Consumer<PollPersistenceBatch>> pollHistoryApplier = new AtomicReference<>();
     private final Thread worker;
 
     public SessionPersistenceWriter(SessionDatabase database, TimeSeriesBackend timeseries) {
@@ -77,6 +82,14 @@ public final class SessionPersistenceWriter implements AutoCloseable {
 
     public void setTimeSeriesBackend(TimeSeriesBackend timeseries) {
         this.timeseries.set(timeseries);
+    }
+
+    /**
+     * Applies {@link PollPersistenceBatch} on the worker thread inside one DB transaction (P35-007).
+     * Typically wired to {@code PollResultEffects} sync JDBC helpers.
+     */
+    public void setPollHistoryApplier(Consumer<PollPersistenceBatch> applier) {
+        this.pollHistoryApplier.set(applier);
     }
 
     public DropPolicy dropPolicy() {
@@ -148,6 +161,24 @@ public final class SessionPersistenceWriter implements AutoCloseable {
     public boolean offerRouteEvent(RouteEvent event) {
         Objects.requireNonNull(event, "event");
         return offerTelemetry(new WriteRoute(event));
+    }
+
+    /**
+     * Enqueues CompletedPoll history (events + poll_result + route) on the control lane (P35-007).
+     * Never dropped; applied in one SQLite transaction.
+     */
+    public boolean offerPollHistory(PollPersistenceBatch batch) {
+        Objects.requireNonNull(batch, "batch");
+        return offerControl(new WritePollHistory(batch));
+    }
+
+    /**
+     * Enqueues arbitrary JDBC work on the control lane inside one transaction (route_change, quality,
+     * dns_change, …) so probe / DNS dispatcher threads stay non-blocking (P35-007).
+     */
+    public boolean offerJdbc(Runnable work) {
+        Objects.requireNonNull(work, "work");
+        return offerControl(new WriteJdbc(work));
     }
 
     /**
@@ -370,6 +401,33 @@ public final class SessionPersistenceWriter implements AutoCloseable {
                 backend.writeRouteEvent(route.event());
             }
             completedCount.incrementAndGet();
+        } else if (job instanceof WritePollHistory history) {
+            SessionDatabase db = database.get();
+            Consumer<PollPersistenceBatch> applier = pollHistoryApplier.get();
+            if (db != null && applier != null) {
+                db.inTransaction(() -> {
+                    applier.accept(history.batch());
+                    return null;
+                });
+            } else if (applier != null) {
+                applier.accept(history.batch());
+            } else {
+                LOG.warn(
+                        "Poll history dropped: no applier configured for {}",
+                        history.batch().poll().host());
+            }
+            completedCount.incrementAndGet();
+        } else if (job instanceof WriteJdbc jdbc) {
+            SessionDatabase db = database.get();
+            if (db != null) {
+                db.inTransaction(() -> {
+                    jdbc.work().run();
+                    return null;
+                });
+            } else {
+                jdbc.work().run();
+            }
+            completedCount.incrementAndGet();
         } else if (job instanceof Barrier barrier) {
             if (hasSiblingLaneWork()) {
                 // Safety net: never release awaitIdle while sibling lanes still have work.
@@ -421,7 +479,8 @@ public final class SessionPersistenceWriter implements AutoCloseable {
         return worker.isAlive();
     }
 
-    private sealed interface Job permits SaveHost, DeleteHost, RenameHost, WritePings, WriteRoute, Barrier {}
+    private sealed interface Job
+            permits SaveHost, DeleteHost, RenameHost, WritePings, WriteRoute, WritePollHistory, WriteJdbc, Barrier {}
 
     private record SaveHost(String host, HostSessionData snapshot) implements Job {}
 
@@ -432,6 +491,10 @@ public final class SessionPersistenceWriter implements AutoCloseable {
     private record WritePings(List<PingSample> samples) implements Job {}
 
     private record WriteRoute(RouteEvent event) implements Job {}
+
+    private record WritePollHistory(PollPersistenceBatch batch) implements Job {}
+
+    private record WriteJdbc(Runnable work) implements Job {}
 
     private record Barrier(CountDownLatch done) implements Job {}
 }
