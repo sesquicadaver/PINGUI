@@ -33,9 +33,7 @@ public record CompletedPoll(
         Objects.requireNonNull(probeMode, "probeMode");
         Objects.requireNonNull(observedAt, "observedAt");
         probeOutcome = probeOutcome != null ? probeOutcome : ProbeOutcome.NETWORK_ERROR;
-        lastKnownHopIps = lastKnownHopIps == null || lastKnownHopIps.isEmpty()
-                ? Map.of()
-                : Map.copyOf(lastKnownHopIps);
+        lastKnownHopIps = lastKnownHopIps == null || lastKnownHopIps.isEmpty() ? Map.of() : Map.copyOf(lastKnownHopIps);
     }
 
     /** Monitor/DNS/internal failure — never counted as sampled downtime. */

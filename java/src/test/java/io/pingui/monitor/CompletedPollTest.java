@@ -85,7 +85,8 @@ class CompletedPollTest {
 
             RouteSnapshot snapshot =
                     new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "8.8.8.8", 11.0, false)));
-            HopStatsSummary measured = HopStats.summarizeAfter(null, snapshot.nodes().get(0));
+            HopStatsSummary measured =
+                    HopStats.summarizeAfter(null, snapshot.nodes().get(0));
             CompletedPoll poll = new CompletedPoll(
                     "8.8.8.8",
                     HostProbeMode.PING_ONLY,

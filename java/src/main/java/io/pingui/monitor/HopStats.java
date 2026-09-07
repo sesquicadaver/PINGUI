@@ -62,8 +62,7 @@ public final class HopStats {
             return prior != null ? summarize(prior) : null;
         }
         PollSampleScope safe = scope != null ? scope : PollSampleScope.FULL;
-        boolean fresh = safe.allHopsFresh()
-                || (safe.freshHop() != null && terminal.hop() == safe.freshHop());
+        boolean fresh = safe.allHopsFresh() || (safe.freshHop() != null && terminal.hop() == safe.freshHop());
         if (!fresh) {
             return prior != null ? summarize(prior) : null;
         }
