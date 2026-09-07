@@ -70,6 +70,8 @@ public final class MonitorLifecycle {
         service.setHostProbeModeResolver(store::getProbeMode);
         service.setHostPollIntervalResolver(store::getIntervalOverride);
         service.setHostTagsResolver(store::getTags);
+        service.setHopStatsLookup(store::hopStatsCopy);
+        // Legacy resolver kept for tests that call recordPollResult directly.
         service.setMeasuredHopStatsResolver(host -> {
             var route = store.get(host).getCurrentRoute();
             if (route.isEmpty()) {

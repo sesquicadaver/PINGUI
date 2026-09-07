@@ -4,6 +4,8 @@ import io.pingui.model.Models;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.HopProbeStats;
 import io.pingui.model.Models.HopStatsSummary;
+import io.pingui.model.Models.RouteSnapshot;
+import java.util.List;
 
 /** Per-hop jitter and packet loss calculations (parity with Python hop_stats.py). */
 public final class HopStats {
@@ -46,6 +48,39 @@ public final class HopStats {
             return null;
         }
         return new HopStatsSummary(jitterMs(stats.getRttSamples()), lossPct(stats));
+    }
+
+    /**
+     * Projects terminal-hop loss/jitter as if {@code sample} were recorded onto a copy of {@code
+     * prior} (P34-005). Does not mutate session state. When the terminal hop is not fresh under
+     * {@code scope}, returns a summary of {@code prior} only (or null).
+     */
+    public static HopStatsSummary projectTerminalAfterSample(
+            HopProbeStats prior, RouteSnapshot snapshot, PollSampleScope scope) {
+        HopNode terminal = CompletedPoll.terminalHop(snapshot);
+        if (terminal == null) {
+            return prior != null ? summarize(prior) : null;
+        }
+        PollSampleScope safe = scope != null ? scope : PollSampleScope.FULL;
+        boolean fresh = safe.allHopsFresh()
+                || (safe.freshHop() != null && terminal.hop() == safe.freshHop());
+        if (!fresh) {
+            return prior != null ? summarize(prior) : null;
+        }
+        return summarizeAfter(prior, terminal);
+    }
+
+    /** Copy-on-write apply of one hop probe for immutable poll aggregates (P34-005). */
+    public static HopStatsSummary summarizeAfter(HopProbeStats prior, HopNode sample) {
+        HopProbeStats projected;
+        if (prior == null) {
+            projected = new HopProbeStats();
+        } else {
+            projected = HopProbeStats.fromSerialized(
+                    prior.getProbes(), prior.getSuccesses(), List.copyOf(prior.getRttSamples()));
+        }
+        recordProbe(projected, sample);
+        return summarize(projected);
     }
 
     public static Double minRtt(java.util.List<Double> samples) {

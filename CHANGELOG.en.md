@@ -16,6 +16,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P34-005 — immutable CompletedPoll:** probe-thread `poll_result` before SessionStore/FX mutation; GUI≡daemon via shared `MonitorLifecycle`; NEXT→**P34-006**.
 - **P34-004 — reliable persistence lanes:** control (delete/rename/barrier) never dropped; coalesced SaveHost; lossy telemetry; `close()` joins until worker stops; barrier does not complete `awaitIdle` until sibling lanes are empty (fix: timed `poll` skipped drain); NEXT→**P34-005**.
 - **P34-003 — current endpoint vs history:** live target timeout → `EndpointState.DOWN` even with healthy historical avg/loss; NEXT→**P34-004**.
 - **P34-002 — MTR target-unknown / exhaustion:** `targetHop` only after a real target match; `TARGET_UNKNOWN` phase; bounded rediscovery (max 5); no `target_sampled` until identified; NEXT→**P34-003**.

@@ -119,7 +119,7 @@ Module → unit test matrix. Update when adding features.
 | GUI information hierarchy (P31) | a11y [x] | [pingui-evo-gui.md](pingui-evo-gui.md); P31-007 [x]; phase closed |
 | Stabilization MTR/history (P32) | phase closed [x] | [pingui-stabilization.md](pingui-stabilization.md) — archival; P32-008 [x] |
 | Correctness MTR/projection (P33) | P33-001…008 [x]; phase closed | [pingui-correctness.md](pingui-correctness.md) — archival |
-| Correctness follow-up (P34) | NEXT=P34-005 | [pingui-route-persistence.md](pingui-route-persistence.md); route identity / target / persistence |
+| Correctness follow-up (P34) | NEXT=P34-006 | [pingui-route-persistence.md](pingui-route-persistence.md); route identity / target / persistence |
 | Route identity FSM (P34-001) | `RouteIdentity`, `CandidateRouteFsm`, `RouteChangeDetector`, `RoutePoller`, `RouteSignature` | `RouteIdentityTest`, `CandidateRouteFsmTest`, `RouteChangeDetectorTest`, `RoutePollerTest.pollHostMtrConfirmsRouteChangeOnlyAfterTarget`, `SessionDatabaseRouteTest.transientTimeoutDoesNotCreateNewRouteRow` |
 | MTR target-unknown (P34-002) | `MtrProbe`, `MtrProbeState.Phase.TARGET_UNKNOWN`, bounded rediscovery | `MtrProbeTest.maxHopsExhaustedWithoutTargetEntersTargetUnknown`, `allTimeoutsExhaustionDoesNotClaimTargetSampled`, `boundedRediscoveryFindsTargetAfterExhaustion`, `rediscoveryStopsAfterMaxAttempts` |
 | Endpoint current vs history (P34-003) | `HostNetworkStateClassifier.endpoint` | `HostNetworkStateClassifierTest.currentTimeoutIsDownEvenWithHealthyHistory`, `SessionStoreTest.timeoutAfterSuccessHistoryIsEndpointDown`, `HostItemMetricsTest.stateGlyphReflectsAvailability` |

@@ -16,6 +16,7 @@
 
 ### Changed
 
+- **P34-005 — immutable CompletedPoll:** probe-thread `poll_result` до SessionStore/FX mutation; GUI≡daemon через спільний `MonitorLifecycle`; NEXT→**P34-006**.
 - **P34-004 — reliable persistence lanes:** control (delete/rename/barrier) без drop; coalesced SaveHost; lossy telemetry; `close()` join до stop worker; barrier не завершує `awaitIdle`, доки sibling-lanes не порожні (fix: timed `poll` обходив drain); NEXT→**P34-005**.
 - **P34-003 — current endpoint vs history:** live target timeout → `EndpointState.DOWN` навіть при здоровому історичному avg/loss; NEXT→**P34-004**.
 - **P34-002 — MTR target-unknown / exhaustion:** `targetHop` лише після real target match; фаза `TARGET_UNKNOWN`; bounded rediscovery (max 5); без `target_sampled` до ідентифікації; NEXT→**P34-003**.
