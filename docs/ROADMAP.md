@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P34-002** |
+| **Поточна задача** | **P34-003** |
 | **Фаза** | 34 — Correctness follow-up (route / target / persistence) |
-| **DoD (коротко)** | MTR target-unknown / exhaustion |
+| **DoD (коротко)** | Current endpoint outcome vs history |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -196,7 +196,7 @@
 | 150 | **P33-007** | [x] | DB migrate v12→v14 + chunked retention |
 | 151 | **P33-008** | [x] | Docs / branch sync |
 | 152 | **P34-001** | [x] | Route identity + candidate-route FSM |
-| 153 | **P34-002** | [ ] | MTR target-unknown / exhaustion recovery |
+| 153 | **P34-002** | [x] | MTR target-unknown / exhaustion recovery |
 | 154 | **P34-003** | [ ] | Current endpoint outcome vs history |
 | 155 | **P34-004** | [ ] | Reliable structural persistence + shutdown |
 | 156 | **P34-005** | [ ] | Immutable CompletedPoll + GUI/daemon parity |
@@ -206,7 +206,7 @@
 | 160 | **P34-009** | [ ] | Python compatibility edition |
 | 161 | **P34-010** | [ ] | Soak / fault matrix + docs sync |
 
-**Стан черги:** **NEXT = P34-002** (фаза 34; [pingui-route-persistence.md](pingui-route-persistence.md)).
+**Стан черги:** **NEXT = P34-003** (фаза 34; [pingui-route-persistence.md](pingui-route-persistence.md)).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -1068,12 +1068,12 @@ flowchart TD
 
 **Контекст:** [pingui-route-persistence.md](pingui-route-persistence.md). Після P33 — NOC/unattended correctness; **не** нове функціональне розширення. Java-first.
 
-**Черга:** після P33; **NEXT = P34-002**.
+**Черга:** після P33; **NEXT = P34-003**.
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
 | **P34-001** | [x] Route identity + candidate FSM | `RouteChangeDetector`, `MtrProbe`, `RoutePoller`, `RouteSignature` | Hop-indexed `(hop, ip\|timeout)`; active/candidate; confirm до target; transient `*` ≠ deduped route; один event на фізичну зміну |
-| **P34-002** | [ ] MTR target-unknown / exhaustion | `MtrProbe`, `MtrProbeState` | `targetHop` лише після real match; `TARGET_UNKNOWN`/`INCOMPLETE`; bounded rediscovery; без `target_sampled` до ідентифікації; тест maxHops exhausted |
+| **P34-002** | [x] MTR target-unknown / exhaustion | `MtrProbe`, `MtrProbeState` | `targetHop` лише після real match; `TARGET_UNKNOWN`/`INCOMPLETE`; bounded rediscovery; без `target_sampled` до ідентифікації; тест maxHops exhausted |
 | **P34-003** | [ ] Current endpoint vs history | `HostNetworkStateClassifier`, UI states | Current TIMEOUT → DOWN/PENDING; session-lifetime loss не маскує актуальний timeout; тест timeout після успіхів |
 | **P34-004** | [ ] Reliable persistence lanes | `SessionPersistenceWriter`, SessionStore close | Control lane (delete/rename/barrier) без drop; coalesced SaveHost; lossy telemetry; безпечний shutdown |
 | **P34-005** | [ ] Immutable CompletedPoll | `MonitorService`, `PollResultEffects`, GUI/daemon | Probe-derived poll_result; GUI≡daemon; без mutable store з probe/FX |
@@ -1171,7 +1171,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P34-002**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P34-003**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

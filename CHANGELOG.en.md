@@ -16,6 +16,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P34-002 — MTR target-unknown / exhaustion:** `targetHop` only after a real target match; `TARGET_UNKNOWN` phase; bounded rediscovery (max 5); no `target_sampled` until identified; NEXT→**P34-003**.
 - **P34-001 — route identity + candidate FSM:** hop-indexed `RouteIdentity`; `CandidateRouteFsm` (active/candidate, confirm to target); TRACE transient `*` ≠ change; MTR — one event after confirmation; `RouteSignature` `N=ip` + last-known fill; NEXT→**P34-002**.
 - **P33-008 — docs / branch sync + phase close:** phases/NEXT/`main`≡`beta` aligned; archival notes for P32+P33; ROADMAP **NEXT=DONE** (phase 33 closed).
 - **P33-007 — DB migrate + chunked retention:** in-place **v12→v13→v14**; `PollResultRetentionJob` in chunks (default 500); NEXT→**P33-008**.
