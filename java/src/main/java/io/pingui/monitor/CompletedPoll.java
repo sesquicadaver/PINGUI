@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Immutable probe-derived poll aggregate (P34-005).
+ * Immutable probe-derived poll aggregate (P34-005 / P35-004).
  *
  * <p>Built on the probe thread <em>before</em> GUI/daemon {@link SessionStore} projection so {@code
  * poll_result} never depends on mutable FX/store state.
@@ -73,9 +73,41 @@ public record CompletedPoll(
             HopProbeStats priorTerminalStats,
             PollSampleScope sampleScope,
             Map<Integer, String> lastKnownHopIps) {
+        return success(
+                host,
+                probeMode,
+                snapshot,
+                durationMs,
+                probeOutcome,
+                targetSampled,
+                observedAt,
+                priorTerminalStats,
+                sampleScope,
+                lastKnownHopIps,
+                null);
+    }
+
+    /**
+     * Like {@link #success(String, HostProbeMode, RouteSnapshot, double, ProbeOutcome, boolean,
+     * Instant, HopProbeStats, PollSampleScope, Map)} with an explicit session {@code knownTargetHop}
+     * (P35-004).
+     */
+    public static CompletedPoll success(
+            String host,
+            HostProbeMode probeMode,
+            RouteSnapshot snapshot,
+            double durationMs,
+            ProbeOutcome probeOutcome,
+            boolean targetSampled,
+            Instant observedAt,
+            HopProbeStats priorTerminalStats,
+            PollSampleScope sampleScope,
+            Map<Integer, String> lastKnownHopIps,
+            Integer knownTargetHop) {
         HopStatsSummary measured = null;
         if (targetSampled && snapshot != null) {
-            measured = HopStats.projectTerminalAfterSample(priorTerminalStats, snapshot, sampleScope);
+            Integer resolvedHop = resolveKnownTargetHop(snapshot, sampleScope, lastKnownHopIps, knownTargetHop);
+            measured = HopStats.projectTerminalAfterSample(priorTerminalStats, snapshot, sampleScope, resolvedHop);
         }
         return new CompletedPoll(
                 host,
@@ -90,33 +122,93 @@ public record CompletedPoll(
                 lastKnownHopIps != null ? lastKnownHopIps : Map.of());
     }
 
-    /** Target hop for poll_result / measured stats (target IP match, else last reachable). */
+    /**
+     * Target hop for poll_result / measured stats (P35-004).
+     *
+     * <p>Prefers a reachable {@code targetIp} match; on timeout attributes by known {@code
+     * targetHop} / {@code freshHop}, never by matching IP {@code *}.
+     */
     public static HopNode terminalHop(RouteSnapshot snapshot) {
-        if (snapshot == null || snapshot.nodes().isEmpty()) {
+        return terminalHop(snapshot, null, null);
+    }
+
+    /**
+     * @param knownTargetHop 1-based hop index from session / MTR when the target IP is not among
+     *     reachable hops (timeout)
+     * @param scope poll freshness; when {@code targetSampled}, {@code freshHop} is the target sample
+     */
+    public static HopNode terminalHop(RouteSnapshot snapshot, Integer knownTargetHop, PollSampleScope scope) {
+        if (snapshot == null || snapshot.nodes() == null || snapshot.nodes().isEmpty()) {
             return null;
         }
         String targetIp = snapshot.targetIp();
         if (targetIp != null && !targetIp.isBlank()) {
-            for (HopNode node : snapshot.nodes()) {
-                if (node.isReachable() && targetIp.equals(node.ip())) {
-                    return node;
+            for (HopNode hop : snapshot.nodes()) {
+                if (hop != null && hop.isReachable() && targetIp.equals(hop.ip())) {
+                    return hop;
                 }
             }
-            // Target known but unreachable — still attribute stats to matching hop index if present.
-            for (HopNode node : snapshot.nodes()) {
-                if (targetIp.equals(node.ip())) {
-                    return node;
-                }
+            Integer indexed = resolveKnownTargetHop(snapshot, scope, Map.of(), knownTargetHop);
+            HopNode byIndex = hopAt(snapshot, indexed);
+            if (byIndex != null) {
+                return byIndex;
             }
+            // Target known but neither reachable nor indexed — do not guess via last hop.
             return null;
         }
         for (int i = snapshot.nodes().size() - 1; i >= 0; i--) {
-            HopNode node = snapshot.nodes().get(i);
-            if (node.isReachable()) {
-                return node;
+            HopNode hop = snapshot.nodes().get(i);
+            if (hop != null && hop.isReachable()) {
+                return hop;
             }
         }
         return snapshot.nodes().get(snapshot.nodes().size() - 1);
+    }
+
+    /**
+     * Resolves the 1-based target hop index for timeout attribution (P35-004).
+     *
+     * <p>Order: sampled {@code freshHop} → explicit session hop → last-known IP map match.
+     */
+    public static Integer resolveKnownTargetHop(
+            RouteSnapshot snapshot,
+            PollSampleScope scope,
+            Map<Integer, String> lastKnownHopIps,
+            Integer knownTargetHop) {
+        if (scope != null && scope.targetSampled() && scope.hasFreshHopSample()) {
+            return scope.freshHop();
+        }
+        if (knownTargetHop != null && knownTargetHop >= 1) {
+            return knownTargetHop;
+        }
+        if (snapshot == null) {
+            return null;
+        }
+        String targetIp = snapshot.targetIp();
+        if (targetIp == null || targetIp.isBlank() || lastKnownHopIps == null || lastKnownHopIps.isEmpty()) {
+            return null;
+        }
+        for (Map.Entry<Integer, String> entry : lastKnownHopIps.entrySet()) {
+            if (entry.getKey() != null && entry.getKey() >= 1 && targetIp.equals(entry.getValue())) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
+    static HopNode hopAt(RouteSnapshot snapshot, Integer hop) {
+        if (snapshot == null || hop == null || hop < 1 || snapshot.nodes() == null) {
+            return null;
+        }
+        for (HopNode node : snapshot.nodes()) {
+            if (node != null && node.hop() == hop) {
+                return node;
+            }
+        }
+        if (hop <= snapshot.nodes().size()) {
+            return snapshot.nodes().get(hop - 1);
+        }
+        return null;
     }
 
     /** Defensive copy helper for callers that hold a live last-known map. */

@@ -5,6 +5,7 @@ import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.HopProbeStats;
 import io.pingui.model.Models.HopStatsSummary;
 import io.pingui.model.Models.RouteSnapshot;
+import java.util.Map;
 
 /**
  * Per-hop jitter and packet loss calculations (parity with Python hop_stats.py).
@@ -110,7 +111,17 @@ public final class HopStats {
      */
     public static HopStatsSummary projectTerminalAfterSample(
             HopProbeStats prior, RouteSnapshot snapshot, PollSampleScope scope) {
-        HopNode terminal = CompletedPoll.terminalHop(snapshot);
+        return projectTerminalAfterSample(prior, snapshot, scope, null);
+    }
+
+    /**
+     * Projects terminal-hop loss/jitter (P34-005 / P35-004). {@code knownTargetHop} attributes
+     * timeout samples when the hop IP is {@code *} rather than {@code targetIp}.
+     */
+    public static HopStatsSummary projectTerminalAfterSample(
+            HopProbeStats prior, RouteSnapshot snapshot, PollSampleScope scope, Integer knownTargetHop) {
+        Integer resolved = CompletedPoll.resolveKnownTargetHop(snapshot, scope, Map.of(), knownTargetHop);
+        HopNode terminal = CompletedPoll.terminalHop(snapshot, resolved, scope);
         if (terminal == null) {
             return prior != null ? summarizeForPollResult(prior) : null;
         }

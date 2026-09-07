@@ -37,6 +37,57 @@ class CompletedPollTest {
     }
 
     @Test
+    void terminalHopAttributesTimeoutByFreshHopNotStarIp() {
+        RouteSnapshot snapshot = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 4.0, false), io.pingui.model.Models.timeout(2)));
+        // Without hop hint, target IP is not among nodes → null (do not guess).
+        assertNull(CompletedPoll.terminalHop(snapshot));
+        // MTR target sample at hop 2 timed out — attribute by freshHop.
+        HopNode terminal = CompletedPoll.terminalHop(snapshot, null, PollSampleScope.mtr(2, true));
+        assertNotNull(terminal);
+        assertEquals(2, terminal.hop());
+        assertTrue(terminal.timeout());
+    }
+
+    @Test
+    void terminalHopAttributesTimeoutByKnownTargetHop() {
+        RouteSnapshot snapshot = new RouteSnapshot(
+                "dns.google",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 4.0, false), io.pingui.model.Models.timeout(2)));
+        HopNode terminal = CompletedPoll.terminalHop(snapshot, 2, PollSampleScope.FULL);
+        assertNotNull(terminal);
+        assertEquals(2, terminal.hop());
+        assertTrue(terminal.timeout());
+    }
+
+    @Test
+    void successProjectsTimeoutLossUsingFreshHop() {
+        HopProbeStats prior = new HopProbeStats();
+        HopStats.recordProbe(prior, new HopNode(2, "8.8.8.8", 8.0, false));
+        RouteSnapshot timedOut = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 4.0, false), io.pingui.model.Models.timeout(2)));
+        CompletedPoll poll = CompletedPoll.success(
+                "8.8.8.8",
+                HostProbeMode.MTR,
+                timedOut,
+                20.0,
+                ProbeOutcome.TIMEOUT,
+                true,
+                Instant.parse("2026-09-07T12:00:00Z"),
+                prior,
+                PollSampleScope.mtr(2, true),
+                Map.of(2, "8.8.8.8"));
+        assertNotNull(poll.measuredTerminalStats());
+        // prior success + current timeout → 50% loss in window
+        assertEquals(50.0, poll.measuredTerminalStats().lossPct());
+    }
+
+    @Test
     void successProjectsLossJitterWithoutMutatingPrior() {
         HopProbeStats prior = new HopProbeStats();
         prior.recordProbeAttempt();

@@ -111,6 +111,7 @@ public final class MonitorService implements AutoCloseable {
     private volatile java.util.function.BiFunction<String, Integer, io.pingui.model.Models.HopProbeStats>
             hopStatsLookup;
     private volatile Function<String, java.util.Map<Integer, String>> lastKnownHopIpsResolver;
+    private volatile Function<String, Integer> targetHopLookup;
     private final BoundedForwardDnsLookup ownedForwardDns = BoundedForwardDnsLookup.systemDefault();
     private final ExecutorService dnsControlExecutor = Executors.newSingleThreadExecutor(r -> {
         Thread thread = new Thread(r, "pingui-dns-control-" + DNS_CONTROL_SEQ.incrementAndGet());
@@ -246,6 +247,11 @@ public final class MonitorService implements AutoCloseable {
     public void setLastKnownHopIpsResolver(Function<String, java.util.Map<Integer, String>> lastKnownHopIpsResolver) {
         this.lastKnownHopIpsResolver = lastKnownHopIpsResolver;
         pollEffects.setLastKnownHopIpsResolver(lastKnownHopIpsResolver);
+    }
+
+    /** Optional session {@code lastTargetHop} for timeout attribution (P35-004). */
+    public void setTargetHopLookup(Function<String, Integer> targetHopLookup) {
+        this.targetHopLookup = targetHopLookup;
     }
 
     /** Session quality problem summary for host-row badge (P22-002 / P23). */
@@ -635,8 +641,11 @@ public final class MonitorService implements AutoCloseable {
             io.pingui.probe.ProbeOutcome probeOutcome,
             PollSampleScope sampleScope,
             Instant observedAt) {
+        java.util.Map<Integer, String> lastKnown = captureLastKnownHopIps(host);
+        Integer knownTargetHop = lookupTargetHop(host);
+        Integer resolvedHop = CompletedPoll.resolveKnownTargetHop(snapshot, sampleScope, lastKnown, knownTargetHop);
         io.pingui.model.Models.HopProbeStats prior = null;
-        io.pingui.model.Models.HopNode terminal = CompletedPoll.terminalHop(snapshot);
+        io.pingui.model.Models.HopNode terminal = CompletedPoll.terminalHop(snapshot, resolvedHop, sampleScope);
         java.util.function.BiFunction<String, Integer, io.pingui.model.Models.HopProbeStats> lookup = hopStatsLookup;
         if (terminal != null && lookup != null) {
             try {
@@ -655,7 +664,21 @@ public final class MonitorService implements AutoCloseable {
                 observedAt,
                 prior,
                 sampleScope,
-                captureLastKnownHopIps(host));
+                lastKnown,
+                knownTargetHop);
+    }
+
+    private Integer lookupTargetHop(String host) {
+        Function<String, Integer> lookup = targetHopLookup;
+        if (lookup == null) {
+            return null;
+        }
+        try {
+            return lookup.apply(host);
+        } catch (RuntimeException ex) {
+            LOG.warn("Target hop lookup failed for {}: {}", host, ex.getMessage());
+            return null;
+        }
     }
 
     private java.util.Map<Integer, String> captureLastKnownHopIps(String host) {
