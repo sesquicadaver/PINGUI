@@ -445,16 +445,19 @@ public final class SessionStore implements AutoCloseable {
 
     /**
      * Immutable copy of per-hop probe counters for building {@link CompletedPoll} before store
-     * mutation (P34-005).
+     * mutation (P34-005 / P35-003).
      */
     public HopProbeStats hopStatsCopy(String host, int hop) {
         synchronized (lock) {
             HopProbeStats stats = getUnlocked(host).getHopStats().get(hop);
-            if (stats == null) {
-                return null;
-            }
-            return HopProbeStats.fromSerialized(
-                    stats.getProbes(), stats.getSuccesses(), List.copyOf(stats.getRttSamples()));
+            return stats == null ? null : stats.copy();
+        }
+    }
+
+    /** Last confirmed target hop index for {@code host}, or {@code null} (P35-004). */
+    public Integer lastTargetHop(String host) {
+        synchronized (lock) {
+            return getUnlocked(host).getLastTargetHop();
         }
     }
 
