@@ -507,7 +507,7 @@ public final class SessionStore implements AutoCloseable {
         if (snapshot.targetIp() != null && !snapshot.targetIp().isBlank()) {
             session.setLastTargetIp(snapshot.targetIp());
         }
-        if (scope != null && scope.targetSampled() && scope.freshHop() != null) {
+        if (scope != null && scope.targetSampled() && scope.hasFreshHopSample()) {
             session.setLastTargetHop(scope.freshHop());
             return;
         }

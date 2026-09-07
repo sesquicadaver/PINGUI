@@ -336,9 +336,9 @@ class MtrProbeTest {
     }
 
     @Test
-    void rediscoveryStopsAfterMaxAttempts() {
+    void rediscoveryEntersBackoffThenRetries() {
         // Each exhaustion cycle: 1 hop max, always a router (never target)
-        for (int i = 0; i < MtrProbe.MAX_TARGET_REDISCOVERIES + 2; i++) {
+        for (int i = 0; i < MtrProbe.MAX_TARGET_REDISCOVERIES + 4; i++) {
             prober.enqueue(new ProbeResult("10.0.0.1", 4.0, false));
         }
 
@@ -352,12 +352,36 @@ class MtrProbeTest {
             assertFalse(again.targetSampled());
         }
 
-        MtrPollOutcome idle = mtrProbe.poll("8.8.8.8", 1, 0.5);
-        assertEquals(MtrProbeState.Phase.TARGET_UNKNOWN, idle.phase());
-        assertEquals(0, idle.probedHop());
-        assertFalse(idle.targetSampled());
+        MtrPollOutcome cooling = mtrProbe.poll("8.8.8.8", 1, 0.5);
+        assertEquals(MtrProbeState.Phase.TARGET_UNKNOWN, cooling.phase());
+        assertEquals(0, cooling.probedHop());
+        assertFalse(cooling.targetSampled());
+        assertEquals(0, mtrProbe.stateFor("8.8.8.8").rediscoveryAttempts());
         assertEquals(
-                MtrProbe.MAX_TARGET_REDISCOVERIES, mtrProbe.stateFor("8.8.8.8").rediscoveryAttempts());
+                MtrProbe.REDISCOVERY_BACKOFF_INITIAL_POLLS,
+                mtrProbe.stateFor("8.8.8.8").rediscoveryBackoffStep());
+        assertTrue(mtrProbe.stateFor("8.8.8.8").rediscoveryBackoffRemaining()
+                < MtrProbe.REDISCOVERY_BACKOFF_INITIAL_POLLS);
+
+        // Drain remaining backoff idle polls (no ICMP)
+        while (mtrProbe.stateFor("8.8.8.8").rediscoveryBackoffRemaining() > 0) {
+            MtrPollOutcome idle = mtrProbe.poll("8.8.8.8", 1, 0.5);
+            assertEquals(0, idle.probedHop());
+            assertFalse(idle.targetSampled());
+        }
+
+        // Next poll starts a new rediscovery burst
+        MtrPollOutcome retry = mtrProbe.poll("8.8.8.8", 1, 0.5);
+        assertEquals(MtrProbeState.Phase.TARGET_UNKNOWN, retry.phase());
+        assertEquals(1, mtrProbe.stateFor("8.8.8.8").rediscoveryAttempts());
+    }
+
+    @Test
+    void nextBackoffStepCapsExponentialGrowth() {
+        assertEquals(MtrProbe.REDISCOVERY_BACKOFF_INITIAL_POLLS, MtrProbe.nextBackoffStep(0));
+        assertEquals(8, MtrProbe.nextBackoffStep(4));
+        assertEquals(MtrProbe.REDISCOVERY_BACKOFF_MAX_POLLS, MtrProbe.nextBackoffStep(64));
+        assertEquals(MtrProbe.REDISCOVERY_BACKOFF_MAX_POLLS, MtrProbe.nextBackoffStep(100));
     }
 
     private static final class ScriptMtrHopProber implements MtrHopProber {
