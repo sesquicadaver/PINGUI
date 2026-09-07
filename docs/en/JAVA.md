@@ -229,4 +229,4 @@ Tests and CI — on **`main`** and **`beta`** (ROADMAP development on `beta`).
 
 ## Future
 
-The linear ROADMAP queue: **NEXT = P35-004** (phase 35 — Unattended NOC). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT; [pingui-unattended.md](pingui-unattended.md). Archival P34: [pingui-route-persistence.md](pingui-route-persistence.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
+The linear ROADMAP queue: **NEXT = P35-005** (phase 35 — Unattended NOC). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT; [pingui-unattended.md](pingui-unattended.md). Archival P34: [pingui-route-persistence.md](pingui-route-persistence.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
