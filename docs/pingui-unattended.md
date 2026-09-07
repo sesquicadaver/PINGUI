@@ -24,7 +24,7 @@ P34 закрила більшість route/persistence дефектів, але
 | **P35-006** | P1 | MTR invalidate on DNS change | [x] Підтверджений address-set change скидає targetIp/candidate/latency |
 | **P35-007** | P1 | Unified SQLite persistence pipeline | [x] CompletedPoll → один ordered write path (events+poll+route) |
 | **P35-008** | P2 | Stuck-writer fault test | [x] close не drain-ить паралельно з живим stuck worker |
-| **P35-009** | P2 | Route signature ≡ hops_json | Один stabilized hop-indexed source |
+| **P35-009** | P2 | Route signature ≡ hops_json | [x] Один stabilized hop-indexed source |
 | **P35-010** | P2 | Python lifecycle harden | join/drain без закриття DB під живим worker; без нових фіч |
 
 ## Поза scope
