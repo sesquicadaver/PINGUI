@@ -9,6 +9,7 @@
 
 ### Added
 
+- **P34 NEXT activated:** ROADMAP **NEXT = P34-001** (Correctness follow-up: route / target / persistence); черга P34-001…010; [pingui-route-persistence.md](docs/pingui-route-persistence.md). `beta`≡`main@45374cc`.
 - **P33 NEXT activated:** ROADMAP **NEXT = P33-001** (Correctness: MTR / projection / side-effects); черга P33-001…008; [pingui-correctness.md](docs/pingui-correctness.md). `beta` синхронізовано з `main@28bdb41`.
 - **P32 NEXT activated:** ROADMAP **NEXT = P32-001** (Stabilization: MTR freshness / history / side-effects); черга P32-001…008; [pingui-stabilization.md](docs/pingui-stabilization.md).
 - **P31 NEXT activated:** ROADMAP **NEXT = P31-001** (GUI information hierarchy); черга P31-001…007; evo [pingui-evo-gui.md](docs/pingui-evo-gui.md).

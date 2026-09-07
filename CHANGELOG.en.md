@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **P34 NEXT activated:** ROADMAP **NEXT = P34-001** (Correctness follow-up: route / target / persistence); queue P34-001…010; [pingui-route-persistence.md](docs/en/pingui-route-persistence.md). `beta`≡`main@45374cc`.
 - **P33 NEXT activated:** ROADMAP **NEXT = P33-001** (Correctness: MTR / projection / side-effects); queue P33-001…008; [pingui-correctness.md](docs/en/pingui-correctness.md). `beta` synced to `main@28bdb41`.
 - **P32 NEXT activated:** ROADMAP **NEXT = P32-001** (Stabilization: MTR freshness / history / side-effects); queue P32-001…008; [pingui-stabilization.md](docs/pingui-stabilization.md).
 - **P31 NEXT activated:** ROADMAP **NEXT = P31-001** (GUI information hierarchy); queue P31-001…007; evo [pingui-evo-gui.md](docs/en/pingui-evo-gui.md).
