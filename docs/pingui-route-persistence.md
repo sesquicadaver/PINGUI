@@ -18,7 +18,7 @@ P32/P33 суттєво покращили проєкт (fresh-hop, span, tri-sta
 |----|-----------|--------|---------------|
 | **P34-001** | P0 | Route identity + candidate-route FSM | [x] TRACE/MTR: hop-indexed `(hop, ip\|timeout)`; active/candidate; confirmation до target; transient `*` ≠ новий route |
 | **P34-002** | P0 | MTR target-unknown / exhaustion | [x] `targetHop` лише після real target match; `TARGET_UNKNOWN`/`INCOMPLETE`; bounded rediscovery; без `target_sampled` до ідентифікації |
-| **P34-003** | P0 | Current endpoint outcome vs history | Current TIMEOUT → DOWN/PENDING; session-lifetime loss не перекриває актуальний timeout |
+| **P34-003** | P0 | Current endpoint outcome vs history | [x] Current TIMEOUT → DOWN/PENDING; session-lifetime loss не перекриває актуальний timeout |
 | **P34-004** | P0 | Reliable structural persistence + shutdown | Control lane (delete/rename/barrier) без drop; coalesced SaveHost; lossy telemetry; безпечний close |
 | **P34-005** | P1 | Immutable `CompletedPoll` + GUI/daemon parity | Один probe-derived poll_result; без mutable SessionStore з probe/FX |
 | **P34-006** | P1 | loss / jitter / rollup semantics | Single-packet loss=NULL або явний window; jitter moments/window; availability з target_sampled/reachable |
