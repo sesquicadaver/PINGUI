@@ -9,6 +9,7 @@ import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
 import io.pingui.persistence.PersistenceEventWriter;
 import io.pingui.persistence.SessionDatabase;
+import io.pingui.persistence.SessionPersistenceWriter;
 import java.util.List;
 import java.util.function.Supplier;
 import javafx.stage.Window;
@@ -97,7 +98,12 @@ public final class MonitorLifecycle {
             return ips;
         });
         if (sessionDatabase != null) {
-            service.setPersistenceEventWriter(new PersistenceEventWriter(sessionDatabase, service.persistencePolicy()));
+            PersistenceEventWriter events = new PersistenceEventWriter(sessionDatabase, service.persistencePolicy());
+            service.setPersistenceEventWriter(events);
+            SessionPersistenceWriter history = store != null ? store.persistenceWriter() : null;
+            if (history != null) {
+                service.setSessionPersistenceWriter(history);
+            }
         }
         service.setListener(listener);
         for (HostEntry entry : sessionHosts) {

@@ -15,6 +15,7 @@ import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.persistence.PersistenceEventWriter;
 import io.pingui.persistence.PersistencePolicy;
 import io.pingui.persistence.PersistencePolicyHolder;
+import io.pingui.persistence.SessionPersistenceWriter;
 import io.pingui.probe.MtrHopProbers;
 import io.pingui.probe.MtrProbe;
 import io.pingui.probe.ProbeMode;
@@ -300,10 +301,22 @@ public final class MonitorService implements AutoCloseable {
         if (acked) {
             PersistenceEventWriter writer = persistenceEvents;
             if (writer != null) {
-                try {
-                    writer.writeProblemAck(host, Instant.now());
-                } catch (RuntimeException ex) {
-                    LOG.warn("problem_ack persistence failed for {}: {}", host, ex.getMessage());
+                Instant at = Instant.now();
+                SessionPersistenceWriter async = pollEffects.sessionPersistenceWriter();
+                if (async != null) {
+                    async.offerJdbc(() -> {
+                        try {
+                            writer.writeProblemAck(host, at);
+                        } catch (RuntimeException ex) {
+                            LOG.warn("problem_ack persistence failed for {}: {}", host, ex.getMessage());
+                        }
+                    });
+                } else {
+                    try {
+                        writer.writeProblemAck(host, at);
+                    } catch (RuntimeException ex) {
+                        LOG.warn("problem_ack persistence failed for {}: {}", host, ex.getMessage());
+                    }
                 }
             }
         }
@@ -333,6 +346,14 @@ public final class MonitorService implements AutoCloseable {
     public void setPersistenceEventWriter(PersistenceEventWriter persistenceEvents) {
         this.persistenceEvents = persistenceEvents;
         pollEffects.setPersistenceEventWriter(persistenceEvents);
+    }
+
+    /**
+     * Async SQLite history pipeline shared with {@link io.pingui.monitor.SessionStore} (P35-007). When
+     * set, poll_result / events leave the probe thread via the control lane.
+     */
+    public void setSessionPersistenceWriter(SessionPersistenceWriter sessionPersistence) {
+        pollEffects.setSessionPersistenceWriter(sessionPersistence);
     }
 
     /** Test hook: replace forward-DNS lookup used by hostname DNS control (P29-004 / P32-005). */
@@ -544,18 +565,12 @@ public final class MonitorService implements AutoCloseable {
             registry.recordPoll(host, probeFailed);
             Instant observedAt = Instant.now();
             if (probeFailed) {
-                PersistenceEventWriter events = persistenceEvents;
-                if (events != null) {
-                    try {
-                        events.writeProbeError(host, outcome.error());
-                    } catch (RuntimeException ex) {
-                        LOG.warn("Persistence probe_error failed for {}: {}", host, ex.getMessage());
-                    }
-                }
+                // Monitor/DNS/internal failure is not a sampled downtime (P33-004 / P34-005 / P35-007).
                 pollEffects.offerTelemetryFailure(host, outcome.error(), probeMode, durationMs);
-                // Monitor/DNS/internal failure is not a sampled downtime (P33-004 / P34-005).
-                pollEffects.recordCompletedPoll(CompletedPoll.failure(
-                        host, probeMode, durationMs, outcome.error(), outcome.probeOutcome(), observedAt));
+                pollEffects.recordFailedPoll(
+                        CompletedPoll.failure(
+                                host, probeMode, durationMs, outcome.error(), outcome.probeOutcome(), observedAt),
+                        outcome.error());
                 current.onProbeError(host, outcome.error());
                 return;
             }
@@ -650,7 +665,18 @@ public final class MonitorService implements AutoCloseable {
         }
         PersistenceEventWriter events = persistenceEvents;
         if (events != null) {
-            events.writeDnsChange(event);
+            SessionPersistenceWriter async = pollEffects.sessionPersistenceWriter();
+            if (async != null) {
+                async.offerJdbc(() -> {
+                    try {
+                        events.writeDnsChange(event);
+                    } catch (RuntimeException ex) {
+                        LOG.warn("Persistence dns_change failed for {}: {}", event.host(), ex.getMessage());
+                    }
+                });
+            } else {
+                events.writeDnsChange(event);
+            }
         }
         if (event.isAddressSetChange()) {
             invalidateHostAfterDnsAddressChange(event.host());

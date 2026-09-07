@@ -9,7 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **P35 NEXT activated:** ROADMAP **NEXT = P35-001** → **P35-007** after P35-001…006; queue P35-001…010; [pingui-unattended.md](docs/en/pingui-unattended.md).
+- **P35 NEXT activated:** ROADMAP **NEXT = P35-001** → **P35-008** after P35-001…007; queue P35-001…010; [pingui-unattended.md](docs/en/pingui-unattended.md).
 - **P34 NEXT activated:** ROADMAP **NEXT = P34-001** (Correctness follow-up: route / target / persistence); queue P34-001…010; [pingui-route-persistence.md](docs/en/pingui-route-persistence.md). `beta`≡`main@45374cc`.
 - **P33 NEXT activated:** ROADMAP **NEXT = P33-001** (Correctness: MTR / projection / side-effects); queue P33-001…008; [pingui-correctness.md](docs/en/pingui-correctness.md). `beta` synced to `main@28bdb41`.
 - **P32 NEXT activated:** ROADMAP **NEXT = P32-001** (Stabilization: MTR freshness / history / side-effects); queue P32-001…008; [pingui-stabilization.md](docs/pingui-stabilization.md).
@@ -17,6 +17,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P35-007 — unified SQLite persistence:** `PollPersistenceBatch` + control-lane `offerPollHistory`/`offerJdbc`; probe thread no longer blocks on sync JDBC for poll_result/events/route; NEXT→**P35-008**.
 - **P35-006 — MTR invalidate on DNS change:** confirmed address-set `change` clears MTR targetIp, candidate route, and latency baseline; NEXT→**P35-007**.
 - **P35-005 — DNS-control bounded dispatcher:** `DnsControlDispatcher` — bounded outer queue + AbortPolicy, coalesce ≤1 pending/host; `/ops`+Prometheus `dns_control` / `pingui_dns_control_*`; NEXT→**P35-006**.
 - **P35-004 — timeout ↔ target hop:** `CompletedPoll.terminalHop` attributes timeouts via `freshHop`/`knownTargetHop`, not IP `*`; `MonitorService`/`MonitorLifecycle` pass session `lastTargetHop`; NEXT→**P35-005**.
