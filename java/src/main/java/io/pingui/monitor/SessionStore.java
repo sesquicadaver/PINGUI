@@ -110,6 +110,16 @@ public final class SessionStore implements AutoCloseable {
         return writer != null ? writer.droppedCount() : 0L;
     }
 
+    /**
+     * Shared async SQLite writer (host_session + poll history control lane). Null when persistence is
+     * disabled (P33-003 / P35-007).
+     */
+    public SessionPersistenceWriter persistenceWriter() {
+        synchronized (lock) {
+            return persistenceWriter;
+        }
+    }
+
     public List<String> hosts() {
         synchronized (lock) {
             return List.copyOf(data.keySet());
