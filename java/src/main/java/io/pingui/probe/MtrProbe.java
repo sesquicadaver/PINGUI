@@ -97,6 +97,19 @@ public final class MtrProbe {
         }
     }
 
+    /**
+     * Current resolved MTR target IP for {@code host}, if any (P35-006 / tests).
+     *
+     * @return empty when the host has no MTR state or target IP is unset
+     */
+    public Optional<String> currentTargetIp(String host) {
+        MtrProbeState state = stateFor(host);
+        if (state == null || state.targetIp() == null || state.targetIp().isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.of(state.targetIp());
+    }
+
     /** Test hook: generation for {@code host}, or empty when absent. */
     Optional<Long> generationFor(String host) {
         HostSlot slot = states.get(host);
