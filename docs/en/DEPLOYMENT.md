@@ -363,7 +363,11 @@ Session persistence (`host_session` / `persistence_event`) is a separate layer; 
 | Routes | `route` (deduped signature + hops_json; P30-004) |
 | Rollups | `metric_rollup` (5m/1h; retention `--poll-retention`; P30-005) |
 
-**Schema:** Java `SCHEMA_VERSION = 14` (P32-004: additive `metric_rollup`). **v13→v14** migrates on open; v12 and below — delete the file and recreate ([ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md)).
+**Schema:** Java `SCHEMA_VERSION = 14` (P32-004: additive `metric_rollup`). **v12→v13→v14** migrates on open; `<v12` — delete the file and recreate ([ADR_SESSION_SCHEMA.md](ADR_SESSION_SCHEMA.md)). Probe-error rows from the legacy backfill are fixed automatically (P34-008) or via:
+
+```bash
+cd java && ./pingui-java.sh -- --session-db ../data/ping.db --repair-poll-result
+```
 
 **Backup / integrity (P30-006):** before `--poll-retention`, `--telemetry-retention`, GUI purge, or delete/recreate after a schema bump — copy the file:
 

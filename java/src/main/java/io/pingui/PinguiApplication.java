@@ -239,17 +239,32 @@ public final class PinguiApplication extends Application {
             throw new IllegalArgumentException("Use either --poll-retention or other retention/export flags, not both");
         }
         boolean integrityCheck = params.containsKey("integrity-check");
+        boolean repairPollResult = params.containsKey("repair-poll-result");
         if (integrityCheck && sessionDb.isEmpty()) {
             throw new IllegalArgumentException("--integrity-check requires --session-db PATH");
         }
         if (integrityCheck
                 && (pollRetention
+                        || repairPollResult
                         || telemetryRetention.isPresent()
                         || telemetryDump.isPresent()
                         || exportReport.isPresent()
                         || exportSchedule.isPresent())) {
             throw new IllegalArgumentException(
                     "Use either --integrity-check or other session-db maintenance flags, not both");
+        }
+        if (repairPollResult && sessionDb.isEmpty()) {
+            throw new IllegalArgumentException("--repair-poll-result requires --session-db PATH");
+        }
+        if (repairPollResult
+                && (integrityCheck
+                        || pollRetention
+                        || telemetryRetention.isPresent()
+                        || telemetryDump.isPresent()
+                        || exportReport.isPresent()
+                        || exportSchedule.isPresent())) {
+            throw new IllegalArgumentException(
+                    "Use either --repair-poll-result or other session-db maintenance flags, not both");
         }
         Optional<String> uiLang = Optional.empty();
         if (params.containsKey("lang")) {
@@ -274,6 +289,8 @@ public final class PinguiApplication extends Application {
             runMode = CliRunMode.POLL_RETENTION;
         } else if (integrityCheck) {
             runMode = CliRunMode.INTEGRITY_CHECK;
+        } else if (repairPollResult) {
+            runMode = CliRunMode.REPAIR_POLL_RESULT;
         } else if (telemetryRetention.isPresent()) {
             runMode = CliRunMode.TELEMETRY_RETENTION;
         } else if (telemetryDump.isPresent()) {
@@ -487,6 +504,10 @@ public final class PinguiApplication extends Application {
                 runIntegrityCheck(options);
                 return;
             }
+            case REPAIR_POLL_RESULT -> {
+                runRepairPollResult(options);
+                return;
+            }
             case DAEMON -> {
                 runDaemon(options);
                 return;
@@ -630,6 +651,25 @@ public final class PinguiApplication extends Application {
         }
     }
 
+    private static void runRepairPollResult(AppOptions options) {
+        if (options.sessionDbPath().isEmpty()) {
+            failCli("--repair-poll-result requires --session-db PATH");
+            return;
+        }
+        try (SessionDatabase database =
+                new SessionDatabase(options.sessionDbPath().orElseThrow())) {
+            // RW open already applies the repair; report that count (explicit re-run is a no-op).
+            int updated = database.lastProbeErrorRepairCount();
+            System.out.println("poll_result probe-error repair: updated="
+                    + updated
+                    + " (schema v"
+                    + database.schemaVersion()
+                    + ")");
+        } catch (RuntimeException ex) {
+            failCli("Poll result repair failed: " + ex.getMessage());
+        }
+    }
+
     private static void printRetentionResult(TelemetryRetentionJob.Result result) {
         System.out.println("Telemetry retention: samples="
                 + result.samplesDeleted()
@@ -723,6 +763,7 @@ public final class PinguiApplication extends Application {
                   --telemetry-dump PATH     Dump SQLite telemetry to .csv/.json and exit
                   --poll-retention         Roll up/purge old poll_result (needs --session-db; cron)
                   --integrity-check        PRAGMA integrity_check and exit (needs --session-db)
+                  --repair-poll-result     Fix probe-error poll_result tri-state (needs --session-db)
                   --export-report PATH  Export CSV/HTML from --session-db and exit (no GUI)
                   --export-schedule P   Cron one-shot: hourly|daily|weekly (with --export-dir)
                   --export-dir DIR      Output directory for --export-schedule (CSV+HTML stamped)

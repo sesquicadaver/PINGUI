@@ -166,6 +166,10 @@ CREATE TABLE metric_rollup (
 
 `metric_rollup` stores additive counters (`sample_count`, `reachable_*`, `rtt_samples`/`rtt_sum`, `loss_samples`/`loss_sum`); averages are computed on read. `PollResultRetentionJob` runs upsert+delete in **chunked** transactions (P33-007). Opening a DB migrates **v12→v13→v14** in-place.
 
+### P34-008 (done) — probe-error tri-state repair
+
+`migrateV12ToV13` backfill for rows with `error_code` → `target_sampled=0`, `reachable=NULL` (P33-004). On already-v14 DBs an idempotent repair runs on every RW open; CLI **`--repair-poll-result`** (+ `--session-db`) prints `updated=N`.
+
 ### P32-008 (done) — persistence hotspot split
 
 Public API remains `SessionDatabase` (connection + transactions). SQL lives in package-private helpers:
@@ -173,7 +177,7 @@ Public API remains `SessionDatabase` (connection + transactions). SQL lives in p
 | Class | Role |
 |------|------|
 | `DbCommit` | `Connection`, `deferCommit`, `maybeCommit` / `rollbackQuietly` |
-| `SchemaManager` | DDL, `schema_meta`, migrate v12→v13→v14 |
+| `SchemaManager` | DDL, `schema_meta`, migrate v12→v13→v14, P34-008 probe-error repair |
 | `SessionStateRepository` | `host_session` + child hop/ping/stats tables |
 | `HistoryRepository` | events, incident, poll_result, route, rollup, telemetry |
 
