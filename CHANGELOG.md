@@ -9,7 +9,7 @@
 
 ### Added
 
-- **P35 NEXT activated:** ROADMAP **NEXT = P35-001** → **P35-002** після P35-001; черга P35-001…010; [pingui-unattended.md](docs/pingui-unattended.md).
+- **P35 NEXT activated:** ROADMAP **NEXT = P35-001** → **P35-003** після P35-001…002; черга P35-001…010; [pingui-unattended.md](docs/pingui-unattended.md).
 - **P34 NEXT activated:** ROADMAP **NEXT = P34-001** (Correctness follow-up: route / target / persistence); черга P34-001…010; [pingui-route-persistence.md](docs/pingui-route-persistence.md). `beta`≡`main@45374cc`.
 - **P33 NEXT activated:** ROADMAP **NEXT = P33-001** (Correctness: MTR / projection / side-effects); черга P33-001…008; [pingui-correctness.md](docs/pingui-correctness.md). `beta` синхронізовано з `main@28bdb41`.
 - **P32 NEXT activated:** ROADMAP **NEXT = P32-001** (Stabilization: MTR freshness / history / side-effects); черга P32-001…008; [pingui-stabilization.md](docs/pingui-stabilization.md).
@@ -17,6 +17,7 @@
 
 ### Changed
 
+- **P35-002 — MTR TARGET_UNKNOWN scope + rediscovery:** `PollSampleScope.UNSAMPLED` замість FULL при `probedHop<1`; burst rediscovery + capped exponential poll-backoff (не вічний idle); без downtime з UNKNOWN; NEXT→**P35-003**.
 - **P35-001 — TRACE real target identity:** `TraceTargetIp` (header/literal/resolve); `ProcessRouteProbe` більше не бере last reachable hop; `RouteChangeDetector.targetReached` без fallback на останній router; NEXT→**P35-002**.
 - **P34-010 — soak/docs sync + phase close:** regression/soak–fault matrix (8 сценаріїв → тести); rename control-lane під overflow; ROADMAP **NEXT=DONE** (фаза 34 closed); `main`≡`beta`.
 - **P34-009 — Python compatibility edition:** bugfix-only lock у docs; `__version__`↔`pyproject` 0.2.0; ідемпотентний `SessionDatabase.close` + daemon `atexit` cleanup; NEXT→**P34-010**.

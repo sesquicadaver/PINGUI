@@ -139,6 +139,33 @@ class RoutePollerTest {
     }
 
     @Test
+    void pollHostMtrTargetUnknownIdleUsesUnsampledScope() {
+        ScriptMtrHopProber prober = new ScriptMtrHopProber();
+        // Exhaust maxHops=1 without target, then burn rediscovery burst into backoff idle
+        final int maxRediscoveries = 5;
+        for (int i = 0; i < maxRediscoveries + 2; i++) {
+            prober.enqueue(new ProbeResult("10.0.0.1", 4.0, false));
+        }
+        RoutePoller poller = new RoutePoller(
+                new FakeRouteProbe(new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of())), new MtrProbe(prober));
+
+        HostPollOutcome first = poller.pollHostMtr("8.8.8.8", List.of(), 1, 0.5);
+        assertEquals(1, first.sampleScope().freshHop());
+        assertFalse(first.sampleScope().targetSampled());
+
+        for (int i = 0; i < maxRediscoveries; i++) {
+            HostPollOutcome again = poller.pollHostMtr("8.8.8.8", List.of(), 1, 0.5);
+            assertFalse(again.sampleScope().targetSampled());
+        }
+
+        HostPollOutcome idle = poller.pollHostMtr("8.8.8.8", List.of(), 1, 0.5);
+        assertEquals(PollSampleScope.UNSAMPLED, idle.sampleScope());
+        assertFalse(idle.sampleScope().targetSampled());
+        assertFalse(idle.sampleScope().allHopsFresh());
+        assertEquals(io.pingui.probe.ProbeOutcome.SUCCESS, idle.probeOutcome());
+    }
+
+    @Test
     void isTimeoutOnlyShrinkDetectsPrefix() {
         assertTrue(RoutePoller.isTimeoutOnlyShrink(List.of("a", "b", "c"), List.of("a", "b")));
         assertFalse(RoutePoller.isTimeoutOnlyShrink(List.of("a", "b"), List.of("a", "x")));

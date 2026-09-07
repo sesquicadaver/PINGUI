@@ -61,7 +61,7 @@ public final class RoutePoller {
                 RouteChangeDetector.observe(fsmFor(host), snapshot, targetConfirmed, previousIps);
         PollSampleScope scope = outcome.probedHop() >= 1
                 ? PollSampleScope.mtr(outcome.probedHop(), outcome.targetSampled())
-                : PollSampleScope.FULL;
+                : PollSampleScope.UNSAMPLED;
         return HostPollOutcome.success(
                 snapshot,
                 change.changed(),

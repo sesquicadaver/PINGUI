@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P35-002** |
+| **Поточна задача** | **P35-003** |
 | **Фаза** | 35 — Unattended NOC (probe identity / loss / persistence) |
-| **DoD (коротко)** | `probedHop<1` ≠ FULL; rediscovery; без downtime з TARGET_UNKNOWN |
+| **DoD (коротко)** | Fixed/sliding loss window **або** loss=NULL у single-packet |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -206,7 +206,7 @@
 | 160 | **P34-009** | [x] | Python compatibility edition |
 | 161 | **P34-010** | [x] | Soak / fault matrix + docs sync |
 | 162 | **P35-001** | [x] | TRACE real target identity (не last hop) |
-| 163 | **P35-002** | [ ] | MTR TARGET_UNKNOWN scope + rediscovery |
+| 163 | **P35-002** | [x] | MTR TARGET_UNKNOWN scope + rediscovery |
 | 164 | **P35-003** | [ ] | Loss window semantics |
 | 165 | **P35-004** | [ ] | Timeout ↔ target hop attribution |
 | 166 | **P35-005** | [ ] | DNS-control bounded dispatcher |
@@ -216,7 +216,7 @@
 | 170 | **P35-009** | [ ] | Route signature ≡ hops_json |
 | 171 | **P35-010** | [ ] | Python lifecycle harden |
 
-**Стан черги:** **NEXT = P35-002** (фаза 35; [pingui-unattended.md](pingui-unattended.md)).
+**Стан черги:** **NEXT = P35-003** (фаза 35; [pingui-unattended.md](pingui-unattended.md)).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -1101,12 +1101,12 @@ flowchart TD
 
 **Контекст:** [pingui-unattended.md](pingui-unattended.md). Аудит після P34 — TRACE/MTR identity, loss window, persistence pipeline. Java-first.
 
-**Черга:** після P34; **NEXT = P35-002**.
+**Черга:** після P34; **NEXT = P35-003**.
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
 | **P35-001** | [x] TRACE real target identity | `TraceTargetIp`, `ProcessRouteProbe`, `RouteChangeDetector` | `targetIp` з header/literal/resolve (не last hop); `targetReached` без fallback на останній router |
-| **P35-002** | [ ] MTR TARGET_UNKNOWN scope + rediscovery | `RoutePoller`, `MtrProbe` | `probedHop<1` ≠ `PollSampleScope.FULL`; periodic rediscovery; без downtime з UNKNOWN |
+| **P35-002** | [x] MTR TARGET_UNKNOWN scope + rediscovery | `RoutePoller`, `MtrProbe`, `PollSampleScope` | `probedHop<1` → `UNSAMPLED` (не FULL); periodic rediscovery з capped backoff; без downtime з UNKNOWN |
 | **P35-003** | [ ] Loss window semantics | `PollResultEffects`, hop stats | Fixed/sliding window **або** loss=NULL у single-packet |
 | **P35-004** | [ ] Timeout ↔ target hop | `CompletedPoll`, poll effects | Timeout за `targetHop`/`freshHop`, не за IP `*` |
 | **P35-005** | [ ] DNS-control bounded dispatcher | DNS control | Bounded/coalesce; outer-queue metrics |
@@ -1204,7 +1204,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P35-002**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P35-003**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

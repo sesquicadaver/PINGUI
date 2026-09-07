@@ -16,11 +16,18 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>One hop per {@link #poll} call. Per-host state lives in a {@link ConcurrentHashMap}; a
  * generation token drops in-flight writes after {@link #resetHost(String)} / rename so a finished
  * poll cannot resurrect cleared state. {@code targetHop} is set only after a real target match;
- * maxHops exhaustion enters {@link MtrProbeState.Phase#TARGET_UNKNOWN} with bounded rediscovery.
+ * maxHops exhaustion enters {@link MtrProbeState.Phase#TARGET_UNKNOWN} with burst rediscovery and
+ * capped exponential poll-backoff (P35-002).
  */
 public final class MtrProbe {
-    /** Full discovery passes after exhaustion without identifying the target (P34-002). */
+    /** Burst of full discovery passes after exhaustion without identifying the target (P34-002). */
     static final int MAX_TARGET_REDISCOVERIES = 5;
+
+    /** Initial idle polls after a failed rediscovery burst (P35-002). */
+    static final int REDISCOVERY_BACKOFF_INITIAL_POLLS = 4;
+
+    /** Cap for exponential poll-backoff between rediscovery bursts (P35-002). */
+    static final int REDISCOVERY_BACKOFF_MAX_POLLS = 64;
 
     private final MtrHopProber hopProber;
     private final ConcurrentHashMap<String, HostSlot> states = new ConcurrentHashMap<>();
@@ -116,7 +123,9 @@ public final class MtrProbe {
                     working.nodes(),
                     working.lastCompleteRouteIps(),
                     working.targetHop(),
-                    working.rediscoveryAttempts());
+                    working.rediscoveryAttempts(),
+                    working.rediscoveryBackoffRemaining(),
+                    working.rediscoveryBackoffStep());
         }
         if (working.phase() == MtrProbeState.Phase.TARGET_UNKNOWN) {
             return stepTargetUnknown(working, maxHops, timeoutSeconds);
@@ -130,13 +139,27 @@ public final class MtrProbe {
     }
 
     /**
-     * After exhaustion without a target match: restart discovery up to {@link
-     * #MAX_TARGET_REDISCOVERIES}, then idle in {@link MtrProbeState.Phase#TARGET_UNKNOWN}.
+     * After exhaustion without a target match: restart discovery in bursts of {@link
+     * #MAX_TARGET_REDISCOVERIES}, then wait with capped exponential poll-backoff before the next
+     * burst (P35-002). Never permanently stops probing.
      */
     private StepResult stepTargetUnknown(MtrProbeState state, int maxHops, double timeoutSeconds) throws IOException {
+        if (state.rediscoveryBackoffRemaining() > 0) {
+            return toStepResult(
+                    state.withRediscoveryBackoffRemaining(state.rediscoveryBackoffRemaining() - 1),
+                    0,
+                    null,
+                    false,
+                    MtrTargetOutcome.NOT_SAMPLED);
+        }
         int nextAttempt = state.rediscoveryAttempts() + 1;
         if (nextAttempt > MAX_TARGET_REDISCOVERIES) {
-            return toStepResult(state, 0, null, false, MtrTargetOutcome.NOT_SAMPLED);
+            int nextStep = nextBackoffStep(state.rediscoveryBackoffStep());
+            int remainingAfterThisPoll = Math.max(0, nextStep - 1);
+            MtrProbeState cooling = state.withRediscoveryAttempts(0)
+                    .withRediscoveryBackoffStep(nextStep)
+                    .withRediscoveryBackoffRemaining(remainingAfterThisPoll);
+            return toStepResult(cooling, 0, null, false, MtrTargetOutcome.NOT_SAMPLED);
         }
         MtrProbeState rediscover = state.withPhase(MtrProbeState.Phase.DISCOVERING)
                 .withCursor(1)
@@ -147,6 +170,14 @@ public final class MtrProbe {
         Optional<ProbeResult> probe =
                 hopProber.probeHop(rediscover.targetHost(), rediscover.targetIp(), hop, timeoutSeconds);
         return stepDiscovering(rediscover, hop, probe);
+    }
+
+    static int nextBackoffStep(int previousStep) {
+        if (previousStep <= 0) {
+            return REDISCOVERY_BACKOFF_INITIAL_POLLS;
+        }
+        long doubled = (long) previousStep * 2L;
+        return (int) Math.min(REDISCOVERY_BACKOFF_MAX_POLLS, doubled);
     }
 
     private StepResult stepDiscovering(MtrProbeState state, int hop, Optional<ProbeResult> probe) {
@@ -177,7 +208,9 @@ public final class MtrProbe {
                 .withCursor(1)
                 .withTargetHop(discoveredTargetHop)
                 .withLastCompleteRouteIps(completeIps)
-                .withRediscoveryAttempts(0);
+                .withRediscoveryAttempts(0)
+                .withRediscoveryBackoffRemaining(0)
+                .withRediscoveryBackoffStep(0);
         return toStepResult(next, hop, fresh, true, MtrTargetOutcome.REACHABLE);
     }
 
