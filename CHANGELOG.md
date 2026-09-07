@@ -16,7 +16,7 @@
 
 ### Changed
 
-- **P34-004 — reliable persistence lanes:** control (delete/rename/barrier) без drop; coalesced SaveHost; lossy telemetry; `close()` join до stop worker; NEXT→**P34-005**.
+- **P34-004 — reliable persistence lanes:** control (delete/rename/barrier) без drop; coalesced SaveHost; lossy telemetry; `close()` join до stop worker; barrier не завершує `awaitIdle`, доки sibling-lanes не порожні (fix: timed `poll` обходив drain); NEXT→**P34-005**.
 - **P34-003 — current endpoint vs history:** live target timeout → `EndpointState.DOWN` навіть при здоровому історичному avg/loss; NEXT→**P34-004**.
 - **P34-002 — MTR target-unknown / exhaustion:** `targetHop` лише після real target match; фаза `TARGET_UNKNOWN`; bounded rediscovery (max 5); без `target_sampled` до ідентифікації; NEXT→**P34-003**.
 - **P34-001 — route identity + candidate FSM:** hop-indexed `RouteIdentity`; `CandidateRouteFsm` (active/candidate, confirm до target); TRACE transient `*` ≠ change; MTR — один event після confirmation; `RouteSignature` `N=ip` + last-known fill; NEXT→**P34-002**.

@@ -197,7 +197,12 @@ public final class SessionPersistenceWriter implements AutoCloseable {
     }
 
     private boolean hasPendingWork() {
-        return !controlQueue.isEmpty() || !dirtyHosts.isEmpty() || !pendingSaves.isEmpty() || !telemetryQueue.isEmpty();
+        return !controlQueue.isEmpty() || hasSiblingLaneWork();
+    }
+
+    /** State + telemetry lanes that must drain before a {@link Barrier} may complete. */
+    private boolean hasSiblingLaneWork() {
+        return !dirtyHosts.isEmpty() || !pendingSaves.isEmpty() || !telemetryQueue.isEmpty();
     }
 
     private void runLoop() {
@@ -219,10 +224,18 @@ public final class SessionPersistenceWriter implements AutoCloseable {
         drainRemaining();
     }
 
+    /**
+     * Picks the next job. A {@link Barrier} must never be returned until coalesced saves and
+     * telemetry are empty — including when a timed {@code controlQueue.poll} wakes on a barrier
+     * (that path previously completed awaitIdle early and dropped pending work).
+     */
     private Job nextJob(long waitMs) throws InterruptedException {
-        Job head = controlQueue.peek();
-        if (head instanceof Barrier) {
-            // Drain coalesced saves + telemetry before the barrier completes (P34-004 awaitIdle).
+        while (true) {
+            Job head = controlQueue.peek();
+            if (head != null && !(head instanceof Barrier)) {
+                return controlQueue.poll();
+            }
+
             Job save = pollCoalescedSave();
             if (save != null) {
                 return save;
@@ -231,33 +244,51 @@ public final class SessionPersistenceWriter implements AutoCloseable {
             if (telemetry != null) {
                 return telemetry;
             }
-            return controlQueue.poll();
+
+            if (head instanceof Barrier) {
+                if (hasSiblingLaneWork()) {
+                    // Work raced in after the polls above; retry without completing the barrier.
+                    continue;
+                }
+                Job polled = controlQueue.poll();
+                if (polled != null) {
+                    return polled;
+                }
+                continue;
+            }
+
+            Job polled = controlQueue.poll(waitMs, TimeUnit.MILLISECONDS);
+            if (polled == null) {
+                return null;
+            }
+            if (polled instanceof Barrier) {
+                // Timed wait dequeued the barrier directly — put it back and drain siblings first.
+                controlQueue.offer(polled);
+                continue;
+            }
+            return polled;
         }
-        if (head != null) {
-            return controlQueue.poll();
-        }
-        Job save = pollCoalescedSave();
-        if (save != null) {
-            return save;
-        }
-        Job telemetry = telemetryQueue.poll();
-        if (telemetry != null) {
-            return telemetry;
-        }
-        return controlQueue.poll(waitMs, TimeUnit.MILLISECONDS);
     }
 
     private Job pollCoalescedSave() {
         String host = dirtyHosts.poll();
-        if (host == null) {
-            return null;
+        if (host != null) {
+            dirtySet.remove(host);
+            HostSessionData snapshot = pendingSaves.remove(host);
+            if (snapshot != null) {
+                return new SaveHost(host, snapshot);
+            }
+            // Stale dirty marker (e.g. after delete); try any remaining pending snapshot.
         }
-        dirtySet.remove(host);
-        HostSessionData snapshot = pendingSaves.remove(host);
-        if (snapshot == null) {
-            return null;
+        // Recover orphaned pending snapshots so barriers cannot spin forever.
+        for (String pendingHost : pendingSaves.keySet()) {
+            HostSessionData snapshot = pendingSaves.remove(pendingHost);
+            if (snapshot != null) {
+                dirtySet.remove(pendingHost);
+                return new SaveHost(pendingHost, snapshot);
+            }
         }
-        return new SaveHost(host, snapshot);
+        return null;
     }
 
     private void drainRemaining() {
@@ -290,6 +321,7 @@ public final class SessionPersistenceWriter implements AutoCloseable {
         Set<String> hosts = new HashSet<>();
         dirtyHosts.drainTo(hosts);
         hosts.addAll(dirtySet);
+        hosts.addAll(pendingSaves.keySet());
         dirtySet.clear();
         for (String host : hosts) {
             HostSessionData snapshot = pendingSaves.remove(host);
@@ -339,6 +371,11 @@ public final class SessionPersistenceWriter implements AutoCloseable {
             }
             completedCount.incrementAndGet();
         } else if (job instanceof Barrier barrier) {
+            if (hasSiblingLaneWork()) {
+                // Safety net: never release awaitIdle while sibling lanes still have work.
+                controlQueue.offer(barrier);
+                return;
+            }
             barrier.done().countDown();
             completedCount.incrementAndGet();
         }
