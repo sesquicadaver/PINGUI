@@ -25,6 +25,39 @@ class HopStatsTest {
     }
 
     @Test
+    void lossUsesSlidingWindowNotLifetimeCounters() {
+        HopProbeStats stats = new HopProbeStats();
+        // Fill a full success window, then roll in enough timeouts to drop old successes.
+        for (int i = 0; i < HopStats.LOSS_WINDOW_SIZE; i++) {
+            HopStats.recordProbe(stats, new HopNode(1, "1.1.1.1", 10.0, false));
+        }
+        assertEquals(0.0, HopStats.lossPctInWindow(stats));
+        assertEquals(HopStats.LOSS_WINDOW_SIZE, stats.getProbes());
+        for (int i = 0; i < HopStats.LOSS_WINDOW_SIZE; i++) {
+            HopStats.recordProbe(stats, Models.timeout(1));
+        }
+        // Lifetime still shows 50% (50 ok + 50 fail), but the window is 100% loss.
+        assertEquals(2 * HopStats.LOSS_WINDOW_SIZE, stats.getProbes());
+        assertEquals(HopStats.LOSS_WINDOW_SIZE, stats.getSuccesses());
+        assertEquals(100.0, HopStats.lossPctInWindow(stats));
+        assertEquals(100.0, HopStats.lossPct(stats));
+        assertEquals(HopStats.LOSS_WINDOW_SIZE, stats.getWindowProbes());
+        assertEquals(0, stats.getWindowSuccesses());
+    }
+
+    @Test
+    void copyPreservesAttemptWindow() {
+        HopProbeStats stats = new HopProbeStats();
+        HopStats.recordProbe(stats, new HopNode(1, "1.1.1.1", 10.0, false));
+        HopStats.recordProbe(stats, Models.timeout(1));
+        HopProbeStats copy = stats.copy();
+        assertEquals(50.0, HopStats.lossPctInWindow(copy));
+        HopStats.recordProbe(copy, new HopNode(1, "1.1.1.1", 11.0, false));
+        assertEquals(50.0, HopStats.lossPctInWindow(stats));
+        assertEquals(1.0 / 3.0 * 100.0, HopStats.lossPctInWindow(copy), 1e-9);
+    }
+
+    @Test
     void jitterIsPopulationStddevOverRttWindow() {
         assertNull(HopStats.jitterMs(List.of()));
         assertNull(HopStats.jitterMs(List.of(10.0)));

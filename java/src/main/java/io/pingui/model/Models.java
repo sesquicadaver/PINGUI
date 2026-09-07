@@ -46,6 +46,8 @@ public final class Models {
         private int probes;
         private int successes;
         private final java.util.List<Double> rttSamples = new java.util.ArrayList<>();
+        /** Sliding attempt outcomes ({@code true}=success) for loss window (P35-003). */
+        private final java.util.ArrayDeque<Boolean> attemptWindow = new java.util.ArrayDeque<>();
 
         public int getProbes() {
             return probes;
@@ -59,22 +61,92 @@ public final class Models {
             return rttSamples;
         }
 
+        /** Attempts currently in the sliding loss window. */
+        public int getWindowProbes() {
+            return attemptWindow.size();
+        }
+
+        /** Successes currently in the sliding loss window. */
+        public int getWindowSuccesses() {
+            int count = 0;
+            for (Boolean success : attemptWindow) {
+                if (Boolean.TRUE.equals(success)) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
         public void recordProbeAttempt() {
             probes++;
+            attemptWindow.addLast(Boolean.FALSE);
+            trimAttemptWindow();
         }
 
         public void recordProbeSuccess(double rttMs) {
+            if (attemptWindow.isEmpty()) {
+                // Legacy callers may record success without a prior attempt (P35-003 window).
+                probes++;
+                attemptWindow.addLast(Boolean.TRUE);
+                trimAttemptWindow();
+            } else {
+                attemptWindow.removeLast();
+                attemptWindow.addLast(Boolean.TRUE);
+            }
             successes++;
             rttSamples.add(rttMs);
         }
 
-        /** Restores counters from SQLite JSON (P11-010 parity with Python). */
+        /** Deep copy including the sliding attempt window (P35-003). */
+        public HopProbeStats copy() {
+            HopProbeStats copy = new HopProbeStats();
+            copy.probes = probes;
+            copy.successes = successes;
+            copy.rttSamples.addAll(rttSamples);
+            copy.attemptWindow.addAll(attemptWindow);
+            return copy;
+        }
+
+        /**
+         * Restores counters from SQLite JSON (P11-010 parity with Python). Seeds the loss window from
+         * lifetime counts (order not preserved across reopen).
+         */
         public static HopProbeStats fromSerialized(int probes, int successes, List<Double> rttSamples) {
             HopProbeStats stats = new HopProbeStats();
-            stats.probes = probes;
-            stats.successes = successes;
-            stats.rttSamples.addAll(rttSamples);
+            stats.probes = Math.max(0, probes);
+            stats.successes = Math.max(0, successes);
+            if (stats.successes > stats.probes) {
+                stats.probes = stats.successes;
+            }
+            if (rttSamples != null) {
+                stats.rttSamples.addAll(rttSamples);
+            }
+            stats.seedAttemptWindowFromLifetime();
             return stats;
+        }
+
+        private void trimAttemptWindow() {
+            while (attemptWindow.size() > MAX_HOP_RTT_SAMPLES) {
+                attemptWindow.removeFirst();
+            }
+        }
+
+        /** Rebuilds a ratio-preserving attempt window after deserialize (P35-003). */
+        private void seedAttemptWindowFromLifetime() {
+            attemptWindow.clear();
+            if (probes <= 0) {
+                return;
+            }
+            int windowSize = Math.min(MAX_HOP_RTT_SAMPLES, probes);
+            int windowSuccesses = (int) Math.round((double) successes * windowSize / probes);
+            windowSuccesses = Math.min(windowSize, Math.max(0, windowSuccesses));
+            int windowFailures = windowSize - windowSuccesses;
+            for (int i = 0; i < windowFailures; i++) {
+                attemptWindow.addLast(Boolean.FALSE);
+            }
+            for (int i = 0; i < windowSuccesses; i++) {
+                attemptWindow.addLast(Boolean.TRUE);
+            }
         }
     }
 
@@ -230,11 +302,7 @@ public final class Models {
                 copy.pingHistory.put(entry.getKey(), new java.util.ArrayList<>(entry.getValue()));
             }
             for (java.util.Map.Entry<Integer, HopProbeStats> entry : hopStats.entrySet()) {
-                HopProbeStats src = entry.getValue();
-                copy.hopStats.put(
-                        entry.getKey(),
-                        HopProbeStats.fromSerialized(
-                                src.getProbes(), src.getSuccesses(), List.copyOf(src.getRttSamples())));
+                copy.hopStats.put(entry.getKey(), entry.getValue().copy());
             }
             copy.enabled = enabled;
             copy.pingOnly = pingOnly;
