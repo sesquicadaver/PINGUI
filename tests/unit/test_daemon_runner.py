@@ -9,7 +9,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from pingui.models import RouteChangeEvent
-from pingui.monitor.daemon_runner import DaemonError, PidFile, _store_callbacks
+from pingui.monitor.daemon_runner import (
+    DaemonError,
+    PidFile,
+    _store_callbacks,
+    run_headless_monitor,
+)
 from pingui.monitor.session_store import SessionStore
 
 
@@ -63,3 +68,39 @@ def test_store_callbacks_dispatches_route_change_alert() -> None:
     assert isinstance(event, RouteChangeEvent)
     assert event.host == "8.8.8.8"
     assert event.profile == "noc"
+
+
+def test_run_headless_monitor_cleanup_is_idempotent(tmp_path) -> None:
+    """Signal stop + finally + atexit must not double-close the session DB (P34-009)."""
+    db_path = tmp_path / "daemon.db"
+    pid_path = tmp_path / "daemon.pid"
+
+    class ImmediateStopLoop:
+        def __init__(self, **_kwargs: object) -> None:
+            self._running = True
+
+        def start(self) -> None:
+            self._running = False
+
+        def stop(self) -> None:
+            self._running = False
+
+        def join(self, timeout: float | None = None) -> None:
+            return None
+
+        def is_running(self) -> bool:
+            return self._running
+
+    with patch("pingui.monitor.daemon_runner.MonitorLoop", ImmediateStopLoop):
+        assert (
+            run_headless_monitor(
+                ["8.8.8.8"],
+                interval_seconds=1.0,
+                max_hops=5,
+                timeout=1.0,
+                session_db_path=db_path,
+                pid_file=pid_path,
+            )
+            == 0
+        )
+    assert not pid_path.exists()

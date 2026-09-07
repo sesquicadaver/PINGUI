@@ -2,7 +2,7 @@
 
 # Довідник модулів PINGUI
 
-> **Scope:** лише Python-пакет `pingui` (версія 0.2.0). Java Pro (telemetry, MTU, Expert) — [JAVA.md](JAVA.md) та [java/README.md](../java/README.md).
+> **Scope:** лише Python-пакет `pingui` (версія 0.2.0) — **legacy / bugfix-only** (P32-008 / P34-009). Java — канон: [JAVA.md](JAVA.md) та [java/README.md](../java/README.md).
 
 Публічні API пакету `pingui`.
 

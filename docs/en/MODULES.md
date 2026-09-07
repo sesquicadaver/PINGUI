@@ -2,7 +2,7 @@
 
 # PINGUI Module Reference
 
-> **Scope:** Python package `pingui` only (version 0.2.0). Java Pro (telemetry, MTU, Expert) — [JAVA.md](JAVA.md) and [java/README.en.md](../../java/README.en.md).
+> **Scope:** Python package `pingui` only (version 0.2.0) — **legacy / bugfix-only** (P32-008 / P34-009). Java is canonical: [JAVA.md](JAVA.md) and [java/README.en.md](../../java/README.en.md).
 
 Public APIs of the `pingui` package.
 

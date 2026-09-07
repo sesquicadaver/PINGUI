@@ -7,7 +7,7 @@
 ## Канон редакції (P32-008)
 
 **Java** — канонічна реалізація продукту (схема SQLite v14, GUI, daemon, alerts, telemetry).
-**Python** (`src/pingui/`) — maintenance / legacy edition: **лише bugfix** і безпекові патчі; нові фічі / schema evolution — лише в Java, якщо окремо не вирішено інше.
+**Python** (`src/pingui/`) — maintenance / legacy edition: **лише bugfix** і безпекові патчі (P32-008 / P34-009); нові фічі / schema evolution — лише в Java, якщо окремо не вирішено інше.
 
 ## Мета
 
@@ -229,4 +229,4 @@ pingui-java.bat --package    REM .msi
 
 ## Майбутнє
 
-Лінійна черга ROADMAP: **NEXT = P34-009** (фаза 34 — Correctness follow-up). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT; [pingui-route-persistence.md](pingui-route-persistence.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
+Лінійна черга ROADMAP: **NEXT = P34-010** (фаза 34 — Correctness follow-up). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT; [pingui-route-persistence.md](pingui-route-persistence.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
