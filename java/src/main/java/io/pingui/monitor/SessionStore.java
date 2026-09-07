@@ -444,6 +444,21 @@ public final class SessionStore implements AutoCloseable {
     }
 
     /**
+     * Immutable copy of per-hop probe counters for building {@link CompletedPoll} before store
+     * mutation (P34-005).
+     */
+    public HopProbeStats hopStatsCopy(String host, int hop) {
+        synchronized (lock) {
+            HopProbeStats stats = getUnlocked(host).getHopStats().get(hop);
+            if (stats == null) {
+                return null;
+            }
+            return HopProbeStats.fromSerialized(
+                    stats.getProbes(), stats.getSuccesses(), List.copyOf(stats.getRttSamples()));
+        }
+    }
+
+    /**
      * Metrics for the real target hop (P33-002), not merely the last node of a partial MTR route.
      * {@code null} when disabled, empty, or the target has not been identified yet.
      */

@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P34-005** |
+| **Поточна задача** | **P34-006** |
 | **Фаза** | 34 — Correctness follow-up (route / target / persistence) |
-| **DoD (коротко)** | Immutable CompletedPoll + GUI/daemon parity |
+| **DoD (коротко)** | loss / jitter / rollup semantics |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -199,14 +199,14 @@
 | 153 | **P34-002** | [x] | MTR target-unknown / exhaustion recovery |
 | 154 | **P34-003** | [x] | Current endpoint outcome vs history |
 | 155 | **P34-004** | [x] | Reliable structural persistence + shutdown |
-| 156 | **P34-005** | [ ] | Immutable CompletedPoll + GUI/daemon parity |
+| 156 | **P34-005** | [x] | Immutable CompletedPoll + GUI/daemon parity |
 | 157 | **P34-006** | [ ] | loss / jitter / rollup semantics |
 | 158 | **P34-007** | [ ] | Bounded DNS queues + ops counters |
 | 159 | **P34-008** | [ ] | v12 migration repair |
 | 160 | **P34-009** | [ ] | Python compatibility edition |
 | 161 | **P34-010** | [ ] | Soak / fault matrix + docs sync |
 
-**Стан черги:** **NEXT = P34-005** (фаза 34; [pingui-route-persistence.md](pingui-route-persistence.md)).
+**Стан черги:** **NEXT = P34-006** (фаза 34; [pingui-route-persistence.md](pingui-route-persistence.md)).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -1068,7 +1068,7 @@ flowchart TD
 
 **Контекст:** [pingui-route-persistence.md](pingui-route-persistence.md). Після P33 — NOC/unattended correctness; **не** нове функціональне розширення. Java-first.
 
-**Черга:** після P33; **NEXT = P34-005**.
+**Черга:** після P33; **NEXT = P34-006**.
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
@@ -1076,7 +1076,7 @@ flowchart TD
 | **P34-002** | [x] MTR target-unknown / exhaustion | `MtrProbe`, `MtrProbeState` | `targetHop` лише після real match; `TARGET_UNKNOWN`/`INCOMPLETE`; bounded rediscovery; без `target_sampled` до ідентифікації; тест maxHops exhausted |
 | **P34-003** | [x] Current endpoint vs history | `HostNetworkStateClassifier`, UI states | Current TIMEOUT → DOWN/PENDING; session-lifetime loss не маскує актуальний timeout; тест timeout після успіхів |
 | **P34-004** | [x] Reliable persistence lanes | `SessionPersistenceWriter`, SessionStore close | Control lane (delete/rename/barrier) без drop; coalesced SaveHost; lossy telemetry; безпечний shutdown |
-| **P34-005** | [ ] Immutable CompletedPoll | `MonitorService`, `PollResultEffects`, GUI/daemon | Probe-derived poll_result; GUI≡daemon; без mutable store з probe/FX |
+| **P34-005** | [x] Immutable CompletedPoll | `MonitorService`, `PollResultEffects`, GUI/daemon | Probe-derived poll_result; GUI≡daemon; без mutable store з probe/FX |
 | **P34-006** | [ ] loss/jitter/rollup semantics | `PollResultEffects`, rollup, retention | loss NULL або явний window; jitter moments/window; availability з target_sampled/reachable |
 | **P34-007** | [ ] Bounded DNS + ops counters | `BoundedForwardDnsLookup`, App Status, API/Prometheus | Bounded queues + coalesce per host; dropped/rejected counters видимі оператору |
 | **P34-008** | [ ] v12 migration repair | `SchemaManager`, CLI/repair | error → `target_sampled=0`, `reachable=NULL`; repair наявних DB |
@@ -1171,7 +1171,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P34-005**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P34-006**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

@@ -108,6 +108,9 @@ public final class MonitorService implements AutoCloseable {
     private final PersistencePolicyHolder persistencePolicy = new PersistencePolicyHolder();
     private final BurstSchedulePolicy burstPolicy = new BurstSchedulePolicy();
     private final TraceConcurrencyLimiter traceLimiter;
+    private volatile java.util.function.BiFunction<String, Integer, io.pingui.model.Models.HopProbeStats>
+            hopStatsLookup;
+    private volatile Function<String, java.util.Map<Integer, String>> lastKnownHopIpsResolver;
     private final BoundedForwardDnsLookup ownedForwardDns = BoundedForwardDnsLookup.systemDefault();
     private final ExecutorService dnsControlExecutor = Executors.newSingleThreadExecutor(r -> {
         Thread thread = new Thread(r, "pingui-dns-control-" + DNS_CONTROL_SEQ.incrementAndGet());
@@ -221,16 +224,27 @@ public final class MonitorService implements AutoCloseable {
     }
 
     /**
-     * Supplies measured terminal-hop loss/jitter from an RTT series (P32-003). Absent → {@code null}
-     * metrics in {@code poll_result}.
+     * Supplies measured terminal-hop loss/jitter from an RTT series (P32-003). Used only by the
+     * legacy {@link PollResultEffects#recordPollResult} test path; production builds {@link
+     * CompletedPoll} with projected stats (P34-005).
      */
     public void setMeasuredHopStatsResolver(
             Function<String, io.pingui.model.Models.HopStatsSummary> measuredHopStatsResolver) {
         pollEffects.setMeasuredHopStatsResolver(measuredHopStatsResolver);
     }
 
+    /**
+     * Supplies a copy of per-hop probe counters before store mutation so {@link CompletedPoll} can
+     * project loss/jitter without reading mutable SessionStore after FX/daemon apply (P34-005).
+     */
+    public void setHopStatsLookup(
+            java.util.function.BiFunction<String, Integer, io.pingui.model.Models.HopProbeStats> hopStatsLookup) {
+        this.hopStatsLookup = hopStatsLookup;
+    }
+
     /** Supplies last-known hop IPs so transient timeouts do not create new route rows (P34-001). */
     public void setLastKnownHopIpsResolver(Function<String, java.util.Map<Integer, String>> lastKnownHopIpsResolver) {
+        this.lastKnownHopIpsResolver = lastKnownHopIpsResolver;
         pollEffects.setLastKnownHopIpsResolver(lastKnownHopIpsResolver);
     }
 
@@ -509,6 +523,7 @@ public final class MonitorService implements AutoCloseable {
             }
             boolean probeFailed = outcome.error() != null;
             registry.recordPoll(host, probeFailed);
+            Instant observedAt = Instant.now();
             if (probeFailed) {
                 PersistenceEventWriter events = persistenceEvents;
                 if (events != null) {
@@ -519,9 +534,9 @@ public final class MonitorService implements AutoCloseable {
                     }
                 }
                 pollEffects.offerTelemetryFailure(host, outcome.error(), probeMode, durationMs);
-                // Monitor/DNS/internal failure is not a sampled downtime (P33-004).
-                pollEffects.recordPollResult(
-                        host, probeMode, null, durationMs, outcome.error(), outcome.probeOutcome(), false);
+                // Monitor/DNS/internal failure is not a sampled downtime (P33-004 / P34-005).
+                pollEffects.recordCompletedPoll(CompletedPoll.failure(
+                        host, probeMode, durationMs, outcome.error(), outcome.probeOutcome(), observedAt));
                 current.onProbeError(host, outcome.error());
                 return;
             }
@@ -542,12 +557,15 @@ public final class MonitorService implements AutoCloseable {
                         snapshot = defaultTargetPingEnricher.enrich(snapshot, timeoutSeconds);
                     }
                 }
+                // Build immutable poll aggregate BEFORE GUI/daemon SessionStore mutation (P34-005).
+                if (sampleScope.targetSampled()) {
+                    pollEffects.recordCompletedPoll(buildCompletedPoll(
+                            host, probeMode, snapshot, durationMs, outcome.probeOutcome(), sampleScope, observedAt));
+                }
                 pollEffects.offerTelemetrySuccess(host, probeMode, snapshot, durationMs, sampleScope);
                 current.onDataReceived(host, snapshot, sampleScope, outcome.routeChanged());
                 deliveredSnapshot = true;
                 if (sampleScope.targetSampled()) {
-                    pollEffects.recordPollResult(
-                            host, probeMode, snapshot, durationMs, null, outcome.probeOutcome(), true);
                     pollEffects.evaluateEndpointDown(host, snapshot);
                     // Reset EWMA before latency_high so the first RTT on a new path is warm-up (P33-005).
                     if (outcome.routeChanged() && !outcome.oldIps().isEmpty()) {
@@ -601,6 +619,51 @@ public final class MonitorService implements AutoCloseable {
             });
         } catch (RejectedExecutionException ex) {
             LOG.warn("DNS control executor rejected observe for {}: {}", host, ex.getMessage());
+        }
+    }
+
+    private CompletedPoll buildCompletedPoll(
+            String host,
+            HostProbeMode probeMode,
+            RouteSnapshot snapshot,
+            double durationMs,
+            io.pingui.probe.ProbeOutcome probeOutcome,
+            PollSampleScope sampleScope,
+            Instant observedAt) {
+        io.pingui.model.Models.HopProbeStats prior = null;
+        io.pingui.model.Models.HopNode terminal = CompletedPoll.terminalHop(snapshot);
+        java.util.function.BiFunction<String, Integer, io.pingui.model.Models.HopProbeStats> lookup = hopStatsLookup;
+        if (terminal != null && lookup != null) {
+            try {
+                prior = lookup.apply(host, terminal.hop());
+            } catch (RuntimeException ex) {
+                LOG.warn("Hop stats lookup failed for {}: {}", host, ex.getMessage());
+            }
+        }
+        return CompletedPoll.success(
+                host,
+                probeMode,
+                snapshot,
+                durationMs,
+                probeOutcome,
+                true,
+                observedAt,
+                prior,
+                sampleScope,
+                captureLastKnownHopIps(host));
+    }
+
+    private java.util.Map<Integer, String> captureLastKnownHopIps(String host) {
+        Function<String, java.util.Map<Integer, String>> resolver = lastKnownHopIpsResolver;
+        if (resolver == null) {
+            return java.util.Map.of();
+        }
+        try {
+            java.util.Map<Integer, String> known = resolver.apply(host);
+            return CompletedPoll.copyLastKnown(known);
+        } catch (RuntimeException ex) {
+            LOG.warn("Last-known hop IPs resolve failed for {}: {}", host, ex.getMessage());
+            return java.util.Map.of();
         }
     }
 
