@@ -23,7 +23,7 @@ P34 closed most route/persistence defects, but `NEXT = DONE` was again premature
 | **P35-005** | P1 | DNS-control bounded dispatcher | [x] Bounded/coalesce per host; outer-queue metrics |
 | **P35-006** | P1 | MTR invalidate on DNS change | [x] Confirmed address-set change clears targetIp/candidate/latency |
 | **P35-007** | P1 | Unified SQLite persistence pipeline | [x] CompletedPoll → one ordered write path (events+poll+route) |
-| **P35-008** | P2 | Stuck-writer fault test | close must not caller-drain while a stuck worker is alive |
+| **P35-008** | P2 | Stuck-writer fault test | [x] close must not caller-drain while a stuck worker is alive |
 | **P35-009** | P2 | Route signature ≡ hops_json | One stabilized hop-indexed source |
 | **P35-010** | P2 | Python lifecycle harden | join/drain without closing DB under a live worker; no new features |
 

@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Multi-lane session persistence writer (P33-003 / P34-004 / P35-007).
+ * Multi-lane session persistence writer (P33-003 / P34-004 / P35-007 / P35-008).
  *
  * <ul>
  *   <li><b>Control lane</b> (unbounded): delete, rename, barrier, poll history — never dropped on
@@ -34,8 +34,10 @@ import org.slf4j.LoggerFactory;
  * </ul>
  *
  * <p>{@link #close()} joins the worker until it stops so callers can safely close the DB afterward.
- * Poll history ({@link #offerPollHistory}) runs inside {@link SessionDatabase#inTransaction} via an
- * injected applier so probe threads never block on JDBC for events+poll+route.
+ * If the worker is still alive after the join budget, {@code close} skips caller-side
+ * {@code drainRemaining} so a stuck apply cannot race parallel JDBC (P35-008). Poll history
+ * ({@link #offerPollHistory}) runs inside {@link SessionDatabase#inTransaction} via an injected
+ * applier so probe threads never block on JDBC for events+poll+route.
  */
 public final class SessionPersistenceWriter implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(SessionPersistenceWriter.class);
@@ -43,6 +45,8 @@ public final class SessionPersistenceWriter implements AutoCloseable {
     public static final int DEFAULT_CAPACITY = 256;
     /** Max wait for the worker to stop so SessionStore can close SQLite safely (P34-004). */
     static final Duration CLOSE_JOIN_TIMEOUT = Duration.ofSeconds(30);
+    /** Extra grace after the primary join before deciding the worker is stuck (P35-008). */
+    static final Duration CLOSE_STUCK_GRACE = Duration.ofSeconds(5);
 
     private final LinkedBlockingQueue<Job> controlQueue = new LinkedBlockingQueue<>();
     private final ConcurrentHashMap<String, HostSessionData> pendingSaves = new ConcurrentHashMap<>();
@@ -50,6 +54,8 @@ public final class SessionPersistenceWriter implements AutoCloseable {
     private final Set<String> dirtySet = ConcurrentHashMap.newKeySet();
     private final ArrayBlockingQueue<Job> telemetryQueue;
     private final DropPolicy telemetryDropPolicy;
+    private final Duration closeJoinTimeout;
+    private final Duration closeStuckGrace;
     private final AtomicLong droppedCount = new AtomicLong();
     private final AtomicLong completedCount = new AtomicLong();
     private final AtomicBoolean running = new AtomicBoolean(true);
@@ -64,8 +70,32 @@ public final class SessionPersistenceWriter implements AutoCloseable {
 
     public SessionPersistenceWriter(
             int telemetryCapacity, DropPolicy dropPolicy, SessionDatabase database, TimeSeriesBackend timeseries) {
+        this(CLOSE_JOIN_TIMEOUT, CLOSE_STUCK_GRACE, telemetryCapacity, dropPolicy, database, timeseries);
+    }
+
+    /**
+     * Package-visible constructor for fault tests that need a short close join (P35-008).
+     *
+     * @param closeJoinTimeout primary join budget before treating the worker as stuck
+     * @param closeStuckGrace brief extra join before skipping caller drain
+     */
+    SessionPersistenceWriter(
+            Duration closeJoinTimeout,
+            Duration closeStuckGrace,
+            int telemetryCapacity,
+            DropPolicy dropPolicy,
+            SessionDatabase database,
+            TimeSeriesBackend timeseries) {
         if (telemetryCapacity < 1) {
             throw new IllegalArgumentException("capacity must be >= 1");
+        }
+        this.closeJoinTimeout = Objects.requireNonNull(closeJoinTimeout, "closeJoinTimeout");
+        this.closeStuckGrace = Objects.requireNonNull(closeStuckGrace, "closeStuckGrace");
+        if (closeJoinTimeout.isNegative() || closeJoinTimeout.isZero()) {
+            throw new IllegalArgumentException("closeJoinTimeout must be > 0");
+        }
+        if (closeStuckGrace.isNegative()) {
+            throw new IllegalArgumentException("closeStuckGrace must be >= 0");
         }
         this.telemetryDropPolicy = Objects.requireNonNull(dropPolicy, "dropPolicy");
         this.telemetryQueue = new ArrayBlockingQueue<>(telemetryCapacity);
@@ -445,7 +475,7 @@ public final class SessionPersistenceWriter implements AutoCloseable {
             return;
         }
         worker.interrupt();
-        long deadlineNs = System.nanoTime() + CLOSE_JOIN_TIMEOUT.toNanos();
+        long deadlineNs = System.nanoTime() + closeJoinTimeout.toNanos();
         try {
             while (worker.isAlive() && System.nanoTime() < deadlineNs) {
                 long remainingMs = Math.max(1L, TimeUnit.NANOSECONDS.toMillis(deadlineNs - System.nanoTime()));
@@ -457,20 +487,23 @@ public final class SessionPersistenceWriter implements AutoCloseable {
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
         }
-        if (worker.isAlive()) {
-            LOG.error(
-                    "Session persistence worker did not stop within {}; draining remaining jobs on caller",
-                    CLOSE_JOIN_TIMEOUT);
-        }
-        // Always drain leftovers once the loop has stopped accepting work. If the worker is still
-        // finishing an in-flight apply, wait briefly so JDBC completes before SessionStore closes DB.
-        if (worker.isAlive()) {
+        // Brief grace for an in-flight apply to finish before deciding the worker is stuck (P35-008).
+        if (worker.isAlive() && !closeStuckGrace.isZero()) {
             try {
-                worker.join(TimeUnit.SECONDS.toMillis(5));
+                worker.join(closeStuckGrace.toMillis());
             } catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
             }
         }
+        if (worker.isAlive()) {
+            // Caller must NOT drain while the worker still owns apply() — parallel JDBC races the DB
+            // and can double-apply control jobs (P35-008). Prefer leaving leftovers queued.
+            LOG.error(
+                    "Session persistence worker did not stop within {}; skipping caller drain while worker alive",
+                    closeJoinTimeout.plus(closeStuckGrace));
+            return;
+        }
+        // Worker exited: finish any leftovers the loop did not flush (normal shutdown path).
         drainRemaining();
     }
 
