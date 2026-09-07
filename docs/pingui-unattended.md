@@ -18,7 +18,7 @@ P34 закрила більшість route/persistence дефектів, але
 |----|-----------|--------|---------------|
 | **P35-001** | P0 | TRACE real target identity | [x] `targetIp` з header/resolve (не last hop); `targetReached` без fallback на останній router |
 | **P35-002** | P0 | MTR TARGET_UNKNOWN scope + rediscovery | [x] `probedHop<1` ≠ `PollSampleScope.FULL`; periodic rediscovery з backoff; без downtime з UNKNOWN |
-| **P35-003** | P0 | Loss window semantics | Справжнє fixed/sliding window attempts/successes **або** loss=NULL у single-packet |
+| **P35-003** | P0 | Loss window semantics | [x] Sliding attempt window (≤50); loss=NULL при <2 probes |
 | **P35-004** | P0 | Timeout ↔ target hop | Timeout атрибуція за `targetHop`/`freshHop`, не за IP `*` |
 | **P35-005** | P1 | DNS-control bounded dispatcher | Bounded/coalesce per host; метрики outer queue |
 | **P35-006** | P1 | MTR invalidate on DNS change | Підтверджений address-set change скидає targetIp/candidate/latency |

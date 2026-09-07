@@ -5,21 +5,24 @@ import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.HopProbeStats;
 import io.pingui.model.Models.HopStatsSummary;
 import io.pingui.model.Models.RouteSnapshot;
-import java.util.List;
 
 /**
  * Per-hop jitter and packet loss calculations (parity with Python hop_stats.py).
  *
- * <p>P34-006: {@code poll_result} uses an explicit probe window — single-packet loss is {@code
- * null}; jitter is population stddev over the RTT window and {@code null} with fewer than {@link
+ * <p>P34-006 / P35-003: {@code poll_result} loss uses a sliding attempt window (size {@link
+ * Models#MAX_HOP_RTT_SAMPLES}), not session-lifetime counters. Single-packet loss is {@code null};
+ * jitter is population stddev over the RTT window and {@code null} with fewer than {@link
  * #MIN_JITTER_RTT_SAMPLES} samples.
  */
 public final class HopStats {
     /**
-     * Minimum probe attempts before {@code poll_result.loss_percent} is considered measured (P34-006).
-     * One ICMP echo cannot define a loss rate.
+     * Minimum sliding-window attempts before {@code poll_result.loss_percent} is measured (P34-006 /
+     * P35-003). One ICMP echo cannot define a loss rate.
      */
     public static final int MIN_LOSS_WINDOW_PROBES = 2;
+
+    /** Sliding loss window length — aligned with the hop RTT sample cap (P35-003). */
+    public static final int LOSS_WINDOW_SIZE = Models.MAX_HOP_RTT_SAMPLES;
 
     /** Minimum successful RTT samples for jitter (population stddev over the hop RTT window). */
     public static final int MIN_JITTER_RTT_SAMPLES = 2;
@@ -39,21 +42,25 @@ public final class HopStats {
         }
     }
 
-    /** Session/UI loss over all recorded probes (0 when empty). */
+    /**
+     * UI / session loss over the sliding attempt window (0 when empty). Lifetime {@code probes} /
+     * {@code successes} remain for persistence compatibility only (P35-003).
+     */
     public static double lossPct(HopProbeStats stats) {
-        if (stats.getProbes() == 0) {
+        int windowProbes = stats.getWindowProbes();
+        if (windowProbes == 0) {
             return 0.0;
         }
-        int failures = stats.getProbes() - stats.getSuccesses();
-        return failures * 100.0 / stats.getProbes();
+        int failures = windowProbes - stats.getWindowSuccesses();
+        return failures * 100.0 / windowProbes;
     }
 
     /**
      * Loss for {@code poll_result} / rollup: {@code null} until {@link #MIN_LOSS_WINDOW_PROBES}
-     * attempts exist in the hop window (P34-006).
+     * attempts exist in the sliding window (P34-006 / P35-003).
      */
     public static Double lossPctInWindow(HopProbeStats stats) {
-        if (stats == null || stats.getProbes() < MIN_LOSS_WINDOW_PROBES) {
+        if (stats == null || stats.getWindowProbes() < MIN_LOSS_WINDOW_PROBES) {
             return null;
         }
         return lossPct(stats);
@@ -74,20 +81,23 @@ public final class HopStats {
         return Math.sqrt(variance);
     }
 
-    /** Session/UI summary — loss may be reported after a single probe. */
+    /** Session/UI summary — loss may be reported after a single probe in the window. */
     public static HopStatsSummary summarize(HopProbeStats stats) {
-        if (stats.getProbes() == 0) {
+        if (stats.getWindowProbes() == 0 && stats.getProbes() == 0) {
+            return null;
+        }
+        if (stats.getWindowProbes() == 0) {
             return null;
         }
         return new HopStatsSummary(jitterMs(stats.getRttSamples()), lossPct(stats));
     }
 
     /**
-     * Canonical metrics for {@code poll_result}: loss only with an explicit probe window; jitter only
-     * with an RTT series (P34-006).
+     * Canonical metrics for {@code poll_result}: loss only with an explicit sliding probe window;
+     * jitter only with an RTT series (P34-006 / P35-003).
      */
     public static HopStatsSummary summarizeForPollResult(HopProbeStats stats) {
-        if (stats == null || stats.getProbes() == 0) {
+        if (stats == null || stats.getWindowProbes() == 0) {
             return null;
         }
         return new HopStatsSummary(jitterMs(stats.getRttSamples()), lossPctInWindow(stats));
@@ -105,22 +115,16 @@ public final class HopStats {
             return prior != null ? summarizeForPollResult(prior) : null;
         }
         PollSampleScope safe = scope != null ? scope : PollSampleScope.FULL;
-        boolean fresh = safe.allHopsFresh() || (safe.freshHop() != null && terminal.hop() == safe.freshHop());
+        boolean fresh = safe.allHopsFresh() || (safe.hasFreshHopSample() && terminal.hop() == safe.freshHop());
         if (!fresh) {
             return prior != null ? summarizeForPollResult(prior) : null;
         }
         return summarizeAfter(prior, terminal);
     }
 
-    /** Copy-on-write apply of one hop probe for immutable poll aggregates (P34-005 / P34-006). */
+    /** Copy-on-write apply of one hop probe for immutable poll aggregates (P34-005 / P35-003). */
     public static HopStatsSummary summarizeAfter(HopProbeStats prior, HopNode sample) {
-        HopProbeStats projected;
-        if (prior == null) {
-            projected = new HopProbeStats();
-        } else {
-            projected = HopProbeStats.fromSerialized(
-                    prior.getProbes(), prior.getSuccesses(), List.copyOf(prior.getRttSamples()));
-        }
+        HopProbeStats projected = prior == null ? new HopProbeStats() : prior.copy();
         recordProbe(projected, sample);
         return summarizeForPollResult(projected);
     }
@@ -147,7 +151,7 @@ public final class HopStats {
     }
 
     public static HostTargetStats targetStats(HopNode terminal, HopProbeStats stats) {
-        if (stats == null || stats.getProbes() == 0) {
+        if (stats == null || stats.getWindowProbes() == 0) {
             return null;
         }
         java.util.List<Double> samples = stats.getRttSamples();

@@ -9,7 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **P35 NEXT activated:** ROADMAP **NEXT = P35-001** → **P35-003** after P35-001…002; queue P35-001…010; [pingui-unattended.md](docs/en/pingui-unattended.md).
+- **P35 NEXT activated:** ROADMAP **NEXT = P35-001** → **P35-004** after P35-001…003; queue P35-001…010; [pingui-unattended.md](docs/en/pingui-unattended.md).
 - **P34 NEXT activated:** ROADMAP **NEXT = P34-001** (Correctness follow-up: route / target / persistence); queue P34-001…010; [pingui-route-persistence.md](docs/en/pingui-route-persistence.md). `beta`≡`main@45374cc`.
 - **P33 NEXT activated:** ROADMAP **NEXT = P33-001** (Correctness: MTR / projection / side-effects); queue P33-001…008; [pingui-correctness.md](docs/en/pingui-correctness.md). `beta` synced to `main@28bdb41`.
 - **P32 NEXT activated:** ROADMAP **NEXT = P32-001** (Stabilization: MTR freshness / history / side-effects); queue P32-001…008; [pingui-stabilization.md](docs/pingui-stabilization.md).
@@ -17,6 +17,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P35-003 — loss window semantics:** sliding attempt window (≤50) in `HopProbeStats`; `poll_result`/UI loss no longer session-lifetime cumulative; loss=NULL when window has <2 probes; NEXT→**P35-004**.
 - **P35-002 — MTR TARGET_UNKNOWN scope + rediscovery:** `PollSampleScope.UNSAMPLED` instead of FULL when `probedHop<1`; burst rediscovery + capped exponential poll-backoff (no permanent idle); no downtime from UNKNOWN; NEXT→**P35-003**.
 - **P35-001 — TRACE real target identity:** `TraceTargetIp` (header/literal/resolve); `ProcessRouteProbe` no longer uses last reachable hop; `RouteChangeDetector.targetReached` with no last-router fallback; NEXT→**P35-002**.
 - **P34-010 — soak/docs sync + phase close:** regression/soak–fault matrix (8 scenarios → tests); rename control-lane under overflow; ROADMAP **NEXT=DONE** (phase 34 closed); `main`≡`beta`.
