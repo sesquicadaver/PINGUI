@@ -2,7 +2,7 @@
 
 # Stabilization — MTR / history / side-effects (P32)
 
-> **Archival:** phase 32 closed. Phases 33–34 also closed — [pingui-correctness.md](pingui-correctness.md), [pingui-route-persistence.md](pingui-route-persistence.md). ROADMAP **NEXT=DONE**.
+> **Archival:** phase 32 closed. Phases 33–34 also closed — [pingui-correctness.md](pingui-correctness.md), [pingui-route-persistence.md](pingui-route-persistence.md). Authoritative ROADMAP **NEXT=P35-002** — [pingui-unattended.md](pingui-unattended.md).
 
 **Historical source for phase 32.** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
 
