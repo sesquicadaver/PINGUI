@@ -9,19 +9,32 @@ public final class AppStatusFormat {
     private AppStatusFormat() {}
 
     /**
-     * Builds {@code Monitoring: active · 8/10 enabled · Last cycle: 2 s ago}.
-     *
-     * @param active monitor scheduler still running
-     * @param enabledCount enabled hosts
-     * @param totalCount hosts in session
-     * @param lastCycleAt latest successful poll instant, or {@code null}
-     * @param now clock for relative age
+     * Builds {@code Monitoring: active · 8/10 enabled · Last cycle: 2 s ago} and optional DNS ops
+     * pressure (P31-006 / P34-007).
      */
     public static String monitoring(
             boolean active, int enabledCount, int totalCount, Instant lastCycleAt, Instant now) {
+        return monitoring(active, enabledCount, totalCount, lastCycleAt, now, null);
+    }
+
+    public static String monitoring(
+            boolean active,
+            int enabledCount,
+            int totalCount,
+            Instant lastCycleAt,
+            Instant now,
+            io.pingui.dns.DnsOpsStats dnsOps) {
         String state = active ? UiI18n.get("status.mon.active") : UiI18n.get("status.mon.inactive");
         String cycle = formatCycleAge(lastCycleAt, now != null ? now : Instant.now());
-        return UiI18n.get("status.mon.summary", state, Math.max(0, enabledCount), Math.max(0, totalCount), cycle);
+        String base =
+                UiI18n.get("status.mon.summary", state, Math.max(0, enabledCount), Math.max(0, totalCount), cycle);
+        if (dnsOps == null || !dnsOps.hasPressure()) {
+            return base;
+        }
+        return base
+                + " · "
+                + UiI18n.get(
+                        "status.mon.dns_ops", dnsOps.droppedCount(), dnsOps.rejectedCount(), dnsOps.timeoutCount());
     }
 
     static String formatCycleAge(Instant lastCycleAt, Instant now) {

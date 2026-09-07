@@ -85,10 +85,25 @@ class ReadOnlyApiContractTest {
             assertTrue(body.contains("\"openapi\": \"3.0.3\"") || body.contains("\"openapi\":\"3.0.3\""));
             assertTrue(body.contains("\"/hosts\""));
             assertTrue(body.contains("\"/routes/{host}\""));
+            assertTrue(body.contains("\"/ops\""));
             assertTrue(body.contains("\"404\""));
             String apiVersion = AppInfo.version().replace("-SNAPSHOT", "");
             assertTrue(body.contains("\"version\": \"" + apiVersion + "\"")
                     || body.contains("\"version\":\"" + apiVersion + "\""));
+        }
+    }
+
+    @Test
+    void opsDocumentExposesDnsCounters() throws Exception {
+        SessionStore store = new SessionStore(List.of());
+        io.pingui.dns.DnsOpsStats stats = new io.pingui.dns.DnsOpsStats(64, 2, 1, 3, 3, 5, 1);
+        try (ReadOnlyApiServer server = start(store, () -> stats)) {
+            HttpResponse<String> response = get(server.port(), "/ops");
+            assertEquals(200, response.statusCode());
+            assertEquals(
+                    "{\"dns\":{\"queue_capacity\":64,\"queued\":2,\"in_flight\":1,"
+                            + "\"rejected\":3,\"dropped\":3,\"coalesced\":5,\"timeouts\":1}}",
+                    response.body());
         }
     }
 
@@ -111,11 +126,16 @@ class ReadOnlyApiContractTest {
     }
 
     private static ReadOnlyApiServer start(SessionStore store) throws Exception {
+        return start(store, null);
+    }
+
+    private static ReadOnlyApiServer start(
+            SessionStore store, java.util.function.Supplier<io.pingui.dns.DnsOpsStats> dnsOps) throws Exception {
         int port;
         try (ServerSocket probe = new ServerSocket(0)) {
             port = probe.getLocalPort();
         }
-        return ReadOnlyApiServer.start(store, port);
+        return ReadOnlyApiServer.start(store, port, dnsOps);
     }
 
     private static HttpResponse<String> get(int port, String path) throws Exception {

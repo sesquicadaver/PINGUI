@@ -2,6 +2,7 @@ package io.pingui.api;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import io.pingui.dns.DnsOpsStats;
 import io.pingui.model.Models.HopNode;
 import io.pingui.monitor.SessionStore;
 import java.io.IOException;
@@ -15,25 +16,33 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Localhost-only read-only HTTP API for runbook access (P15-040).
+ * Localhost-only read-only HTTP API for runbook access (P15-040 / P34-007).
  *
- * <p>Endpoints: {@code GET /hosts}, {@code GET /routes/{host}}, {@code GET /openapi.json}. Auth is out
- * of scope for v1.
+ * <p>Endpoints: {@code GET /hosts}, {@code GET /routes/{host}}, {@code GET /ops}, {@code GET
+ * /openapi.json}. Auth is out of scope for v1.
  */
 public final class ReadOnlyApiServer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyApiServer.class);
 
     private final SessionStore store;
+    private final Supplier<DnsOpsStats> dnsOpsSupplier;
     private final HttpServer server;
     private final ExecutorService executor;
     private final int port;
 
-    private ReadOnlyApiServer(SessionStore store, HttpServer server, ExecutorService executor, int port) {
+    private ReadOnlyApiServer(
+            SessionStore store,
+            Supplier<DnsOpsStats> dnsOpsSupplier,
+            HttpServer server,
+            ExecutorService executor,
+            int port) {
         this.store = store;
+        this.dnsOpsSupplier = dnsOpsSupplier != null ? dnsOpsSupplier : () -> DnsOpsStats.empty(0);
         this.server = server;
         this.executor = executor;
         this.port = port;
@@ -46,6 +55,12 @@ public final class ReadOnlyApiServer implements AutoCloseable {
      * @throws IOException if bind fails
      */
     public static ReadOnlyApiServer start(SessionStore store, int port) throws IOException {
+        return start(store, port, null);
+    }
+
+    /** Same as {@link #start(SessionStore, int)} with optional DNS ops supplier (P34-007). */
+    public static ReadOnlyApiServer start(SessionStore store, int port, Supplier<DnsOpsStats> dnsOpsSupplier)
+            throws IOException {
         Objects.requireNonNull(store, "store");
         if (port < 1 || port > 65535) {
             throw new IllegalArgumentException("api port must be 1..65535, got " + port);
@@ -57,13 +72,14 @@ public final class ReadOnlyApiServer implements AutoCloseable {
             thread.setDaemon(true);
             return thread;
         });
-        ReadOnlyApiServer api = new ReadOnlyApiServer(store, httpServer, executor, port);
+        ReadOnlyApiServer api = new ReadOnlyApiServer(store, dnsOpsSupplier, httpServer, executor, port);
         httpServer.createContext("/hosts", api::handleHosts);
         httpServer.createContext("/routes", api::handleRoutes);
+        httpServer.createContext("/ops", api::handleOps);
         httpServer.createContext("/openapi.json", api::handleOpenApi);
         httpServer.setExecutor(executor);
         httpServer.start();
-        LOG.info("Read-only API listening on http://127.0.0.1:{}/ (hosts, routes, openapi.json)", port);
+        LOG.info("Read-only API listening on http://127.0.0.1:{}/ (hosts, routes, ops, openapi.json)", port);
         return api;
     }
 
@@ -103,6 +119,24 @@ public final class ReadOnlyApiServer implements AutoCloseable {
         }
         List<HopNode> hops = store.currentRouteSnapshot(host);
         sendJson(exchange, 200, ReadOnlyApiJson.routeDocument(host, hops));
+    }
+
+    private void handleOps(HttpExchange exchange) throws IOException {
+        if (!isExactPath(exchange, "/ops")) {
+            sendJson(exchange, 404, "{\"error\":\"not_found\"}");
+            return;
+        }
+        if (!requireGet(exchange)) {
+            return;
+        }
+        DnsOpsStats stats;
+        try {
+            stats = dnsOpsSupplier.get();
+        } catch (RuntimeException ex) {
+            LOG.warn("DNS ops supplier failed: {}", ex.getMessage());
+            stats = DnsOpsStats.empty(0);
+        }
+        sendJson(exchange, 200, ReadOnlyApiJson.opsDocument(stats != null ? stats : DnsOpsStats.empty(0)));
     }
 
     private void handleOpenApi(HttpExchange exchange) throws IOException {
