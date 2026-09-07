@@ -10,7 +10,7 @@ Post-MVP roadmap (2026-06-26) for **professional users** (NOC/SRE, network engin
 
 | Field | Value |
 |-------|-------|
-| **Branch** | `main` — stable snapshot after merge; `beta` — development (linear queue **P33**). Both: Java Pro (P9–P19) + Python after merge |
+| **Branch** | `main` — stable snapshot after merge; `beta` — development (linear queue **P34**). Both: Java Pro (P9–P19) + Python after merge |
 | **Priority** | P0 critical · P1 important · P2 nice-to-have |
 | **DoD** | Definition of Done — task closure condition |
 
@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **DONE** |
-| **Phase** | 33 — Correctness (MTR / projection / side-effects) |
-| **DoD (short)** | Phase 33 linear queue closed |
+| **Current task** | **P34-001** |
+| **Phase** | 34 — Correctness follow-up (route / target / persistence) |
+| **DoD (short)** | Route identity + candidate-route FSM for TRACE/MTR |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -195,8 +195,18 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 149 | **P33-006** | [x] | Webhook bounded queue + closeable dispatcher |
 | 150 | **P33-007** | [x] | DB migrate v12→v14 + chunked retention |
 | 151 | **P33-008** | [x] | Docs / branch sync |
+| 152 | **P34-001** | [ ] | Route identity + candidate-route FSM |
+| 153 | **P34-002** | [ ] | MTR target-unknown / exhaustion recovery |
+| 154 | **P34-003** | [ ] | Current endpoint outcome vs history |
+| 155 | **P34-004** | [ ] | Reliable structural persistence + shutdown |
+| 156 | **P34-005** | [ ] | Immutable CompletedPoll + GUI/daemon parity |
+| 157 | **P34-006** | [ ] | loss / jitter / rollup semantics |
+| 158 | **P34-007** | [ ] | Bounded DNS queues + ops counters |
+| 159 | **P34-008** | [ ] | v12 migration repair |
+| 160 | **P34-009** | [ ] | Python compatibility edition |
+| 161 | **P34-010** | [ ] | Soak / fault matrix + docs sync |
 
-**Queue status:** **NEXT = DONE** (phase 33 closed; [pingui-correctness.md](pingui-correctness.md)).
+**Queue status:** **NEXT = P34-001** (phase 34; [pingui-route-persistence.md](pingui-route-persistence.md)).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -1053,6 +1063,29 @@ flowchart TD
 
 ---
 
+
+## Phase 34 — Correctness follow-up: route / target / persistence (`beta`, P0)
+
+**Context:** [pingui-route-persistence.md](pingui-route-persistence.md). After P33 — NOC/unattended correctness; **not** feature expansion. Java-first.
+
+**Queue:** after P33; **NEXT = P34-001**.
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **P34-001** | [ ] Route identity + candidate FSM | `RouteChangeDetector`, `MtrProbe`, `RoutePoller`, `RouteSignature` | Hop-indexed `(hop, ip\|timeout)`; active/candidate; confirm to target; transient `*` ≠ deduped route; one event per physical change |
+| **P34-002** | [ ] MTR target-unknown / exhaustion | `MtrProbe`, `MtrProbeState` | `targetHop` only after real match; `TARGET_UNKNOWN`/`INCOMPLETE`; bounded rediscovery; no `target_sampled` until identified; maxHops exhausted test |
+| **P34-003** | [ ] Current endpoint vs history | `HostNetworkStateClassifier`, UI states | Current TIMEOUT → DOWN/PENDING; session-lifetime loss must not mask a live timeout; timeout-after-success test |
+| **P34-004** | [ ] Reliable persistence lanes | `SessionPersistenceWriter`, SessionStore close | Control lane (delete/rename/barrier) never drops; coalesced SaveHost; lossy telemetry; safe shutdown |
+| **P34-005** | [ ] Immutable CompletedPoll | `MonitorService`, `PollResultEffects`, GUI/daemon | Probe-derived poll_result; GUI≡daemon; no mutable store from probe/FX |
+| **P34-006** | [ ] loss/jitter/rollup semantics | `PollResultEffects`, rollup, retention | loss NULL or explicit window; jitter moments/window; availability from target_sampled/reachable |
+| **P34-007** | [ ] Bounded DNS + ops counters | `BoundedForwardDnsLookup`, App Status, API/Prometheus | Bounded queues + coalesce per host; dropped/rejected counters visible to operators |
+| **P34-008** | [ ] v12 migration repair | `SchemaManager`, CLI/repair | error → `target_sampled=0`, `reachable=NULL`; repair existing DBs |
+| **P34-009** | [ ] Python compatibility | `src/pingui/`, pyproject, version | bugfix-only locked; shutdown harden; version align |
+| **P34-010** | [ ] Soak/docs sync | tests, README, ROADMAP | Audit regression matrix; NEXT/`main`≡`beta` |
+
+**Out of scope:** new protocols; ORM; large GUI surfaces; silent `.db` delete.
+
+---
 ## Out of scope (not planned)
 
 | ID | Idea | Why not |
@@ -1138,7 +1171,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **DONE**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P34-001**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

@@ -118,7 +118,8 @@
 | SQLite schema evolution (P30) | schema v8–v12 complete | P30-006 [x]; NEXT→**P31-001** |
 | GUI information hierarchy (P31) | a11y [x] | [pingui-evo-gui.md](pingui-evo-gui.md); P31-007 [x]; фаза закрита |
 | Stabilization MTR/history (P32) | phase closed [x] | [pingui-stabilization.md](pingui-stabilization.md) — **архів**; P32-008 [x] |
-| Correctness MTR/projection (P33) | P33-001…008 [x]; phase closed; NEXT=DONE | [pingui-correctness.md](pingui-correctness.md); docs/`main`≡`beta` sync |
+| Correctness MTR/projection (P33) | P33-001…008 [x]; phase closed | [pingui-correctness.md](pingui-correctness.md) — архів |
+| Correctness follow-up (P34) | NEXT=P34-001 | [pingui-route-persistence.md](pingui-route-persistence.md); route identity / target / persistence |
 | Runtime hardening follow-up (P28) | SinkRegistry hang [x]; inFlight before pool [x]; Python schema `!=` gate [x] | фаза 28 closed |
 | Diagnostic evolution (P29) | multi-host correlation [x]; incident timeline [x]; alert silence [x]; DNS control [x]; TCP connect [x] | NEXT=`DONE`; Java-first |
 | TCP connect (P29-005) | `TcpEndpoint`, `TcpConnectProbe`, `HostProbeMode.TCP_CONNECT`, `RoutePoller.pollHostTcpConnect` | `TcpEndpointTest`, `TcpConnectProbeTest`, `RoutePollerTcpConnectTest`, `ProfilesConfigTest.loadTcpConnect*` |
