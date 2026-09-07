@@ -340,4 +340,34 @@ class SessionStoreTest {
         store.applyPollSnapshot("8.8.8.8", second, PollSampleScope.mtr(1, false), true);
         assertEquals("10.0.0.1", store.get("8.8.8.8").getPreviousRoute().get(0).ip());
     }
+
+    @Test
+    void timeoutAfterSuccessHistoryIsEndpointDown() {
+        SessionStore store = new SessionStore(List.of("8.8.8.8"));
+        store.setEnabled("8.8.8.8", true);
+        RouteSnapshot success = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 4.0, false), new HopNode(2, "8.8.8.8", 12.0, false)));
+        // Several successes so session loss stays well below the DOWN threshold after one miss.
+        for (int i = 0; i < 9; i++) {
+            store.applyPollSnapshot("8.8.8.8", success, PollSampleScope.mtr(2, true), false);
+        }
+        HostTargetStats up = store.targetStats("8.8.8.8");
+        assertNotNull(up);
+        assertFalse(up.timeout());
+        assertEquals(EndpointState.UP, HostNetworkStateClassifier.endpoint(true, up));
+
+        RouteSnapshot timedOut = new RouteSnapshot(
+                "8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 4.0, false), Models.timeout(2)));
+        store.applyPollSnapshot("8.8.8.8", timedOut, PollSampleScope.mtr(2, true), false);
+        HostTargetStats afterTimeout = store.targetStats("8.8.8.8");
+        assertNotNull(afterTimeout);
+        assertTrue(afterTimeout.timeout());
+        assertNotNull(afterTimeout.avgMs(), "historical RTT remains for display");
+        assertTrue(
+                afterTimeout.lossPct() < HostNetworkStateClassifier.DOWN_LOSS_PCT,
+                "session loss alone must not be the DOWN reason");
+        assertEquals(EndpointState.DOWN, HostNetworkStateClassifier.endpoint(true, afterTimeout));
+    }
 }

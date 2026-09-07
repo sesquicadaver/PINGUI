@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P34-003** |
+| **Current task** | **P34-004** |
 | **Phase** | 34 — Correctness follow-up (route / target / persistence) |
-| **DoD (short)** | Current endpoint outcome vs history |
+| **DoD (short)** | Reliable structural persistence + shutdown |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -197,7 +197,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 151 | **P33-008** | [x] | Docs / branch sync |
 | 152 | **P34-001** | [x] | Route identity + candidate-route FSM |
 | 153 | **P34-002** | [x] | MTR target-unknown / exhaustion recovery |
-| 154 | **P34-003** | [ ] | Current endpoint outcome vs history |
+| 154 | **P34-003** | [x] | Current endpoint outcome vs history |
 | 155 | **P34-004** | [ ] | Reliable structural persistence + shutdown |
 | 156 | **P34-005** | [ ] | Immutable CompletedPoll + GUI/daemon parity |
 | 157 | **P34-006** | [ ] | loss / jitter / rollup semantics |
@@ -206,7 +206,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 160 | **P34-009** | [ ] | Python compatibility edition |
 | 161 | **P34-010** | [ ] | Soak / fault matrix + docs sync |
 
-**Queue status:** **NEXT = P34-003** (phase 34; [pingui-route-persistence.md](pingui-route-persistence.md)).
+**Queue status:** **NEXT = P34-004** (phase 34; [pingui-route-persistence.md](pingui-route-persistence.md)).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -1068,13 +1068,13 @@ flowchart TD
 
 **Context:** [pingui-route-persistence.md](pingui-route-persistence.md). After P33 — NOC/unattended correctness; **not** feature expansion. Java-first.
 
-**Queue:** after P33; **NEXT = P34-003**.
+**Queue:** after P33; **NEXT = P34-004**.
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
 | **P34-001** | [x] Route identity + candidate FSM | `RouteChangeDetector`, `MtrProbe`, `RoutePoller`, `RouteSignature` | Hop-indexed `(hop, ip\|timeout)`; active/candidate; confirm to target; transient `*` ≠ deduped route; one event per physical change |
 | **P34-002** | [x] MTR target-unknown / exhaustion | `MtrProbe`, `MtrProbeState` | `targetHop` only after real match; `TARGET_UNKNOWN`/`INCOMPLETE`; bounded rediscovery; no `target_sampled` until identified; maxHops exhausted test |
-| **P34-003** | [ ] Current endpoint vs history | `HostNetworkStateClassifier`, UI states | Current TIMEOUT → DOWN/PENDING; session-lifetime loss must not mask a live timeout; timeout-after-success test |
+| **P34-003** | [x] Current endpoint vs history | `HostNetworkStateClassifier`, UI states | Current TIMEOUT → DOWN/PENDING; session-lifetime loss must not mask a live timeout; timeout-after-success test |
 | **P34-004** | [ ] Reliable persistence lanes | `SessionPersistenceWriter`, SessionStore close | Control lane (delete/rename/barrier) never drops; coalesced SaveHost; lossy telemetry; safe shutdown |
 | **P34-005** | [ ] Immutable CompletedPoll | `MonitorService`, `PollResultEffects`, GUI/daemon | Probe-derived poll_result; GUI≡daemon; no mutable store from probe/FX |
 | **P34-006** | [ ] loss/jitter/rollup semantics | `PollResultEffects`, rollup, retention | loss NULL or explicit window; jitter moments/window; availability from target_sampled/reachable |
@@ -1171,7 +1171,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P34-003**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P34-004**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

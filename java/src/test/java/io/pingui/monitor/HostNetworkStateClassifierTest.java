@@ -61,6 +61,26 @@ class HostNetworkStateClassifierTest {
                 HostNetworkStateClassifier.endpoint(true, new HostTargetStats(100.0, null, null, null, true)));
     }
 
+    @Test
+    void currentTimeoutIsDownEvenWithHealthyHistory() {
+        // After successful probes, avg/loss look fine but the latest target sample timed out.
+        HostTargetStats timeoutAfterSuccess = new HostTargetStats(1.0, 10.0, 12.0, 15.0, true);
+        assertEquals(EndpointState.DOWN, HostNetworkStateClassifier.endpoint(true, timeoutAfterSuccess));
+        assertEquals(
+                EndpointState.DOWN,
+                HostNetworkStateClassifier.endpoint(true, new HostTargetStats(0.0, 8.0, 9.0, 11.0, true)));
+    }
+
+    @Test
+    void highSessionLossWithoutTimeoutIsStillDownOrDegraded() {
+        assertEquals(
+                EndpointState.DOWN,
+                HostNetworkStateClassifier.endpoint(true, new HostTargetStats(60.0, 10.0, 12.0, 20.0, false)));
+        assertEquals(
+                EndpointState.DEGRADED,
+                HostNetworkStateClassifier.endpoint(true, new HostTargetStats(25.0, 10.0, 12.0, 20.0, false)));
+    }
+
     private static HostTargetStats upStats() {
         return new HostTargetStats(0.0, 10.0, 12.0, 15.0, false);
     }
