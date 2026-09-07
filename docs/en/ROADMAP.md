@@ -10,7 +10,7 @@ Post-MVP roadmap (2026-06-26) for **professional users** (NOC/SRE, network engin
 
 | Field | Value |
 |-------|-------|
-| **Branch** | `main` — stable snapshot after merge; `beta` — development (linear queue **DONE** after phase 34). Both: Java Pro (P9–P19) + Python after merge |
+| **Branch** | `main` — stable snapshot after merge; `beta` — development (phase **35** — Unattended NOC). Both: Java Pro (P9–P19) + Python after merge |
 | **Priority** | P0 critical · P1 important · P2 nice-to-have |
 | **DoD** | Definition of Done — task closure condition |
 
@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **DONE** |
-| **Phase** | 34 — Correctness follow-up (route / target / persistence) |
-| **DoD (short)** | queue empty |
+| **Current task** | **P35-002** |
+| **Phase** | 35 — Unattended NOC (probe identity / loss / persistence) |
+| **DoD (short)** | `probedHop<1` ≠ FULL; rediscovery; no downtime from TARGET_UNKNOWN |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -205,8 +205,18 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 159 | **P34-008** | [x] | v12 migration repair |
 | 160 | **P34-009** | [x] | Python compatibility edition |
 | 161 | **P34-010** | [x] | Soak / fault matrix + docs sync |
+| 162 | **P35-001** | [x] | TRACE real target identity (not last hop) |
+| 163 | **P35-002** | [ ] | MTR TARGET_UNKNOWN scope + rediscovery |
+| 164 | **P35-003** | [ ] | Loss window semantics |
+| 165 | **P35-004** | [ ] | Timeout ↔ target hop attribution |
+| 166 | **P35-005** | [ ] | DNS-control bounded dispatcher |
+| 167 | **P35-006** | [ ] | MTR invalidate on DNS change |
+| 168 | **P35-007** | [ ] | Unified SQLite persistence pipeline |
+| 169 | **P35-008** | [ ] | Stuck-writer fault test |
+| 170 | **P35-009** | [ ] | Route signature ≡ hops_json |
+| 171 | **P35-010** | [ ] | Python lifecycle harden |
 
-**Queue status:** **NEXT = DONE** (phase 34 closed; [pingui-route-persistence.md](pingui-route-persistence.md) — archival).
+**Queue status:** **NEXT = P35-002** (phase 35; [pingui-unattended.md](pingui-unattended.md)).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -1086,6 +1096,29 @@ flowchart TD
 **Out of scope:** new protocols; ORM; large GUI surfaces; silent `.db` delete.
 
 ---
+
+## Phase 35 — Unattended NOC: probe identity / loss / persistence (`beta`, P0)
+
+**Context:** [pingui-unattended.md](pingui-unattended.md). Post-P34 audit — TRACE/MTR identity, loss window, persistence pipeline. Java-first.
+
+**Queue:** after P34; **NEXT = P35-002**.
+
+| ID | Task | Files | DoD |
+|----|------|-------|-----|
+| **P35-001** | [x] TRACE real target identity | `TraceTargetIp`, `ProcessRouteProbe`, `RouteChangeDetector` | `targetIp` from header/literal/resolve (not last hop); `targetReached` with no last-router fallback |
+| **P35-002** | [ ] MTR TARGET_UNKNOWN scope + rediscovery | `RoutePoller`, `MtrProbe` | `probedHop<1` ≠ `PollSampleScope.FULL`; periodic rediscovery; no downtime from UNKNOWN |
+| **P35-003** | [ ] Loss window semantics | `PollResultEffects`, hop stats | Fixed/sliding window **or** loss=NULL in single-packet |
+| **P35-004** | [ ] Timeout ↔ target hop | `CompletedPoll`, poll effects | Attribute timeouts by `targetHop`/`freshHop`, not IP `*` |
+| **P35-005** | [ ] DNS-control bounded dispatcher | DNS control | Bounded/coalesce; outer-queue metrics |
+| **P35-006** | [ ] MTR invalidate on DNS change | MTR + DNS | Address-set change clears targetIp/candidate/latency |
+| **P35-007** | [ ] Unified SQLite persistence | SessionStore / writers | CompletedPoll → one ordered write path |
+| **P35-008** | [ ] Stuck-writer fault test | SessionPersistenceWriter | close must not caller-drain while stuck worker alive |
+| **P35-009** | [ ] Route signature ≡ hops_json | RouteSignature | One hop-indexed source |
+| **P35-010** | [ ] Python lifecycle harden | `src/pingui/` | join/drain without closing DB under live worker |
+
+**Out of scope:** new protocols; ORM; large GUI surfaces; Python feature parity; silent `.db` delete.
+
+---
 ## Out of scope (not planned)
 
 | ID | Idea | Why not |
@@ -1171,7 +1204,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **DONE**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P35-002**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

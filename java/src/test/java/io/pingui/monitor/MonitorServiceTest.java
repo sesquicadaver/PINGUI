@@ -162,9 +162,14 @@ class MonitorServiceTest {
 
     @Test
     void emitsRouteChangedWhenIpsDiffer() throws Exception {
-        RouteSnapshot first = new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
-        RouteSnapshot second =
-                new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "192.168.1.1", 6.0, false)));
+        RouteSnapshot first = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "8.8.8.8", 10.0, false)));
+        RouteSnapshot second = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "192.168.1.1", 6.0, false), new HopNode(2, "8.8.8.8", 11.0, false)));
         java.util.concurrent.atomic.AtomicInteger probeCalls = new java.util.concurrent.atomic.AtomicInteger();
         RouteProbe probe = (targetHost, maxHops, timeoutSeconds) -> {
             return probeCalls.getAndIncrement() == 0 ? first : second;
@@ -190,15 +195,20 @@ class MonitorServiceTest {
         });
         service.addHost("8.8.8.8", true);
         assertTrue(latch.await(5, TimeUnit.SECONDS));
-        assertEquals(List.of("10.0.0.1"), oldRef.get());
+        assertEquals(List.of("10.0.0.1", "8.8.8.8"), oldRef.get());
         service.close();
     }
 
     @Test
     void dispatchesAlertOnRouteChange() throws Exception {
-        RouteSnapshot first = new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
-        RouteSnapshot second =
-                new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "192.168.1.1", 6.0, false)));
+        RouteSnapshot first = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "8.8.8.8", 10.0, false)));
+        RouteSnapshot second = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "192.168.1.1", 6.0, false), new HopNode(2, "8.8.8.8", 11.0, false)));
         AtomicInteger probeCalls = new AtomicInteger();
         RouteProbe probe = (targetHost, maxHops, timeoutSeconds) -> probeCalls.getAndIncrement() == 0 ? first : second;
         RecordingAlertDispatcher alerts = new RecordingAlertDispatcher();
@@ -223,8 +233,8 @@ class MonitorServiceTest {
         assertEquals(1, alerts.events().size());
         RouteChangeEvent event = alerts.events().get(0);
         assertEquals("8.8.8.8", event.host());
-        assertEquals(List.of("10.0.0.1"), event.oldIps());
-        assertEquals(List.of("192.168.1.1"), event.newIps());
+        assertEquals(List.of("10.0.0.1", "8.8.8.8"), event.oldIps());
+        assertEquals(List.of("192.168.1.1", "8.8.8.8"), event.newIps());
         assertEquals("noc", event.profile());
         service.close();
     }
@@ -537,9 +547,14 @@ class MonitorServiceTest {
 
     @Test
     void acceleratesPollingAfterRouteChange() throws Exception {
-        RouteSnapshot first = new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
-        RouteSnapshot second =
-                new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "192.168.1.1", 6.0, false)));
+        RouteSnapshot first = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "8.8.8.8", 10.0, false)));
+        RouteSnapshot second = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "192.168.1.1", 6.0, false), new HopNode(2, "8.8.8.8", 11.0, false)));
         AtomicInteger polls = new AtomicInteger();
         RouteProbe probe = (targetHost, maxHops, timeoutSeconds) -> {
             polls.incrementAndGet();
@@ -1033,17 +1048,27 @@ class MonitorServiceTest {
     }
 
     private static RouteProbe singleRouteChangeProbe() {
-        RouteSnapshot first = new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
-        RouteSnapshot second =
-                new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "192.168.1.1", 6.0, false)));
+        RouteSnapshot first = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "8.8.8.8", 10.0, false)));
+        RouteSnapshot second = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "192.168.1.1", 6.0, false), new HopNode(2, "8.8.8.8", 11.0, false)));
         AtomicInteger probeCalls = new AtomicInteger();
         return (targetHost, maxHops, timeoutSeconds) -> probeCalls.getAndIncrement() == 0 ? first : second;
     }
 
     private static RouteProbe alternatingRouteChangeProbe() {
-        RouteSnapshot first = new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "10.0.0.1", 5.0, false)));
-        RouteSnapshot second =
-                new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "192.168.1.1", 6.0, false)));
+        RouteSnapshot first = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 5.0, false), new HopNode(2, "8.8.8.8", 10.0, false)));
+        RouteSnapshot second = new RouteSnapshot(
+                "8.8.8.8",
+                "8.8.8.8",
+                List.of(new HopNode(1, "192.168.1.1", 6.0, false), new HopNode(2, "8.8.8.8", 11.0, false)));
         AtomicInteger probeCalls = new AtomicInteger();
         return (targetHost, maxHops, timeoutSeconds) -> probeCalls.getAndIncrement() % 2 == 0 ? first : second;
     }

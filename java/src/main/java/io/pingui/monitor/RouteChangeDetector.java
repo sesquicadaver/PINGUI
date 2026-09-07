@@ -37,21 +37,25 @@ public final class RouteChangeDetector {
         return new RouteChangeResult(decision.changed(), decision.oldIps(), decision.newIps());
     }
 
-    /** True when the snapshot reaches the configured target (TRACE confirmation). */
+    /**
+     * True when a reachable hop IP matches the authoritative {@code targetIp} (TRACE confirmation).
+     *
+     * <p>P35-001: no fallback to the last reachable router — incomplete paths must not confirm.
+     */
     public static boolean targetReached(RouteSnapshot snapshot) {
         if (snapshot == null || snapshot.nodes() == null || snapshot.nodes().isEmpty()) {
             return false;
         }
         String targetIp = snapshot.targetIp();
-        if (targetIp != null && !targetIp.isBlank()) {
-            for (HopNode hop : snapshot.nodes()) {
-                if (hop != null && hop.isReachable() && targetIp.equals(hop.ip())) {
-                    return true;
-                }
+        if (targetIp == null || targetIp.isBlank()) {
+            return false;
+        }
+        for (HopNode hop : snapshot.nodes()) {
+            if (hop != null && hop.isReachable() && targetIp.equals(hop.ip())) {
+                return true;
             }
         }
-        HopNode last = snapshot.nodes().get(snapshot.nodes().size() - 1);
-        return last != null && last.isReachable();
+        return false;
     }
 
     /** Legacy reachable-IP equality (no hop index / timeout awareness). */

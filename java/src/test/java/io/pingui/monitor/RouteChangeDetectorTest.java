@@ -83,4 +83,19 @@ class RouteChangeDetectorTest {
                 List.of(new HopNode(1, "10.0.0.1", 1.0, false), new HopNode(2, "8.8.8.8", 2.0, false)));
         assertTrue(RouteChangeDetector.targetReached(snapshot));
     }
+
+    @Test
+    void targetReachedFalseWhenOnlyIntermediateRouterReachable() {
+        RouteSnapshot snapshot = new RouteSnapshot(
+                "dns.google",
+                "8.8.8.8",
+                List.of(new HopNode(1, "10.0.0.1", 1.0, false), new HopNode(2, "10.0.0.2", 2.0, false)));
+        assertFalse(RouteChangeDetector.targetReached(snapshot));
+    }
+
+    @Test
+    void targetReachedFalseWhenTargetIpUnknown() {
+        RouteSnapshot snapshot = new RouteSnapshot("dns.google", null, List.of(new HopNode(1, "10.0.0.1", 1.0, false)));
+        assertFalse(RouteChangeDetector.targetReached(snapshot));
+    }
 }
