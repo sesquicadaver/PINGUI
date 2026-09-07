@@ -20,7 +20,7 @@ P34 closed most route/persistence defects, but `NEXT = DONE` was again premature
 | **P35-002** | P0 | MTR TARGET_UNKNOWN scope + rediscovery | [x] `probedHop<1` ≠ `PollSampleScope.FULL`; periodic rediscovery with backoff; no downtime from UNKNOWN |
 | **P35-003** | P0 | Loss window semantics | [x] Sliding attempt window (≤50); loss=NULL when <2 probes |
 | **P35-004** | P0 | Timeout ↔ target hop | [x] Attribute timeouts by `targetHop`/`freshHop`, not timeout-node IP `*` |
-| **P35-005** | P1 | DNS-control bounded dispatcher | Bounded/coalesce per host; outer-queue metrics |
+| **P35-005** | P1 | DNS-control bounded dispatcher | [x] Bounded/coalesce per host; outer-queue metrics |
 | **P35-006** | P1 | MTR invalidate on DNS change | Confirmed address-set change clears targetIp/candidate/latency |
 | **P35-007** | P1 | Unified SQLite persistence pipeline | CompletedPoll → one ordered write path (events+poll+route) |
 | **P35-008** | P2 | Stuck-writer fault test | close must not caller-drain while a stuck worker is alive |

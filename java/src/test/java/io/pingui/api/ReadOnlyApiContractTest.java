@@ -96,13 +96,17 @@ class ReadOnlyApiContractTest {
     @Test
     void opsDocumentExposesDnsCounters() throws Exception {
         SessionStore store = new SessionStore(List.of());
-        io.pingui.dns.DnsOpsStats stats = new io.pingui.dns.DnsOpsStats(64, 2, 1, 3, 3, 5, 1);
-        try (ReadOnlyApiServer server = start(store, () -> stats)) {
+        io.pingui.dns.DnsOpsStats resolve = new io.pingui.dns.DnsOpsStats(64, 2, 1, 3, 3, 5, 1);
+        io.pingui.dns.DnsOpsStats control = new io.pingui.dns.DnsOpsStats(64, 4, 2, 1, 1, 7, 0);
+        io.pingui.dns.DnsOpsSnapshot snapshot = new io.pingui.dns.DnsOpsSnapshot(resolve, control);
+        try (ReadOnlyApiServer server = start(store, () -> snapshot)) {
             HttpResponse<String> response = get(server.port(), "/ops");
             assertEquals(200, response.statusCode());
             assertEquals(
                     "{\"dns\":{\"queue_capacity\":64,\"queued\":2,\"in_flight\":1,"
-                            + "\"rejected\":3,\"dropped\":3,\"coalesced\":5,\"timeouts\":1}}",
+                            + "\"rejected\":3,\"dropped\":3,\"coalesced\":5,\"timeouts\":1},"
+                            + "\"dns_control\":{\"queue_capacity\":64,\"queued\":4,\"in_flight\":2,"
+                            + "\"rejected\":1,\"dropped\":1,\"coalesced\":7,\"timeouts\":0}}",
                     response.body());
         }
     }
@@ -130,7 +134,7 @@ class ReadOnlyApiContractTest {
     }
 
     private static ReadOnlyApiServer start(
-            SessionStore store, java.util.function.Supplier<io.pingui.dns.DnsOpsStats> dnsOps) throws Exception {
+            SessionStore store, java.util.function.Supplier<io.pingui.dns.DnsOpsSnapshot> dnsOps) throws Exception {
         int port;
         try (ServerSocket probe = new ServerSocket(0)) {
             port = probe.getLocalPort();

@@ -2,7 +2,7 @@ package io.pingui.api;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
-import io.pingui.dns.DnsOpsStats;
+import io.pingui.dns.DnsOpsSnapshot;
 import io.pingui.model.Models.HopNode;
 import io.pingui.monitor.SessionStore;
 import java.io.IOException;
@@ -30,19 +30,19 @@ public final class ReadOnlyApiServer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyApiServer.class);
 
     private final SessionStore store;
-    private final Supplier<DnsOpsStats> dnsOpsSupplier;
+    private final Supplier<DnsOpsSnapshot> dnsOpsSupplier;
     private final HttpServer server;
     private final ExecutorService executor;
     private final int port;
 
     private ReadOnlyApiServer(
             SessionStore store,
-            Supplier<DnsOpsStats> dnsOpsSupplier,
+            Supplier<DnsOpsSnapshot> dnsOpsSupplier,
             HttpServer server,
             ExecutorService executor,
             int port) {
         this.store = store;
-        this.dnsOpsSupplier = dnsOpsSupplier != null ? dnsOpsSupplier : () -> DnsOpsStats.empty(0);
+        this.dnsOpsSupplier = dnsOpsSupplier != null ? dnsOpsSupplier : DnsOpsSnapshot::empty;
         this.server = server;
         this.executor = executor;
         this.port = port;
@@ -58,8 +58,8 @@ public final class ReadOnlyApiServer implements AutoCloseable {
         return start(store, port, null);
     }
 
-    /** Same as {@link #start(SessionStore, int)} with optional DNS ops supplier (P34-007). */
-    public static ReadOnlyApiServer start(SessionStore store, int port, Supplier<DnsOpsStats> dnsOpsSupplier)
+    /** Same as {@link #start(SessionStore, int)} with optional DNS ops supplier (P34-007 / P35-005). */
+    public static ReadOnlyApiServer start(SessionStore store, int port, Supplier<DnsOpsSnapshot> dnsOpsSupplier)
             throws IOException {
         Objects.requireNonNull(store, "store");
         if (port < 1 || port > 65535) {
@@ -129,14 +129,14 @@ public final class ReadOnlyApiServer implements AutoCloseable {
         if (!requireGet(exchange)) {
             return;
         }
-        DnsOpsStats stats;
+        DnsOpsSnapshot snapshot;
         try {
-            stats = dnsOpsSupplier.get();
+            snapshot = dnsOpsSupplier.get();
         } catch (RuntimeException ex) {
             LOG.warn("DNS ops supplier failed: {}", ex.getMessage());
-            stats = DnsOpsStats.empty(0);
+            snapshot = DnsOpsSnapshot.empty();
         }
-        sendJson(exchange, 200, ReadOnlyApiJson.opsDocument(stats != null ? stats : DnsOpsStats.empty(0)));
+        sendJson(exchange, 200, ReadOnlyApiJson.opsDocument(snapshot != null ? snapshot : DnsOpsSnapshot.empty()));
     }
 
     private void handleOpenApi(HttpExchange exchange) throws IOException {

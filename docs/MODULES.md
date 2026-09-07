@@ -450,9 +450,9 @@ Compact per-host timeline from SQLite (`endpoint_down` / `latency_high` / `route
 
 Maintenance windows: silence host/tag/profile until ISO timestamp with reason. Monitoring continues; alert dispatch suppressed independently of host enabled. YAML `alerts.silence` + Alerts settings lines.
 
-### Java: DnsControl (P29-004)
+### Java: DnsControl (P29-004 / P35-005)
 
-Forward DNS for hostname targets: address set (v4/v6), resolve latency, distinct `dns_change` events (`ok` / `change` / `nxdomain` / `timeout` / `servfail`). `DnsControlTracker` in poll path; persistence only — not an auto-incident.
+Forward DNS for hostname targets: address set (v4/v6), resolve latency, distinct `dns_change` events (`ok` / `change` / `nxdomain` / `timeout` / `servfail`). `DnsControlTracker` via bounded/coalesced `DnsControlDispatcher` (≤1 pending/host); outer queue in `/ops` `dns_control` + Prometheus `pingui_dns_control_*`. Persistence only — not an auto-incident.
 
 ### Java: TcpConnectProbe (P29-005)
 

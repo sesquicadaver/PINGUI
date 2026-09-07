@@ -9,7 +9,7 @@
 
 ### Added
 
-- **P35 NEXT activated:** ROADMAP **NEXT = P35-001** → **P35-005** після P35-001…004; черга P35-001…010; [pingui-unattended.md](docs/pingui-unattended.md).
+- **P35 NEXT activated:** ROADMAP **NEXT = P35-001** → **P35-006** після P35-001…005; черга P35-001…010; [pingui-unattended.md](docs/pingui-unattended.md).
 - **P34 NEXT activated:** ROADMAP **NEXT = P34-001** (Correctness follow-up: route / target / persistence); черга P34-001…010; [pingui-route-persistence.md](docs/pingui-route-persistence.md). `beta`≡`main@45374cc`.
 - **P33 NEXT activated:** ROADMAP **NEXT = P33-001** (Correctness: MTR / projection / side-effects); черга P33-001…008; [pingui-correctness.md](docs/pingui-correctness.md). `beta` синхронізовано з `main@28bdb41`.
 - **P32 NEXT activated:** ROADMAP **NEXT = P32-001** (Stabilization: MTR freshness / history / side-effects); черга P32-001…008; [pingui-stabilization.md](docs/pingui-stabilization.md).
@@ -17,6 +17,7 @@
 
 ### Changed
 
+- **P35-005 — DNS-control bounded dispatcher:** `DnsControlDispatcher` — bounded outer queue + AbortPolicy, coalesce ≤1 pending/host; `/ops`+Prometheus `dns_control` / `pingui_dns_control_*`; NEXT→**P35-006**.
 - **P35-004 — timeout ↔ target hop:** `CompletedPoll.terminalHop` атрибує timeout за `freshHop`/`knownTargetHop`, не за IP `*`; `MonitorService`/`MonitorLifecycle` передають session `lastTargetHop`; NEXT→**P35-005**.
 - **P35-003 — loss window semantics:** sliding attempt window (≤50) у `HopProbeStats`; `poll_result`/UI loss більше не session-lifetime cumulative; loss=NULL при <2 probes у вікні; NEXT→**P35-004**.
 - **P35-002 — MTR TARGET_UNKNOWN scope + rediscovery:** `PollSampleScope.UNSAMPLED` замість FULL при `probedHop<1`; burst rediscovery + capped exponential poll-backoff (не вічний idle); без downtime з UNKNOWN; NEXT→**P35-003**.

@@ -25,12 +25,16 @@ class PrometheusExporterTest {
         assertTrue(text.contains("# TYPE pingui_dns_rejected_total counter"));
         assertTrue(text.contains("pingui_dns_rejected_total 0"));
         assertTrue(text.contains("pingui_dns_queue_capacity 0"));
+        assertTrue(text.contains("# TYPE pingui_dns_control_rejected_total counter"));
+        assertTrue(text.contains("pingui_dns_control_queue_capacity 0"));
     }
 
     @Test
     void scrapeIncludesLiveDnsOpsSupplier() {
         PrometheusExporter exporter = new PrometheusExporter();
-        exporter.setDnsOpsSupplier(() -> new io.pingui.dns.DnsOpsStats(64, 3, 1, 2, 2, 4, 5));
+        exporter.setDnsOpsSupplier(() -> new io.pingui.dns.DnsOpsSnapshot(
+                new io.pingui.dns.DnsOpsStats(64, 3, 1, 2, 2, 4, 5),
+                new io.pingui.dns.DnsOpsStats(32, 6, 2, 7, 7, 8, 0)));
         String text = exporter.scrape();
         assertTrue(text.contains("pingui_dns_rejected_total 2"));
         assertTrue(text.contains("pingui_dns_dropped_total 2"));
@@ -38,6 +42,12 @@ class PrometheusExporterTest {
         assertTrue(text.contains("pingui_dns_timeout_total 5"));
         assertTrue(text.contains("pingui_dns_queue_depth 3"));
         assertTrue(text.contains("pingui_dns_queue_capacity 64"));
+        assertTrue(text.contains("pingui_dns_control_rejected_total 7"));
+        assertTrue(text.contains("pingui_dns_control_dropped_total 7"));
+        assertTrue(text.contains("pingui_dns_control_coalesced_total 8"));
+        assertTrue(text.contains("pingui_dns_control_queue_depth 6"));
+        assertTrue(text.contains("pingui_dns_control_queue_capacity 32"));
+        assertTrue(text.contains("pingui_dns_control_pending 2"));
     }
 
     @Test
