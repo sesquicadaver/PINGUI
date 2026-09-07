@@ -10,7 +10,7 @@ Post-MVP roadmap (2026-06-26) for **professional users** (NOC/SRE, network engin
 
 | Field | Value |
 |-------|-------|
-| **Branch** | `main` — stable snapshot after merge; `beta` — development (linear queue **P34**). Both: Java Pro (P9–P19) + Python after merge |
+| **Branch** | `main` — stable snapshot after merge; `beta` — development (linear queue **DONE** after phase 34). Both: Java Pro (P9–P19) + Python after merge |
 | **Priority** | P0 critical · P1 important · P2 nice-to-have |
 | **DoD** | Definition of Done — task closure condition |
 
@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P34-010** |
+| **Current task** | **DONE** |
 | **Phase** | 34 — Correctness follow-up (route / target / persistence) |
-| **DoD (short)** | Soak / fault matrix + docs sync |
+| **DoD (short)** | queue empty |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -204,9 +204,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 158 | **P34-007** | [x] | Bounded DNS queues + ops counters |
 | 159 | **P34-008** | [x] | v12 migration repair |
 | 160 | **P34-009** | [x] | Python compatibility edition |
-| 161 | **P34-010** | [ ] | Soak / fault matrix + docs sync |
+| 161 | **P34-010** | [x] | Soak / fault matrix + docs sync |
 
-**Queue status:** **NEXT = P34-010** (phase 34; [pingui-route-persistence.md](pingui-route-persistence.md)).
+**Queue status:** **NEXT = DONE** (phase 34 closed; [pingui-route-persistence.md](pingui-route-persistence.md) — archival).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -1068,7 +1068,7 @@ flowchart TD
 
 **Context:** [pingui-route-persistence.md](pingui-route-persistence.md). After P33 — NOC/unattended correctness; **not** feature expansion. Java-first.
 
-**Queue:** after P33; **NEXT = P34-010**.
+**Queue:** after P33; **NEXT = DONE** (P34-001…010 [x]; phase 34 closed).
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
@@ -1081,7 +1081,7 @@ flowchart TD
 | **P34-007** | [x] Bounded DNS + ops counters | `BoundedForwardDnsLookup`, App Status, API/Prometheus | Bounded queues + coalesce per host; dropped/rejected counters visible to operators |
 | **P34-008** | [x] v12 migration repair | `SchemaManager`, CLI/repair | error → `target_sampled=0`, `reachable=NULL`; repair existing DBs |
 | **P34-009** | [x] Python compatibility | `src/pingui/`, pyproject, version | bugfix-only locked; shutdown harden; version align |
-| **P34-010** | [ ] Soak/docs sync | tests, README, ROADMAP | Audit regression matrix; NEXT/`main`≡`beta` |
+| **P34-010** | [x] Soak/docs sync | tests, README, ROADMAP | Audit regression matrix; NEXT/`main`≡`beta` |
 
 **Out of scope:** new protocols; ORM; large GUI surfaces; silent `.db` delete.
 
@@ -1171,7 +1171,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P34-010**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **DONE**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

@@ -2,7 +2,7 @@
 
 # Документація PINGUI
 
-На **`main`** і **`beta`** — повний пакет (Java Pro + Python) після merge; **`beta`** — гілка розробки, **`main`** — останній стабільний зріз. Лінійна черга ROADMAP: **NEXT = P34-010** (фаза 34 — [ROADMAP.md § NEXT](ROADMAP.md#next--єдине-джерело-правди)). «Гілки» — [README.md](../README.md).
+На **`main`** і **`beta`** — повний пакет (Java Pro + Python) після merge; **`beta`** — гілка розробки, **`main`** — останній стабільний зріз. Лінійна черга ROADMAP: **NEXT = DONE** (фаза 34 — [ROADMAP.md § NEXT](ROADMAP.md#next--єдине-джерело-правди)). «Гілки» — [README.md](../README.md).
 
 ## Навігація
 
@@ -11,10 +11,10 @@
 | [CHECKLIST.md](CHECKLIST.md) | Адмін / DevOps | Checklist Linux / Windows / macOS |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Адмін / DevOps | JDK 21, venv, cap_net_raw, systemd |
 | [JAVA.md](JAVA.md) | Розробник | Probe, monitor, UI, YAML |
-| [ROADMAP.md](ROADMAP.md) | Розробник | Офіційний план: фази 0–34; NEXT=P34-010 |
+| [ROADMAP.md](ROADMAP.md) | Розробник | Офіційний план: фази 0–34; NEXT=DONE |
 | [pingui-evo-gui.md](pingui-evo-gui.md) | Розробник | GUI evolution (фаза 31) |
 | [pingui-correctness.md](pingui-correctness.md) | Розробник | Correctness audit → фаза 33 (**архів**) |
-| [pingui-route-persistence.md](pingui-route-persistence.md) | Розробник | Correctness follow-up → фаза 34 |
+| [pingui-route-persistence.md](pingui-route-persistence.md) | Розробник | Correctness follow-up → фаза 34 (**архів**) |
 | [pingui-stabilization.md](pingui-stabilization.md) | Розробник | Stabilization audit → фаза 32 (**архів**) |
 | [LIVING_SPEC.md](LIVING_SPEC.md) | Розробник | Матриця модуль → тести |
 | [ADR_IPV6.md](ADR_IPV6.md) | Розробник | Dual-stack config ADR (V6-002) |

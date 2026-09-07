@@ -2,6 +2,8 @@
 
 # Correctness follow-up — route / target / persistence (P34)
 
+> **Archive:** phase 34 **closed** (P34-001…010). Authoritative ROADMAP **NEXT=DONE**. Correctness: [pingui-correctness.md](pingui-correctness.md). Stabilization: [pingui-stabilization.md](pingui-stabilization.md).
+
 **Source for phase 34.** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
 
 Audit of `main`≡`beta` @ `45374cc` (2026-09-06, after P33 close). Not feature expansion — focus on NOC / unattended reliability.
@@ -25,18 +27,35 @@ P32/P33 materially improved the project (fresh-hop, span, tri-state poll_result,
 | **P34-007** | P1 | Bounded DNS + ops counters | [x] Bounded DNS queues + coalesce per host; counters in App Status / API / Prometheus |
 | **P34-008** | P1 | v12 migration repair | [x] error rows → `target_sampled=0`, `reachable=NULL`; repair CLI/online for existing DBs |
 | **P34-009** | P2 | Python compatibility edition | [x] Lock bugfix-only; minimal shutdown harden; align version |
-| **P34-010** | P2 | Soak / fault matrix + docs sync | Audit regression matrix; README/ROADMAP/`main`≡`beta` |
+| **P34-010** | P2 | Soak / fault matrix + docs sync | [x] Audit regression matrix; README/ROADMAP/`main`≡`beta` |
 
-## Required regression tests (phase)
+## Regression / soak–fault matrix (P34-010)
 
-* target never reached / maxHops exhausted;
-* full route change across several MTR steps;
-* transient TRACE timeout ≠ route change;
-* timeout after success history → not UP;
-* overflow must not drop delete/rename control jobs;
-* GUI/daemon poll_result parity;
-* stuck writer shutdown;
-* migrate/repair old probe-error rows.
+| # | Scenario | Canonical tests | Status |
+|---|----------|-----------------|--------|
+| 1 | target never reached / maxHops exhausted | `MtrProbeTest.maxHopsExhaustedWithoutTargetEntersTargetUnknown`, `allTimeoutsExhaustionDoesNotClaimTargetSampled`, `boundedRediscoveryFindsTargetAfterExhaustion`, `rediscoveryStopsAfterMaxAttempts` | [x] |
+| 2 | full route change across several MTR steps | `MtrProbeTest.detectsRouteChangeDuringMonitoring`, `RoutePollerTest.pollHostMtrConfirmsRouteChangeOnlyAfterTarget` | [x] |
+| 3 | transient TRACE timeout ≠ route change | `RouteChangeDetectorTest.transientTimeoutIsNotRouteChange`, `RoutePollerTest.pollHostRouteTransientTimeoutIsNotRouteChange`, `SessionStoreTest.intermediateTimeoutDoesNotConfirmRouteChange`, `SessionDatabaseRouteTest.transientTimeoutDoesNotCreateNewRouteRow` | [x] |
+| 4 | timeout after success history → not UP | `HostNetworkStateClassifierTest.currentTimeoutIsDownEvenWithHealthyHistory`, `SessionStoreTest.timeoutAfterSuccessHistoryIsEndpointDown` | [x] |
+| 5 | overflow must not drop delete/rename control jobs | `SessionPersistenceWriterTest.telemetryOverflowDoesNotDropDelete`, `telemetryOverflowDoesNotDropRename` | [x] |
+| 6 | GUI/daemon poll_result parity | `CompletedPollTest.guiAndDaemonListenersShareSamePollResultWhenUsingCompletedPoll`, `recordCompletedPollDoesNotTouchSessionStore` | [x] |
+| 7 | stuck writer shutdown | `SessionPersistenceWriterTest.closeStopsWorkerBeforeReturning` | [x] |
+| 8 | migrate/repair old probe-error rows | `SessionDatabaseMetricRollupTest.migratesV12PollResultAndRollupToV14`, `repairsLegacyProbeErrorTriStateOnAlreadyV14Db`, `PinguiApplicationTest.parseOptions_repairPollResult*` | [x] |
+
+Java run: `cd java && ./gradlew test --tests 'io.pingui.probe.MtrProbeTest' --tests 'io.pingui.monitor.RoutePollerTest' --tests 'io.pingui.monitor.RouteChangeDetectorTest' --tests 'io.pingui.monitor.SessionStoreTest' --tests 'io.pingui.monitor.HostNetworkStateClassifierTest' --tests 'io.pingui.persistence.SessionPersistenceWriterTest' --tests 'io.pingui.monitor.CompletedPollTest' --tests 'io.pingui.persistence.SessionDatabaseMetricRollupTest' --tests 'io.pingui.persistence.SessionDatabaseRouteTest' --tests 'io.pingui.PinguiApplicationTest'`
+
+## P34-010 (done) — Soak / docs sync
+
+**Goal:** lock the audit regression matrix, align README/ROADMAP with `main`≡`beta`, mark phase 34 **closed**.
+
+**Done:**
+
+* ROADMAP **NEXT=DONE**; all P34-001…010 `[x]`; phase index ✅ DONE;
+* 8 soak/fault scenarios → tests (table above);
+* rename control-lane under telemetry overflow covered by test;
+* archival banner on this doc; LIVING_SPEC + JAVA + docs index.
+
+**Branches:** `main` ≡ `beta` after this PR merges.
 
 ## Out of scope
 
