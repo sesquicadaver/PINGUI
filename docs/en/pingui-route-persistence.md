@@ -24,7 +24,7 @@ P32/P33 materially improved the project (fresh-hop, span, tri-state poll_result,
 | **P34-006** | P1 | loss / jitter / rollup semantics | [x] Single-packet loss=NULL or explicit window; jitter moments/window; availability from target_sampled/reachable |
 | **P34-007** | P1 | Bounded DNS + ops counters | [x] Bounded DNS queues + coalesce per host; counters in App Status / API / Prometheus |
 | **P34-008** | P1 | v12 migration repair | [x] error rows → `target_sampled=0`, `reachable=NULL`; repair CLI/online for existing DBs |
-| **P34-009** | P2 | Python compatibility edition | Lock bugfix-only; minimal shutdown harden; align version |
+| **P34-009** | P2 | Python compatibility edition | [x] Lock bugfix-only; minimal shutdown harden; align version |
 | **P34-010** | P2 | Soak / fault matrix + docs sync | Audit regression matrix; README/ROADMAP/`main`≡`beta` |
 
 ## Required regression tests (phase)

@@ -113,11 +113,13 @@ class SessionDatabase:
         # MonitorLoop / Qt worker may call save/insert_event off the opener thread.
         self._conn = sqlite3.connect(self._path, check_same_thread=False)
         self._lock = threading.RLock()
+        self._closed = False
         self._conn.execute("PRAGMA foreign_keys = ON")
         try:
             self._init_schema()
         except Exception:
             self._conn.close()
+            self._closed = True
             raise
 
     @property
@@ -323,5 +325,9 @@ class SessionDatabase:
             self._conn.commit()
 
     def close(self) -> None:
+        """Close the SQLite connection. Idempotent (P34-009 shutdown harden)."""
         with self._lock:
+            if self._closed:
+                return
+            self._closed = True
             self._conn.close()

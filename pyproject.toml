@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pingui"
 version = "0.2.0"
-description = "Linux desktop route and ping monitor with topological visualization"
+description = "Linux desktop route and ping monitor (legacy / bugfix-only; Java is canonical)"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
