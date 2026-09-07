@@ -14,7 +14,19 @@ import org.junit.jupiter.api.Test;
 
 class HopStatsTest {
     @Test
-    void jitterRequiresTwoSamples() {
+    void lossInWindowRequiresTwoProbes() {
+        HopProbeStats stats = new HopProbeStats();
+        HopStats.recordProbe(stats, new HopNode(1, "1.1.1.1", 10.0, false));
+        assertNull(HopStats.lossPctInWindow(stats));
+        assertNull(HopStats.summarizeForPollResult(stats).lossPct());
+        HopStats.recordProbe(stats, Models.timeout(1));
+        assertEquals(50.0, HopStats.lossPctInWindow(stats));
+        assertEquals(50.0, HopStats.summarizeForPollResult(stats).lossPct());
+    }
+
+    @Test
+    void jitterIsPopulationStddevOverRttWindow() {
+        assertNull(HopStats.jitterMs(List.of()));
         assertNull(HopStats.jitterMs(List.of(10.0)));
         assertEquals(2.0, HopStats.jitterMs(List.of(10.0, 14.0)));
     }

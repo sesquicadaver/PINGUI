@@ -49,21 +49,27 @@ class BoundedForwardDnsLookupTest {
     }
 
     @Test
-    void cachesTimeoutFailureBriefly() {
+    void cachesTimeoutFailureBriefly() throws Exception {
         AtomicInteger calls = new AtomicInteger();
+        java.util.concurrent.CountDownLatch entered = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.CountDownLatch release = new java.util.concurrent.CountDownLatch(1);
         try (BoundedForwardDnsLookup lookup = BoundedForwardDnsLookup.forTests(
                 hostname -> {
                     calls.incrementAndGet();
-                    Thread.sleep(200);
+                    entered.countDown();
+                    // Block until the test finishes — timeout must come from Future.get, not sleep.
+                    release.await(5, java.util.concurrent.TimeUnit.SECONDS);
                     return new InetAddress[] {InetAddress.getByName("8.8.8.8")};
                 },
-                Duration.ofMillis(30),
+                Duration.ofMillis(50),
                 Duration.ofMinutes(1),
                 Clock.systemUTC())) {
             assertThrows(SocketTimeoutException.class, () -> lookup.resolve("fail.example"));
+            assertTrue(entered.await(2, java.util.concurrent.TimeUnit.SECONDS));
             assertThrows(SocketTimeoutException.class, () -> lookup.resolve("fail.example"));
-            assertTrue(calls.get() >= 1);
-            assertEquals(1, calls.get());
+            assertEquals(1, calls.get(), "negative cache must suppress a second resolver call");
+        } finally {
+            release.countDown();
         }
     }
 }

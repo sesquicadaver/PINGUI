@@ -229,4 +229,4 @@ Tests and CI — on **`main`** and **`beta`** (ROADMAP development on `beta`).
 
 ## Future
 
-The linear ROADMAP queue: **NEXT = P34-006** (phase 34 — Correctness follow-up). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT; [pingui-route-persistence.md](pingui-route-persistence.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
+The linear ROADMAP queue: **NEXT = P34-007** (phase 34 — Correctness follow-up). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT; [pingui-route-persistence.md](pingui-route-persistence.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).

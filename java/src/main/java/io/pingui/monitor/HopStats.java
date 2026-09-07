@@ -7,8 +7,23 @@ import io.pingui.model.Models.HopStatsSummary;
 import io.pingui.model.Models.RouteSnapshot;
 import java.util.List;
 
-/** Per-hop jitter and packet loss calculations (parity with Python hop_stats.py). */
+/**
+ * Per-hop jitter and packet loss calculations (parity with Python hop_stats.py).
+ *
+ * <p>P34-006: {@code poll_result} uses an explicit probe window — single-packet loss is {@code
+ * null}; jitter is population stddev over the RTT window and {@code null} with fewer than {@link
+ * #MIN_JITTER_RTT_SAMPLES} samples.
+ */
 public final class HopStats {
+    /**
+     * Minimum probe attempts before {@code poll_result.loss_percent} is considered measured (P34-006).
+     * One ICMP echo cannot define a loss rate.
+     */
+    public static final int MIN_LOSS_WINDOW_PROBES = 2;
+
+    /** Minimum successful RTT samples for jitter (population stddev over the hop RTT window). */
+    public static final int MIN_JITTER_RTT_SAMPLES = 2;
+
     private HopStats() {}
 
     public static void recordProbe(HopProbeStats stats, HopNode node) {
@@ -24,6 +39,7 @@ public final class HopStats {
         }
     }
 
+    /** Session/UI loss over all recorded probes (0 when empty). */
     public static double lossPct(HopProbeStats stats) {
         if (stats.getProbes() == 0) {
             return 0.0;
@@ -32,8 +48,23 @@ public final class HopStats {
         return failures * 100.0 / stats.getProbes();
     }
 
+    /**
+     * Loss for {@code poll_result} / rollup: {@code null} until {@link #MIN_LOSS_WINDOW_PROBES}
+     * attempts exist in the hop window (P34-006).
+     */
+    public static Double lossPctInWindow(HopProbeStats stats) {
+        if (stats == null || stats.getProbes() < MIN_LOSS_WINDOW_PROBES) {
+            return null;
+        }
+        return lossPct(stats);
+    }
+
+    /**
+     * Population standard deviation of RTT samples in the hop window; {@code null} when fewer than
+     * {@link #MIN_JITTER_RTT_SAMPLES} RTTs (P34-006 moments/window).
+     */
     public static Double jitterMs(java.util.List<Double> samples) {
-        if (samples.size() < 2) {
+        if (samples == null || samples.size() < MIN_JITTER_RTT_SAMPLES) {
             return null;
         }
         double mean =
@@ -43,6 +74,7 @@ public final class HopStats {
         return Math.sqrt(variance);
     }
 
+    /** Session/UI summary — loss may be reported after a single probe. */
     public static HopStatsSummary summarize(HopProbeStats stats) {
         if (stats.getProbes() == 0) {
             return null;
@@ -51,25 +83,36 @@ public final class HopStats {
     }
 
     /**
+     * Canonical metrics for {@code poll_result}: loss only with an explicit probe window; jitter only
+     * with an RTT series (P34-006).
+     */
+    public static HopStatsSummary summarizeForPollResult(HopProbeStats stats) {
+        if (stats == null || stats.getProbes() == 0) {
+            return null;
+        }
+        return new HopStatsSummary(jitterMs(stats.getRttSamples()), lossPctInWindow(stats));
+    }
+
+    /**
      * Projects terminal-hop loss/jitter as if {@code sample} were recorded onto a copy of {@code
-     * prior} (P34-005). Does not mutate session state. When the terminal hop is not fresh under
-     * {@code scope}, returns a summary of {@code prior} only (or null).
+     * prior} (P34-005 / P34-006). Does not mutate session state. When the terminal hop is not fresh
+     * under {@code scope}, returns a poll_result summary of {@code prior} only (or null).
      */
     public static HopStatsSummary projectTerminalAfterSample(
             HopProbeStats prior, RouteSnapshot snapshot, PollSampleScope scope) {
         HopNode terminal = CompletedPoll.terminalHop(snapshot);
         if (terminal == null) {
-            return prior != null ? summarize(prior) : null;
+            return prior != null ? summarizeForPollResult(prior) : null;
         }
         PollSampleScope safe = scope != null ? scope : PollSampleScope.FULL;
         boolean fresh = safe.allHopsFresh() || (safe.freshHop() != null && terminal.hop() == safe.freshHop());
         if (!fresh) {
-            return prior != null ? summarize(prior) : null;
+            return prior != null ? summarizeForPollResult(prior) : null;
         }
         return summarizeAfter(prior, terminal);
     }
 
-    /** Copy-on-write apply of one hop probe for immutable poll aggregates (P34-005). */
+    /** Copy-on-write apply of one hop probe for immutable poll aggregates (P34-005 / P34-006). */
     public static HopStatsSummary summarizeAfter(HopProbeStats prior, HopNode sample) {
         HopProbeStats projected;
         if (prior == null) {
@@ -79,7 +122,7 @@ public final class HopStats {
                     prior.getProbes(), prior.getSuccesses(), List.copyOf(prior.getRttSamples()));
         }
         recordProbe(projected, sample);
-        return summarize(projected);
+        return summarizeForPollResult(projected);
     }
 
     public static Double minRtt(java.util.List<Double> samples) {
