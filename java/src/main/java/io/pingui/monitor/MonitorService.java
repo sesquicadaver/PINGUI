@@ -336,6 +336,11 @@ public final class MonitorService implements AutoCloseable {
         dnsControl = lookup == null ? new DnsControlTracker(ownedForwardDns) : new DnsControlTracker(lookup);
     }
 
+    /** Forward-DNS queue / coalesce / overflow counters (P34-007). */
+    public io.pingui.dns.DnsOpsStats dnsOpsStats() {
+        return ownedForwardDns.opsStats();
+    }
+
     /** Optional telemetry bus (P16-013); null disables offers. Must not block poll. */
     public void setTelemetryBus(TelemetryBus telemetryBus) {
         pollEffects.setTelemetryBus(telemetryBus);

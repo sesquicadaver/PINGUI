@@ -60,7 +60,27 @@ final class ReadOnlyApiJson {
         return json.toString();
     }
 
-    /** Minimal OpenAPI 3.0 stub for the two read endpoints. */
+    static String opsDocument(io.pingui.dns.DnsOpsStats dns) {
+        Objects.requireNonNull(dns, "dns");
+        return "{\"dns\":{"
+                + "\"queue_capacity\":"
+                + dns.queueCapacity()
+                + ",\"queued\":"
+                + dns.queued()
+                + ",\"in_flight\":"
+                + dns.inFlight()
+                + ",\"rejected\":"
+                + dns.rejectedCount()
+                + ",\"dropped\":"
+                + dns.droppedCount()
+                + ",\"coalesced\":"
+                + dns.coalescedCount()
+                + ",\"timeouts\":"
+                + dns.timeoutCount()
+                + "}}";
+    }
+
+    /** Minimal OpenAPI 3.0 stub for the read endpoints. */
     static String openApiDocument() {
         String apiVersion = AppInfo.version().replace("-SNAPSHOT", "");
         return """
@@ -69,7 +89,7 @@ final class ReadOnlyApiJson {
                   "info": {
                     "title": "PINGUI Read-Only API",
                     "version": "%s",
-                    "description": "Localhost runbook API (P15-040). Auth out of scope for v1."
+                    "description": "Localhost runbook API (P15-040 / P34-007). Auth out of scope for v1."
                   },
                   "servers": [{"url": "http://127.0.0.1"}],
                   "paths": {
@@ -109,6 +129,21 @@ final class ReadOnlyApiJson {
                             }
                           },
                           "404": {"description": "Unknown host"}
+                        }
+                      }
+                    },
+                    "/ops": {
+                      "get": {
+                        "summary": "Operator counters (DNS queue pressure)",
+                        "responses": {
+                          "200": {
+                            "description": "Ops snapshot",
+                            "content": {
+                              "application/json": {
+                                "schema": {"type": "object"}
+                              }
+                            }
+                          }
                         }
                       }
                     }

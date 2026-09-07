@@ -1,13 +1,15 @@
 package io.pingui.observability;
 
+import io.pingui.dns.DnsOpsStats;
 import io.pingui.telemetry.MetricNames;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 /**
- * In-process Prometheus text exposition state (P15-010).
+ * In-process Prometheus text exposition state (P15-010 / P34-007).
  *
  * <p>Thread-safe scrape snapshot for daemon {@code GET /metrics}. Not a remote_write client.
  */
@@ -16,6 +18,12 @@ public final class PrometheusExporter {
     private final ConcurrentHashMap<String, AtomicLong> routeChangeTotal = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Double> targetReachable = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<DurationKey, Double> traceDurationMs = new ConcurrentHashMap<>();
+    private volatile Supplier<DnsOpsStats> dnsOpsSupplier;
+
+    /** Optional live DNS queue counters for scrape (P34-007). */
+    public void setDnsOpsSupplier(Supplier<DnsOpsStats> dnsOpsSupplier) {
+        this.dnsOpsSupplier = dnsOpsSupplier;
+    }
 
     /** Records last-known RTT for a hop (gauge). */
     public void recordRtt(String host, int hop, double rttMilliseconds) {
@@ -94,7 +102,46 @@ public final class PrometheusExporter {
                     .append(formatDouble(entry.getValue()))
                     .append('\n');
         }
+        appendDnsOps(out);
         return out.toString();
+    }
+
+    private void appendDnsOps(StringBuilder out) {
+        Supplier<DnsOpsStats> supplier = dnsOpsSupplier;
+        DnsOpsStats stats = supplier != null ? supplier.get() : null;
+        if (stats == null) {
+            stats = DnsOpsStats.empty(0);
+        }
+        writeCounterHeader(out, MetricNames.DNS_REJECTED_TOTAL, "DNS lookups rejected because the queue was full");
+        out.append(MetricNames.DNS_REJECTED_TOTAL)
+                .append(' ')
+                .append(stats.rejectedCount())
+                .append('\n');
+        writeCounterHeader(out, MetricNames.DNS_DROPPED_TOTAL, "DNS lookups dropped on queue overflow");
+        out.append(MetricNames.DNS_DROPPED_TOTAL)
+                .append(' ')
+                .append(stats.droppedCount())
+                .append('\n');
+        writeCounterHeader(out, MetricNames.DNS_COALESCED_TOTAL, "DNS lookups coalesced onto an in-flight resolve");
+        out.append(MetricNames.DNS_COALESCED_TOTAL)
+                .append(' ')
+                .append(stats.coalescedCount())
+                .append('\n');
+        writeCounterHeader(out, MetricNames.DNS_TIMEOUT_TOTAL, "DNS lookups that hit the hard timeout");
+        out.append(MetricNames.DNS_TIMEOUT_TOTAL)
+                .append(' ')
+                .append(stats.timeoutCount())
+                .append('\n');
+        writeGaugeHeader(out, MetricNames.DNS_QUEUE_DEPTH, "Current DNS executor queue depth");
+        out.append(MetricNames.DNS_QUEUE_DEPTH)
+                .append(' ')
+                .append(stats.queued())
+                .append('\n');
+        writeGaugeHeader(out, MetricNames.DNS_QUEUE_CAPACITY, "DNS executor queue capacity");
+        out.append(MetricNames.DNS_QUEUE_CAPACITY)
+                .append(' ')
+                .append(stats.queueCapacity())
+                .append('\n');
     }
 
     static String escapeLabel(String value) {

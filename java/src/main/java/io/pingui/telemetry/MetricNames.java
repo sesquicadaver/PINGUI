@@ -16,6 +16,12 @@ public final class MetricNames {
     public static final String TRACE_DURATION_MS = "pingui_trace_duration_ms";
     public static final String HOP_LOSS_PCT = "pingui_hop_loss_pct";
     public static final String ROUTE_CHANGE_TOTAL = "pingui_route_change_total";
+    public static final String DNS_REJECTED_TOTAL = "pingui_dns_rejected_total";
+    public static final String DNS_DROPPED_TOTAL = "pingui_dns_dropped_total";
+    public static final String DNS_COALESCED_TOTAL = "pingui_dns_coalesced_total";
+    public static final String DNS_TIMEOUT_TOTAL = "pingui_dns_timeout_total";
+    public static final String DNS_QUEUE_DEPTH = "pingui_dns_queue_depth";
+    public static final String DNS_QUEUE_CAPACITY = "pingui_dns_queue_capacity";
 
     public static final String LABEL_PROFILE = "profile";
     public static final String LABEL_PROBE_MODE = "probe_mode";
