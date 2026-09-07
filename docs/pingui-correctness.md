@@ -2,7 +2,7 @@
 
 # Correctness — MTR / projection / side-effects (P33)
 
-> **Архів:** фаза 33 **closed** (P33-001…008). Лінійна черга — **NEXT=DONE**. Stabilization audit: [pingui-stabilization.md](pingui-stabilization.md).
+> **Архів:** фаза 33 **closed** (P33-001…008). Актуальна фаза 34 — [pingui-route-persistence.md](pingui-route-persistence.md). Stabilization: [pingui-stabilization.md](pingui-stabilization.md).
 
 **Джерело для фази 33.** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
 
