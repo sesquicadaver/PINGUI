@@ -2,7 +2,7 @@
 
 # Correctness follow-up — route / target / persistence (P34)
 
-> **Архів:** фаза 34 **closed** (P34-001…010). Актуальний ROADMAP **NEXT=P35-009** — [pingui-unattended.md](pingui-unattended.md). Correctness: [pingui-correctness.md](pingui-correctness.md). Stabilization: [pingui-stabilization.md](pingui-stabilization.md).
+> **Архів:** фаза 34 **closed** (P34-001…010). Актуальний ROADMAP **NEXT=P35-010** — [pingui-unattended.md](pingui-unattended.md). Correctness: [pingui-correctness.md](pingui-correctness.md). Stabilization: [pingui-stabilization.md](pingui-stabilization.md).
 
 **Джерело для фази 34.** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
 

@@ -9,7 +9,7 @@
 
 ### Added
 
-- **P35 NEXT activated:** ROADMAP **NEXT = P35-001** → **P35-009** після P35-001…008; черга P35-001…010; [pingui-unattended.md](docs/pingui-unattended.md).
+- **P35 NEXT activated:** ROADMAP **NEXT = P35-001** → **P35-010** після P35-001…009; черга P35-001…010; [pingui-unattended.md](docs/pingui-unattended.md).
 - **P34 NEXT activated:** ROADMAP **NEXT = P34-001** (Correctness follow-up: route / target / persistence); черга P34-001…010; [pingui-route-persistence.md](docs/pingui-route-persistence.md). `beta`≡`main@45374cc`.
 - **P33 NEXT activated:** ROADMAP **NEXT = P33-001** (Correctness: MTR / projection / side-effects); черга P33-001…008; [pingui-correctness.md](docs/pingui-correctness.md). `beta` синхронізовано з `main@28bdb41`.
 - **P32 NEXT activated:** ROADMAP **NEXT = P32-001** (Stabilization: MTR freshness / history / side-effects); черга P32-001…008; [pingui-stabilization.md](docs/pingui-stabilization.md).
@@ -17,6 +17,7 @@
 
 ### Changed
 
+- **P35-009 — route signature ≡ hops_json:** `RouteSignature.stabilize` — єдине hop-indexed джерело для signature і persisted hops_json; `fromHops` більше не вигадує hop-и поза snapshot; NEXT→**P35-010**.
 - **P35-008 — stuck-writer fault test:** `SessionPersistenceWriter.close` більше не викликає caller-side `drainRemaining` поки worker живий; тест `closeDoesNotCallerDrainWhileStuckWorkerAlive`; NEXT→**P35-009**.
 - **P35-007 — unified SQLite persistence:** `PollPersistenceBatch` + control-lane `offerPollHistory`/`offerJdbc`; probe thread більше не блокується sync JDBC для poll_result/events/route; NEXT→**P35-008**.
 - **P35-006 — MTR invalidate on DNS change:** підтверджений address-set `change` скидає MTR targetIp, candidate route і latency baseline; NEXT→**P35-007**.

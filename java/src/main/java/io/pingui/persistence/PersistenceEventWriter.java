@@ -173,8 +173,9 @@ public final class PersistenceEventWriter {
     }
 
     /**
-     * Upserts deduplicated {@code route} (P30-004 / P34-001). {@code lastKnownByHop} fills transient
-     * timeout slots so packet loss does not create a new signature.
+     * Upserts deduplicated {@code route} (P30-004 / P34-001 / P35-009). {@code lastKnownByHop} fills
+     * transient timeout slots and extends a short snapshot so signature and {@code hops_json} share
+     * one stabilized hop-indexed chain.
      */
     public Long observeRoute(
             String host,
@@ -185,7 +186,8 @@ public final class PersistenceEventWriter {
             return null;
         }
         java.util.List<io.pingui.model.Models.HopNode> stabilized = RouteSignature.stabilize(hops, lastKnownByHop);
-        String signature = RouteSignature.fromHops(stabilized, lastKnownByHop);
+        // Signature must be derived only from the same chain persisted as hops_json (P35-009).
+        String signature = RouteSignature.fromHops(stabilized);
         if (signature.isBlank()) {
             return null;
         }
