@@ -16,13 +16,59 @@ class SessionDatabaseRouteTest {
     Path tempDir;
 
     @Test
-    void signatureUsesStarForTimeouts() {
+    void signatureUsesHopIndexedReachableHops() {
         assertEquals(
-                "10.0.0.1|*|8.8.8.8",
+                "1=10.0.0.1|3=8.8.8.8",
                 RouteSignature.fromHops(List.of(
                         new HopNode(1, "10.0.0.1", 1.0, false),
                         Models.timeout(2),
                         new HopNode(3, "8.8.8.8", 9.0, false))));
+    }
+
+    @Test
+    void signatureFillsTimeoutFromLastKnown() {
+        assertEquals(
+                "1=10.0.0.1|2=10.0.0.2|3=8.8.8.8",
+                RouteSignature.fromHops(
+                        List.of(
+                                new HopNode(1, "10.0.0.1", 1.0, false),
+                                Models.timeout(2),
+                                new HopNode(3, "8.8.8.8", 9.0, false)),
+                        java.util.Map.of(2, "10.0.0.2")));
+    }
+
+    @Test
+    void transientTimeoutDoesNotCreateNewRouteRow() {
+        Path dbPath = tempDir.resolve("route-stable.db");
+        try (SessionDatabase db = new SessionDatabase(dbPath)) {
+            HostSessionData data = new HostSessionData();
+            data.setEnabled(true);
+            db.save("8.8.8.8", data);
+            Instant t0 = Instant.parse("2026-09-03T14:00:00Z");
+            Instant t1 = Instant.parse("2026-09-03T14:05:00Z");
+            java.util.Map<Integer, String> known = java.util.Map.of(1, "10.0.0.1", 2, "10.0.0.2", 3, "8.8.8.8");
+            String sig = RouteSignature.fromHops(
+                    List.of(
+                            new HopNode(1, "10.0.0.1", 1.0, false),
+                            new HopNode(2, "10.0.0.2", 2.0, false),
+                            new HopNode(3, "8.8.8.8", 8.0, false)),
+                    known);
+            String hopsJson = SessionJsonCodec.routeToJson(List.of(
+                    new HopNode(1, "10.0.0.1", 1.0, false),
+                    new HopNode(2, "10.0.0.2", 2.0, false),
+                    new HopNode(3, "8.8.8.8", 8.0, false)));
+            long id1 = db.upsertRoute("8.8.8.8", sig, hopsJson, t0);
+            String lossySig = RouteSignature.fromHops(
+                    List.of(
+                            new HopNode(1, "10.0.0.1", 1.0, false),
+                            Models.timeout(2),
+                            new HopNode(3, "8.8.8.8", 8.0, false)),
+                    known);
+            assertEquals(sig, lossySig);
+            long id2 = db.upsertRoute("8.8.8.8", lossySig, hopsJson, t1);
+            assertEquals(id1, id2);
+            assertEquals(1, db.countRoutes());
+        }
     }
 
     @Test

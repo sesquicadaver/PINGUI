@@ -17,7 +17,7 @@ Module → unit test matrix. Update when adding features.
 | YAML profiles v2 + legacy | `ProfilesConfig`, `ProfileDocument` | `ProfilesConfigTest` (host flags, type errors, save max hosts), `ProfileDocumentTest` |
 | CLI profile override | `CliProfileOverrides`, `PinguiApplication` | `PinguiApplicationTest` |
 | Monitor polling | `MonitorService`, `RoutePoller`, `ExpertPingEnricher` | `MonitorServiceTest`, `ExpertPingEnricherTest` (stub ping) |
-| MTR per-hop probe (P13-010 / P33-001) | `MtrProbe`, `MtrProbeState` (`targetHop`/`monitoringSpan`), `RoutePoller.pollHostMtr` | `MtrProbeTest` (timeout span / target recovery), `RoutePollerTest.pollHostMtrDetectsIncrementalRouteChange` |
+| MTR per-hop probe (P13-010 / P33-001 / P34-001) | `MtrProbe`, `MtrProbeState` (`targetHop`/`monitoringSpan`), `RoutePoller.pollHostMtr`, `CandidateRouteFsm` | `MtrProbeTest` (timeout span / target recovery), `RoutePollerTest.pollHostMtrConfirmsRouteChangeOnlyAfterTarget` |
 | YAML `probe_mode` (P13-011) | `HostProbeMode`, `ProfilesConfig`, `MonitorService` | `HostProbeModeTest`, `HostEntryProbeModeTest`, `ProfilesConfigTest.loadProbeModeOnProfileAndHost` |
 | Smart poll interval (P13-020) | `HostPollSchedule`, `MonitorService`, `HostEntry`, `SessionStore` | `HostPollScheduleTest`, `HostEntryTest.effectiveIntervalUsesModeDefaultsAndOverride`, `ProfilesConfigTest.loadHostIntervalOverride`, `MonitorServiceTest.pollsHostsOnIndependentSchedules` |
 | Burst on route change (P13-021) | `BurstSchedulePolicy`, `MonitorService` | `BurstSchedulePolicyTest`, `MonitorServiceTest.acceleratesPollingAfterRouteChange` |
@@ -119,7 +119,8 @@ Module → unit test matrix. Update when adding features.
 | GUI information hierarchy (P31) | a11y [x] | [pingui-evo-gui.md](pingui-evo-gui.md); P31-007 [x]; phase closed |
 | Stabilization MTR/history (P32) | phase closed [x] | [pingui-stabilization.md](pingui-stabilization.md) — archival; P32-008 [x] |
 | Correctness MTR/projection (P33) | P33-001…008 [x]; phase closed | [pingui-correctness.md](pingui-correctness.md) — archival |
-| Correctness follow-up (P34) | NEXT=P34-001 | [pingui-route-persistence.md](pingui-route-persistence.md); route identity / target / persistence |
+| Correctness follow-up (P34) | NEXT=P34-002 | [pingui-route-persistence.md](pingui-route-persistence.md); route identity / target / persistence |
+| Route identity FSM (P34-001) | `RouteIdentity`, `CandidateRouteFsm`, `RouteChangeDetector`, `RoutePoller`, `RouteSignature` | `RouteIdentityTest`, `CandidateRouteFsmTest`, `RouteChangeDetectorTest`, `RoutePollerTest.pollHostMtrConfirmsRouteChangeOnlyAfterTarget`, `SessionDatabaseRouteTest.transientTimeoutDoesNotCreateNewRouteRow` |
 | Runtime hardening follow-up (P28) | SinkRegistry hang [x]; inFlight before pool [x]; Python schema `!=` gate [x] | phase 28 closed |
 | Diagnostic evolution (P29) | multi-host correlation [x]; incident timeline [x]; alert silence [x]; DNS control [x]; TCP connect [x] | NEXT=`DONE`; Java-first |
 | TCP connect (P29-005) | `TcpEndpoint`, `TcpConnectProbe`, `HostProbeMode.TCP_CONNECT`, `RoutePoller.pollHostTcpConnect` | `TcpEndpointTest`, `TcpConnectProbeTest`, `RoutePollerTcpConnectTest`, `ProfilesConfigTest.loadTcpConnect*` |

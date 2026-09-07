@@ -169,16 +169,29 @@ public final class PersistenceEventWriter {
      * when hops are empty.
      */
     public Long observeRoute(String host, java.util.List<io.pingui.model.Models.HopNode> hops, Instant when) {
+        return observeRoute(host, hops, when, java.util.Map.of());
+    }
+
+    /**
+     * Upserts deduplicated {@code route} (P30-004 / P34-001). {@code lastKnownByHop} fills transient
+     * timeout slots so packet loss does not create a new signature.
+     */
+    public Long observeRoute(
+            String host,
+            java.util.List<io.pingui.model.Models.HopNode> hops,
+            Instant when,
+            java.util.Map<Integer, String> lastKnownByHop) {
         if (host == null || host.isBlank() || hops == null || hops.isEmpty()) {
             return null;
         }
-        String signature = RouteSignature.fromHops(hops);
+        java.util.List<io.pingui.model.Models.HopNode> stabilized = RouteSignature.stabilize(hops, lastKnownByHop);
+        String signature = RouteSignature.fromHops(stabilized, lastKnownByHop);
         if (signature.isBlank()) {
             return null;
         }
         ensureHostRow(host);
         Instant at = when != null ? when : Instant.now();
-        return database.upsertRoute(host, signature, SessionJsonCodec.routeToJson(hops), at);
+        return database.upsertRoute(host, signature, SessionJsonCodec.routeToJson(stabilized), at);
     }
 
     private static PersistenceEventType qualityEventType(QualityAlertEvent event) {

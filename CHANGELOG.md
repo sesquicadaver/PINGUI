@@ -16,6 +16,7 @@
 
 ### Changed
 
+- **P34-001 — route identity + candidate FSM:** hop-indexed `RouteIdentity`; `CandidateRouteFsm` (active/candidate, confirm до target); TRACE transient `*` ≠ change; MTR — один event після confirmation; `RouteSignature` `N=ip` + last-known fill; NEXT→**P34-002**.
 - **P33-008 — docs / branch sync + phase close:** фази/NEXT/`main`≡`beta` узгоджені; архівні notes P32+P33; ROADMAP **NEXT=DONE** (фаза 33 closed).
 - **P33-007 — DB migrate + chunked retention:** in-place **v12→v13→v14**; `PollResultRetentionJob` порціями (default 500); NEXT→**P33-008**.
 - **P33-006 — webhook lifecycle:** bounded `ArrayBlockingQueue` + AbortPolicy + `rejectedCount`; `AlertDispatcher` closeable; close on replace/`MonitorService.close`; NEXT→**P33-007**.

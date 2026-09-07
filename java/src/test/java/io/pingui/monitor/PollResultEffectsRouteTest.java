@@ -40,7 +40,7 @@ class PollResultEffectsRouteTest {
             assertEquals(2, database.countPollResults());
             RouteRecord route = database.listRoutes("8.8.8.8", 1).get(0);
             assertEquals(2, route.seenCount());
-            assertEquals("10.0.0.1|8.8.8.8", route.signature());
+            assertEquals("1=10.0.0.1|2=8.8.8.8", route.signature());
             PollResultRecord poll = database.listPollResults("8.8.8.8", 1).get(0);
             assertNotNull(poll.routeId());
             assertEquals(route.id(), poll.routeId());
