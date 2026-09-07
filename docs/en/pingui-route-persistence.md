@@ -17,7 +17,7 @@ P32/P33 materially improved the project (fresh-hop, span, tri-state poll_result,
 | ID | Priority | Task | DoD (short) |
 |----|----------|------|-------------|
 | **P34-001** | P0 | Route identity + candidate-route FSM | [x] TRACE/MTR: hop-indexed `(hop, ip\|timeout)`; active/candidate; confirm to target; transient `*` ≠ new route |
-| **P34-002** | P0 | MTR target-unknown / exhaustion | `targetHop` only after real target match; `TARGET_UNKNOWN`/`INCOMPLETE`; bounded rediscovery; no `target_sampled` until identified |
+| **P34-002** | P0 | MTR target-unknown / exhaustion | [x] `targetHop` only after real target match; `TARGET_UNKNOWN`/`INCOMPLETE`; bounded rediscovery; no `target_sampled` until identified |
 | **P34-003** | P0 | Current endpoint outcome vs history | Current TIMEOUT → DOWN/PENDING; session-lifetime loss must not override a live timeout |
 | **P34-004** | P0 | Reliable structural persistence + shutdown | Control lane (delete/rename/barrier) never drops; coalesced SaveHost; lossy telemetry; safe close |
 | **P34-005** | P1 | Immutable `CompletedPoll` + GUI/daemon parity | One probe-derived poll_result; no mutable SessionStore from probe/FX |

@@ -283,6 +283,83 @@ class MtrProbeTest {
         assertEquals(9.5, up.freshHopSample().pingMs());
     }
 
+    @Test
+    void maxHopsExhaustedWithoutTargetEntersTargetUnknown() {
+        prober.enqueue(new ProbeResult("10.0.0.1", 4.0, false), new ProbeResult("10.0.0.2", 6.0, false));
+
+        MtrPollOutcome hop1 = mtrProbe.poll("8.8.8.8", 2, 0.5);
+        assertFalse(hop1.targetSampled());
+        assertEquals(MtrProbeState.Phase.DISCOVERING, hop1.phase());
+
+        MtrPollOutcome exhausted = mtrProbe.poll("8.8.8.8", 2, 0.5);
+        assertEquals(MtrProbeState.Phase.TARGET_UNKNOWN, exhausted.phase());
+        assertEquals(0, mtrProbe.stateFor("8.8.8.8").targetHop());
+        assertFalse(exhausted.targetSampled());
+        assertEquals(MtrTargetOutcome.NOT_SAMPLED, exhausted.targetOutcome());
+        assertEquals(List.of("10.0.0.1", "10.0.0.2"), exhausted.completeRoute().routeIps());
+    }
+
+    @Test
+    void allTimeoutsExhaustionDoesNotClaimTargetSampled() {
+        prober.enqueueTimeout();
+        prober.enqueueTimeout();
+
+        mtrProbe.poll("8.8.8.8", 2, 0.5);
+        MtrPollOutcome exhausted = mtrProbe.poll("8.8.8.8", 2, 0.5);
+        assertEquals(MtrProbeState.Phase.TARGET_UNKNOWN, exhausted.phase());
+        assertEquals(0, mtrProbe.stateFor("8.8.8.8").targetHop());
+        assertFalse(exhausted.targetSampled());
+        assertEquals(MtrTargetOutcome.NOT_SAMPLED, exhausted.targetOutcome());
+    }
+
+    @Test
+    void boundedRediscoveryFindsTargetAfterExhaustion() {
+        // First pass: 2 routers, no target (maxHops=2)
+        prober.enqueue(new ProbeResult("10.0.0.1", 4.0, false), new ProbeResult("10.0.0.2", 6.0, false));
+        // Rediscovery: target at hop 2
+        prober.enqueue(new ProbeResult("10.0.0.1", 4.0, false), new ProbeResult("8.8.8.8", 8.0, true));
+
+        mtrProbe.poll("8.8.8.8", 2, 0.5);
+        MtrPollOutcome exhausted = mtrProbe.poll("8.8.8.8", 2, 0.5);
+        assertEquals(MtrProbeState.Phase.TARGET_UNKNOWN, exhausted.phase());
+
+        MtrPollOutcome rediscoveryHop1 = mtrProbe.poll("8.8.8.8", 2, 0.5);
+        assertEquals(MtrProbeState.Phase.DISCOVERING, rediscoveryHop1.phase());
+        assertFalse(rediscoveryHop1.targetSampled());
+        assertEquals(1, mtrProbe.stateFor("8.8.8.8").rediscoveryAttempts());
+
+        MtrPollOutcome found = mtrProbe.poll("8.8.8.8", 2, 0.5);
+        assertEquals(MtrProbeState.Phase.MONITORING, found.phase());
+        assertTrue(found.targetSampled());
+        assertEquals(2, mtrProbe.stateFor("8.8.8.8").targetHop());
+        assertEquals(0, mtrProbe.stateFor("8.8.8.8").rediscoveryAttempts());
+    }
+
+    @Test
+    void rediscoveryStopsAfterMaxAttempts() {
+        // Each exhaustion cycle: 1 hop max, always a router (never target)
+        for (int i = 0; i < MtrProbe.MAX_TARGET_REDISCOVERIES + 2; i++) {
+            prober.enqueue(new ProbeResult("10.0.0.1", 4.0, false));
+        }
+
+        MtrPollOutcome first = mtrProbe.poll("8.8.8.8", 1, 0.5);
+        assertEquals(MtrProbeState.Phase.TARGET_UNKNOWN, first.phase());
+
+        for (int i = 0; i < MtrProbe.MAX_TARGET_REDISCOVERIES; i++) {
+            MtrPollOutcome again = mtrProbe.poll("8.8.8.8", 1, 0.5);
+            // Rediscovery immediately probes hop 1 and exhausts again → TARGET_UNKNOWN
+            assertEquals(MtrProbeState.Phase.TARGET_UNKNOWN, again.phase());
+            assertFalse(again.targetSampled());
+        }
+
+        MtrPollOutcome idle = mtrProbe.poll("8.8.8.8", 1, 0.5);
+        assertEquals(MtrProbeState.Phase.TARGET_UNKNOWN, idle.phase());
+        assertEquals(0, idle.probedHop());
+        assertFalse(idle.targetSampled());
+        assertEquals(
+                MtrProbe.MAX_TARGET_REDISCOVERIES, mtrProbe.stateFor("8.8.8.8").rediscoveryAttempts());
+    }
+
     private static final class ScriptMtrHopProber implements MtrHopProber {
         private final String targetIp;
         private final Deque<Optional<ProbeResult>> script = new ArrayDeque<>();
