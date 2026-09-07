@@ -2,7 +2,7 @@
 
 # Correctness — MTR / projection / side-effects (P33)
 
-> **Archival:** phase 33 **closed** (P33-001…008). Current phase 34 — [pingui-route-persistence.md](pingui-route-persistence.md). Stabilization: [pingui-stabilization.md](pingui-stabilization.md).
+> **Archival:** phase 33 **closed** (P33-001…008). Phase 34 also **closed** — [pingui-route-persistence.md](pingui-route-persistence.md). ROADMAP **NEXT=DONE**. Stabilization: [pingui-stabilization.md](pingui-stabilization.md).
 
 **Source for phase 33.** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
 

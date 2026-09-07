@@ -97,6 +97,33 @@ class SessionPersistenceWriterTest {
     }
 
     @Test
+    void telemetryOverflowDoesNotDropRename() throws Exception {
+        Path dbPath = tempDir.resolve("rename-lane.db");
+        MemoryTimeSeriesBackend backend = new MemoryTimeSeriesBackend();
+        try (SessionDatabase db = new SessionDatabase(dbPath);
+                SessionPersistenceWriter writer =
+                        new SessionPersistenceWriter(1, DropPolicy.DROP_OLDEST, db, backend)) {
+            HostSessionData data = new HostSessionData();
+            data.setEnabled(true);
+            db.save("old.example", data);
+            assertNotNull(db.load("old.example"));
+
+            Instant now = Instant.now();
+            long drops = 0;
+            for (int i = 0; i < 500; i++) {
+                writer.offerPingSamples(List.of(new PingSample("noise", 1, "1.1.1.1", 1.0, now)));
+                drops = writer.droppedCount();
+            }
+            assertTrue(drops > 0, "telemetry lane must drop under overflow");
+
+            assertTrue(writer.offerRename("old.example", "new.example"));
+            assertTrue(writer.awaitIdle(Duration.ofSeconds(5)));
+            assertNull(db.load("old.example"), "rename must clear old address under overflow");
+            assertNotNull(db.load("new.example"), "rename must survive telemetry overflow");
+        }
+    }
+
+    @Test
     void coalescesSaveHostToLatestSnapshot() throws Exception {
         Path dbPath = tempDir.resolve("coalesce.db");
         try (SessionDatabase db = new SessionDatabase(dbPath);
