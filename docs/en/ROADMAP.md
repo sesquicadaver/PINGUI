@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P35-002** |
+| **Current task** | **P35-003** |
 | **Phase** | 35 — Unattended NOC (probe identity / loss / persistence) |
-| **DoD (short)** | `probedHop<1` ≠ FULL; rediscovery; no downtime from TARGET_UNKNOWN |
+| **DoD (short)** | Fixed/sliding loss window **or** loss=NULL in single-packet |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -206,7 +206,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 160 | **P34-009** | [x] | Python compatibility edition |
 | 161 | **P34-010** | [x] | Soak / fault matrix + docs sync |
 | 162 | **P35-001** | [x] | TRACE real target identity (not last hop) |
-| 163 | **P35-002** | [ ] | MTR TARGET_UNKNOWN scope + rediscovery |
+| 163 | **P35-002** | [x] | MTR TARGET_UNKNOWN scope + rediscovery |
 | 164 | **P35-003** | [ ] | Loss window semantics |
 | 165 | **P35-004** | [ ] | Timeout ↔ target hop attribution |
 | 166 | **P35-005** | [ ] | DNS-control bounded dispatcher |
@@ -216,7 +216,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 170 | **P35-009** | [ ] | Route signature ≡ hops_json |
 | 171 | **P35-010** | [ ] | Python lifecycle harden |
 
-**Queue status:** **NEXT = P35-002** (phase 35; [pingui-unattended.md](pingui-unattended.md)).
+**Queue status:** **NEXT = P35-003** (phase 35; [pingui-unattended.md](pingui-unattended.md)).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -1101,12 +1101,12 @@ flowchart TD
 
 **Context:** [pingui-unattended.md](pingui-unattended.md). Post-P34 audit — TRACE/MTR identity, loss window, persistence pipeline. Java-first.
 
-**Queue:** after P34; **NEXT = P35-002**.
+**Queue:** after P34; **NEXT = P35-003**.
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
 | **P35-001** | [x] TRACE real target identity | `TraceTargetIp`, `ProcessRouteProbe`, `RouteChangeDetector` | `targetIp` from header/literal/resolve (not last hop); `targetReached` with no last-router fallback |
-| **P35-002** | [ ] MTR TARGET_UNKNOWN scope + rediscovery | `RoutePoller`, `MtrProbe` | `probedHop<1` ≠ `PollSampleScope.FULL`; periodic rediscovery; no downtime from UNKNOWN |
+| **P35-002** | [x] MTR TARGET_UNKNOWN scope + rediscovery | `RoutePoller`, `MtrProbe`, `PollSampleScope` | `probedHop<1` → `UNSAMPLED` (not FULL); periodic rediscovery with capped backoff; no downtime from UNKNOWN |
 | **P35-003** | [ ] Loss window semantics | `PollResultEffects`, hop stats | Fixed/sliding window **or** loss=NULL in single-packet |
 | **P35-004** | [ ] Timeout ↔ target hop | `CompletedPoll`, poll effects | Attribute timeouts by `targetHop`/`freshHop`, not IP `*` |
 | **P35-005** | [ ] DNS-control bounded dispatcher | DNS control | Bounded/coalesce; outer-queue metrics |
@@ -1204,7 +1204,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P35-002**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P35-003**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

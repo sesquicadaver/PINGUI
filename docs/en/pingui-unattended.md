@@ -17,7 +17,7 @@ P34 closed most route/persistence defects, but `NEXT = DONE` was again premature
 | ID | Priority | Task | DoD (short) |
 |----|----------|------|-------------|
 | **P35-001** | P0 | TRACE real target identity | [x] `targetIp` from header/resolve (not last hop); `targetReached` with no last-router fallback |
-| **P35-002** | P0 | MTR TARGET_UNKNOWN scope + rediscovery | `probedHop<1` ≠ `PollSampleScope.FULL`; periodic rediscovery with backoff; no downtime from UNKNOWN |
+| **P35-002** | P0 | MTR TARGET_UNKNOWN scope + rediscovery | [x] `probedHop<1` ≠ `PollSampleScope.FULL`; periodic rediscovery with backoff; no downtime from UNKNOWN |
 | **P35-003** | P0 | Loss window semantics | Real fixed/sliding window attempts/successes **or** loss=NULL in single-packet mode |
 | **P35-004** | P0 | Timeout ↔ target hop | Attribute timeouts by `targetHop`/`freshHop`, not timeout-node IP `*` |
 | **P35-005** | P1 | DNS-control bounded dispatcher | Bounded/coalesce per host; outer-queue metrics |
