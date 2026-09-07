@@ -69,6 +69,7 @@ class DnsControlTest {
         Optional<DnsControlEvent> change = tracker.observe("dns.example", T0.plusSeconds(2));
         assertTrue(change.isPresent());
         assertEquals("change", change.get().state());
+        assertTrue(change.get().isAddressSetChange());
         assertEquals(List.of("9.9.9.9"), change.get().previousAddresses());
         assertEquals(List.of("1.0.0.1"), change.get().addresses());
 
@@ -78,6 +79,7 @@ class DnsControlTest {
         Optional<DnsControlEvent> nx = tracker.observe("dns.example", T0.plusSeconds(3));
         assertTrue(nx.isPresent());
         assertEquals("nxdomain", nx.get().state());
+        assertFalse(nx.get().isAddressSetChange());
         assertTrue(nx.get().addresses().isEmpty());
         assertFalse(nx.get().message().isBlank());
     }

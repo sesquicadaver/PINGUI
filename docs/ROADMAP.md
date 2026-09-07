@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P35-006** |
+| **Поточна задача** | **P35-007** |
 | **Фаза** | 35 — Unattended NOC (probe identity / loss / persistence) |
-| **DoD (коротко)** | Підтверджений address-set change скидає MTR target/candidate/latency |
+| **DoD (коротко)** | CompletedPoll → один ordered write path (events+poll+route) |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -210,13 +210,13 @@
 | 164 | **P35-003** | [x] | Loss window semantics |
 | 165 | **P35-004** | [x] | Timeout ↔ target hop attribution |
 | 166 | **P35-005** | [x] | DNS-control bounded dispatcher |
-| 167 | **P35-006** | [ ] | MTR invalidate on DNS change |
+| 167 | **P35-006** | [x] | MTR invalidate on DNS change |
 | 168 | **P35-007** | [ ] | Unified SQLite persistence pipeline |
 | 169 | **P35-008** | [ ] | Stuck-writer fault test |
 | 170 | **P35-009** | [ ] | Route signature ≡ hops_json |
 | 171 | **P35-010** | [ ] | Python lifecycle harden |
 
-**Стан черги:** **NEXT = P35-006** (фаза 35; [pingui-unattended.md](pingui-unattended.md)).
+**Стан черги:** **NEXT = P35-007** (фаза 35; [pingui-unattended.md](pingui-unattended.md)).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -1101,7 +1101,7 @@ flowchart TD
 
 **Контекст:** [pingui-unattended.md](pingui-unattended.md). Аудит після P34 — TRACE/MTR identity, loss window, persistence pipeline. Java-first.
 
-**Черга:** після P34; **NEXT = P35-006**.
+**Черга:** після P34; **NEXT = P35-007**.
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
@@ -1110,7 +1110,7 @@ flowchart TD
 | **P35-003** | [x] Loss window semantics | `HopProbeStats`, `HopStats` | Sliding attempt window (≤50); loss=NULL при <2 probes; NEXT→P35-004 |
 | **P35-004** | [x] Timeout ↔ target hop | `CompletedPoll`, `HopStats`, `MonitorService` | Timeout за `targetHop`/`freshHop`, не за IP `*`; NEXT→P35-005 |
 | **P35-005** | [x] DNS-control bounded dispatcher | `DnsControlDispatcher`, `DnsOpsSnapshot` | Bounded/coalesce ≤1 pending/host; outer `/ops`+Prometheus; NEXT→P35-006 |
-| **P35-006** | [ ] MTR invalidate on DNS change | MTR + DNS | Address-set change скидає targetIp/candidate/latency |
+| **P35-006** | [x] MTR invalidate on DNS change | `MonitorService.applyDnsControlEvent`, `RoutePoller.invalidateOnDnsAddressChange` | Address-set change скидає targetIp/candidate/latency; NEXT→P35-007 |
 | **P35-007** | [ ] Unified SQLite persistence | SessionStore / writers | CompletedPoll → один ordered write path |
 | **P35-008** | [ ] Stuck-writer fault test | SessionPersistenceWriter | close не drain-ить паралельно зі stuck worker |
 | **P35-009** | [ ] Route signature ≡ hops_json | RouteSignature | Один hop-indexed source |
@@ -1204,7 +1204,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P35-006**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P35-007**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 
