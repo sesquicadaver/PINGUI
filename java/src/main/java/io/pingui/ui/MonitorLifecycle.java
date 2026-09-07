@@ -77,6 +77,22 @@ public final class MonitorLifecycle {
             }
             return store.hopStatsSummary(host, route.get(route.size() - 1).hop());
         });
+        service.setLastKnownHopIpsResolver(host -> {
+            var known = store.get(host).getLastKnownByHop();
+            if (known == null || known.isEmpty()) {
+                return java.util.Map.of();
+            }
+            java.util.Map<Integer, String> ips = new java.util.HashMap<>();
+            known.forEach((hop, node) -> {
+                if (node != null
+                        && node.isReachable()
+                        && node.ip() != null
+                        && !node.ip().isBlank()) {
+                    ips.put(hop, node.ip());
+                }
+            });
+            return ips;
+        });
         if (sessionDatabase != null) {
             service.setPersistenceEventWriter(new PersistenceEventWriter(sessionDatabase, service.persistencePolicy()));
         }
