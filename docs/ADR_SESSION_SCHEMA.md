@@ -166,6 +166,10 @@ CREATE TABLE metric_rollup (
 
 `metric_rollup` зберігає адитивні лічильники (`sample_count`, `reachable_*`, `rtt_samples`/`rtt_sum`, `loss_samples`/`loss_sum`); середні обчислюються на читанні. `PollResultRetentionJob` виконує upsert+delete **порціями** (chunked transactions, P33-007). Відкриття БД мігрує **v12→v13→v14** in-place.
 
+### P34-008 (зроблено) — probe-error tri-state repair
+
+`migrateV12ToV13` backfill для рядків з `error_code` → `target_sampled=0`, `reachable=NULL` (P33-004). На вже-v14 DB ідемпотентний repair на кожному RW open; CLI **`--repair-poll-result`** (+ `--session-db`) друкує `updated=N`.
+
 ### P32-008 (зроблено) — поділ persistence hotspot
 
 Публічний API лишається `SessionDatabase` (connection + transactions). SQL рознесено package-private:
@@ -173,7 +177,7 @@ CREATE TABLE metric_rollup (
 | Клас | Роль |
 |------|------|
 | `DbCommit` | `Connection`, `deferCommit`, `maybeCommit` / `rollbackQuietly` |
-| `SchemaManager` | DDL, `schema_meta`, migrate v12→v13→v14 |
+| `SchemaManager` | DDL, `schema_meta`, migrate v12→v13→v14, P34-008 probe-error repair |
 | `SessionStateRepository` | `host_session` + дочірні hop/ping/stats |
 | `HistoryRepository` | events, incident, poll_result, route, rollup, telemetry |
 

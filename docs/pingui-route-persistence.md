@@ -23,7 +23,7 @@ P32/P33 суттєво покращили проєкт (fresh-hop, span, tri-sta
 | **P34-005** | P1 | Immutable `CompletedPoll` + GUI/daemon parity | [x] Один probe-derived poll_result; без mutable SessionStore з probe/FX |
 | **P34-006** | P1 | loss / jitter / rollup semantics | [x] Single-packet loss=NULL або явний window; jitter moments/window; availability з target_sampled/reachable |
 | **P34-007** | P1 | Bounded DNS + ops counters | [x] Bounded DNS queues + coalesce per host; counters у App Status / API / Prometheus |
-| **P34-008** | P1 | v12 migration repair | error rows → `target_sampled=0`, `reachable=NULL`; repair CLI/онлайн для наявних DB |
+| **P34-008** | P1 | v12 migration repair | [x] error rows → `target_sampled=0`, `reachable=NULL`; repair CLI/онлайн для наявних DB |
 | **P34-009** | P2 | Python compatibility edition | Зафіксувати bugfix-only; мінімальний shutdown harden; вирівняти version |
 | **P34-010** | P2 | Soak / fault matrix + docs sync | Regression matrix з аудиту; README/ROADMAP/`main`≡`beta` |
 

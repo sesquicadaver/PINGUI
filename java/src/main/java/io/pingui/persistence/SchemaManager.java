@@ -10,8 +10,9 @@ import java.sql.Statement;
  * Manages DDL setup and schema migration for the session SQLite database.
  *
  * <p>Handles {@code CREATE TABLE IF NOT EXISTS}, version seeding, read-only version assertion,
- * and in-place migrations {@code v12 → v13 → v14} (P32-004 / P33-007). Package-private — all
- * external access goes through {@link SessionDatabase}.
+ * in-place migrations {@code v12 → v13 → v14} (P32-004 / P33-007), and idempotent probe-error
+ * tri-state repair on {@code poll_result} (P34-008 / P33-004). Package-private — all external
+ * access goes through {@link SessionDatabase}.
  */
 final class SchemaManager {
 
@@ -141,6 +142,35 @@ final class SchemaManager {
             seedSchemaVersion();
         }
         commit.maybeCommit();
+    }
+
+    /**
+     * Idempotent repair: probe/DNS/network error rows must be {@code target_sampled=0} and
+     * {@code reachable=NULL} (P33-004 / P34-008). Safe on every RW open and via CLI.
+     *
+     * @return number of {@code poll_result} rows updated
+     */
+    int repairPollResultProbeErrorTriState() throws SQLException {
+        if (openMode == SessionDatabase.OpenMode.READ_ONLY) {
+            throw new PersistenceException("Cannot repair poll_result on a read-only session database");
+        }
+        try (Statement statement = commit.connection.createStatement()) {
+            int updated = statement.executeUpdate(
+                    """
+                    UPDATE poll_result SET
+                        target_sampled = 0,
+                        reachable = NULL
+                    WHERE (
+                            (error_code IS NOT NULL AND error_code != '')
+                            OR probe_outcome IN ('NETWORK_ERROR', 'DNS_ERROR')
+                          )
+                      AND (target_sampled != 0 OR reachable IS NOT NULL)
+                    """);
+            if (updated > 0) {
+                commit.maybeCommit();
+            }
+            return updated;
+        }
     }
 
     private void initSchemaReadOnly(Integer existingVersion) {
@@ -388,7 +418,8 @@ final class SchemaManager {
 
     /**
      * In-place v12 → v13: add {@code poll_result.probe_outcome} / {@code target_sampled} and
-     * backfill from legacy reachability (P33-007).
+     * backfill from legacy reachability (P33-007). Probe {@code error_code} rows follow
+     * P33-004 tri-state ({@code target_sampled=0}, {@code reachable=NULL}) — P34-008.
      */
     private void migrateV12ToV13() throws SQLException {
         try (Statement statement = commit.connection.createStatement()) {
@@ -410,7 +441,7 @@ final class SchemaManager {
             if (!hasTargetSampled) {
                 statement.execute("ALTER TABLE poll_result ADD COLUMN target_sampled INTEGER");
             }
-            // v12 treated finished polls as sampled; map reachable/error_code onto ProbeOutcome wire.
+            // Map reachable/error_code onto ProbeOutcome; errors are not downtime samples.
             statement.execute(
                     """
                     UPDATE poll_result SET
@@ -419,7 +450,14 @@ final class SchemaManager {
                             WHEN error_code IS NOT NULL AND error_code != '' THEN 'NETWORK_ERROR'
                             ELSE 'TIMEOUT'
                         END,
-                        target_sampled = 1
+                        target_sampled = CASE
+                            WHEN error_code IS NOT NULL AND error_code != '' THEN 0
+                            ELSE 1
+                        END,
+                        reachable = CASE
+                            WHEN error_code IS NOT NULL AND error_code != '' THEN NULL
+                            ELSE reachable
+                        END
                     WHERE probe_outcome IS NULL OR target_sampled IS NULL
                     """);
             statement.execute(

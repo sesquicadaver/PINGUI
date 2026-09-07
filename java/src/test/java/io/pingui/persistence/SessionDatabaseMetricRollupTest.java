@@ -1,6 +1,8 @@
 package io.pingui.persistence;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -226,9 +228,14 @@ class SessionDatabaseMetricRollupTest {
             assertEquals(3, polls.size());
             // listPollResults is newest-first
             assertEquals(ProbeOutcome.NETWORK_ERROR, polls.get(0).probeOutcome());
+            assertFalse(polls.get(0).targetSampled());
+            assertNull(polls.get(0).reachable());
             assertEquals(ProbeOutcome.TIMEOUT, polls.get(1).probeOutcome());
+            assertTrue(polls.get(1).targetSampled());
+            assertEquals(Boolean.FALSE, polls.get(1).reachable());
             assertEquals(ProbeOutcome.SUCCESS, polls.get(2).probeOutcome());
             assertTrue(polls.get(2).targetSampled());
+            assertEquals(Boolean.TRUE, polls.get(2).reachable());
             MetricRollupRecord row = db.listMetricRollups("8.8.8.8", 300, 1).get(0);
             assertEquals(4, row.sampleCount());
             assertEquals(0.75, row.uptimeRatio());
@@ -236,6 +243,100 @@ class SessionDatabaseMetricRollupTest {
             assertEquals(1.0, row.lossAvg());
             assertEquals(4, row.rttSamples());
             assertEquals(4, row.lossSamples());
+        }
+    }
+
+    @Test
+    void repairsLegacyProbeErrorTriStateOnAlreadyV14Db() throws Exception {
+        Path dbPath = tempDir.resolve("v14-bad-error.db");
+        try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + dbPath.toAbsolutePath());
+                Statement st = c.createStatement()) {
+            st.execute("PRAGMA foreign_keys = ON");
+            st.execute("CREATE TABLE schema_meta (version INTEGER NOT NULL)");
+            st.execute("INSERT INTO schema_meta(version) VALUES (14)");
+            st.execute(
+                    """
+                    CREATE TABLE host_session (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        address TEXT NOT NULL UNIQUE,
+                        enabled INTEGER NOT NULL,
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL
+                    )
+                    """);
+            st.execute(
+                    """
+                    INSERT INTO host_session(address, enabled, created_at, updated_at)
+                    VALUES ('8.8.8.8', 1, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')
+                    """);
+            st.execute(
+                    """
+                    CREATE TABLE poll_result (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        host_id INTEGER NOT NULL,
+                        observed_at TEXT NOT NULL,
+                        probe_mode TEXT NOT NULL,
+                        reachable INTEGER,
+                        terminal_rtt_ms REAL,
+                        jitter_ms REAL,
+                        loss_percent REAL,
+                        duration_ms REAL,
+                        route_id INTEGER,
+                        error_code TEXT,
+                        probe_outcome TEXT NOT NULL,
+                        target_sampled INTEGER NOT NULL,
+                        FOREIGN KEY (host_id) REFERENCES host_session(id) ON DELETE CASCADE
+                    )
+                    """);
+            st.execute(
+                    """
+                    INSERT INTO poll_result(
+                        host_id, observed_at, probe_mode, reachable, terminal_rtt_ms,
+                        jitter_ms, loss_percent, duration_ms, route_id, error_code,
+                        probe_outcome, target_sampled)
+                    VALUES
+                        (1, '2026-08-01T10:00:00Z', 'ping_only', 0, NULL, NULL, NULL, 40.0, NULL, 'dns',
+                         'NETWORK_ERROR', 1),
+                        (1, '2026-08-01T10:01:00Z', 'ping_only', 0, NULL, NULL, NULL, 40.0, NULL, NULL,
+                         'TIMEOUT', 1),
+                        (1, '2026-08-01T10:02:00Z', 'tcp_connect', 0, NULL, NULL, NULL, 40.0, NULL, NULL,
+                         'DNS_ERROR', 1)
+                    """);
+            st.execute(
+                    """
+                    CREATE TABLE metric_rollup (
+                        host_id INTEGER NOT NULL,
+                        bucket_start TEXT NOT NULL,
+                        bucket_size INTEGER NOT NULL,
+                        sample_count INTEGER NOT NULL,
+                        reachable_samples INTEGER NOT NULL DEFAULT 0,
+                        reachable_count INTEGER NOT NULL DEFAULT 0,
+                        rtt_samples INTEGER NOT NULL DEFAULT 0,
+                        rtt_sum REAL NOT NULL DEFAULT 0,
+                        rtt_min REAL,
+                        rtt_max REAL,
+                        loss_samples INTEGER NOT NULL DEFAULT 0,
+                        loss_sum REAL NOT NULL DEFAULT 0,
+                        PRIMARY KEY(host_id, bucket_start, bucket_size)
+                    )
+                    """);
+        }
+        try (SessionDatabase db = new SessionDatabase(dbPath)) {
+            assertEquals(14, db.schemaVersion());
+            assertEquals(2, db.lastProbeErrorRepairCount());
+            List<PollResultRecord> polls = db.listPollResults("8.8.8.8", 10);
+            assertEquals(3, polls.size());
+            // newest first: DNS_ERROR, TIMEOUT, NETWORK_ERROR
+            assertEquals(ProbeOutcome.DNS_ERROR, polls.get(0).probeOutcome());
+            assertFalse(polls.get(0).targetSampled());
+            assertNull(polls.get(0).reachable());
+            assertEquals(ProbeOutcome.TIMEOUT, polls.get(1).probeOutcome());
+            assertTrue(polls.get(1).targetSampled());
+            assertEquals(Boolean.FALSE, polls.get(1).reachable());
+            assertEquals(ProbeOutcome.NETWORK_ERROR, polls.get(2).probeOutcome());
+            assertFalse(polls.get(2).targetSampled());
+            assertNull(polls.get(2).reachable());
+            assertEquals(0, db.repairPollResultProbeErrorTriState());
         }
     }
 

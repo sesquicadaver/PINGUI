@@ -24,7 +24,8 @@ import java.util.OptionalLong;
  *
  * <p>Schema v14: additive {@code metric_rollup} counters ({@code *_samples}/{@code *_sum});
  * averages on read. Public API remains address-keyed. Opens migrate {@code 12 → 13 → 14}
- * in-place (P33-007); versions older than v12 are still rejected.
+ * in-place (P33-007) and repair probe-error {@code poll_result} tri-state (P34-008);
+ * versions older than v12 are still rejected.
  *
  * <p>This class is the public facade: it owns the {@link Connection}, manages the transaction
  * boundary via {@link #inTransaction}, and delegates all SQL work to package-private repositories.
@@ -51,6 +52,8 @@ public final class SessionDatabase implements AutoCloseable {
     private final SchemaManager schemaManager;
     private final SessionStateRepository stateRepo;
     private final HistoryRepository historyRepo;
+    /** Rows fixed by P34-008 repair during the most recent RW open (or explicit repair call). */
+    private int lastProbeErrorRepairCount;
 
     /** Opens {@code path} for read/write (creates schema when missing). */
     public SessionDatabase(Path path) {
@@ -100,6 +103,10 @@ public final class SessionDatabase implements AutoCloseable {
             this.stateRepo = new SessionStateRepository(dbCommit);
             this.historyRepo = new HistoryRepository(dbCommit, stateRepo);
             schemaManager.initSchema();
+            if (openMode == OpenMode.READ_WRITE) {
+                // P34-008: fix legacy v12→v13 backfill that marked probe errors as sampled downtime.
+                this.lastProbeErrorRepairCount = schemaManager.repairPollResultProbeErrorTriState();
+            }
         } catch (SQLException ex) {
             closeQuietly(opened);
             throw new PersistenceException("Failed to open session database: " + path, ex);
@@ -211,6 +218,34 @@ public final class SessionDatabase implements AutoCloseable {
         } catch (SQLException ex) {
             throw new PersistenceException("Failed to read schema version", ex);
         }
+    }
+
+    /**
+     * Repairs legacy probe-error {@code poll_result} rows to P33-004 tri-state
+     * ({@code target_sampled=0}, {@code reachable=NULL}). Idempotent; also runs on RW open
+     * (P34-008).
+     *
+     * @return number of rows updated by this call
+     */
+    public synchronized int repairPollResultProbeErrorTriState() {
+        if (openMode == OpenMode.READ_ONLY) {
+            throw new PersistenceException("Cannot repair poll_result on a read-only session database");
+        }
+        try {
+            lastProbeErrorRepairCount = schemaManager.repairPollResultProbeErrorTriState();
+            return lastProbeErrorRepairCount;
+        } catch (SQLException ex) {
+            dbCommit.rollbackQuietly();
+            throw new PersistenceException("Failed to repair poll_result probe-error tri-state on " + path, ex);
+        }
+    }
+
+    /**
+     * Rows updated by the repair that ran on the last RW open (or last explicit
+     * {@link #repairPollResultProbeErrorTriState()} call).
+     */
+    public synchronized int lastProbeErrorRepairCount() {
+        return lastProbeErrorRepairCount;
     }
 
     // -------------------------------------------------------------------------
