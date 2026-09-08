@@ -213,7 +213,8 @@ def run_headless_monitor(
         if loop.is_alive():
             # Do not close sink/DB under a live monitor thread (P35-010).
             logger.error(
-                "Monitor loop still alive after join; skipping telemetry/DB close under live worker"
+                "Monitor loop still alive after join; "
+                "skipping telemetry/DB close under live worker"
             )
             if pid is not None:
                 pid.release()
@@ -221,7 +222,8 @@ def run_headless_monitor(
         telemetry.close()
         if isinstance(telemetry, QueueTelemetryEmitter) and telemetry.worker_alive():
             logger.error(
-                "Telemetry emit worker still alive after close; skipping sink/DB close under live worker"
+                "Telemetry emit worker still alive after close; "
+                "skipping sink/DB close under live worker"
             )
             if pid is not None:
                 pid.release()

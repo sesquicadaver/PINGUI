@@ -422,7 +422,8 @@ class MainWindow(QMainWindow):
         if self._worker.isRunning():
             # Do not close sink/DB under a live Qt monitor thread (P35-010).
             logger.error(
-                "Monitor worker still alive after wait; skipping telemetry/DB close under live worker"
+                "Monitor worker still alive after wait; "
+                "skipping telemetry/DB close under live worker"
             )
             if event is not None:
                 event.accept()

@@ -136,7 +136,12 @@ def test_run_headless_skips_db_close_while_monitor_alive(tmp_path) -> None:
 
     with (
         patch("pingui.monitor.daemon_runner.MonitorLoop", StuckLoop),
-        patch.object(SessionStore, "close", autospec=True, side_effect=lambda self: close_calls.append("store")),
+        patch.object(
+            SessionStore,
+            "close",
+            autospec=True,
+            side_effect=lambda self: close_calls.append("store"),
+        ),
     ):
         assert (
             run_headless_monitor(

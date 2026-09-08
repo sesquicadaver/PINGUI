@@ -93,7 +93,8 @@ class QueueTelemetryEmitter:
         if self._thread.is_alive():
             # Prefer leaving leftovers queued over parallel dispatch with a stuck worker.
             logger.error(
-                "Telemetry emit worker did not stop within %.1fs; skipping caller drain while worker alive",
+                "Telemetry emit worker did not stop within %.1fs; "
+                "skipping caller drain while worker alive",
                 self._close_join_timeout,
             )
             return
