@@ -52,4 +52,21 @@ class AppStatusFormatTest {
         String text = AppStatusFormat.monitoring(true, 1, 1, cycle, now, snapshot);
         assertTrue(text.contains(UiI18n.get("status.mon.dns_ops", 3L, 3L, 0L)) || text.contains("dropped"));
     }
+
+    @Test
+    void monitoringAppendsGeoIpPressure() {
+        Instant now = Instant.parse("2026-09-05T10:00:05Z");
+        Instant cycle = Instant.parse("2026-09-05T10:00:03Z");
+        var geo = new io.pingui.geoip.GeoIpOpsStats(0, 64, 0, 64, 0, 0L, 0L, 0L, 2L, 5L, 0L, 1L, null);
+        String text = AppStatusFormat.monitoring(true, 1, 1, cycle, now, null, geo);
+        assertTrue(text.contains(UiI18n.get("status.mon.geoip_ops", 5L, 2L, 1L)) || text.contains("GeoIP"));
+    }
+
+    @Test
+    void geoIpWithoutPressureDoesNotAppend() {
+        Instant now = Instant.parse("2026-09-05T10:00:05Z");
+        Instant cycle = Instant.parse("2026-09-05T10:00:03Z");
+        String text = AppStatusFormat.monitoring(true, 1, 1, cycle, now, null, io.pingui.geoip.GeoIpOpsStats.empty());
+        assertTrue(!text.contains("GeoIP"));
+    }
 }

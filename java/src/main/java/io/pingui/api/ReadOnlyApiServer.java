@@ -3,6 +3,8 @@ package io.pingui.api;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import io.pingui.dns.DnsOpsSnapshot;
+import io.pingui.geoip.GeoIpOpsStats;
+import io.pingui.geoip.IpMetadataRuntime;
 import io.pingui.model.Models.HopNode;
 import io.pingui.monitor.SessionStore;
 import java.io.IOException;
@@ -21,7 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Localhost-only read-only HTTP API for runbook access (P15-040 / P34-007).
+ * Localhost-only read-only HTTP API for runbook access (P15-040 / P34-007 / P36-010).
  *
  * <p>Endpoints: {@code GET /hosts}, {@code GET /routes/{host}}, {@code GET /ops}, {@code GET
  * /openapi.json}. Auth is out of scope for v1.
@@ -31,6 +33,7 @@ public final class ReadOnlyApiServer implements AutoCloseable {
 
     private final SessionStore store;
     private final Supplier<DnsOpsSnapshot> dnsOpsSupplier;
+    private final Supplier<GeoIpOpsStats> geoIpOpsSupplier;
     private final HttpServer server;
     private final ExecutorService executor;
     private final int port;
@@ -38,11 +41,15 @@ public final class ReadOnlyApiServer implements AutoCloseable {
     private ReadOnlyApiServer(
             SessionStore store,
             Supplier<DnsOpsSnapshot> dnsOpsSupplier,
+            Supplier<GeoIpOpsStats> geoIpOpsSupplier,
             HttpServer server,
             ExecutorService executor,
             int port) {
         this.store = store;
         this.dnsOpsSupplier = dnsOpsSupplier != null ? dnsOpsSupplier : DnsOpsSnapshot::empty;
+        this.geoIpOpsSupplier = geoIpOpsSupplier != null
+                ? geoIpOpsSupplier
+                : () -> IpMetadataRuntime.get().opsStats();
         this.server = server;
         this.executor = executor;
         this.port = port;
@@ -55,11 +62,21 @@ public final class ReadOnlyApiServer implements AutoCloseable {
      * @throws IOException if bind fails
      */
     public static ReadOnlyApiServer start(SessionStore store, int port) throws IOException {
-        return start(store, port, null);
+        return start(store, port, null, null);
     }
 
     /** Same as {@link #start(SessionStore, int)} with optional DNS ops supplier (P34-007 / P35-005). */
     public static ReadOnlyApiServer start(SessionStore store, int port, Supplier<DnsOpsSnapshot> dnsOpsSupplier)
+            throws IOException {
+        return start(store, port, dnsOpsSupplier, null);
+    }
+
+    /** DNS + GeoIP ops suppliers for {@code GET /ops} (P36-010). */
+    public static ReadOnlyApiServer start(
+            SessionStore store,
+            int port,
+            Supplier<DnsOpsSnapshot> dnsOpsSupplier,
+            Supplier<GeoIpOpsStats> geoIpOpsSupplier)
             throws IOException {
         Objects.requireNonNull(store, "store");
         if (port < 1 || port > 65535) {
@@ -72,7 +89,8 @@ public final class ReadOnlyApiServer implements AutoCloseable {
             thread.setDaemon(true);
             return thread;
         });
-        ReadOnlyApiServer api = new ReadOnlyApiServer(store, dnsOpsSupplier, httpServer, executor, port);
+        ReadOnlyApiServer api =
+                new ReadOnlyApiServer(store, dnsOpsSupplier, geoIpOpsSupplier, httpServer, executor, port);
         httpServer.createContext("/hosts", api::handleHosts);
         httpServer.createContext("/routes", api::handleRoutes);
         httpServer.createContext("/ops", api::handleOps);
@@ -161,7 +179,19 @@ public final class ReadOnlyApiServer implements AutoCloseable {
             LOG.warn("DNS ops supplier failed: {}", ex.getMessage());
             snapshot = DnsOpsSnapshot.empty();
         }
-        sendJson(exchange, 200, ReadOnlyApiJson.opsDocument(snapshot != null ? snapshot : DnsOpsSnapshot.empty()));
+        GeoIpOpsStats geoip;
+        try {
+            geoip = geoIpOpsSupplier.get();
+        } catch (RuntimeException ex) {
+            LOG.warn("GeoIP ops supplier failed: {}", ex.getMessage());
+            geoip = GeoIpOpsStats.empty();
+        }
+        sendJson(
+                exchange,
+                200,
+                ReadOnlyApiJson.opsDocument(
+                        snapshot != null ? snapshot : DnsOpsSnapshot.empty(),
+                        geoip != null ? geoip : GeoIpOpsStats.empty()));
     }
 
     private void handleOpenApi(HttpExchange exchange) throws IOException {
