@@ -16,6 +16,10 @@ public record AppOptions(
         boolean verbose,
         boolean geoipEnabled,
         Path geoipHintsPath,
+        /** Optional City/Country MMDB ({@code --geoip-db}); empty → YAML overrides only. */
+        Optional<Path> geoipDbPath,
+        /** Optional ASN MMDB ({@code --geoip-asn-db}); requires {@link #geoipDbPath()}. */
+        Optional<Path> geoipAsnDbPath,
         boolean asnEnabled,
         Path asnHintsPath,
         int asnTimeoutMs,
@@ -43,6 +47,8 @@ public record AppOptions(
                 false,
                 true,
                 Path.of("config/geoip_hints.yaml"),
+                Optional.empty(),
+                Optional.empty(),
                 true,
                 Path.of("config/asn_hints.yaml"),
                 2000,

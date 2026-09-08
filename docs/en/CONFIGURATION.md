@@ -216,11 +216,13 @@ CLI names `--geoip-*` are kept for compatibility; functionally these are **count
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `--geoip-hints` | Path | `config/geoip_hints.yaml` | Country hints / overrides: CIDR→ISO (legacy) or extended mapping (`country`, `city`, coords, `asn`, …); P36-004 `YamlIpMetadataOverrides` |
-| `--no-geoip` | flag | off | Disable country hints |
-| `--asn-hints` | Path | `config/asn_hints.yaml` | CIDR→ASN+org for hop labels (`{asn, org}`) |
-| `--no-asn` | flag | off | Disable ASN hints |
-| `--asn-timeout-ms` | int | `2000` | Reserved for future whois fallback |
+| `--geoip-hints` | Path | `config/geoip_hints.yaml` | YAML overrides / country hints (legacy CIDR→ISO or extended); P36-004 |
+| `--geoip-db` | Path | — | Offline City/Country MMDB; explicit missing/corrupt → config error (P36-007) |
+| `--geoip-asn-db` | Path | — | Offline ASN MMDB (requires `--geoip-db`) |
+| `--no-geoip` | flag | off | Disable enrichment / country hints |
+| `--asn-hints` | Path | `config/asn_hints.yaml` | Legacy CIDR→ASN+org for hop labels |
+| `--no-asn` | flag | off | Disable ASN hints / skip ASN MMDB |
+| `--asn-timeout-ms` | int | `2000` | **Deprecated** (no network ASN fallback) |
 | `--no-geo-map` | flag | off | Disable folium geo-map tab |
 
 Expert ping presets (Java GUI, P14-040 / P17-010): `config/ping_presets.yaml` beside the hosts config (or CWD `config/ping_presets.yaml`); otherwise the bundled resource. Exactly 4 presets (`mtu_probe`, `df`, `dscp`, `burst`). Required fields: `id`, `label`, `args`, `summary`, `expect`; optional `caution`. Buttons in `PingExpertDialog` apply args (keeping AF `-4`/`-6`) and show a status/tooltip with UX copy. Presets do **not** run an MTU sweep.
