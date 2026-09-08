@@ -89,9 +89,15 @@ public final class RouteGraphInteraction {
             return "";
         }
         String body = node.label() != null ? node.label() : "";
+        StringBuilder tip = new StringBuilder(body);
         if (node.hopIp() != null && !node.hopIp().isBlank()) {
-            return body + "\n\nПодвійний клік — копіювати IP";
+            var meta = HopGeoLabels.cachedOrOffer(node.hopIp());
+            String details = HopGeoLabels.details(meta);
+            if (!details.isEmpty()) {
+                tip.append("\n\n").append(details);
+            }
+            tip.append("\n\nПодвійний клік — копіювати IP");
         }
-        return body;
+        return tip.toString();
     }
 }

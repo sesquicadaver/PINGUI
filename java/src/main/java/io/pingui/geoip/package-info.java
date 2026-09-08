@@ -16,7 +16,9 @@
  *       {@link io.pingui.geoip.YamlIpMetadataOverrides} for YAML CIDR overrides (P36-004), {@link
  *       io.pingui.geoip.MmdbIpMetadataProvider} for offline MMDB (P36-005), and {@link
  *       io.pingui.geoip.IpMetadataService} for precedence / bounded cache / atomic reload (P36-006),
- *       and {@link io.pingui.geoip.IpMetadataBootstrap} for CLI/bootstrap wiring (P36-007).
+ *       and {@link io.pingui.geoip.IpMetadataBootstrap} for CLI/bootstrap wiring (P36-007). GUI
+ *       labels use cache-only {@link io.pingui.ui.HopGeoLabels} / {@link io.pingui.ui.PingColor}
+ *       (P36-008).
  * </ul>
  */
 package io.pingui.geoip;

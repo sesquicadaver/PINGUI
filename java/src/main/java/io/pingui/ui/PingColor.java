@@ -1,8 +1,7 @@
 package io.pingui.ui;
 
 import io.pingui.dns.DnsResolver;
-import io.pingui.geoip.AsnLookup;
-import io.pingui.geoip.GeoCountry;
+import io.pingui.geoip.IpMetadata;
 import io.pingui.model.Models;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.HopStatsSummary;
@@ -51,9 +50,10 @@ public final class PingColor {
             return "Hop " + node.hop() + "\n*";
         }
         String rdnsLine = DnsResolver.labelLine(node.ip());
-        String countryLine = countryLine(node.ip());
-        String asnLine = AsnLookup.labelLine(node.ip());
-        String metaLines = rdnsLine + countryLine + asnLine;
+        IpMetadata meta = HopGeoLabels.cachedOrOffer(node.ip());
+        String geoCompact = HopGeoLabels.compactLine(node.ip(), meta);
+        String geoLine = geoCompact.isEmpty() ? "" : "\n" + geoCompact;
+        String metaLines = rdnsLine + geoLine;
         String statsLine = statsLine(node.hop(), hopStatsFn);
         String displayIp = HopDisplay.formatHopIp(node.ip());
         Double avg = avgPingFn.apply(node.ip());
@@ -68,11 +68,6 @@ public final class PingColor {
             return "Hop " + node.hop() + "\n" + displayIp + metaLines + statsLine;
         }
         return "Hop " + node.hop() + "\n" + displayIp;
-    }
-
-    private static String countryLine(String ip) {
-        String code = GeoCountry.lookup(ip);
-        return code != null ? "\n" + code : "";
     }
 
     private static String statsLine(int hop, Function<Integer, HopStatsSummary> hopStatsFn) {
