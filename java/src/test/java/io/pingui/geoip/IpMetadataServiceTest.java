@@ -145,6 +145,11 @@ class IpMetadataServiceTest {
             }
             assertTrue(entered.await(5, TimeUnit.SECONDS));
             assertEquals(1, service.inFlightSizeForTests());
+            long coalesceDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+            while (service.opsStats().coalesced() < 1 && System.nanoTime() < coalesceDeadline) {
+                Thread.sleep(5);
+            }
+            assertTrue(service.opsStats().coalesced() >= 1, "waiters must coalesce before release");
             release.countDown();
             for (Future<IpMetadata> future : futures) {
                 assertEquals(

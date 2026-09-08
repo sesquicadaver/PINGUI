@@ -1,9 +1,11 @@
 package io.pingui.ui;
 
+import io.pingui.model.Models.HopNode;
 import io.pingui.monitor.RouteChangeEvent;
 import io.pingui.monitor.SessionStore;
 import java.util.List;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javafx.scene.control.ListView;
 
@@ -14,6 +16,7 @@ final class RouteGraphPresenter {
     private final Supplier<SessionStore> store;
     private final BooleanSupplier extendedView;
     private final BooleanSupplier easterEggActive;
+    private final Consumer<String> geoStrip;
     private RouteChangeEvent replayEvent;
 
     RouteGraphPresenter(
@@ -21,12 +24,14 @@ final class RouteGraphPresenter {
             ListView<HostItem> hostList,
             Supplier<SessionStore> store,
             BooleanSupplier extendedView,
-            BooleanSupplier easterEggActive) {
+            BooleanSupplier easterEggActive,
+            Consumer<String> geoStrip) {
         this.graphCanvas = graphCanvas;
         this.hostList = hostList;
         this.store = store;
         this.extendedView = extendedView;
         this.easterEggActive = easterEggActive;
+        this.geoStrip = geoStrip != null ? geoStrip : text -> {};
     }
 
     void redrawIfExtended() {
@@ -39,15 +44,17 @@ final class RouteGraphPresenter {
         if (replayEvent != null) {
             if (selected != null && replayEvent.host().equals(selected.getHost())) {
                 // Replay uses reachable IP sequences from RouteChangeEvent (timeouts not stored).
-                List<io.pingui.model.Models.HopNode> newRoute = RouteHistoryPresenter.ipsToRoute(replayEvent.newIps());
-                List<io.pingui.model.Models.HopNode> oldRoute = RouteHistoryPresenter.ipsToRoute(replayEvent.oldIps());
+                List<HopNode> newRoute = RouteHistoryPresenter.ipsToRoute(replayEvent.newIps());
+                List<HopNode> oldRoute = RouteHistoryPresenter.ipsToRoute(replayEvent.oldIps());
                 graphCanvas.renderRoute(newRoute, ip -> null, oldRoute, hop -> null);
+                geoStrip.accept(HopGeoLabels.formatStrip(newRoute));
                 return;
             }
             replayEvent = null;
         }
         if (selected == null) {
             graphCanvas.renderRoute(java.util.List.of(), ip -> null, java.util.List.of());
+            geoStrip.accept("");
             return;
         }
         String host = selected.getHost();
@@ -56,11 +63,13 @@ final class RouteGraphPresenter {
         var previous = session.inactiveRoute(host);
         graphCanvas.renderRoute(
                 current, ip -> session.avgPing(host, ip), previous, hop -> session.hopStatsSummary(host, hop));
+        geoStrip.accept(HopGeoLabels.formatStrip(current));
     }
 
     void showStaticMessage(String message) {
         replayEvent = null;
         graphCanvas.renderStaticView(message);
+        geoStrip.accept("");
     }
 
     void replayRouteChange(RouteChangeEvent event) {

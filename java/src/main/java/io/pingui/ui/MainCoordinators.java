@@ -120,7 +120,8 @@ final class MainCoordinators {
                 wiring.mainView.hostList(),
                 wiring.store,
                 () -> viewMode.isExtended(),
-                wiring.easterEggActive);
+                wiring.easterEggActive,
+                wiring.mainView.routeGraphPanel()::setGeoStrip);
         EasterEggController easterEgg = new EasterEggController(
                 wiring.mainView, viewMode, routeGraph, stageGeometry::ensureExtendedStageGeometry);
         HostListPresenter hostList = new HostListPresenter(

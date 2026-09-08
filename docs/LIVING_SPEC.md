@@ -20,6 +20,7 @@
 | MMDB City/Country + ASN (P36-005) | `MmdbIpMetadataProvider`, `MmdbDatabaseInfo` | `MmdbIpMetadataProviderTest` (City/Country/ASN fixtures, wrong edition, corrupt) |
 | Bounded enrichment service (P36-006) | `IpMetadataService`, `GeoIpOpsStats` | `IpMetadataServiceTest` (precedence, LRU, negative, offer reject, atomic reload) |
 | GeoIP bootstrap/CLI (P36-007) | `IpMetadataBootstrap`, `AppOptions` | `IpMetadataBootstrapTest`, `PinguiApplicationTest` geoip flags |
+| GeoIP GUI (P36-008) | `HopGeoLabels`, `PingColor`, `RouteGraphPanel` strip | `PingColorTest`, `HopGeoLabelsTest` |
 | YAML profiles v2 + legacy | `ProfilesConfig`, `ProfileDocument` | `ProfilesConfigTest` (host flags, type errors, save max hosts), `ProfileDocumentTest` |
 | CLI override профілю | `CliProfileOverrides`, `PinguiApplication` | `PinguiApplicationTest` |
 | Monitor polling | `MonitorService`, `RoutePoller`, `ExpertPingEnricher` | `MonitorServiceTest`, `ExpertPingEnricherTest` (stub ping) |
@@ -127,7 +128,7 @@
 | Correctness MTR/projection (P33) | P33-001…008 [x]; phase closed | [pingui-correctness.md](pingui-correctness.md) — архів |
 | Correctness follow-up (P34) | P34-001…010 [x]; phase closed | [pingui-route-persistence.md](pingui-route-persistence.md) — **архів**; soak/fault matrix |
 | Unattended NOC (P35) | closed P35-001…010 [x] | [pingui-unattended.md](pingui-unattended.md) |
-| GeoIP / IP metadata (P36) | NEXT=**P36-008**; P36-001…007 [x]; queue P36-008…012 | [pingui-geoip.md](pingui-geoip.md) |
+| GeoIP / IP metadata (P36) | NEXT=**P36-009**; P36-001…008 [x]; queue P36-009…012 | [pingui-geoip.md](pingui-geoip.md) |
 | TRACE real target identity (P35-001) | `TraceTargetIp`, `ProcessRouteProbe`, `RouteChangeDetector.targetReached` | `TraceTargetIpTest`, `RouteChangeDetectorTest.targetReachedFalseWhenOnlyIntermediateRouterReachable` |
 | MTR TARGET_UNKNOWN scope (P35-002) | `PollSampleScope.UNSAMPLED`, `RoutePoller.pollHostMtr`, `MtrProbe` backoff | `RoutePollerTest.pollHostMtrTargetUnknownIdleUsesUnsampledScope`, `MtrProbeTest.rediscoveryEntersBackoffThenRetries` |
 | Loss window semantics (P35-003) | `HopProbeStats` attempt window, `HopStats.lossPctInWindow` | `HopStatsTest.lossUsesSlidingWindowNotLifetimeCounters`, `lossInWindowRequiresTwoProbes` |
