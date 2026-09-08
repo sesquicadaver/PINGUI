@@ -109,7 +109,12 @@ class GeoCountryTest {
     @Test
     void ipv6PublicPrefixMatch() {
         assertEquals("US", GeoCountry.lookup("2001:4860:4860::8888"));
-        assertEquals("US", GeoCountry.lookup("2001:db8::1"));
+    }
+
+    @Test
+    void documentationIpv6HasNoCountryHint() {
+        // P36-001: 2001:db8::/32 must not map to a fake country.
+        assertNull(GeoCountry.lookup("2001:db8::1"));
     }
 
     @Test

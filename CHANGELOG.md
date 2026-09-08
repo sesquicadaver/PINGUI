@@ -18,6 +18,7 @@
 
 ### Changed
 
+- **P36-001 — GeoIP contract + country hints:** зафіксовано Java-only / offline-only / no probe blocking; `GeoCountry` позиціоновано як country hints; прибрано грубі `/8` і `2001:db8::/32→US` з defaults; NEXT→**P36-002**.
 - **P35-010 — Python lifecycle harden:** `QueueTelemetryEmitter.close` не drain-ить на caller при живому worker; daemon/GUI не закривають DB/sink під живим monitor; фаза 35 **NEXT=DONE**.
 - **P35-009 — route signature ≡ hops_json:** `RouteSignature.stabilize` — єдине hop-indexed джерело для signature і persisted hops_json; `fromHops` більше не вигадує hop-и поза snapshot; NEXT→**P35-010**.
 - **P35-008 — stuck-writer fault test:** `SessionPersistenceWriter.close` більше не викликає caller-side `drainRemaining` поки worker живий; тест `closeDoesNotCallerDrainWhileStuckWorkerAlive`; NEXT→**P35-009**.

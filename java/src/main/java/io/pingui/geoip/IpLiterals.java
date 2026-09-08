@@ -8,7 +8,7 @@ import java.net.UnknownHostException;
 /**
  * Parses IPv4/IPv6 address literals only — never performs DNS for hostnames.
  *
- * <p>Used by offline GeoIP/ASN label lookups so hop labels stay network-free.
+ * <p>Used by offline country/ASN <em>hints</em> so hop labels stay network-free (P36-001).
  */
 public final class IpLiterals {
     private IpLiterals() {}

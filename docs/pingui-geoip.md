@@ -10,7 +10,7 @@
 
 ## Висновок
 
-«GeoIP» у PINGUI зараз — лише статичні **country hints** (YAML CIDR → ISO), не повноцінна геолокація. Embedded defaults містять грубі `/8`, помилковий documentation IPv6 `2001:db8::/32 → US`, окремі `GeoCountry` / `AsnLookup`, а Python-карта будує лінію з центроїдів країн + штучний jitter.
+«GeoIP» у PINGUI зараз — лише статичні **country hints** (YAML CIDR → ISO), не повноцінна геолокація. Після P36-001 embedded/defaults містять лише тісні public-DNS префікси; грубі `/8` і помилковий documentation IPv6 `2001:db8::/32 → US` прибрані. Окремі `GeoCountry` / `AsnLookup` тимчасові до `IpMetadata*`. Python-карта (центроїди + jitter) — legacy, не розширюється в P36.
 
 **Ціль фази:** локальна MMDB (Country/City + ASN) + YAML override + bounded enrichment поза probe-path; Java-only; без мережевих lookup під час моніторингу; без роздування `poll_result` / SQLite schema.
 
@@ -18,7 +18,7 @@
 
 | ID | Пріоритет | Задача | DoD (коротко) |
 |----|-----------|--------|---------------|
-| **P36-001** | P0 | Контракт і межі | Java-only, offline-only, no probe blocking; rename «country hints» |
+| **P36-001** | P0 | Контракт і межі | [x] Java-only, offline-only, no probe blocking; «country hints» |
 | **P36-002** | P0 | `IpMetadata` + provider contract | Immutable, nullable fields, IPv4/IPv6 |
 | **P36-003** | P0 | Класифікація special IP | RFC1918, ULA, loopback, link-local, CGNAT, documentation → без фейкової країни |
 | **P36-004** | P1 | YAML override provider | Longest-prefix; старий формат сумісний; розширені поля |
@@ -30,6 +30,19 @@
 | **P36-010** | P2 | Observability | `/ops`, Prometheus, App Status |
 | **P36-011** | P2 | Fault / concurrency / performance | Stalled provider не затримує polling |
 | **P36-012** | P2 | Legacy/docs/package close | Python не розширено; docs parity; NEXT=`DONE` |
+
+## Контракт (P36-001) — зафіксовано
+
+| Інваріант | Зміст |
+|-----------|--------|
+| **Java-only** | Новий GeoIP/MMDB код лише в Java Pro; Python — legacy / bugfix-only. |
+| **Offline-only** | Жодного HTTP/whois/DNS для enrichment під час моніторингу; літерали через `IpLiterals`. |
+| **No probe blocking** | Enrichment не тримає `inFlight` і не ділить lock з probe/monitor (bounded service — P36-006+). |
+| **Назва** | Поточне API/CLI — **country hints** (не «повний GeoIP»); `GeoCountry` / `AsnLookup` — тимчасові. |
+| **Defaults** | Без грубих `/8` і без `2001:db8::/32 → country`; невідомий public IP → `null`/unknown. |
+| **Persistence** | Не розширювати `poll_result` GeoIP-колонками (фаза 36). |
+
+Код: `java/.../geoip/package-info.java`, `GeoCountry`, `config/geoip_hints.yaml`, `java/.../resources/geoip_hints.yaml`.
 
 ## Цільова архітектура
 

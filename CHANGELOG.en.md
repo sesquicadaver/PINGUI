@@ -18,6 +18,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P36-001 — GeoIP contract + country hints:** locked Java-only / offline-only / no probe blocking; positioned `GeoCountry` as country hints; removed coarse `/8` and `2001:db8::/32→US` from defaults; NEXT→**P36-002**.
 - **P35-010 — Python lifecycle harden:** `QueueTelemetryEmitter.close` skips caller drain while the worker is alive; daemon/GUI skip DB/sink close under a live monitor; phase 35 **NEXT=DONE**.
 - **P35-009 — route signature ≡ hops_json:** `RouteSignature.stabilize` is the single hop-indexed source for signature and persisted hops_json; `fromHops` no longer invents hops outside the snapshot; NEXT→**P35-010**.
 - **P35-008 — stuck-writer fault test:** `SessionPersistenceWriter.close` no longer caller-drains while the worker is alive; test `closeDoesNotCallerDrainWhileStuckWorkerAlive`; NEXT→**P35-009**.

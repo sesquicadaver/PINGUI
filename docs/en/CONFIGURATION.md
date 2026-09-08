@@ -210,11 +210,13 @@ Presence of a sink block (`sqlite` / `jsonl_dir` / `syslog` / `gelf` / `loki` / 
 Time-series push (`--ts-backend influx|timescale` + Influx/Timescale flags/env) is a separate channel; in Python (P16-052) it goes through `InfluxTelemetrySink` on the telemetry bus. See Time-series below.
 
 Webhook route alerts stay under `alerts.webhook` / `--alert-webhook` (P10); HTTP emit is `WebhookTelemetrySink` (P16-050), ADR_ALERTS payload unchanged.
-### GeoIP and map
+### GeoIP and country hints
+
+CLI names `--geoip-*` are kept for compatibility; functionally these are **country hints** (not full geolocation). Phase 36 contract: [pingui-geoip.md](pingui-geoip.md).
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `--geoip-hints` | Path | `config/geoip_hints.yaml` | CIDR→country for hop labels (`prefixes` v4, `prefixes_v6` v6) |
+| `--geoip-hints` | Path | `config/geoip_hints.yaml` | Country hints: CIDR→ISO for hop labels (`prefixes` v4, `prefixes_v6` v6); no coarse `/8` in defaults (P36-001) |
 | `--no-geoip` | flag | off | Disable country hints |
 | `--asn-hints` | Path | `config/asn_hints.yaml` | CIDR→ASN+org for hop labels (`{asn, org}`) |
 | `--no-asn` | flag | off | Disable ASN hints |

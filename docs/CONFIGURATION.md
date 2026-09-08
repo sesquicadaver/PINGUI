@@ -210,11 +210,13 @@ profiles:
 Time-series push (`--ts-backend influx|timescale` + Influx/Timescale flags/env) — окремий канал; у Python (P16-052) йде через `InfluxTelemetrySink` з telemetry bus. Див. секцію Time-series нижче.
 
 Webhook route alerts лишаються в `alerts.webhook` / `--alert-webhook` (P10); HTTP emit — `WebhookTelemetrySink` (P16-050), payload ADR_ALERTS без змін.
-### GeoIP і карта
+### GeoIP і country hints
+
+CLI-назви `--geoip-*` збережені для сумісності; функціонально це **country hints** (не повна геолокація). Контракт фази 36: [pingui-geoip.md](pingui-geoip.md).
 
 | Опція | Тип | За замовч. | Опис |
 |-------|-----|------------|------|
-| `--geoip-hints` | Path | `config/geoip_hints.yaml` | CIDR→country для міток hop (`prefixes` v4, `prefixes_v6` v6) |
+| `--geoip-hints` | Path | `config/geoip_hints.yaml` | Country hints: CIDR→ISO для міток hop (`prefixes` v4, `prefixes_v6` v6); без грубих `/8` у defaults (P36-001) |
 | `--no-geoip` | flag | off | Вимкнути country hints |
 | `--asn-hints` | Path | `config/asn_hints.yaml` | CIDR→ASN+org для міток hop (`{asn, org}`) |
 | `--no-asn` | flag | off | Вимкнути ASN hints |
