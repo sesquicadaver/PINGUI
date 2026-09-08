@@ -1,5 +1,6 @@
 package io.pingui.geoip;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -22,5 +23,12 @@ class IpLiteralsTest {
         assertNull(IpLiterals.parseLiteralOrNull("example.com"));
         assertNull(IpLiterals.parseLiteralOrNull(""));
         assertNull(IpLiterals.parseLiteralOrNull(null));
+    }
+
+    @Test
+    void canonicalLiteralOrNullNormalizesBrackets() {
+        assertEquals("8.8.8.8", IpLiterals.canonicalLiteralOrNull(" 8.8.8.8 "));
+        assertNotNull(IpLiterals.canonicalLiteralOrNull("[2001:4860:4860::8888]"));
+        assertNull(IpLiterals.canonicalLiteralOrNull("dns.google"));
     }
 }

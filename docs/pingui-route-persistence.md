@@ -2,7 +2,7 @@
 
 # Correctness follow-up — route / target / persistence (P34)
 
-> **Архів:** фаза 34 **closed** (P34-001…010). Актуальний ROADMAP **NEXT=P36-002** — [pingui-geoip.md](pingui-geoip.md). Correctness: [pingui-correctness.md](pingui-correctness.md). Stabilization: [pingui-stabilization.md](pingui-stabilization.md).
+> **Архів:** фаза 34 **closed** (P34-001…010). Актуальний ROADMAP **NEXT=P36-003** — [pingui-geoip.md](pingui-geoip.md). Correctness: [pingui-correctness.md](pingui-correctness.md). Stabilization: [pingui-stabilization.md](pingui-stabilization.md).
 
 **Джерело для фази 34.** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
 
@@ -50,7 +50,7 @@ P32/P33 суттєво покращили проєкт (fresh-hop, span, tri-sta
 
 **Зроблено:**
 
-* ROADMAP **NEXT=P36-002**; усі P34-001…010 `[x]`; індекс фаз ✅ DONE;
+* ROADMAP **NEXT=P36-003**; усі P34-001…010 `[x]`; індекс фаз ✅ DONE;
 * матриця 8 soak/fault сценаріїв → тести (вище);
 * rename control-lane під telemetry overflow покрито тестом;
 * цей документ — архівний банер; LIVING_SPEC + JAVA + docs index.

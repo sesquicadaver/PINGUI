@@ -8,7 +8,8 @@ import java.net.UnknownHostException;
 /**
  * Parses IPv4/IPv6 address literals only — never performs DNS for hostnames.
  *
- * <p>Used by offline country/ASN <em>hints</em> so hop labels stay network-free (P36-001).
+ * <p>Used by offline country/ASN <em>hints</em> and {@link IpMetadataProvider} so enrichment stays
+ * network-free (P36-001 / P36-002).
  */
 public final class IpLiterals {
     private IpLiterals() {}
@@ -43,6 +44,17 @@ public final class IpLiterals {
         } catch (UnknownHostException ex) {
             return null;
         }
+    }
+
+    /**
+     * Canonical host-address form for a literal, or {@code null} when not a literal.
+     *
+     * <p>Uses {@link InetAddress#getHostAddress()} (no reverse DNS). Bracketed IPv6 input is
+     * accepted; output is without brackets.
+     */
+    public static String canonicalLiteralOrNull(String raw) {
+        InetAddress parsed = parseLiteralOrNull(raw);
+        return parsed == null ? null : parsed.getHostAddress();
     }
 
     private static String stripBrackets(String value) {
