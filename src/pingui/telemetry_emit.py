@@ -1,4 +1,4 @@
-"""Optional telemetry emit surface for the Python monitor loop (P16-013)."""
+"""Optional telemetry emit surface for the Python monitor loop (P16-013 / P35-010)."""
 
 from __future__ import annotations
 
@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 
 SampleHandler = Callable[[MetricSample], None]
 EventHandler = Callable[[TelemetryEvent], None]
+
+# Default join budget before treating the emit worker as stuck (P35-010).
+DEFAULT_CLOSE_JOIN_TIMEOUT = 5.0
 
 
 class TelemetryEmitter(Protocol):
@@ -40,6 +43,9 @@ class QueueTelemetryEmitter:
     Bounded async emitter (Python parity with Java TelemetryBus DROP_OLDEST).
 
     ``offer_*`` never blocks the poll thread; overflow drops the oldest queued item.
+
+    ``close()`` joins the worker; if it is still alive after the join budget, caller-side
+    drain is skipped so dispatch cannot race in parallel with a stuck worker (P35-010).
     """
 
     def __init__(
@@ -48,9 +54,13 @@ class QueueTelemetryEmitter:
         capacity: int = 8192,
         on_sample: SampleHandler | None = None,
         on_event: EventHandler | None = None,
+        close_join_timeout: float = DEFAULT_CLOSE_JOIN_TIMEOUT,
     ) -> None:
         if capacity < 1:
             msg = "capacity must be >= 1"
+            raise ValueError(msg)
+        if close_join_timeout <= 0:
+            msg = "close_join_timeout must be > 0"
             raise ValueError(msg)
         self._queue: Queue[tuple[str, MetricSample | TelemetryEvent]] = Queue(maxsize=capacity)
         self._on_sample = on_sample
@@ -58,6 +68,7 @@ class QueueTelemetryEmitter:
         self._dropped = 0
         self._lock = threading.Lock()
         self._running = True
+        self._close_join_timeout = close_join_timeout
         self._thread = threading.Thread(target=self._run, name="pingui-telemetry-emit", daemon=True)
         self._thread.start()
 
@@ -65,6 +76,10 @@ class QueueTelemetryEmitter:
     def dropped_count(self) -> int:
         with self._lock:
             return self._dropped
+
+    def worker_alive(self) -> bool:
+        """True while the background emit thread has not terminated (P35-010)."""
+        return self._thread.is_alive()
 
     def offer_sample(self, sample: MetricSample) -> bool:
         return self._offer(("sample", sample))
@@ -74,7 +89,14 @@ class QueueTelemetryEmitter:
 
     def close(self) -> None:
         self._running = False
-        self._thread.join(timeout=5.0)
+        self._thread.join(timeout=self._close_join_timeout)
+        if self._thread.is_alive():
+            # Prefer leaving leftovers queued over parallel dispatch with a stuck worker.
+            logger.error(
+                "Telemetry emit worker did not stop within %.1fs; skipping caller drain while worker alive",
+                self._close_join_timeout,
+            )
+            return
         while True:
             try:
                 kind, payload = self._queue.get_nowait()
