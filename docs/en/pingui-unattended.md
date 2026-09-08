@@ -2,6 +2,8 @@
 
 # Unattended NOC — probe identity / loss / persistence (P35)
 
+> **Archive:** phase 35 **closed** (P35-001…010). Authoritative ROADMAP **NEXT=P36-001** — [pingui-geoip.md](pingui-geoip.md).
+
 **Source for phase 35.** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
 
 Audit of `main`≡`beta` @ `a1ee5aa` (2026-09-07, after P34-010). Canonical in-repo copy of the external `pingui-current` findings.
