@@ -91,6 +91,9 @@ def test_run_headless_monitor_cleanup_is_idempotent(tmp_path) -> None:
         def is_running(self) -> bool:
             return self._running
 
+        def is_alive(self) -> bool:
+            return False
+
     with patch("pingui.monitor.daemon_runner.MonitorLoop", ImmediateStopLoop):
         assert (
             run_headless_monitor(
@@ -103,4 +106,53 @@ def test_run_headless_monitor_cleanup_is_idempotent(tmp_path) -> None:
             )
             == 0
         )
+    assert not pid_path.exists()
+
+
+def test_run_headless_skips_db_close_while_monitor_alive(tmp_path) -> None:
+    """P35-010: stuck monitor join must not close SessionStore/DB under a live worker."""
+    db_path = tmp_path / "stuck.db"
+    pid_path = tmp_path / "stuck.pid"
+    close_calls: list[str] = []
+
+    class StuckLoop:
+        def __init__(self, **_kwargs: object) -> None:
+            self._running = True
+
+        def start(self) -> None:
+            self._running = False
+
+        def stop(self) -> None:
+            self._running = False
+
+        def join(self, timeout: float | None = None) -> None:
+            return None
+
+        def is_running(self) -> bool:
+            return self._running
+
+        def is_alive(self) -> bool:
+            return True
+
+    with (
+        patch("pingui.monitor.daemon_runner.MonitorLoop", StuckLoop),
+        patch.object(
+            SessionStore,
+            "close",
+            autospec=True,
+            side_effect=lambda self: close_calls.append("store"),
+        ),
+    ):
+        assert (
+            run_headless_monitor(
+                ["8.8.8.8"],
+                interval_seconds=1.0,
+                max_hops=5,
+                timeout=1.0,
+                session_db_path=db_path,
+                pid_file=pid_path,
+            )
+            == 0
+        )
+    assert close_calls == []
     assert not pid_path.exists()

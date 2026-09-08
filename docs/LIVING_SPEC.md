@@ -120,7 +120,7 @@
 | Stabilization MTR/history (P32) | phase closed [x] | [pingui-stabilization.md](pingui-stabilization.md) — **архів**; P32-008 [x] |
 | Correctness MTR/projection (P33) | P33-001…008 [x]; phase closed | [pingui-correctness.md](pingui-correctness.md) — архів |
 | Correctness follow-up (P34) | P34-001…010 [x]; phase closed | [pingui-route-persistence.md](pingui-route-persistence.md) — **архів**; soak/fault matrix |
-| Unattended NOC (P35) | NEXT=**P35-010**; P35-001…009 [x] | [pingui-unattended.md](pingui-unattended.md) |
+| Unattended NOC (P35) | NEXT=**DONE**; P35-001…010 [x] | [pingui-unattended.md](pingui-unattended.md) |
 | TRACE real target identity (P35-001) | `TraceTargetIp`, `ProcessRouteProbe`, `RouteChangeDetector.targetReached` | `TraceTargetIpTest`, `RouteChangeDetectorTest.targetReachedFalseWhenOnlyIntermediateRouterReachable` |
 | MTR TARGET_UNKNOWN scope (P35-002) | `PollSampleScope.UNSAMPLED`, `RoutePoller.pollHostMtr`, `MtrProbe` backoff | `RoutePollerTest.pollHostMtrTargetUnknownIdleUsesUnsampledScope`, `MtrProbeTest.rediscoveryEntersBackoffThenRetries` |
 | Loss window semantics (P35-003) | `HopProbeStats` attempt window, `HopStats.lossPctInWindow` | `HopStatsTest.lossUsesSlidingWindowNotLifetimeCounters`, `lossInWindowRequiresTwoProbes` |
@@ -136,7 +136,7 @@
 | loss/jitter/rollup (P34-006) | `PollResultEffects`, rollup availability | `PollResultEffectsTest` (loss NULL / jitter window / target_sampled) |
 | Bounded DNS + ops (P34-007) | `BoundedForwardDnsLookup`, `DnsOpsStats`, App Status, `/ops`, Prometheus | `BoundedForwardDnsLookupTest`, `AppStatusFormatTest.monitoringAppendsDnsPressure`, `ReadOnlyApiContractTest.opsDocumentExposesDnsCounters`, `PrometheusExporterTest.scrapeIncludesLiveDnsOpsSupplier` |
 | v12 migration repair (P34-008) | `SchemaManager.migrateV12ToV13`, `repairPollResultProbeErrorTriState`, CLI `--repair-poll-result` | `SessionDatabaseMetricRollupTest.migratesV12PollResultAndRollupToV14`, `repairsLegacyProbeErrorTriStateOnAlreadyV14Db`, `PinguiApplicationTest.parseOptions_repairPollResult*` |
-| Python compatibility (P34-009) | `src/pingui/` bugfix-only lock; idempotent `SessionDatabase.close`; daemon `atexit`; `__version__`↔`pyproject` | `test_version.py`, `test_session_db.py` (idempotent close), `test_daemon_runner.py` |
+| Python compatibility (P34-009 / P35-010) | `src/pingui/` bugfix-only lock; idempotent close; no DB close under live worker | `test_version.py`, `test_session_db.py`, `test_daemon_runner.py`, `test_monitor_telemetry.py` (stuck close) |
 | Soak/docs sync (P34-010) | regression matrix + phase 34 closed | [pingui-route-persistence.md](pingui-route-persistence.md) § matrix; README/ROADMAP |
 | Runtime hardening follow-up (P28) | SinkRegistry hang [x]; inFlight before pool [x]; Python schema `!=` gate [x] | фаза 28 closed |
 | Diagnostic evolution (P29) | multi-host correlation [x]; incident timeline [x]; alert silence [x]; DNS control [x]; TCP connect [x] | NEXT=`DONE`; Java-first |
