@@ -18,6 +18,7 @@ Module → unit test matrix. Update when adding features.
 | Special-IP classification (P36-003) | `IpAddressClassifier`, `GeoCountry`, `IpLiterals` | `IpAddressClassifierTest`, `GeoCountryTest.specialRangesNeverGetCountry*`, IPv4-mapped literals |
 | YAML IP metadata overrides (P36-004) | `YamlIpMetadataOverrides` | `YamlIpMetadataOverridesTest` (legacy + extended, longest-prefix, private coords) |
 | MMDB City/Country + ASN (P36-005) | `MmdbIpMetadataProvider`, `MmdbDatabaseInfo` | `MmdbIpMetadataProviderTest` (City/Country/ASN fixtures, wrong edition, corrupt) |
+| Bounded enrichment service (P36-006) | `IpMetadataService`, `GeoIpOpsStats` | `IpMetadataServiceTest` (precedence, LRU, negative, offer reject, atomic reload) |
 | YAML profiles v2 + legacy | `ProfilesConfig`, `ProfileDocument` | `ProfilesConfigTest` (host flags, type errors, save max hosts), `ProfileDocumentTest` |
 | CLI profile override | `CliProfileOverrides`, `PinguiApplication` | `PinguiApplicationTest` |
 | Monitor polling | `MonitorService`, `RoutePoller`, `ExpertPingEnricher` | `MonitorServiceTest`, `ExpertPingEnricherTest` (stub ping) |
@@ -125,7 +126,7 @@ Module → unit test matrix. Update when adding features.
 | Correctness MTR/projection (P33) | P33-001…008 [x]; phase closed | [pingui-correctness.md](pingui-correctness.md) — archival |
 | Correctness follow-up (P34) | P34-001…010 [x]; phase closed | [pingui-route-persistence.md](pingui-route-persistence.md) — archival; soak/fault matrix |
 | Unattended NOC (P35) | closed P35-001…010 [x] | [pingui-unattended.md](pingui-unattended.md) |
-| GeoIP / IP metadata (P36) | NEXT=**P36-006**; P36-001…005 [x]; queue P36-006…012 | [pingui-geoip.md](pingui-geoip.md) |
+| GeoIP / IP metadata (P36) | NEXT=**P36-007**; P36-001…006 [x]; queue P36-007…012 | [pingui-geoip.md](pingui-geoip.md) |
 | TRACE real target identity (P35-001) | `TraceTargetIp`, `ProcessRouteProbe`, `RouteChangeDetector.targetReached` | `TraceTargetIpTest`, `RouteChangeDetectorTest.targetReachedFalseWhenOnlyIntermediateRouterReachable` |
 | MTR TARGET_UNKNOWN scope (P35-002) | `PollSampleScope.UNSAMPLED`, `RoutePoller.pollHostMtr`, `MtrProbe` backoff | `RoutePollerTest.pollHostMtrTargetUnknownIdleUsesUnsampledScope`, `MtrProbeTest.rediscoveryEntersBackoffThenRetries` |
 | Loss window semantics (P35-003) | `HopProbeStats` attempt window, `HopStats.lossPctInWindow` | `HopStatsTest.lossUsesSlidingWindowNotLifetimeCounters`, `lossInWindowRequiresTwoProbes` |

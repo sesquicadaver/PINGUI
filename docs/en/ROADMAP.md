@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P36-006** |
+| **Current task** | **P36-007** |
 | **Phase** | 36 — GeoIP / IP metadata (offline enrichment) |
-| **DoD (short)** | Bounded enrichment service: cache, dedupe, negative, atomic reload |
+| **DoD (short)** | Bootstrap and CLI: `--geoip-db` / asn / hints / `--no-geoip` |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -220,7 +220,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 174 | **P36-003** | [x] | Special-IP classification |
 | 175 | **P36-004** | [x] | YAML override provider |
 | 176 | **P36-005** | [x] | MMDB City/Country + ASN |
-| 177 | **P36-006** | [ ] | Bounded enrichment service |
+| 177 | **P36-006** | [x] | Bounded enrichment service |
 | 178 | **P36-007** | [ ] | Bootstrap and CLI |
 | 179 | **P36-008** | [ ] | GUI integration |
 | 180 | **P36-009** | [ ] | Event/API/export enrichment |
@@ -228,7 +228,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 182 | **P36-011** | [ ] | Fault / concurrency / performance |
 | 183 | **P36-012** | [ ] | Legacy/docs/package close |
 
-**Queue status:** **NEXT = P36-006** (phase 36; [pingui-geoip.md](pingui-geoip.md)).
+**Queue status:** **NEXT = P36-007** (phase 36; [pingui-geoip.md](pingui-geoip.md)).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -1134,7 +1134,7 @@ flowchart TD
 
 **Context:** [pingui-geoip.md](pingui-geoip.md). After P35 — replace country hints with local MMDB + YAML override; enrichment off the probe path. Java-only.
 
-**Queue:** after P35; **NEXT = P36-006**.
+**Queue:** after P35; **NEXT = P36-007**.
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
@@ -1143,7 +1143,7 @@ flowchart TD
 | **P36-003** | [x] Special-IP classification | `IpAddressClassifier`, `GeoCountry`, `IpLiterals` | RFC1918, ULA, loopback, link-local, CGNAT, documentation; NEXT→P36-004 |
 | **P36-004** | [x] YAML override provider | `YamlIpMetadataOverrides` | Longest-prefix; legacy + extended YAML; NEXT→P36-005 |
 | **P36-005** | [x] MMDB City/Country + ASN | `MmdbIpMetadataProvider`, `MmdbDatabaseInfo`, geoip2 | Type + build epoch; official reader; NEXT→P36-006 |
-| **P36-006** | [ ] Bounded enrichment service | `IpMetadataService` | Cache, dedupe, negative, atomic reload |
+| **P36-006** | [x] Bounded enrichment service | `IpMetadataService`, `GeoIpOpsStats` | Cache, dedupe, negative, atomic reload; NEXT→P36-007 |
 | **P36-007** | [ ] Bootstrap and CLI | `AppOptions`, `PinguiApplication` | `--geoip-db` / asn / hints / `--no-geoip` |
 | **P36-008** | [ ] GUI integration | `PingColor`, hop details, route strip | Cache-only render |
 | **P36-009** | [ ] Event/API/export | route_change detail, `/routes?include=geo` | Backward-compatible; no schema change |
@@ -1239,7 +1239,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P36-006**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P36-007**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 
