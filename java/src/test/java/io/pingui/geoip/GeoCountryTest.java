@@ -83,13 +83,13 @@ class GeoCountryTest {
                 hints,
                 """
                 prefixes:
-                  203.0.113.0/24: AA
-                  203.0.113.0/28: BB
+                  41.41.41.0/24: AA
+                  41.41.41.0/28: BB
                 """,
                 java.nio.charset.StandardCharsets.UTF_8);
         GeoCountry.configure(true, hints);
-        assertEquals("BB", GeoCountry.lookup("203.0.113.10"));
-        assertEquals("AA", GeoCountry.lookup("203.0.113.200"));
+        assertEquals("BB", GeoCountry.lookup("41.41.41.10"));
+        assertEquals("AA", GeoCountry.lookup("41.41.41.200"));
     }
 
     @Test
@@ -113,8 +113,28 @@ class GeoCountryTest {
 
     @Test
     void documentationIpv6HasNoCountryHint() {
-        // P36-001: 2001:db8::/32 must not map to a fake country.
+        // P36-001 / P36-003: 2001:db8::/32 must not map to a fake country.
         assertNull(GeoCountry.lookup("2001:db8::1"));
+    }
+
+    @Test
+    void specialRangesNeverGetCountryEvenWithHints(@TempDir Path tempDir) throws Exception {
+        Path hints = tempDir.resolve("hints.yaml");
+        java.nio.file.Files.writeString(
+                hints,
+                """
+                prefixes:
+                  203.0.113.0/24: XX
+                  100.64.0.0/10: YY
+                prefixes_v6:
+                  2001:db8::/32: ZZ
+                """,
+                java.nio.charset.StandardCharsets.UTF_8);
+        GeoCountry.configure(true, hints);
+        assertNull(GeoCountry.lookup("203.0.113.10"));
+        assertNull(GeoCountry.lookup("100.64.1.1"));
+        assertNull(GeoCountry.lookup("2001:db8::1"));
+        assertEquals("LAN", GeoCountry.lookup("10.0.0.1"));
     }
 
     @Test
@@ -126,20 +146,20 @@ class GeoCountryTest {
                 prefixes:
                   8.8.8.0/24: US
                 prefixes_v6:
-                  2001:db8:1::/64: PL
+                  2001:4860:4860::/64: PL
                 """,
                 java.nio.charset.StandardCharsets.UTF_8);
         GeoCountry.configure(true, hints);
-        assertEquals("PL", GeoCountry.lookup("2001:db8:1::42"));
+        assertEquals("PL", GeoCountry.lookup("2001:4860:4860::42"));
     }
 
     @Test
     void v6OnlyHintsFile(@TempDir Path tempDir) throws Exception {
         Path hints = tempDir.resolve("hints.yaml");
         java.nio.file.Files.writeString(
-                hints, "prefixes_v6:\n  2001:db8:1::/64: PL\n", java.nio.charset.StandardCharsets.UTF_8);
+                hints, "prefixes_v6:\n  2001:4860:4860::/64: PL\n", java.nio.charset.StandardCharsets.UTF_8);
         GeoCountry.configure(true, hints);
-        assertEquals("PL", GeoCountry.lookup("2001:db8:1::42"));
+        assertEquals("PL", GeoCountry.lookup("2001:4860:4860::42"));
         assertNull(GeoCountry.lookup("8.8.8.8"));
     }
 

@@ -2,7 +2,7 @@
 
 # Correctness — MTR / projection / side-effects (P33)
 
-> **Archival:** phase 33 **closed** (P33-001…008). Phase 34 also **closed** — [pingui-route-persistence.md](pingui-route-persistence.md). Authoritative ROADMAP **NEXT=P36-003** — [pingui-geoip.md](pingui-geoip.md). Stabilization: [pingui-stabilization.md](pingui-stabilization.md).
+> **Archival:** phase 33 **closed** (P33-001…008). Phase 34 also **closed** — [pingui-route-persistence.md](pingui-route-persistence.md). Authoritative ROADMAP **NEXT=P36-004** — [pingui-geoip.md](pingui-geoip.md). Stabilization: [pingui-stabilization.md](pingui-stabilization.md).
 
 **Source for phase 33.** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
 
@@ -118,7 +118,7 @@ P32 landed well (fresh-hop, `target_sampled`, rollup v14, bounded DNS/webhook te
 
 **Done:**
 
-* ROADMAP **NEXT=P36-003**; all P33-001…008 `[x]`; phase index ✅ DONE;
+* ROADMAP **NEXT=P36-004**; all P33-001…008 `[x]`; phase index ✅ DONE;
 * README no longer references stale P29-001;
 * `pingui-stabilization.md` / `pingui-correctness.md` — archival banners; LIVING_SPEC + JAVA + docs index.
 
