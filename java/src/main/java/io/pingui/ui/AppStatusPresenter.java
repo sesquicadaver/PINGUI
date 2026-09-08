@@ -118,7 +118,8 @@ final class AppStatusPresenter {
                         total,
                         lastCycleAt,
                         Instant.now(),
-                        service != null ? service.dnsOpsSnapshot() : null));
+                        service != null ? service.dnsOpsSnapshot() : null,
+                        io.pingui.geoip.IpMetadataRuntime.get().opsStats()));
     }
 
     /**

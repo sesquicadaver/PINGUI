@@ -155,6 +155,8 @@ public final class DaemonRunner implements AutoCloseable {
         if (monitor != null) {
             exporter.setDnsOpsSupplier(monitor::dnsOpsSnapshot);
         }
+        exporter.setGeoIpOpsSupplier(
+                () -> io.pingui.geoip.IpMetadataRuntime.get().opsStats());
         metricsServer = MetricsHttpServer.start(exporter, port.get());
         if (telemetry != null) {
             telemetry.registry().register(new PrometheusTelemetrySink(exporter));
@@ -169,7 +171,11 @@ public final class DaemonRunner implements AutoCloseable {
         if (port.isEmpty()) {
             return;
         }
-        apiServer = ReadOnlyApiServer.start(store, port.get(), monitor != null ? monitor::dnsOpsSnapshot : null);
+        apiServer = ReadOnlyApiServer.start(
+                store,
+                port.get(),
+                monitor != null ? monitor::dnsOpsSnapshot : null,
+                () -> io.pingui.geoip.IpMetadataRuntime.get().opsStats());
     }
 
     private void closeQuietly() {

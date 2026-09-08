@@ -27,6 +27,9 @@ class PrometheusExporterTest {
         assertTrue(text.contains("pingui_dns_queue_capacity 0"));
         assertTrue(text.contains("# TYPE pingui_dns_control_rejected_total counter"));
         assertTrue(text.contains("pingui_dns_control_queue_capacity 0"));
+        assertTrue(text.contains("# TYPE pingui_geoip_hits_total counter"));
+        assertTrue(text.contains("pingui_geoip_hits_total 0"));
+        assertTrue(text.contains("pingui_geoip_cache_capacity 0"));
     }
 
     @Test
@@ -48,6 +51,26 @@ class PrometheusExporterTest {
         assertTrue(text.contains("pingui_dns_control_queue_depth 6"));
         assertTrue(text.contains("pingui_dns_control_queue_capacity 32"));
         assertTrue(text.contains("pingui_dns_control_pending 2"));
+    }
+
+    @Test
+    void scrapeIncludesLiveGeoIpOpsSupplier() {
+        PrometheusExporter exporter = new PrometheusExporter();
+        exporter.setGeoIpOpsSupplier(
+                () -> new io.pingui.geoip.GeoIpOpsStats(12, 4096, 2, 64, 1, 50L, 9L, 3L, 1L, 4L, 6L, 2L, null));
+        String text = exporter.scrape();
+        assertTrue(text.contains("pingui_geoip_hits_total 50"));
+        assertTrue(text.contains("pingui_geoip_misses_total 9"));
+        assertTrue(text.contains("pingui_geoip_unknowns_total 3"));
+        assertTrue(text.contains("pingui_geoip_errors_total 1"));
+        assertTrue(text.contains("pingui_geoip_rejected_total 4"));
+        assertTrue(text.contains("pingui_geoip_coalesced_total 6"));
+        assertTrue(text.contains("pingui_geoip_reload_failures_total 2"));
+        assertTrue(text.contains("pingui_geoip_cache_size 12"));
+        assertTrue(text.contains("pingui_geoip_cache_capacity 4096"));
+        assertTrue(text.contains("pingui_geoip_queue_depth 2"));
+        assertTrue(text.contains("pingui_geoip_queue_capacity 64"));
+        assertTrue(text.contains("pingui_geoip_pending 1"));
     }
 
     @Test

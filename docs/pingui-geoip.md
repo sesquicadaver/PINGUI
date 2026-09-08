@@ -27,7 +27,7 @@
 | **P36-007** | P1 | Bootstrap і CLI | [x] `--geoip-db` / `--geoip-asn-db` / hints / `--no-geoip`; передбачувані помилки |
 | **P36-008** | P2 | GUI integration | [x] Cache-only rendering, tooltip/details, geographic route strip |
 | **P36-009** | P2 | Event/API/export enrichment | [x] `/routes?include=geo`; route_change `geo_diff`/`asn_diff` + `detail_json`; `--export-geo` |
-| **P36-010** | P2 | Observability | `/ops`, Prometheus, App Status |
+| **P36-010** | P2 | Observability | [x] `/ops` + Prometheus + App Status (`GeoIpOpsStats`) |
 | **P36-011** | P2 | Fault / concurrency / performance | Stalled provider не затримує polling |
 | **P36-012** | P2 | Legacy/docs/package close | Python не розширено; docs parity; NEXT=`DONE` |
 
@@ -58,7 +58,7 @@
 | `YamlIpMetadataOverrides` | Legacy `CIDR: US` + extended mapping; longest-prefix; source=`OVERRIDE` |
 | `MmdbIpMetadataProvider` | Official `DatabaseReader`; City/Country + optional ASN; `MmdbDatabaseInfo` (type + build epoch) |
 | `IpMetadataService` | Precedence YAML→MMDB→NONE; LRU+negative cache; offer/dedupe; atomic reload |
-| `GeoIpOpsStats` | Cache/queue/hit counters (full `/ops` wiring — P36-010) |
+| `GeoIpOpsStats` | Cache/queue/hit counters on `/ops`, Prometheus, App Status |
 | `IpMetadataBootstrap` | CLI → service; fail-fast on explicit broken MMDB |
 | `IpMetadataRuntime` | Process-wide install/get/close for GUI/daemon |
 | `HopGeoLabels` | Cache-only compact/details/strip; legacy GeoCountry/AsnLookup gap-fill |
