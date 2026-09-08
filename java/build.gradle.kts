@@ -29,6 +29,8 @@ dependencies {
     implementation("net.java.dev.jna:jna:5.15.0")
     implementation("net.java.dev.jna:jna-platform:5.15.0")
     implementation("org.xerial:sqlite-jdbc:3.47.2.0")
+    // Offline GeoIP/ASN MMDB (P36-005); databases are not shipped in Git.
+    implementation("com.maxmind.geoip2:geoip2:5.2.0")
     // Optional Timescale/PostgreSQL JDBC (P19-006): not on default runtime/jpackage classpath.
     compileOnly("org.postgresql:postgresql:42.7.4")
     testImplementation("org.postgresql:postgresql:42.7.4")

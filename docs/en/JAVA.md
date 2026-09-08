@@ -229,4 +229,4 @@ Tests and CI — on **`main`** and **`beta`** (ROADMAP development on `beta`).
 
 ## Future
 
-The linear ROADMAP queue: **NEXT = P36-005** (phase 36 — GeoIP / IP metadata). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT; [pingui-geoip.md](pingui-geoip.md). Archival P34: [pingui-route-persistence.md](pingui-route-persistence.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
+The linear ROADMAP queue: **NEXT = P36-006** (phase 36 — GeoIP / IP metadata). Details — [docs/en/ROADMAP.md](ROADMAP.md) § NEXT; [pingui-geoip.md](pingui-geoip.md). Archival P34: [pingui-route-persistence.md](pingui-route-persistence.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
