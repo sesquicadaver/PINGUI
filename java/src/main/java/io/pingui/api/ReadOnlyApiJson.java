@@ -1,13 +1,14 @@
 package io.pingui.api;
 
 import io.pingui.AppInfo;
+import io.pingui.geoip.RouteGeoEnrichment;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.HostSessionData;
 import io.pingui.monitor.SessionStore;
 import java.util.List;
 import java.util.Objects;
 
-/** JSON serializers for the read-only runbook API (P15-040). */
+/** JSON serializers for the read-only runbook API (P15-040 / P36-009). */
 final class ReadOnlyApiJson {
     private ReadOnlyApiJson() {}
 
@@ -35,6 +36,13 @@ final class ReadOnlyApiJson {
     }
 
     static String routeDocument(String host, List<HopNode> hops) {
+        return routeDocument(host, hops, false);
+    }
+
+    /**
+     * @param includeGeo when true, append nullable GeoIP fields per hop ({@code ?include=geo})
+     */
+    static String routeDocument(String host, List<HopNode> hops, boolean includeGeo) {
         Objects.requireNonNull(host, "host");
         Objects.requireNonNull(hops, "hops");
         StringBuilder json = new StringBuilder(128);
@@ -54,7 +62,11 @@ final class ReadOnlyApiJson {
             } else {
                 json.append(hop.pingMs());
             }
-            json.append(",\"timeout\":").append(hop.timeout()).append('}');
+            json.append(",\"timeout\":").append(hop.timeout());
+            if (includeGeo) {
+                RouteGeoEnrichment.appendHopGeoFields(json, RouteGeoEnrichment.resolveLiteral(hop.ip()));
+            }
+            json.append('}');
         }
         json.append("]}");
         return json.toString();
@@ -127,11 +139,18 @@ final class ReadOnlyApiJson {
                             "in": "path",
                             "required": true,
                             "schema": {"type": "string"}
+                          },
+                          {
+                            "name": "include",
+                            "in": "query",
+                            "required": false,
+                            "description": "Opt-in enrichment; use include=geo for nullable country/ASN fields (P36-009)",
+                            "schema": {"type": "string", "enum": ["geo"]}
                           }
                         ],
                         "responses": {
                           "200": {
-                            "description": "Route hops",
+                            "description": "Route hops (geo fields only when include=geo)",
                             "content": {
                               "application/json": {
                                 "schema": {"type": "object"}

@@ -68,14 +68,21 @@ class WebhookTelemetrySinkTest {
     }
 
     @Test
-    void formatMatchesRouteChangeEventToJson() {
+    void formatContainsAdrBasePlusOptionalGeoDiffs() {
         Instant ts = Instant.parse("2026-07-14T08:00:00Z");
         RouteChangeEvent event =
                 RouteChangeEvent.fromRouteChange("1.1.1.1", List.of("10.0.0.1"), List.of("1.1.1.1"), "noc", ts);
-        assertEquals(
-                event.toJson(),
-                WebhookTelemetrySink.formatRouteChangeAlertJson(
-                        event.host(), event.oldIps(), event.newIps(), event.timestamp(), event.profile()));
+        String enriched = WebhookTelemetrySink.formatRouteChangeAlertJson(
+                event.host(), event.oldIps(), event.newIps(), event.timestamp(), event.profile());
+        assertTrue(enriched.contains("\"event\":\"route_change\""));
+        assertTrue(enriched.contains("\"host\":\"1.1.1.1\""));
+        assertTrue(enriched.contains("\"geo_diff\""));
+        assertTrue(enriched.contains("\"asn_diff\""));
+        RouteChangeEvent parsed = RouteChangeEvent.fromJson(enriched);
+        assertEquals(event.host(), parsed.host());
+        assertEquals(event.oldIps(), parsed.oldIps());
+        assertEquals(event.newIps(), parsed.newIps());
+        assertEquals(event.profile(), parsed.profile());
     }
 
     @Test

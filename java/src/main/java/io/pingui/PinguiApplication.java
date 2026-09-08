@@ -189,6 +189,10 @@ public final class PinguiApplication extends Application {
         if (exportDir.isPresent() && exportSchedule.isEmpty()) {
             throw new IllegalArgumentException("--export-dir requires --export-schedule");
         }
+        boolean exportIncludeGeo = params.containsKey("export-geo");
+        if (exportIncludeGeo && exportReport.isEmpty()) {
+            throw new IllegalArgumentException("--export-geo requires --export-report PATH");
+        }
         Optional<Integer> metricsPort = Optional.empty();
         if (params.containsKey("metrics-port")) {
             int port = parseRequiredInt(params.get("metrics-port"), "--metrics-port");
@@ -347,6 +351,7 @@ public final class PinguiApplication extends Application {
                 exportReport,
                 exportSchedule,
                 exportDir,
+                exportIncludeGeo,
                 runMode,
                 pidFile,
                 metricsPort,
@@ -589,7 +594,7 @@ public final class PinguiApplication extends Application {
         Path reportPath = options.exportReportPath().orElseThrow();
         try (SessionDatabase database =
                 SessionDatabase.readOnly(options.sessionDbPath().orElseThrow())) {
-            SessionReportExporter.export(database, reportPath);
+            SessionReportExporter.export(database, reportPath, options.exportIncludeGeo());
             System.out.println("Session report written: " + reportPath.toAbsolutePath());
         } catch (IOException | RuntimeException ex) {
             failCli("Export failed: " + ex.getMessage());
@@ -789,6 +794,7 @@ public final class PinguiApplication extends Application {
                   --integrity-check        PRAGMA integrity_check and exit (needs --session-db)
                   --repair-poll-result     Fix probe-error poll_result tri-state (needs --session-db)
                   --export-report PATH  Export CSV/HTML from --session-db and exit (no GUI)
+                  --export-geo          With --export-report: append country/ASN columns (P36-009)
                   --export-schedule P   Cron one-shot: hourly|daily|weekly (with --export-dir)
                   --export-dir DIR      Output directory for --export-schedule (CSV+HTML stamped)
                   --daemon            Headless monitor loop (no JavaFX)

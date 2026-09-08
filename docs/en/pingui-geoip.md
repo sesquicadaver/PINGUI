@@ -26,7 +26,7 @@ What PINGUI calls “GeoIP” today is only static **country hints** (YAML CIDR 
 | **P36-006** | P1 | Bounded enrichment service | [x] Cache, dedupe, negative cache, atomic reload |
 | **P36-007** | P1 | Bootstrap and CLI | [x] `--geoip-db` / `--geoip-asn-db` / hints / `--no-geoip`; predictable errors |
 | **P36-008** | P2 | GUI integration | [x] Cache-only rendering, tooltip/details, geographic route strip |
-| **P36-009** | P2 | Event/API/export enrichment | Backward-compatible; no SQLite schema change |
+| **P36-009** | P2 | Event/API/export enrichment | [x] `/routes?include=geo`; route_change `geo_diff`/`asn_diff` + `detail_json`; `--export-geo` |
 | **P36-010** | P2 | Observability | `/ops`, Prometheus, App Status |
 | **P36-011** | P2 | Fault / concurrency / performance | Stalled provider must not delay polling |
 | **P36-012** | P2 | Legacy/docs/package close | Python not extended; docs parity; NEXT=`DONE` |
@@ -62,6 +62,7 @@ Code: `java/.../geoip/package-info.java`, `GeoCountry`, `config/geoip_hints.yaml
 | `IpMetadataBootstrap` | CLI → service; fail-fast on explicit broken MMDB |
 | `IpMetadataRuntime` | Process-wide install/get/close for GUI/daemon |
 | `HopGeoLabels` | Cache-only compact/details/strip; legacy GeoCountry/AsnLookup gap-fill |
+| `RouteGeoEnrichment` | API hop fields; webhook/persist `geo_diff`/`asn_diff`; enriched CSV/HTML |
 
 ## Target architecture
 

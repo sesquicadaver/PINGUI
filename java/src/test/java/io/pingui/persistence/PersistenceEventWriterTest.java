@@ -25,6 +25,25 @@ class PersistenceEventWriterTest {
     }
 
     @Test
+    void writesRouteChangeDetailJsonWithGeoDiff() throws Exception {
+        Path dbPath = tempDir.resolve("route-geo.db");
+        try (SessionDatabase database = new SessionDatabase(dbPath)) {
+            PersistenceEventWriter writer = new PersistenceEventWriter(database);
+            writer.writeRouteChange(RouteChangeEvent.fromRouteChange(
+                    "8.8.8.8",
+                    List.of("10.0.0.1"),
+                    List.of("8.8.8.8"),
+                    "office",
+                    Instant.parse("2026-09-08T12:00:00Z")));
+            PersistenceEventRecord row = database.listEvents(
+                            PersistenceEventType.ROUTE_CHANGE, "8.8.8.8", Instant.EPOCH, 10)
+                    .get(0);
+            assertTrue(row.detailJson().contains("geo_diff"));
+            assertTrue(row.detailJson().contains("asn_diff"));
+        }
+    }
+
+    @Test
     void skipsRouteChangeWhenPolicyDisabled() {
         Path dbPath = tempDir.resolve("policy.db");
         PersistencePolicyHolder holder = new PersistencePolicyHolder();

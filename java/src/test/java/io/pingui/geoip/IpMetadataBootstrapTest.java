@@ -123,6 +123,7 @@ class IpMetadataBootstrapTest {
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
+                false,
                 d.runMode(),
                 d.pidFilePath(),
                 Optional.empty(),
