@@ -2,7 +2,7 @@
 
 # Документація PINGUI
 
-На **`main`** і **`beta`** — повний пакет (Java Pro + Python) після merge; **`beta`** — гілка розробки, **`main`** — останній стабільний зріз. Лінійна черга ROADMAP: **NEXT = P36-006** (фаза 36 — [ROADMAP.md § NEXT](ROADMAP.md#next--єдине-джерело-правди)). «Гілки» — [README.md](../README.md).
+На **`main`** і **`beta`** — повний пакет (Java Pro + Python) після merge; **`beta`** — гілка розробки, **`main`** — останній стабільний зріз. Лінійна черга ROADMAP: **NEXT = P36-007** (фаза 36 — [ROADMAP.md § NEXT](ROADMAP.md#next--єдине-джерело-правди)). «Гілки» — [README.md](../README.md).
 
 ## Навігація
 
@@ -11,7 +11,7 @@
 | [CHECKLIST.md](CHECKLIST.md) | Адмін / DevOps | Checklist Linux / Windows / macOS |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Адмін / DevOps | JDK 21, venv, cap_net_raw, systemd |
 | [JAVA.md](JAVA.md) | Розробник | Probe, monitor, UI, YAML |
-| [ROADMAP.md](ROADMAP.md) | Розробник | Офіційний план: фази 0–36; NEXT=P36-006 |
+| [ROADMAP.md](ROADMAP.md) | Розробник | Офіційний план: фази 0–36; NEXT=P36-007 |
 | [pingui-evo-gui.md](pingui-evo-gui.md) | Розробник | GUI evolution (фаза 31) |
 | [pingui-geoip.md](pingui-geoip.md) | Розробник | GeoIP / IP metadata → фаза 36 (**активна**) |
 | [pingui-unattended.md](pingui-unattended.md) | Розробник | Unattended NOC → фаза 35 (**архів**) |

@@ -18,6 +18,7 @@
 
 ### Changed
 
+- **P36-006 — Bounded enrichment service:** `IpMetadataService` (YAML→MMDB→NONE, LRU+negative cache, offer/dedupe, atomic reload) + `GeoIpOpsStats`; NEXT→**P36-007**.
 - **P36-005 — MMDB City/Country + ASN:** `MmdbIpMetadataProvider` на офіційному `geoip2` `DatabaseReader`; type + build epoch; SPECIAL без країни; NEXT→**P36-006**.
 - **P36-004 — YAML override provider:** `YamlIpMetadataOverrides` — legacy `CIDR: ISO` + extended mapping (city/coords/ASN); longest-prefix; NEXT→**P36-005**.
 - **P36-003 — Special-IP classification:** `IpAddressClassifier` (RFC1918/ULA/CGNAT/documentation/…); `GeoCountry` не дає країну для SPECIAL; IPv4-mapped literals; NEXT→**P36-004**.

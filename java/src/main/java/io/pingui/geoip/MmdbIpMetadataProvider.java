@@ -23,7 +23,8 @@ import java.util.Optional;
  * skipped (return {@code null}) so documentation/CGNAT never get a country from MMDB. Unknown
  * public IPs return {@link IpMetadataSource#NONE}.
  *
- * <p>Callers must {@link #close()} when the provider is discarded (atomic reload lands in P36-006).
+ * <p>Callers must {@link #close()} when the provider is discarded; prefer ownership via {@link
+ * IpMetadataService} for atomic reload.
  */
 public final class MmdbIpMetadataProvider implements IpMetadataProvider, Closeable {
     private final DatabaseReader geoReader;

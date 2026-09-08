@@ -22,9 +22,9 @@ import org.yaml.snakeyaml.Yaml;
  * <p>Supports the legacy country-hint form ({@code CIDR: US}) and the extended mapping form
  * ({@code country}, {@code city}, coordinates, {@code asn}, …). Longest-prefix match; no DNS/HTTP.
  *
- * <p>Returns {@code null} for non-literals and for addresses with no matching prefix (composition
- * with other providers is P36-006). Matching overrides apply even to private/special scopes so
- * corporate WAN/docs ranges can carry explicit metadata.
+ * <p>Returns {@code null} for non-literals and for addresses with no matching prefix (composed by
+ * {@link IpMetadataService}). Matching overrides apply even to private/special scopes so corporate
+ * WAN/docs ranges can carry explicit metadata.
  */
 public final class YamlIpMetadataOverrides implements IpMetadataProvider {
     private final List<OverrideEntry4> v4;

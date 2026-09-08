@@ -23,7 +23,7 @@ What PINGUI calls “GeoIP” today is only static **country hints** (YAML CIDR 
 | **P36-003** | P0 | Special-IP classification | [x] RFC1918, ULA, loopback, link-local, CGNAT, documentation → no fake country |
 | **P36-004** | P1 | YAML override provider | [x] Longest-prefix; legacy format OK; extended fields |
 | **P36-005** | P1 | MMDB City/Country + ASN | [x] DB type + build epoch; official Java reader |
-| **P36-006** | P1 | Bounded enrichment service | Cache, dedupe, negative cache, atomic reload |
+| **P36-006** | P1 | Bounded enrichment service | [x] Cache, dedupe, negative cache, atomic reload |
 | **P36-007** | P1 | Bootstrap and CLI | `--geoip-db` / `--geoip-asn-db` / hints / `--no-geoip`; predictable errors |
 | **P36-008** | P2 | GUI integration | Cache-only rendering, tooltip/details, geographic route strip |
 | **P36-009** | P2 | Event/API/export enrichment | Backward-compatible; no SQLite schema change |
@@ -57,6 +57,8 @@ Code: `java/.../geoip/package-info.java`, `GeoCountry`, `config/geoip_hints.yaml
 | `IpAddressClassifier` | RFC1918/ULA → PRIVATE; loopback/link-local/CGNAT/documentation/multicast → SPECIAL |
 | `YamlIpMetadataOverrides` | Legacy `CIDR: US` + extended mapping; longest-prefix; source=`OVERRIDE` |
 | `MmdbIpMetadataProvider` | Official `DatabaseReader`; City/Country + optional ASN; `MmdbDatabaseInfo` (type + build epoch) |
+| `IpMetadataService` | Precedence YAML→MMDB→NONE; LRU+negative cache; offer/dedupe; atomic reload |
+| `GeoIpOpsStats` | Cache/queue/hit counters (full `/ops` wiring — P36-010) |
 
 ## Target architecture
 
