@@ -18,6 +18,7 @@
 
 ### Changed
 
+- **P36-008 — GeoIP GUI:** `HopGeoLabels` + cache-only `PingColor`; tooltip details; geographic route strip; NEXT→**P36-009**.
 - **P36-007 — GeoIP bootstrap/CLI:** `--geoip-db` / `--geoip-asn-db` + `IpMetadataBootstrap` (fail-fast на explicit broken MMDB; YAML-only без MMDB); `--asn-timeout-ms` deprecated; NEXT→**P36-008**.
 - **P36-006 — Bounded enrichment service:** `IpMetadataService` (YAML→MMDB→NONE, LRU+negative cache, offer/dedupe, atomic reload) + `GeoIpOpsStats`; NEXT→**P36-007**.
 - **P36-005 — MMDB City/Country + ASN:** `MmdbIpMetadataProvider` на офіційному `geoip2` `DatabaseReader`; type + build epoch; SPECIAL без країни; NEXT→**P36-006**.
