@@ -18,6 +18,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P36-011 — GeoIP fault/concurrency:** hard `resolve` lookup timeout (commonPool); stall proofs for `cached`/`offer`/`HopGeoLabels`; NEXT→**P36-012**.
 - **P36-010 — GeoIP observability:** `GeoIpOpsStats` on `GET /ops`, Prometheus (`pingui_geoip_*`), App Status pressure line; NEXT→**P36-011**.
 - **P36-009 — Event/API/export enrichment:** `RouteGeoEnrichment`; `GET /routes/{host}?include=geo`; webhook/persist `geo_diff`/`asn_diff`; CLI `--export-geo`; NEXT→**P36-010**.
 - **P36-008 — GeoIP GUI:** `HopGeoLabels` + cache-only `PingColor`; tooltip details; geographic route strip; NEXT→**P36-009**.
