@@ -132,7 +132,6 @@ public final class IpMetadataService implements AutoCloseable {
             hits.incrementAndGet();
             return cachedHit;
         }
-        misses.incrementAndGet();
 
         CompletableFuture<IpMetadata> created = new CompletableFuture<>();
         CompletableFuture<IpMetadata> shared = inFlight.putIfAbsent(key, created);
@@ -150,6 +149,14 @@ public final class IpMetadataService implements AutoCloseable {
             }
         }
         try {
+            // Another resolve may have finished between the first cache miss and inFlight win.
+            IpMetadata raced = cachedWithoutHitCounter(key);
+            if (raced != null) {
+                hits.incrementAndGet();
+                created.complete(raced);
+                return raced;
+            }
+            misses.incrementAndGet();
             Providers snapshot = providers.get();
             IpMetadata resolved = lookupUncached(snapshot, key);
             if (providers.get() == snapshot) {
@@ -190,6 +197,11 @@ public final class IpMetadataService implements AutoCloseable {
         try {
             executor.execute(() -> {
                 try {
+                    IpMetadata raced = cachedWithoutHitCounter(key);
+                    if (raced != null) {
+                        created.complete(raced);
+                        return;
+                    }
                     misses.incrementAndGet();
                     Providers snapshot = providers.get();
                     IpMetadata resolved = lookupUncached(snapshot, key);

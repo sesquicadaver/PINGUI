@@ -33,8 +33,7 @@ class IpMetadataServiceTest {
                 prefixes:
                   81.2.69.160/32: UA
                 """);
-        try (IpMetadataService service =
-                new IpMetadataService(overrides, MmdbIpMetadataProvider.open(CITY, ASN))) {
+        try (IpMetadataService service = new IpMetadataService(overrides, MmdbIpMetadataProvider.open(CITY, ASN))) {
             IpMetadata override = service.resolve("81.2.69.160");
             assertEquals(IpMetadataSource.OVERRIDE, override.source());
             assertEquals("UA", override.countryIso());
@@ -136,15 +135,20 @@ class IpMetadataServiceTest {
         };
         try (IpMetadataService service = new IpMetadataService(slow, null, 64, 8, 1);
                 ExecutorService pool = Executors.newFixedThreadPool(4)) {
+            java.util.concurrent.CyclicBarrier start = new java.util.concurrent.CyclicBarrier(4);
             List<Future<IpMetadata>> futures = new ArrayList<>();
             for (int i = 0; i < 4; i++) {
-                futures.add(pool.submit(() -> service.resolve("1.1.1.1")));
+                futures.add(pool.submit(() -> {
+                    start.await(5, TimeUnit.SECONDS);
+                    return service.resolve("1.1.1.1");
+                }));
             }
             assertTrue(entered.await(5, TimeUnit.SECONDS));
             assertEquals(1, service.inFlightSizeForTests());
             release.countDown();
             for (Future<IpMetadata> future : futures) {
-                assertEquals(IpMetadataSource.NONE, future.get(5, TimeUnit.SECONDS).source());
+                assertEquals(
+                        IpMetadataSource.NONE, future.get(5, TimeUnit.SECONDS).source());
             }
             assertEquals(1, calls.get());
             assertTrue(service.opsStats().coalesced() >= 1);
@@ -215,8 +219,7 @@ class IpMetadataServiceTest {
         }
     }
 
-    private static boolean awaitCached(IpMetadataService service, String ip, int seconds)
-            throws InterruptedException {
+    private static boolean awaitCached(IpMetadataService service, String ip, int seconds) throws InterruptedException {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(seconds);
         while (System.nanoTime() < deadline) {
             if (service.cached(ip) != null) {
