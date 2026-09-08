@@ -89,7 +89,12 @@ class MmdbIpMetadataProviderTest {
             Files.writeString(corrupt, "not-an-mmdb");
             assertThrows(IllegalStateException.class, () -> MmdbIpMetadataProvider.open(corrupt));
         } finally {
-            Files.deleteIfExists(corrupt);
+            try {
+                Files.deleteIfExists(corrupt);
+            } catch (IOException ex) {
+                // Windows may keep a lock after a failed DatabaseReader open.
+                corrupt.toFile().deleteOnExit();
+            }
         }
         assertThrows(
                 IllegalArgumentException.class,
