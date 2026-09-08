@@ -18,6 +18,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P36-003 — Special-IP classification:** `IpAddressClassifier` (RFC1918/ULA/CGNAT/documentation/…); `GeoCountry` never fakes a country for SPECIAL; IPv4-mapped literals; NEXT→**P36-004**.
 - **P36-002 — IpMetadata + provider contract:** `IpMetadata` / `IpMetadataProvider` / `EmptyIpMetadataProvider`; nullable geo fields; IPv4/IPv6 literals; NEXT→**P36-003**.
 - **P36-001 — GeoIP contract + country hints:** locked Java-only / offline-only / no probe blocking; positioned `GeoCountry` as country hints; removed coarse `/8` and `2001:db8::/32→US` from defaults; NEXT→**P36-002**.
 - **P35-010 — Python lifecycle harden:** `QueueTelemetryEmitter.close` skips caller drain while the worker is alive; daemon/GUI skip DB/sink close under a live monitor; phase 35 **NEXT=DONE**.

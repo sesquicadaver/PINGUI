@@ -1,9 +1,11 @@
 package io.pingui.geoip;
 
+import java.net.InetAddress;
+
 /**
- * Baseline {@link IpMetadataProvider}: valid literals → {@link IpMetadataSource#NONE}; no network
- * I/O. Used until YAML/MMDB providers land (P36-004+). Scope is {@link IpAddressScope#PUBLIC} for
- * every literal — refined classification is P36-003.
+ * Baseline {@link IpMetadataProvider}: valid literals → {@link IpMetadataSource#NONE} with
+ * classified {@link IpAddressScope} (P36-003); no network I/O. YAML/MMDB providers land in
+ * P36-004+.
  */
 public final class EmptyIpMetadataProvider implements IpMetadataProvider {
     public static final EmptyIpMetadataProvider INSTANCE = new EmptyIpMetadataProvider();
@@ -12,10 +14,10 @@ public final class EmptyIpMetadataProvider implements IpMetadataProvider {
 
     @Override
     public IpMetadata lookup(String ip) {
-        String canonical = IpLiterals.canonicalLiteralOrNull(ip);
-        if (canonical == null) {
+        InetAddress address = IpLiterals.parseLiteralOrNull(ip);
+        if (address == null) {
             return null;
         }
-        return IpMetadata.unknown(canonical, IpAddressScope.PUBLIC);
+        return IpMetadata.unknown(address.getHostAddress(), IpAddressClassifier.scopeOf(address));
     }
 }
