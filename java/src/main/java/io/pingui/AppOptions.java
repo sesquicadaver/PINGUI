@@ -27,6 +27,8 @@ public record AppOptions(
         Optional<Path> exportReportPath,
         Optional<ExportSchedulePeriod> exportSchedule,
         Optional<Path> exportDir,
+        /** CLI {@code --export-geo}: append country/ASN columns to {@code --export-report} (P36-009). */
+        boolean exportIncludeGeo,
         CliRunMode runMode,
         Path pidFilePath,
         Optional<Integer> metricsPort,
@@ -56,6 +58,7 @@ public record AppOptions(
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
+                false,
                 CliRunMode.GUI,
                 defaultPidFile(),
                 Optional.empty(),

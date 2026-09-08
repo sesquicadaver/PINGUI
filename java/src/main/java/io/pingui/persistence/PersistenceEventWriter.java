@@ -38,7 +38,7 @@ public final class PersistenceEventWriter {
                 null,
                 PersistenceJson.stringArray(event.oldIps()),
                 PersistenceJson.stringArray(event.newIps()),
-                null,
+                io.pingui.geoip.RouteGeoEnrichment.routeChangeDetailJson(event.oldIps(), event.newIps()),
                 event.timestamp());
     }
 

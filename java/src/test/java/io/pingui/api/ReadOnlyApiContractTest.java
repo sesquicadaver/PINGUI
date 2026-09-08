@@ -1,6 +1,7 @@
 package io.pingui.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.AppInfo;
@@ -63,6 +64,33 @@ class ReadOnlyApiContractTest {
                             + "]}",
                     response.body());
         }
+    }
+
+    @Test
+    void routeDocumentIncludeGeoAppendsNullableFields() throws Exception {
+        SessionStore store = new SessionStore(List.of());
+        store.addHost("target.example", true);
+        store.get("target.example").setCurrentRoute(List.of(new HopNode(1, "10.0.0.1", 4.5, false)));
+
+        try (ReadOnlyApiServer server = start(store)) {
+            HttpResponse<String> plain = get(server.port(), "/routes/target.example");
+            HttpResponse<String> geo = get(server.port(), "/routes/target.example?include=geo");
+            assertEquals(200, geo.statusCode());
+            assertFalse(plain.body().contains("country_iso"));
+            assertTrue(geo.body().contains("\"country_iso\""));
+            assertTrue(geo.body().contains("\"asn\""));
+            assertTrue(geo.body().contains("\"source\""));
+            assertTrue(geo.body().contains("\"hop\":1"));
+        }
+    }
+
+    @Test
+    void queryIncludesGeoParsesTokens() {
+        assertTrue(ReadOnlyApiServer.queryIncludesGeo("include=geo"));
+        assertTrue(ReadOnlyApiServer.queryIncludesGeo("include=geo,other"));
+        assertTrue(ReadOnlyApiServer.queryIncludesGeo("foo=1&include=GEO"));
+        assertFalse(ReadOnlyApiServer.queryIncludesGeo("include=asn"));
+        assertFalse(ReadOnlyApiServer.queryIncludesGeo(null));
     }
 
     @Test

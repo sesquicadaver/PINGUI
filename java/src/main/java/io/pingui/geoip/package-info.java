@@ -18,7 +18,8 @@
  *       io.pingui.geoip.IpMetadataService} for precedence / bounded cache / atomic reload (P36-006),
  *       and {@link io.pingui.geoip.IpMetadataBootstrap} for CLI/bootstrap wiring (P36-007). GUI
  *       labels use cache-only {@link io.pingui.ui.HopGeoLabels} / {@link io.pingui.ui.PingColor}
- *       (P36-008).
+ *       (P36-008). Event/API/export enrichment uses {@link io.pingui.geoip.RouteGeoEnrichment}
+ *       (P36-009).
  * </ul>
  */
 package io.pingui.geoip;

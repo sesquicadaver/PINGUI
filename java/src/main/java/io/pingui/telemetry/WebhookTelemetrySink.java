@@ -261,7 +261,7 @@ public final class WebhookTelemetrySink implements TelemetrySink {
         }
     }
 
-    /** ADR_ALERTS route_change JSON (package-visible for tests). */
+    /** ADR_ALERTS route_change JSON + optional geo/asn diffs (P36-009; package-visible for tests). */
     static String formatRouteChangeAlertJson(
             String host, List<String> oldIps, List<String> newIps, Instant timestamp, String profile) {
         Instant ts = timestamp != null ? timestamp : Instant.now();
@@ -274,7 +274,7 @@ public final class WebhookTelemetrySink implements TelemetrySink {
         sb.append(",\"timestamp\":").append(TelemetryJson.quote(ts.toString()));
         sb.append(",\"profile\":").append(TelemetryJson.quote(safeProfile));
         sb.append('}');
-        return sb.toString();
+        return io.pingui.geoip.RouteGeoEnrichment.appendRouteChangeDiffs(sb.toString(), oldIps, newIps);
     }
 
     private static ExecutorService newWebhookPool(int poolSize, int queueCapacity) {

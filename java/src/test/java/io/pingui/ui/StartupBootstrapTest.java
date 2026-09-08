@@ -214,6 +214,7 @@ class StartupBootstrapTest {
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
+                false,
                 defaults.runMode(),
                 defaults.pidFilePath(),
                 Optional.empty(),
