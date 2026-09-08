@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P36-001** |
+| **Current task** | **P36-002** |
 | **Phase** | 36 — GeoIP / IP metadata (offline enrichment) |
-| **DoD (short)** | Java-only, offline-only, no probe blocking; country hints positioning |
+| **DoD (short)** | `IpMetadata` + provider contract: immutable, nullable, IPv4/IPv6 |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -215,7 +215,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 169 | **P35-008** | [x] | Stuck-writer fault test |
 | 170 | **P35-009** | [x] | Route signature ≡ hops_json |
 | 171 | **P35-010** | [x] | Python lifecycle harden |
-| 172 | **P36-001** | [ ] | GeoIP contract + boundaries (country hints) |
+| 172 | **P36-001** | [x] | GeoIP contract + boundaries (country hints) |
 | 173 | **P36-002** | [ ] | IpMetadata + provider contract |
 | 174 | **P36-003** | [ ] | Special-IP classification |
 | 175 | **P36-004** | [ ] | YAML override provider |
@@ -228,7 +228,7 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 182 | **P36-011** | [ ] | Fault / concurrency / performance |
 | 183 | **P36-012** | [ ] | Legacy/docs/package close |
 
-**Queue status:** **NEXT = P36-001** (phase 36; [pingui-geoip.md](pingui-geoip.md)).
+**Queue status:** **NEXT = P36-002** (phase 36; [pingui-geoip.md](pingui-geoip.md)).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -1134,11 +1134,11 @@ flowchart TD
 
 **Context:** [pingui-geoip.md](pingui-geoip.md). After P35 — replace country hints with local MMDB + YAML override; enrichment off the probe path. Java-only.
 
-**Queue:** after P35; **NEXT = P36-001**.
+**Queue:** after P35; **NEXT = P36-002**.
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
-| **P36-001** | [ ] Contract and boundaries | docs, `GeoCountry` positioning | Java-only, offline-only, no probe blocking; “country hints” |
+| **P36-001** | [x] Contract and boundaries | `package-info`, `GeoCountry`, hints YAML, docs | Java-only, offline-only, no probe blocking; “country hints”; NEXT→P36-002 |
 | **P36-002** | [ ] `IpMetadata` + provider | `IpMetadata`, `IpMetadataProvider` | Immutable, nullable, IPv4/IPv6 |
 | **P36-003** | [ ] Special-IP classification | `IpLiterals` / classifier | RFC1918, ULA, loopback, link-local, CGNAT, documentation |
 | **P36-004** | [ ] YAML override provider | `YamlIpMetadataOverrides`, `geoip_hints.yaml` | Longest-prefix; legacy format OK |
@@ -1239,7 +1239,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P36-001**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P36-002**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 

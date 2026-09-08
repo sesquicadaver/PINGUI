@@ -15,7 +15,13 @@ import java.util.List;
 import java.util.Map;
 import org.yaml.snakeyaml.Yaml;
 
-/** Offline country hints for hop labels (longest-prefix match). */
+/**
+ * Offline <em>country hints</em> for hop labels (YAML CIDR → ISO, longest-prefix match).
+ *
+ * <p>This is <b>not</b> full GeoIP. Temporary until {@code IpMetadata*} (P36-002+). Does not perform
+ * network I/O; must not be invoked on the probe critical path for blocking work (see {@code
+ * package-info} for P36-001 contract).
+ */
 public final class GeoCountry {
     public static final String LAN_TAG = "LAN";
     private static final String DEFAULT_RESOURCE = "geoip_hints.yaml";
@@ -299,6 +305,7 @@ public final class GeoCountry {
             }
         }
 
+        /** Tight public-DNS examples only — no coarse /8, no documentation→country (P36-001). */
         private static PrefixTables embeddedDefaults() {
             return new PrefixTables(
                     List.of(
@@ -306,7 +313,7 @@ public final class GeoCountry {
                             parseV4Cidr("8.8.4.0/24", "US"),
                             parseV4Cidr("1.1.1.0/24", "AU"),
                             parseV4Cidr("1.0.0.0/24", "AU")),
-                    List.of(parseV6Cidr("2001:db8::/32", "US")));
+                    List.of(parseV6Cidr("2001:4860:4860::/48", "US")));
         }
     }
 }

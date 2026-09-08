@@ -79,7 +79,8 @@ def test_ipv6_private_returns_lan() -> None:
 def test_ipv6_public_prefix_match() -> None:
     lookup = CountryLookup.load(Path("config/geoip_hints.yaml"))
     assert lookup.lookup("2001:4860:4860::8888") == "US"
-    assert lookup.lookup("2001:db8::1") == "US"
+    # P36-001: documentation prefix must not fake a country.
+    assert lookup.lookup("2001:db8::1") is None
 
 
 def test_ipv6_custom_hints_yaml(tmp_path: Path) -> None:
