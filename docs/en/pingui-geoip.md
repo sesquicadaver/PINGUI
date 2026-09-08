@@ -28,7 +28,7 @@ What PINGUI calls “GeoIP” today is only static **country hints** (YAML CIDR 
 | **P36-008** | P2 | GUI integration | [x] Cache-only rendering, tooltip/details, geographic route strip |
 | **P36-009** | P2 | Event/API/export enrichment | [x] `/routes?include=geo`; route_change `geo_diff`/`asn_diff` + `detail_json`; `--export-geo` |
 | **P36-010** | P2 | Observability | [x] `/ops` + Prometheus + App Status (`GeoIpOpsStats`) |
-| **P36-011** | P2 | Fault / concurrency / performance | Stalled provider must not delay polling |
+| **P36-011** | P2 | Fault / concurrency / performance | [x] lookup timeout; cached/offer stall proofs |
 | **P36-012** | P2 | Legacy/docs/package close | Python not extended; docs parity; NEXT=`DONE` |
 
 ## Contract (P36-001) — locked
@@ -57,7 +57,7 @@ Code: `java/.../geoip/package-info.java`, `GeoCountry`, `config/geoip_hints.yaml
 | `IpAddressClassifier` | RFC1918/ULA → PRIVATE; loopback/link-local/CGNAT/documentation/multicast → SPECIAL |
 | `YamlIpMetadataOverrides` | Legacy `CIDR: US` + extended mapping; longest-prefix; source=`OVERRIDE` |
 | `MmdbIpMetadataProvider` | Official `DatabaseReader`; City/Country + optional ASN; `MmdbDatabaseInfo` (type + build epoch) |
-| `IpMetadataService` | Precedence YAML→MMDB→NONE; LRU+negative cache; offer/dedupe; atomic reload |
+| `IpMetadataService` | Precedence YAML→MMDB→NONE; LRU+negative cache; offer/dedupe; atomic reload; lookup timeout (P36-011) |
 | `GeoIpOpsStats` | Cache/queue/hit counters on `/ops`, Prometheus, App Status |
 | `IpMetadataBootstrap` | CLI → service; fail-fast on explicit broken MMDB |
 | `IpMetadataRuntime` | Process-wide install/get/close for GUI/daemon |

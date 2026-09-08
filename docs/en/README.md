@@ -2,7 +2,7 @@
 
 # PINGUI documentation
 
-On **`main`** and **`beta`** — full package (Java Pro + Python) after merge; **`beta`** is the development branch, **`main`** is the last stable snapshot. Linear ROADMAP queue: **NEXT = P36-011** (phase 36 — [ROADMAP.md § NEXT](ROADMAP.md#next--single-source-of-truth)). Branches: [README.en.md](../README.en.md).
+On **`main`** and **`beta`** — full package (Java Pro + Python) after merge; **`beta`** is the development branch, **`main`** is the last stable snapshot. Linear ROADMAP queue: **NEXT = P36-012** (phase 36 — [ROADMAP.md § NEXT](ROADMAP.md#next--single-source-of-truth)). Branches: [README.en.md](../README.en.md).
 
 ## Navigation
 

@@ -128,7 +128,7 @@ Module → unit test matrix. Update when adding features.
 | Correctness MTR/projection (P33) | P33-001…008 [x]; phase closed | [pingui-correctness.md](pingui-correctness.md) — archival |
 | Correctness follow-up (P34) | P34-001…010 [x]; phase closed | [pingui-route-persistence.md](pingui-route-persistence.md) — archival; soak/fault matrix |
 | Unattended NOC (P35) | closed P35-001…010 [x] | [pingui-unattended.md](pingui-unattended.md) |
-| GeoIP / IP metadata (P36) | NEXT=**P36-011**; P36-001…010 [x]; queue P36-011…012 | [pingui-geoip.md](pingui-geoip.md) |
+| GeoIP / IP metadata (P36) | NEXT=**P36-012**; P36-001…011 [x]; queue P36-012 | [pingui-geoip.md](pingui-geoip.md) |
 | TRACE real target identity (P35-001) | `TraceTargetIp`, `ProcessRouteProbe`, `RouteChangeDetector.targetReached` | `TraceTargetIpTest`, `RouteChangeDetectorTest.targetReachedFalseWhenOnlyIntermediateRouterReachable` |
 | MTR TARGET_UNKNOWN scope (P35-002) | `PollSampleScope.UNSAMPLED`, `RoutePoller.pollHostMtr`, `MtrProbe` backoff | `RoutePollerTest.pollHostMtrTargetUnknownIdleUsesUnsampledScope`, `MtrProbeTest.rediscoveryEntersBackoffThenRetries` |
 | Loss window semantics (P35-003) | `HopProbeStats` attempt window, `HopStats.lossPctInWindow` | `HopStatsTest.lossUsesSlidingWindowNotLifetimeCounters`, `lossInWindowRequiresTwoProbes` |
