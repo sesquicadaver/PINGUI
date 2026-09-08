@@ -108,7 +108,7 @@ The Java GUI keeps journal/route graph as-is; desktop alert is an optional chann
 
 - **P16-050:** ✅ `WebhookTelemetrySink` + `WebhookAlertDispatcher` delegates HTTP — single emit path, no duplicate client.
 - YAML `alerts:` section with multiple sinks (phase 16).
-- Payload enrichment (ASN, geo, diff summary) — separate tickets, backward-compatible fields.
+- Payload enrichment (ASN, geo, diff summary) — **P36-009:** optional `geo_diff` / `asn_diff` on webhook; `detail_json` in SQLite; base ADR fields unchanged.
 - **Quality rules** (`endpoint_down`, later loss/latency) — [ADR_ALERT_RULES](ADR_ALERT_RULES.md) (P21), not an expansion of this document.
 
 ## Consequences
