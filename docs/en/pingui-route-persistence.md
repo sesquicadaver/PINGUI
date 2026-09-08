@@ -2,7 +2,7 @@
 
 # Correctness follow-up — route / target / persistence (P34)
 
-> **Archive:** phase 34 **closed** (P34-001…010). Authoritative ROADMAP **NEXT=P36-006** — [pingui-geoip.md](pingui-geoip.md). Correctness: [pingui-correctness.md](pingui-correctness.md). Stabilization: [pingui-stabilization.md](pingui-stabilization.md).
+> **Archive:** phase 34 **closed** (P34-001…010). Authoritative ROADMAP **NEXT=P36-007** — [pingui-geoip.md](pingui-geoip.md). Correctness: [pingui-correctness.md](pingui-correctness.md). Stabilization: [pingui-stabilization.md](pingui-stabilization.md).
 
 **Source for phase 34.** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
 
@@ -50,7 +50,7 @@ Java run: `cd java && ./gradlew test --tests 'io.pingui.probe.MtrProbeTest' --te
 
 **Done:**
 
-* ROADMAP **NEXT=P36-006**; all P34-001…010 `[x]`; phase index ✅ DONE;
+* ROADMAP **NEXT=P36-007**; all P34-001…010 `[x]`; phase index ✅ DONE;
 * 8 soak/fault scenarios → tests (table above);
 * rename control-lane under telemetry overflow covered by test;
 * archival banner on this doc; LIVING_SPEC + JAVA + docs index.
