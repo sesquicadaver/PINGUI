@@ -12,7 +12,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 class MmdbIpMetadataProviderTest {
     private static final Path CITY = copyResource("mmdb/GeoLite2-City-Test.mmdb");
