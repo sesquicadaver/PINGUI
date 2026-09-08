@@ -45,6 +45,25 @@ class SessionReportExporterTest {
     }
 
     @Test
+    void exportCsvGeoAppendsColumnsWithoutChangingDefault() throws Exception {
+        Path dbPath = tempDir.resolve("session.db");
+        seedSampleHost(dbPath, "8.8.8.8");
+        Path defaultCsv = tempDir.resolve("default.csv");
+        Path geoCsv = tempDir.resolve("geo.csv");
+        try (SessionDatabase database = new SessionDatabase(dbPath)) {
+            SessionReportExporter.exportCsv(database, defaultCsv);
+            SessionReportExporter.exportCsv(database, geoCsv, true);
+        }
+        String plain = Files.readString(defaultCsv);
+        String geo = Files.readString(geoCsv);
+        assertTrue(plain.startsWith("host,enabled,route_kind"));
+        assertFalse(plain.contains("country_iso"));
+        assertTrue(geo.contains("country_iso"));
+        assertTrue(geo.contains("organization"));
+        assertTrue(geo.contains("source"));
+    }
+
+    @Test
     void exportCsvContainsRouteRows() throws Exception {
         Path dbPath = tempDir.resolve("session.db");
         seedSampleHost(dbPath, "8.8.8.8");

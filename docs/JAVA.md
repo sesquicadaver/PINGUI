@@ -229,4 +229,4 @@ pingui-java.bat --package    REM .msi
 
 ## Майбутнє
 
-Лінійна черга ROADMAP: **NEXT = P36-009** (фаза 36 — GeoIP / IP metadata). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT; [pingui-geoip.md](pingui-geoip.md). Архів P34: [pingui-route-persistence.md](pingui-route-persistence.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).
+Лінійна черга ROADMAP: **NEXT = P36-010** (фаза 36 — GeoIP / IP metadata). Деталі — [docs/ROADMAP.md](ROADMAP.md) § NEXT; [pingui-geoip.md](pingui-geoip.md). Архів P34: [pingui-route-persistence.md](pingui-route-persistence.md). Hardening post-audit (P26): [ADR_HARDENING.md](ADR_HARDENING.md).

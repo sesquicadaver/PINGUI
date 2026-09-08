@@ -118,7 +118,32 @@ public final class ReadOnlyApiServer implements AutoCloseable {
             return;
         }
         List<HopNode> hops = store.currentRouteSnapshot(host);
-        sendJson(exchange, 200, ReadOnlyApiJson.routeDocument(host, hops));
+        boolean includeGeo = queryIncludesGeo(exchange.getRequestURI().getRawQuery());
+        sendJson(exchange, 200, ReadOnlyApiJson.routeDocument(host, hops, includeGeo));
+    }
+
+    /** True when query contains {@code include=geo} (comma-separated tokens allowed). */
+    static boolean queryIncludesGeo(String rawQuery) {
+        if (rawQuery == null || rawQuery.isBlank()) {
+            return false;
+        }
+        for (String pair : rawQuery.split("&")) {
+            int eq = pair.indexOf('=');
+            if (eq <= 0) {
+                continue;
+            }
+            String key = URLDecoder.decode(pair.substring(0, eq), StandardCharsets.UTF_8);
+            if (!"include".equalsIgnoreCase(key)) {
+                continue;
+            }
+            String value = URLDecoder.decode(pair.substring(eq + 1), StandardCharsets.UTF_8);
+            for (String token : value.split(",")) {
+                if ("geo".equalsIgnoreCase(token.strip())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private void handleOps(HttpExchange exchange) throws IOException {

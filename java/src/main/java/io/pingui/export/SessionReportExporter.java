@@ -1,5 +1,7 @@
 package io.pingui.export;
 
+import io.pingui.geoip.IpMetadata;
+import io.pingui.geoip.RouteGeoEnrichment;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.HopProbeStats;
 import io.pingui.model.Models.HopStatsSummary;
@@ -19,12 +21,29 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/** CSV/HTML session reports from SQLite {@code host_session} (P11-030). */
+/** CSV/HTML session reports from SQLite {@code host_session} (P11-030 / P36-009). */
 public final class SessionReportExporter {
     private static final DateTimeFormatter ISO_UTC = DateTimeFormatter.ISO_INSTANT.withZone(ZoneOffset.UTC);
 
     private static final String[] CSV_FIELDS = {
         "host", "enabled", "route_kind", "hop", "ip", "ping_ms", "avg_ping_ms", "jitter_ms", "loss_pct", "is_timeout"
+    };
+
+    private static final String[] CSV_GEO_FIELDS = {
+        "host",
+        "enabled",
+        "route_kind",
+        "hop",
+        "ip",
+        "ping_ms",
+        "avg_ping_ms",
+        "jitter_ms",
+        "loss_pct",
+        "is_timeout",
+        "country_iso",
+        "asn",
+        "organization",
+        "source"
     };
 
     private SessionReportExporter() {}
@@ -42,32 +61,48 @@ public final class SessionReportExporter {
         return name.endsWith(".html") || name.endsWith(".htm");
     }
 
-    /** Export CSV or HTML based on {@link #isHtmlReport(Path)}. */
+    /** Export CSV or HTML based on {@link #isHtmlReport(Path)} (default columns; no geo). */
     public static void export(SessionDatabase database, Path path) throws IOException {
+        export(database, path, false);
+    }
+
+    /**
+     * @param includeGeo when true, append country/ASN columns (CLI {@code --export-geo}); default
+     *     CSV/HTML shape unchanged when false
+     */
+    public static void export(SessionDatabase database, Path path, boolean includeGeo) throws IOException {
         if (isHtmlReport(path)) {
-            exportHtml(database, path);
+            exportHtml(database, path, includeGeo);
         } else {
-            exportCsv(database, path);
+            exportCsv(database, path, includeGeo);
         }
     }
 
     public static void exportCsv(SessionDatabase database, Path path) throws IOException {
+        exportCsv(database, path, false);
+    }
+
+    public static void exportCsv(SessionDatabase database, Path path, boolean includeGeo) throws IOException {
         List<SessionReportRouteRow> rows = buildRouteRows(database);
         Files.createDirectories(path.getParent() != null ? path.getParent() : Path.of("."));
         StringBuilder body = new StringBuilder();
-        body.append(String.join(",", CSV_FIELDS)).append('\n');
+        body.append(String.join(",", includeGeo ? CSV_GEO_FIELDS : CSV_FIELDS)).append('\n');
         for (SessionReportRouteRow row : rows) {
-            body.append(csvRow(row)).append('\n');
+            body.append(csvRow(row, includeGeo)).append('\n');
         }
         Files.writeString(path, body.toString(), StandardCharsets.UTF_8);
     }
 
     public static void exportHtml(SessionDatabase database, Path path) throws IOException {
+        exportHtml(database, path, false);
+    }
+
+    public static void exportHtml(SessionDatabase database, Path path, boolean includeGeo) throws IOException {
         List<String> hosts = database.listHosts();
         List<SessionReportRouteRow> rows = buildRouteRows(database);
         String generated = ISO_UTC.format(Instant.now());
         Files.createDirectories(path.getParent() != null ? path.getParent() : Path.of("."));
-        Files.writeString(path, renderHtml(hosts, rows, generated), StandardCharsets.UTF_8);
+        Files.writeString(path, renderHtml(hosts, rows, generated, includeGeo), StandardCharsets.UTF_8);
     }
 
     public static List<SessionReportRouteRow> buildRouteRows(SessionDatabase database) {
@@ -120,8 +155,8 @@ public final class SessionReportExporter {
         return rows;
     }
 
-    private static String csvRow(SessionReportRouteRow row) {
-        return String.join(
+    private static String csvRow(SessionReportRouteRow row, boolean includeGeo) {
+        String base = String.join(
                 ",",
                 csvCell(row.host()),
                 csvCell(row.enabled() ? "1" : "0"),
@@ -133,6 +168,20 @@ public final class SessionReportExporter {
                 csvCell(formatDouble(row.jitterMs())),
                 csvCell(formatDouble(row.lossPct())),
                 csvCell(row.timeout() ? "1" : "0"));
+        if (!includeGeo) {
+            return base;
+        }
+        IpMetadata meta = RouteGeoEnrichment.resolveLiteral(row.ip());
+        String[] geo = RouteGeoEnrichment.csvGeoCells(meta);
+        return base
+                + ","
+                + csvCell(geo[0])
+                + ","
+                + csvCell(geo[1])
+                + ","
+                + csvCell(geo[2])
+                + ","
+                + csvCell(geo[3]);
     }
 
     private static String formatDouble(Double value) {
@@ -149,7 +198,8 @@ public final class SessionReportExporter {
         return value;
     }
 
-    private static String renderHtml(List<String> hosts, List<SessionReportRouteRow> rows, String generated) {
+    private static String renderHtml(
+            List<String> hosts, List<SessionReportRouteRow> rows, String generated, boolean includeGeo) {
         StringBuilder html = new StringBuilder();
         html.append("<!DOCTYPE html>\n<html lang=\"uk\">\n<head>\n");
         html.append("<meta charset=\"utf-8\">\n<title>PINGUI session report</title>\n");
@@ -177,7 +227,11 @@ public final class SessionReportExporter {
                 continue;
             }
             html.append("<table>\n<tr><th>Route</th><th>Hop</th><th>IP</th>");
-            html.append("<th>Ping ms</th><th>Avg ms</th><th>Jitter ms</th><th>Loss %</th><th>Timeout</th></tr>\n");
+            html.append("<th>Ping ms</th><th>Avg ms</th><th>Jitter ms</th><th>Loss %</th><th>Timeout</th>");
+            if (includeGeo) {
+                html.append("<th>Country</th><th>ASN</th><th>Org</th><th>Source</th>");
+            }
+            html.append("</tr>\n");
             for (SessionReportRouteRow row : hostRows) {
                 html.append("<tr><td>")
                         .append(escapeHtml(row.routeKind()))
@@ -194,8 +248,19 @@ public final class SessionReportExporter {
                         .append("</td><td>")
                         .append(formatDouble(row.lossPct()))
                         .append("</td><td>")
-                        .append(row.timeout() ? "yes" : "no")
-                        .append("</td></tr>\n");
+                        .append(row.timeout() ? "yes" : "no");
+                if (includeGeo) {
+                    String[] geo = RouteGeoEnrichment.csvGeoCells(RouteGeoEnrichment.resolveLiteral(row.ip()));
+                    html.append("</td><td>")
+                            .append(escapeHtml(geo[0]))
+                            .append("</td><td>")
+                            .append(escapeHtml(geo[1]))
+                            .append("</td><td>")
+                            .append(escapeHtml(geo[2]))
+                            .append("</td><td>")
+                            .append(escapeHtml(geo[3]));
+                }
+                html.append("</td></tr>\n");
             }
             html.append("</table>\n");
         }
