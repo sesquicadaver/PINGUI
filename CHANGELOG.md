@@ -18,6 +18,7 @@
 
 ### Changed
 
+- **P36-004 — YAML override provider:** `YamlIpMetadataOverrides` — legacy `CIDR: ISO` + extended mapping (city/coords/ASN); longest-prefix; NEXT→**P36-005**.
 - **P36-003 — Special-IP classification:** `IpAddressClassifier` (RFC1918/ULA/CGNAT/documentation/…); `GeoCountry` не дає країну для SPECIAL; IPv4-mapped literals; NEXT→**P36-004**.
 - **P36-002 — IpMetadata + provider contract:** `IpMetadata` / `IpMetadataProvider` / `EmptyIpMetadataProvider`; nullable geo fields; IPv4/IPv6 literals; NEXT→**P36-003**.
 - **P36-001 — GeoIP contract + country hints:** зафіксовано Java-only / offline-only / no probe blocking; `GeoCountry` позиціоновано як country hints; прибрано грубі `/8` і `2001:db8::/32→US` з defaults; NEXT→**P36-002**.

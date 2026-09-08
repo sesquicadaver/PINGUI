@@ -21,7 +21,7 @@ What PINGUI calls “GeoIP” today is only static **country hints** (YAML CIDR 
 | **P36-001** | P0 | Contract and boundaries | [x] Java-only, offline-only, no probe blocking; “country hints” |
 | **P36-002** | P0 | `IpMetadata` + provider contract | [x] Immutable, nullable fields, IPv4/IPv6 |
 | **P36-003** | P0 | Special-IP classification | [x] RFC1918, ULA, loopback, link-local, CGNAT, documentation → no fake country |
-| **P36-004** | P1 | YAML override provider | Longest-prefix; legacy format OK; extended fields |
+| **P36-004** | P1 | YAML override provider | [x] Longest-prefix; legacy format OK; extended fields |
 | **P36-005** | P1 | MMDB City/Country + ASN | DB type + build epoch; official Java reader |
 | **P36-006** | P1 | Bounded enrichment service | Cache, dedupe, negative cache, atomic reload |
 | **P36-007** | P1 | Bootstrap and CLI | `--geoip-db` / `--geoip-asn-db` / hints / `--no-geoip`; predictable errors |
@@ -55,6 +55,7 @@ Code: `java/.../geoip/package-info.java`, `GeoCountry`, `config/geoip_hints.yaml
 | `EmptyIpMetadataProvider` | Baseline: literal → `NONE` + classified scope |
 | `IpLiterals.canonicalLiteralOrNull` | Canonical host-address without reverse DNS |
 | `IpAddressClassifier` | RFC1918/ULA → PRIVATE; loopback/link-local/CGNAT/documentation/multicast → SPECIAL |
+| `YamlIpMetadataOverrides` | Legacy `CIDR: US` + extended mapping; longest-prefix; source=`OVERRIDE` |
 
 ## Target architecture
 

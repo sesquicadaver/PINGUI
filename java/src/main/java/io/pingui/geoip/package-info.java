@@ -12,7 +12,8 @@
  *       synchronous and local only).
  *   <li>Current {@link io.pingui.geoip.GeoCountry} / {@link io.pingui.geoip.AsnLookup} are temporary
  *       <em>country/ASN hints</em> (YAML CIDR → label), not full geolocation — replaced by {@link
- *       io.pingui.geoip.IpMetadata} / {@link io.pingui.geoip.IpMetadataProvider} (P36-002+).
+ *       io.pingui.geoip.IpMetadata} / {@link io.pingui.geoip.IpMetadataProvider} (P36-002+), with
+ *       {@link io.pingui.geoip.YamlIpMetadataOverrides} for YAML CIDR overrides (P36-004).
  * </ul>
  */
 package io.pingui.geoip;

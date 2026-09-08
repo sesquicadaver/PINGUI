@@ -18,6 +18,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P36-004 — YAML override provider:** `YamlIpMetadataOverrides` — legacy `CIDR: ISO` + extended mapping (city/coords/ASN); longest-prefix; NEXT→**P36-005**.
 - **P36-003 — Special-IP classification:** `IpAddressClassifier` (RFC1918/ULA/CGNAT/documentation/…); `GeoCountry` never fakes a country for SPECIAL; IPv4-mapped literals; NEXT→**P36-004**.
 - **P36-002 — IpMetadata + provider contract:** `IpMetadata` / `IpMetadataProvider` / `EmptyIpMetadataProvider`; nullable geo fields; IPv4/IPv6 literals; NEXT→**P36-003**.
 - **P36-001 — GeoIP contract + country hints:** locked Java-only / offline-only / no probe blocking; positioned `GeoCountry` as country hints; removed coarse `/8` and `2001:db8::/32→US` from defaults; NEXT→**P36-002**.
