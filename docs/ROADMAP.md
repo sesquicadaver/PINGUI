@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P36-004** |
+| **Поточна задача** | **P36-005** |
 | **Фаза** | 36 — GeoIP / IP metadata (offline enrichment) |
-| **DoD (коротко)** | YAML override provider: longest-prefix; legacy format OK |
+| **DoD (коротко)** | MMDB City/Country + ASN: type + build epoch; official reader |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -218,7 +218,7 @@
 | 172 | **P36-001** | [x] | GeoIP contract + boundaries (country hints) |
 | 173 | **P36-002** | [x] | IpMetadata + provider contract |
 | 174 | **P36-003** | [x] | Special-IP classification |
-| 175 | **P36-004** | [ ] | YAML override provider |
+| 175 | **P36-004** | [x] | YAML override provider |
 | 176 | **P36-005** | [ ] | MMDB City/Country + ASN |
 | 177 | **P36-006** | [ ] | Bounded enrichment service |
 | 178 | **P36-007** | [ ] | Bootstrap і CLI |
@@ -228,7 +228,7 @@
 | 182 | **P36-011** | [ ] | Fault / concurrency / performance |
 | 183 | **P36-012** | [ ] | Legacy/docs/package close |
 
-**Стан черги:** **NEXT = P36-004** (фаза 36; [pingui-geoip.md](pingui-geoip.md)).
+**Стан черги:** **NEXT = P36-005** (фаза 36; [pingui-geoip.md](pingui-geoip.md)).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -1134,14 +1134,14 @@ flowchart TD
 
 **Контекст:** [pingui-geoip.md](pingui-geoip.md). Після P35 — замінити country hints на локальну MMDB + YAML override; enrichment поза probe-path. Java-only.
 
-**Черга:** після P35; **NEXT = P36-004**.
+**Черга:** після P35; **NEXT = P36-005**.
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
 | **P36-001** | [x] Контракт і межі | `package-info`, `GeoCountry`, hints YAML, docs | Java-only, offline-only, no probe blocking; «country hints»; NEXT→P36-002 |
 | **P36-002** | [x] `IpMetadata` + provider | `IpMetadata`, `IpMetadataProvider`, `EmptyIpMetadataProvider` | Immutable, nullable, IPv4/IPv6; NEXT→P36-003 |
 | **P36-003** | [x] Special-IP classification | `IpAddressClassifier`, `GeoCountry`, `IpLiterals` | RFC1918, ULA, loopback, link-local, CGNAT, documentation; NEXT→P36-004 |
-| **P36-004** | [ ] YAML override provider | `YamlIpMetadataOverrides`, `geoip_hints.yaml` | Longest-prefix; legacy format OK |
+| **P36-004** | [x] YAML override provider | `YamlIpMetadataOverrides` | Longest-prefix; legacy + extended YAML; NEXT→P36-005 |
 | **P36-005** | [ ] MMDB City/Country + ASN | `MmdbIpMetadataProvider` | Type + build epoch; official reader |
 | **P36-006** | [ ] Bounded enrichment service | `IpMetadataService` | Cache, dedupe, negative, atomic reload |
 | **P36-007** | [ ] Bootstrap і CLI | `AppOptions`, `PinguiApplication` | `--geoip-db` / asn / hints / `--no-geoip` |
@@ -1239,7 +1239,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P36-004**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P36-005**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 
