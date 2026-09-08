@@ -18,6 +18,7 @@
 
 ### Changed
 
+- **P36-012 — Legacy/docs close:** видалено `GeoCountry`/`AsnLookup`/`AsnInfo`; `MergingIpMetadataProvider` + ASN hints у bootstrap; Python не розширено; фаза 36 **NEXT=DONE**.
 - **P36-011 — GeoIP fault/concurrency:** hard `resolve` lookup timeout (commonPool); stall proofs for `cached`/`offer`/`HopGeoLabels`; NEXT→**P36-012**.
 - **P36-010 — GeoIP observability:** `GeoIpOpsStats` on `GET /ops`, Prometheus (`pingui_geoip_*`), App Status pressure line; NEXT→**P36-011**.
 - **P36-009 — Event/API/export enrichment:** `RouteGeoEnrichment`; `GET /routes/{host}?include=geo`; webhook/persist `geo_diff`/`asn_diff`; CLI `--export-geo`; NEXT→**P36-010**.
@@ -128,6 +129,7 @@
 
 ### Changed
 
+- **P36-012 — Legacy/docs close:** видалено `GeoCountry`/`AsnLookup`/`AsnInfo`; `MergingIpMetadataProvider` + ASN hints у bootstrap; Python не розширено; фаза 36 **NEXT=DONE**.
 - **Desktop alerts = in-app popup:** JavaFX `Alert` через `JavaFxDesktopAlertSink` (без `notify-send` / D-Bus / tray). Python — injectable popup або INFO log. ADR_ALERTS / CHECKLIST / CLI help оновлено.
 - **Trace concurrency default:** `max_concurrent_traces` default **10** (= `HostsConfig.MAX_HOSTS`). Увімкнені TRACE-хости в сесії (до 10) можуть трасуватись паралельно; YAML-зниження — лише свідоме throttling.
 - **P22-005 — Auto session DB name:** кнопка «Створити…» → `data/YYYY-MM-DD_HH-mm-ss_<lan-ip>.db`; фаза 22 → **DONE**.
@@ -283,6 +285,7 @@
 
 ### Changed
 
+- **P36-012 — Legacy/docs close:** видалено `GeoCountry`/`AsnLookup`/`AsnInfo`; `MergingIpMetadataProvider` + ASN hints у bootstrap; Python не розширено; фаза 36 **NEXT=DONE**.
 - **Version:** Java `0.2.0-SNAPSHOT`, Python `0.2.0` on `beta` branch.
 - **Tests:** IPv6 fixtures (`unix_v6_*`, `win_v6_*`), `v4FixturesRemainGreen`, `IcmpV6PacketTest`, JaCoCo notes.
 
@@ -290,6 +293,7 @@
 
 ### Changed
 
+- **P36-012 — Legacy/docs close:** видалено `GeoCountry`/`AsnLookup`/`AsnInfo`; `MergingIpMetadataProvider` + ASN hints у bootstrap; Python не розширено; фаза 36 **NEXT=DONE**.
 - **Tests:** B-064f — `PingExpertValidatorTest` (compatibility/value specs); `ExpertPingEnricherTest` з stub ping; прибрано JaCoCo exclusion для `ExpertPingEnricher`.
 - **Tests:** B-064e — `HostEntryTest`; розширено `GeoCountryTest` (YAML validation, 0.0.0.0/0) та `ProfilesConfigTest` (type errors, save max hosts).
 - **Tests:** B-064d — `GeoCountryTest` (longest-prefix, loopback/link-local, invalid hints, IPv6); `ProfilesConfigTest` (string host flags, invalid boolean, save round-trip).
@@ -343,6 +347,7 @@
 
 ### Changed
 
+- **P36-012 — Legacy/docs close:** видалено `GeoCountry`/`AsnLookup`/`AsnInfo`; `MergingIpMetadataProvider` + ASN hints у bootstrap; Python не розширено; фаза 36 **NEXT=DONE**.
 - **Гілки:** `main` — робочий код і документація; `beta` — повний репозиторій розробки (тести, CI, specs).
 - **Розділення launcherів:** `pingui.sh` — лише Python; Java — `java/pingui-java.sh` (Unix) / `java/pingui-java.bat` (Windows).
 
@@ -388,6 +393,7 @@
 
 ### Changed
 
+- **P36-012 — Legacy/docs close:** видалено `GeoCountry`/`AsnLookup`/`AsnInfo`; `MergingIpMetadataProvider` + ASN hints у bootstrap; Python не розширено; фаза 36 **NEXT=DONE**.
 - Замість `scripts/deploy.sh` — `pingui.sh` у корені.
 - Тихий запуск GUI (logging ERROR, фільтр Qt messages).
 

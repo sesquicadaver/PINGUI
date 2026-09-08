@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P36-012** |
-| **Фаза** | 36 — GeoIP / IP metadata (offline enrichment) |
-| **DoD (коротко)** | Legacy/docs/package close; NEXT=`DONE` |
+| **Поточна задача** | **DONE** |
+| **Фаза** | 36 — GeoIP / IP metadata (offline enrichment) — **closed** |
+| **DoD (коротко)** | Черга фази 36 вичерпана; чекати явного нового ID |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -226,9 +226,9 @@
 | 180 | **P36-009** | [x] | Event/API/export enrichment |
 | 181 | **P36-010** | [x] | Observability |
 | 182 | **P36-011** | [x] | Fault / concurrency / performance |
-| 183 | **P36-012** | [ ] | Legacy/docs/package close |
+| 183 | **P36-012** | [x] | Legacy/docs/package close |
 
-**Стан черги:** **NEXT = P36-012** (фаза 36; [pingui-geoip.md](pingui-geoip.md)).
+**Стан черги:** **NEXT = DONE** (фаза 36 closed; [pingui-geoip.md](pingui-geoip.md)).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -1134,7 +1134,7 @@ flowchart TD
 
 **Контекст:** [pingui-geoip.md](pingui-geoip.md). Після P35 — замінити country hints на локальну MMDB + YAML override; enrichment поза probe-path. Java-only.
 
-**Черга:** після P35; **NEXT = P36-012**.
+**Черга:** після P35; **NEXT = DONE** (фаза 36 closed).
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
@@ -1149,7 +1149,7 @@ flowchart TD
 | **P36-009** | [x] Event/API/export | `RouteGeoEnrichment`, `/routes?include=geo`, `--export-geo` | BC geo/asn_diff + detail_json; NEXT→P36-010 |
 | **P36-010** | [x] Observability | `/ops`+Prometheus+App Status `GeoIpOpsStats` | NEXT→P36-011 |
 | **P36-011** | [x] Fault / concurrency | lookup timeout + stall proofs | NEXT→P36-012 |
-| **P36-012** | [ ] Legacy/docs close | docs, Python note | Python не розширено; NEXT=`DONE` |
+| **P36-012** | [x] Legacy/docs close | `MergingIpMetadataProvider`, docs | прибрано GeoCountry/AsnLookup/AsnInfo; Python не розширено; NEXT=`DONE` |
 
 **Поза scope:** мережевий GeoIP API; важка Java-карта; GeoIP у `poll_result`; Python feature parity; MMDB у Git.
 
@@ -1239,7 +1239,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P36-012**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **DONE**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

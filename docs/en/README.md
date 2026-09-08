@@ -2,7 +2,7 @@
 
 # PINGUI documentation
 
-On **`main`** and **`beta`** — full package (Java Pro + Python) after merge; **`beta`** is the development branch, **`main`** is the last stable snapshot. Linear ROADMAP queue: **NEXT = P36-012** (phase 36 — [ROADMAP.md § NEXT](ROADMAP.md#next--single-source-of-truth)). Branches: [README.en.md](../README.en.md).
+On **`main`** and **`beta`** — full package (Java Pro + Python) after merge; **`beta`** is the development branch, **`main`** is the last stable snapshot. Linear ROADMAP queue: **NEXT = DONE** (phase 36 closed — [ROADMAP.md § NEXT](ROADMAP.md#next--single-source-of-truth)). Branches: [README.en.md](../README.en.md).
 
 ## Navigation
 
@@ -12,7 +12,7 @@ On **`main`** and **`beta`** — full package (Java Pro + Python) after merge; *
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Admin / DevOps | JDK 21, venv, cap_net_raw, systemd |
 | [JAVA.md](JAVA.md) | Developer | Probe, monitor, UI, YAML |
 | [ROADMAP.md](ROADMAP.md) | Developer | Official plan: phases 0–36; NEXT=P36-009 |
-| [pingui-geoip.md](pingui-geoip.md) | Developer | GeoIP / IP metadata → phase 36 (**active**) |
+| [pingui-geoip.md](pingui-geoip.md) | Developer | GeoIP / IP metadata → phase 36 (**closed**) |
 | [pingui-unattended.md](pingui-unattended.md) | Developer | Unattended NOC → phase 35 (**archive**) |
 | [pingui-correctness.md](pingui-correctness.md) | Developer | Correctness audit → phase 33 (**archival**) |
 | [pingui-route-persistence.md](pingui-route-persistence.md) | Developer | Correctness follow-up → phase 34 (**archival**) |

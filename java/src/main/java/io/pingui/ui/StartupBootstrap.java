@@ -10,8 +10,6 @@ import io.pingui.config.ProfilesConfig;
 import io.pingui.config.SessionDbResolver;
 import io.pingui.config.TracingProfile;
 import io.pingui.dns.DnsResolver;
-import io.pingui.geoip.AsnLookup;
-import io.pingui.geoip.GeoCountry;
 import io.pingui.geoip.IpMetadataBootstrap;
 import io.pingui.geoip.IpMetadataService;
 import io.pingui.monitor.SessionStore;
@@ -68,8 +66,6 @@ public final class StartupBootstrap {
 
         awaitDelay();
         phaseListener.accept("geoip");
-        GeoCountry.configure(options.geoipEnabled(), options.geoipHintsPath());
-        AsnLookup.configure(options.asnEnabled(), options.asnHintsPath(), options.asnTimeoutMs());
         IpMetadataService ipMetadata = IpMetadataBootstrap.open(options);
         try {
             DnsResolver.configure(true);
