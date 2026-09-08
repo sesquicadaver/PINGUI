@@ -9,6 +9,7 @@
 
 ### Added
 
+- **P36 NEXT activated:** ROADMAP **NEXT = P36-001** (GeoIP / IP metadata: offline MMDB + YAML override); черга P36-001…012; [pingui-geoip.md](docs/pingui-geoip.md).
 - **P35 NEXT activated:** ROADMAP **NEXT = P35-001** → **DONE** після P35-001…010; черга P35-001…010; [pingui-unattended.md](docs/pingui-unattended.md).
 - **P34 NEXT activated:** ROADMAP **NEXT = P34-001** (Correctness follow-up: route / target / persistence); черга P34-001…010; [pingui-route-persistence.md](docs/pingui-route-persistence.md). `beta`≡`main@45374cc`.
 - **P33 NEXT activated:** ROADMAP **NEXT = P33-001** (Correctness: MTR / projection / side-effects); черга P33-001…008; [pingui-correctness.md](docs/pingui-correctness.md). `beta` синхронізовано з `main@28bdb41`.
