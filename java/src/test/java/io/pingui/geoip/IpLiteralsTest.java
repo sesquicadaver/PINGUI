@@ -31,4 +31,11 @@ class IpLiteralsTest {
         assertNotNull(IpLiterals.canonicalLiteralOrNull("[2001:4860:4860::8888]"));
         assertNull(IpLiterals.canonicalLiteralOrNull("dns.google"));
     }
+
+    @Test
+    void parsesIpv4MappedLiteralsWithoutDns() {
+        assertTrue(IpLiterals.parseLiteralOrNull("::ffff:8.8.8.8") instanceof Inet4Address
+                || IpLiterals.parseLiteralOrNull("::ffff:8.8.8.8") instanceof Inet6Address);
+        assertEquals("8.8.8.8", IpLiterals.canonicalLiteralOrNull("::ffff:8.8.8.8"));
+    }
 }

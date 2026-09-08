@@ -8,8 +8,8 @@ import java.net.UnknownHostException;
 /**
  * Parses IPv4/IPv6 address literals only — never performs DNS for hostnames.
  *
- * <p>Used by offline country/ASN <em>hints</em> and {@link IpMetadataProvider} so enrichment stays
- * network-free (P36-001 / P36-002).
+ * <p>Used by offline country/ASN <em>hints</em>, {@link IpMetadataProvider}, and {@link
+ * IpAddressClassifier} so enrichment stays network-free (P36-001…003).
  */
 public final class IpLiterals {
     private IpLiterals() {}
@@ -40,7 +40,11 @@ public final class IpLiterals {
         }
         try {
             InetAddress parsed = InetAddress.getByName(host);
-            return parsed instanceof Inet6Address ? parsed : null;
+            // JDK may collapse IPv4-mapped forms (::ffff:x) to Inet4Address — still a literal.
+            if (parsed instanceof Inet4Address || parsed instanceof Inet6Address) {
+                return parsed;
+            }
+            return null;
         } catch (UnknownHostException ex) {
             return null;
         }

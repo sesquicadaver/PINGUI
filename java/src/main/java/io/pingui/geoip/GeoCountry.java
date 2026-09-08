@@ -133,10 +133,12 @@ public final class GeoCountry {
         }
 
         private String resolveV4(Inet4Address addr) {
-            if (addr.isLoopbackAddress() || addr.isLinkLocalAddress() || addr.isSiteLocalAddress()) {
+            IpAddressScope scope = IpAddressClassifier.scopeOf(addr);
+            if (scope == IpAddressScope.PRIVATE || addr.isLoopbackAddress() || addr.isLinkLocalAddress()) {
                 return LAN_TAG;
             }
-            if (addr.isMulticastAddress()) {
+            if (scope == IpAddressScope.SPECIAL) {
+                // CGNAT / documentation / multicast / unspecified — never fake a country (P36-003).
                 return null;
             }
             int value = ipv4ToInt(addr);
@@ -149,10 +151,11 @@ public final class GeoCountry {
         }
 
         private String resolveV6(Inet6Address addr) {
-            if (isIpv6Lan(addr)) {
+            IpAddressScope scope = IpAddressClassifier.scopeOf(addr);
+            if (scope == IpAddressScope.PRIVATE || addr.isLoopbackAddress() || addr.isLinkLocalAddress()) {
                 return LAN_TAG;
             }
-            if (addr.isMulticastAddress()) {
+            if (scope == IpAddressScope.SPECIAL) {
                 return null;
             }
             byte[] value = addr.getAddress();
@@ -162,14 +165,6 @@ public final class GeoCountry {
                 }
             }
             return null;
-        }
-
-        private static boolean isIpv6Lan(Inet6Address addr) {
-            if (addr.isLoopbackAddress() || addr.isLinkLocalAddress()) {
-                return true;
-            }
-            byte[] octets = addr.getAddress();
-            return (octets[0] & (byte) 0xfe) == (byte) 0xfc;
         }
 
         private static boolean matchesV4(int ip, PrefixEntry entry) {

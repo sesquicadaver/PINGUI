@@ -18,7 +18,16 @@ class IpMetadataProviderTest {
 
         IpMetadata v6 = provider.lookup("[2001:4860:4860::8888]");
         assertEquals(IpMetadataSource.NONE, v6.source());
+        assertEquals(IpAddressScope.PUBLIC, v6.scope());
         assertEquals("2001:4860:4860:0:0:0:0:8888", v6.ip());
+    }
+
+    @Test
+    void privateAndSpecialScopesClassified() {
+        assertEquals(IpAddressScope.PRIVATE, provider.lookup("10.0.0.1").scope());
+        assertEquals(IpAddressScope.SPECIAL, provider.lookup("127.0.0.1").scope());
+        assertEquals(IpAddressScope.SPECIAL, provider.lookup("2001:db8::1").scope());
+        assertEquals(IpAddressScope.PRIVATE, provider.lookup("fd00::1").scope());
     }
 
     @Test
