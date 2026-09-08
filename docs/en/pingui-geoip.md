@@ -24,7 +24,7 @@ What PINGUI calls “GeoIP” today is only static **country hints** (YAML CIDR 
 | **P36-004** | P1 | YAML override provider | [x] Longest-prefix; legacy format OK; extended fields |
 | **P36-005** | P1 | MMDB City/Country + ASN | [x] DB type + build epoch; official Java reader |
 | **P36-006** | P1 | Bounded enrichment service | [x] Cache, dedupe, negative cache, atomic reload |
-| **P36-007** | P1 | Bootstrap and CLI | `--geoip-db` / `--geoip-asn-db` / hints / `--no-geoip`; predictable errors |
+| **P36-007** | P1 | Bootstrap and CLI | [x] `--geoip-db` / `--geoip-asn-db` / hints / `--no-geoip`; predictable errors |
 | **P36-008** | P2 | GUI integration | Cache-only rendering, tooltip/details, geographic route strip |
 | **P36-009** | P2 | Event/API/export enrichment | Backward-compatible; no SQLite schema change |
 | **P36-010** | P2 | Observability | `/ops`, Prometheus, App Status |
@@ -59,6 +59,7 @@ Code: `java/.../geoip/package-info.java`, `GeoCountry`, `config/geoip_hints.yaml
 | `MmdbIpMetadataProvider` | Official `DatabaseReader`; City/Country + optional ASN; `MmdbDatabaseInfo` (type + build epoch) |
 | `IpMetadataService` | Precedence YAML→MMDB→NONE; LRU+negative cache; offer/dedupe; atomic reload |
 | `GeoIpOpsStats` | Cache/queue/hit counters (full `/ops` wiring — P36-010) |
+| `IpMetadataBootstrap` | CLI → service; fail-fast on explicit broken MMDB |
 
 ## Target architecture
 

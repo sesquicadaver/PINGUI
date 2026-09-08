@@ -24,7 +24,7 @@
 | **P36-004** | P1 | YAML override provider | [x] Longest-prefix; старий формат сумісний; розширені поля |
 | **P36-005** | P1 | MMDB City/Country + ASN | [x] Тип БД + build epoch; офіційний Java reader |
 | **P36-006** | P1 | Bounded enrichment service | [x] Cache, dedupe, negative cache, atomic reload |
-| **P36-007** | P1 | Bootstrap і CLI | `--geoip-db` / `--geoip-asn-db` / hints / `--no-geoip`; передбачувані помилки |
+| **P36-007** | P1 | Bootstrap і CLI | [x] `--geoip-db` / `--geoip-asn-db` / hints / `--no-geoip`; передбачувані помилки |
 | **P36-008** | P2 | GUI integration | Cache-only rendering, tooltip/details, geographic route strip |
 | **P36-009** | P2 | Event/API/export enrichment | Backward-compatible; без зміни SQLite schema |
 | **P36-010** | P2 | Observability | `/ops`, Prometheus, App Status |
@@ -59,6 +59,7 @@
 | `MmdbIpMetadataProvider` | Official `DatabaseReader`; City/Country + optional ASN; `MmdbDatabaseInfo` (type + build epoch) |
 | `IpMetadataService` | Precedence YAML→MMDB→NONE; LRU+negative cache; offer/dedupe; atomic reload |
 | `GeoIpOpsStats` | Cache/queue/hit counters (full `/ops` wiring — P36-010) |
+| `IpMetadataBootstrap` | CLI → service; fail-fast on explicit broken MMDB |
 
 ## Цільова архітектура
 

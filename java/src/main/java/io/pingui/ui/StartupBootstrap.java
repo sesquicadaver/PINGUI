@@ -12,6 +12,8 @@ import io.pingui.config.TracingProfile;
 import io.pingui.dns.DnsResolver;
 import io.pingui.geoip.AsnLookup;
 import io.pingui.geoip.GeoCountry;
+import io.pingui.geoip.IpMetadataBootstrap;
+import io.pingui.geoip.IpMetadataService;
 import io.pingui.monitor.SessionStore;
 import io.pingui.persistence.SessionDatabase;
 import io.pingui.persistence.timeseries.TimeSeriesBackends;
@@ -53,7 +55,8 @@ public final class StartupBootstrap {
             SessionStore store,
             List<HostEntry> sessionHosts,
             boolean sqliteOpened,
-            String heavyThreadName) {}
+            String heavyThreadName,
+            IpMetadataService ipMetadata) {}
 
     /** Loads config + enrichment tables + session store. Must not run on the FX thread. */
     public static Result load(AppOptions options) throws IOException {
@@ -67,25 +70,32 @@ public final class StartupBootstrap {
         phaseListener.accept("geoip");
         GeoCountry.configure(options.geoipEnabled(), options.geoipHintsPath());
         AsnLookup.configure(options.asnEnabled(), options.asnHintsPath(), options.asnTimeoutMs());
-        DnsResolver.configure(true);
-        PingPresets.configure(PingPresets.resolvePath(options.configPath()));
+        IpMetadataService ipMetadata = IpMetadataBootstrap.open(options);
+        try {
+            DnsResolver.configure(true);
+            PingPresets.configure(PingPresets.resolvePath(options.configPath()));
 
-        awaitDelay();
-        phaseListener.accept("sqlite");
-        SessionDatabase database = openSessionDatabase(options, document);
-        List<HostEntry> sessionHosts =
-                HostViewRules.sessionEntries(document.active().hosts());
-        SessionStore store = SessionStore.fromEntries(
-                sessionHosts, database, document.active().hostProbeMode());
-        attachTimeSeries(store, options);
+            awaitDelay();
+            phaseListener.accept("sqlite");
+            SessionDatabase database = openSessionDatabase(options, document);
+            List<HostEntry> sessionHosts =
+                    HostViewRules.sessionEntries(document.active().hosts());
+            SessionStore store = SessionStore.fromEntries(
+                    sessionHosts, database, document.active().hostProbeMode());
+            attachTimeSeries(store, options);
 
-        phaseListener.accept("done");
-        return new Result(
-                document,
-                store,
-                sessionHosts,
-                database != null,
-                Thread.currentThread().getName());
+            phaseListener.accept("done");
+            return new Result(
+                    document,
+                    store,
+                    sessionHosts,
+                    database != null,
+                    Thread.currentThread().getName(),
+                    ipMetadata);
+        } catch (RuntimeException ex) {
+            ipMetadata.close();
+            throw ex;
+        }
     }
 
     static void resetTestHooks() {

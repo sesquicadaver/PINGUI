@@ -18,6 +18,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P36-007 — GeoIP bootstrap/CLI:** `--geoip-db` / `--geoip-asn-db` + `IpMetadataBootstrap` (fail-fast on explicit broken MMDB; YAML-only without MMDB); `--asn-timeout-ms` deprecated; NEXT→**P36-008**.
 - **P36-006 — Bounded enrichment service:** `IpMetadataService` (YAML→MMDB→NONE, LRU+negative cache, offer/dedupe, atomic reload) + `GeoIpOpsStats`; NEXT→**P36-007**.
 - **P36-005 — MMDB City/Country + ASN:** `MmdbIpMetadataProvider` on official `geoip2` `DatabaseReader`; type + build epoch; SPECIAL skipped; NEXT→**P36-006**.
 - **P36-004 — YAML override provider:** `YamlIpMetadataOverrides` — legacy `CIDR: ISO` + extended mapping (city/coords/ASN); longest-prefix; NEXT→**P36-005**.

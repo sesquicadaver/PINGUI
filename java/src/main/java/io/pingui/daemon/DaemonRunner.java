@@ -12,6 +12,8 @@ import io.pingui.config.SessionDbResolver;
 import io.pingui.config.TracingProfile;
 import io.pingui.geoip.AsnLookup;
 import io.pingui.geoip.GeoCountry;
+import io.pingui.geoip.IpMetadataBootstrap;
+import io.pingui.geoip.IpMetadataService;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
@@ -44,6 +46,7 @@ public final class DaemonRunner implements AutoCloseable {
     private SessionStore store;
     private MonitorService monitor;
     private TelemetryAttachment telemetry;
+    private IpMetadataService ipMetadata;
     private MetricsHttpServer metricsServer;
     private ReadOnlyApiServer apiServer;
     private final CountDownLatch running = new CountDownLatch(1);
@@ -62,23 +65,29 @@ public final class DaemonRunner implements AutoCloseable {
         applyCliOverridesToActiveProfile();
         GeoCountry.configure(options.geoipEnabled(), options.geoipHintsPath());
         AsnLookup.configure(options.asnEnabled(), options.asnHintsPath(), options.asnTimeoutMs());
-        TracingProfile active = profileDocument.active();
-        List<HostEntry> sessionHosts = HostViewRules.sessionEntries(active.hosts());
-        store = SessionStore.fromEntries(sessionHosts, openSessionDatabase(active), active.hostProbeMode());
-        attachTimeSeries(store);
-        monitor = createMonitor(active, sessionHosts);
-        attachTelemetryBus(monitor);
-        startMetricsIfConfigured();
-        startApiIfConfigured();
-        DaemonPidFile.write(pidFile, ProcessHandle.current().pid());
-        Runtime.getRuntime().addShutdownHook(new Thread(this::closeQuietly, "pingui-daemon-shutdown"));
-        LOG.info(
-                "PINGUI daemon started (profile={}, hosts={}, pid={})",
-                profileDocument.activeProfile(),
-                sessionHosts.size(),
-                ProcessHandle.current().pid());
-        if (monitor.enabledHosts().isEmpty()) {
-            LOG.warn("No enabled hosts in profile — enable targets in YAML or daemon will idle");
+        ipMetadata = IpMetadataBootstrap.open(options);
+        try {
+            TracingProfile active = profileDocument.active();
+            List<HostEntry> sessionHosts = HostViewRules.sessionEntries(active.hosts());
+            store = SessionStore.fromEntries(sessionHosts, openSessionDatabase(active), active.hostProbeMode());
+            attachTimeSeries(store);
+            monitor = createMonitor(active, sessionHosts);
+            attachTelemetryBus(monitor);
+            startMetricsIfConfigured();
+            startApiIfConfigured();
+            DaemonPidFile.write(pidFile, ProcessHandle.current().pid());
+            Runtime.getRuntime().addShutdownHook(new Thread(this::closeQuietly, "pingui-daemon-shutdown"));
+            LOG.info(
+                    "PINGUI daemon started (profile={}, hosts={}, pid={})",
+                    profileDocument.activeProfile(),
+                    sessionHosts.size(),
+                    ProcessHandle.current().pid());
+            if (monitor.enabledHosts().isEmpty()) {
+                LOG.warn("No enabled hosts in profile — enable targets in YAML or daemon will idle");
+            }
+        } catch (RuntimeException | IOException ex) {
+            closeQuietly();
+            throw ex;
         }
     }
 
@@ -127,6 +136,10 @@ public final class DaemonRunner implements AutoCloseable {
         if (store != null) {
             store.close();
             store = null;
+        }
+        if (ipMetadata != null) {
+            ipMetadata.close();
+            ipMetadata = null;
         }
         try {
             DaemonPidFile.deleteIfExists(pidFile);

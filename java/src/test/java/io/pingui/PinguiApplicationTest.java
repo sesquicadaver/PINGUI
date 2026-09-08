@@ -282,6 +282,27 @@ class PinguiApplicationTest {
     }
 
     @Test
+    void parseOptions_geoipDbAndAsnDb() {
+        AppOptions options = PinguiApplication.parseOptions(Map.of(
+                "geoip-db", "/data/GeoLite2-City.mmdb",
+                "geoip-asn-db", "/data/GeoLite2-ASN.mmdb"));
+        assertEquals(Path.of("/data/GeoLite2-City.mmdb"), options.geoipDbPath().orElseThrow());
+        assertEquals(
+                Path.of("/data/GeoLite2-ASN.mmdb"), options.geoipAsnDbPath().orElseThrow());
+        assertTrue(options.geoipEnabled());
+    }
+
+    @Test
+    void parseOptions_rejectsGeoipDbWithNoGeoipAndAsnWithoutDb() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PinguiApplication.parseOptions(Map.of("no-geoip", "true", "geoip-db", "x.mmdb")));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PinguiApplication.parseOptions(Map.of("geoip-asn-db", "asn.mmdb")));
+    }
+
+    @Test
     void parseOptions_telemetryRetentionWithSessionDb() {
         AppOptions options = PinguiApplication.parseOptions(Map.of(
                 "session-db", "data/ping.db",

@@ -16,6 +16,8 @@ class AppOptionsTest {
         assertFalse(options.verbose());
         assertTrue(options.geoipEnabled());
         assertEquals(Path.of("config/geoip_hints.yaml"), options.geoipHintsPath());
+        assertTrue(options.geoipDbPath().isEmpty());
+        assertTrue(options.geoipAsnDbPath().isEmpty());
         assertTrue(options.asnEnabled());
         assertEquals(Path.of("config/asn_hints.yaml"), options.asnHintsPath());
         assertEquals(2000, options.asnTimeoutMs());

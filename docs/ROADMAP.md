@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P36-007** |
+| **Поточна задача** | **P36-008** |
 | **Фаза** | 36 — GeoIP / IP metadata (offline enrichment) |
-| **DoD (коротко)** | Bootstrap і CLI: `--geoip-db` / asn / hints / `--no-geoip` |
+| **DoD (коротко)** | GUI integration: cache-only rendering, tooltip/details, route strip |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -221,14 +221,14 @@
 | 175 | **P36-004** | [x] | YAML override provider |
 | 176 | **P36-005** | [x] | MMDB City/Country + ASN |
 | 177 | **P36-006** | [x] | Bounded enrichment service |
-| 178 | **P36-007** | [ ] | Bootstrap і CLI |
+| 178 | **P36-007** | [x] | Bootstrap і CLI |
 | 179 | **P36-008** | [ ] | GUI integration |
 | 180 | **P36-009** | [ ] | Event/API/export enrichment |
 | 181 | **P36-010** | [ ] | Observability |
 | 182 | **P36-011** | [ ] | Fault / concurrency / performance |
 | 183 | **P36-012** | [ ] | Legacy/docs/package close |
 
-**Стан черги:** **NEXT = P36-007** (фаза 36; [pingui-geoip.md](pingui-geoip.md)).
+**Стан черги:** **NEXT = P36-008** (фаза 36; [pingui-geoip.md](pingui-geoip.md)).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -1134,7 +1134,7 @@ flowchart TD
 
 **Контекст:** [pingui-geoip.md](pingui-geoip.md). Після P35 — замінити country hints на локальну MMDB + YAML override; enrichment поза probe-path. Java-only.
 
-**Черга:** після P35; **NEXT = P36-007**.
+**Черга:** після P35; **NEXT = P36-008**.
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
@@ -1144,7 +1144,7 @@ flowchart TD
 | **P36-004** | [x] YAML override provider | `YamlIpMetadataOverrides` | Longest-prefix; legacy + extended YAML; NEXT→P36-005 |
 | **P36-005** | [x] MMDB City/Country + ASN | `MmdbIpMetadataProvider`, `MmdbDatabaseInfo`, geoip2 | Type + build epoch; official reader; NEXT→P36-006 |
 | **P36-006** | [x] Bounded enrichment service | `IpMetadataService`, `GeoIpOpsStats` | Cache, dedupe, negative, atomic reload; NEXT→P36-007 |
-| **P36-007** | [ ] Bootstrap і CLI | `AppOptions`, `PinguiApplication` | `--geoip-db` / asn / hints / `--no-geoip` |
+| **P36-007** | [x] Bootstrap і CLI | `IpMetadataBootstrap`, `AppOptions`, `PinguiApplication` | `--geoip-db` / asn / hints / `--no-geoip`; NEXT→P36-008 |
 | **P36-008** | [ ] GUI integration | `PingColor`, hop details, route strip | Cache-only render |
 | **P36-009** | [ ] Event/API/export | route_change detail, `/routes?include=geo` | Backward-compatible; no schema change |
 | **P36-010** | [ ] Observability | `/ops`, Prometheus, App Status | GeoIpOpsStats |
@@ -1239,7 +1239,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P36-007**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P36-008**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

@@ -121,6 +121,28 @@ public final class PinguiApplication extends Application {
         boolean geoipEnabled = !params.containsKey("no-geoip");
         Path geoipHints =
                 params.containsKey("geoip-hints") ? Path.of(params.get("geoip-hints")) : defaults.geoipHintsPath();
+        Optional<Path> geoipDb = Optional.empty();
+        if (params.containsKey("geoip-db")) {
+            String value = params.get("geoip-db");
+            if (value == null || value.isBlank()) {
+                throw new IllegalArgumentException("Missing value for --geoip-db");
+            }
+            geoipDb = Optional.of(Path.of(value.strip()));
+        }
+        Optional<Path> geoipAsnDb = Optional.empty();
+        if (params.containsKey("geoip-asn-db")) {
+            String value = params.get("geoip-asn-db");
+            if (value == null || value.isBlank()) {
+                throw new IllegalArgumentException("Missing value for --geoip-asn-db");
+            }
+            geoipAsnDb = Optional.of(Path.of(value.strip()));
+        }
+        if (!geoipEnabled && (geoipDb.isPresent() || geoipAsnDb.isPresent())) {
+            throw new IllegalArgumentException("--geoip-db/--geoip-asn-db cannot be used with --no-geoip");
+        }
+        if (geoipAsnDb.isPresent() && geoipDb.isEmpty()) {
+            throw new IllegalArgumentException("--geoip-asn-db requires --geoip-db PATH");
+        }
         boolean asnEnabled = !params.containsKey("no-asn");
         Path asnHints = params.containsKey("asn-hints") ? Path.of(params.get("asn-hints")) : defaults.asnHintsPath();
         int asnTimeoutMs = defaults.asnTimeoutMs();
@@ -316,6 +338,8 @@ public final class PinguiApplication extends Application {
                 verbose,
                 geoipEnabled,
                 geoipHints,
+                geoipDb,
+                geoipAsnDb,
                 asnEnabled,
                 asnHints,
                 asnTimeoutMs,
@@ -781,11 +805,13 @@ public final class PinguiApplication extends Application {
                   --status            Print daemon running/stopped
                   --no-persist-route-change  Disable route_change events in session DB
                   --no-persist-probe-error     Disable probe_error events in session DB
-                  --geoip-hints PATH  Country hints YAML CIDR→ISO (not full GeoIP; default: config/geoip_hints.yaml)
-                  --no-geoip        Disable country hints in hop labels
-                  --asn-hints PATH    CIDR→ASN YAML (default: config/asn_hints.yaml)
-                  --no-asn          Disable ASN hints in hop labels
-                  --asn-timeout-ms N Reserved for future whois fallback (default: 2000)
+                  --geoip-hints PATH  YAML CIDR overrides / country hints (default: config/geoip_hints.yaml)
+                  --geoip-db PATH     Offline City/Country MMDB (optional; missing/corrupt → config error)
+                  --geoip-asn-db PATH Offline ASN MMDB (requires --geoip-db)
+                  --no-geoip        Disable GeoIP enrichment and country hints
+                  --asn-hints PATH    Legacy CIDR→ASN YAML (default: config/asn_hints.yaml)
+                  --no-asn          Disable ASN hints / skip ASN MMDB
+                  --asn-timeout-ms N Deprecated (no network ASN fallback; kept for CLI compatibility)
                   --lang CODE       UI language: uk|en|es|it|pl|cs|lv|lt|et (default: prefs or uk)
                   --verbose         Debug logging
                 """);
