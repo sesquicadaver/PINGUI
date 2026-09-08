@@ -122,19 +122,25 @@ class ReadOnlyApiContractTest {
     }
 
     @Test
-    void opsDocumentExposesDnsCounters() throws Exception {
+    void opsDocumentExposesDnsAndGeoIpCounters() throws Exception {
         SessionStore store = new SessionStore(List.of());
         io.pingui.dns.DnsOpsStats resolve = new io.pingui.dns.DnsOpsStats(64, 2, 1, 3, 3, 5, 1);
         io.pingui.dns.DnsOpsStats control = new io.pingui.dns.DnsOpsStats(64, 4, 2, 1, 1, 7, 0);
         io.pingui.dns.DnsOpsSnapshot snapshot = new io.pingui.dns.DnsOpsSnapshot(resolve, control);
-        try (ReadOnlyApiServer server = start(store, () -> snapshot)) {
+        io.pingui.geoip.GeoIpOpsStats geoip = new io.pingui.geoip.GeoIpOpsStats(
+                10, 4096, 1, 64, 2, 100L, 20L, 5L, 1L, 3L, 7L, 0L, java.time.Instant.parse("2026-09-08T12:00:00Z"));
+        try (ReadOnlyApiServer server = start(store, () -> snapshot, () -> geoip)) {
             HttpResponse<String> response = get(server.port(), "/ops");
             assertEquals(200, response.statusCode());
             assertEquals(
                     "{\"dns\":{\"queue_capacity\":64,\"queued\":2,\"in_flight\":1,"
                             + "\"rejected\":3,\"dropped\":3,\"coalesced\":5,\"timeouts\":1},"
                             + "\"dns_control\":{\"queue_capacity\":64,\"queued\":4,\"in_flight\":2,"
-                            + "\"rejected\":1,\"dropped\":1,\"coalesced\":7,\"timeouts\":0}}",
+                            + "\"rejected\":1,\"dropped\":1,\"coalesced\":7,\"timeouts\":0},"
+                            + "\"geoip\":{\"cache_size\":10,\"cache_capacity\":4096,\"queue_depth\":1,"
+                            + "\"queue_capacity\":64,\"pending\":2,\"hits\":100,\"misses\":20,\"unknowns\":5,"
+                            + "\"errors\":1,\"rejected\":3,\"coalesced\":7,\"reload_failures\":0,"
+                            + "\"last_successful_reload\":\"2026-09-08T12:00:00Z\"}}",
                     response.body());
         }
     }
@@ -158,16 +164,24 @@ class ReadOnlyApiContractTest {
     }
 
     private static ReadOnlyApiServer start(SessionStore store) throws Exception {
-        return start(store, null);
+        return start(store, null, null);
     }
 
     private static ReadOnlyApiServer start(
             SessionStore store, java.util.function.Supplier<io.pingui.dns.DnsOpsSnapshot> dnsOps) throws Exception {
+        return start(store, dnsOps, null);
+    }
+
+    private static ReadOnlyApiServer start(
+            SessionStore store,
+            java.util.function.Supplier<io.pingui.dns.DnsOpsSnapshot> dnsOps,
+            java.util.function.Supplier<io.pingui.geoip.GeoIpOpsStats> geoIpOps)
+            throws Exception {
         int port;
         try (ServerSocket probe = new ServerSocket(0)) {
             port = probe.getLocalPort();
         }
-        return ReadOnlyApiServer.start(store, port, dnsOps);
+        return ReadOnlyApiServer.start(store, port, dnsOps, geoIpOps);
     }
 
     private static HttpResponse<String> get(int port, String path) throws Exception {

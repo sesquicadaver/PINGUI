@@ -73,8 +73,22 @@ final class ReadOnlyApiJson {
     }
 
     static String opsDocument(io.pingui.dns.DnsOpsSnapshot snapshot) {
+        return opsDocument(snapshot, io.pingui.geoip.IpMetadataRuntime.get().opsStats());
+    }
+
+    /**
+     * @param geoip enrichment counters (P36-010); {@code null} → empty snapshot
+     */
+    static String opsDocument(io.pingui.dns.DnsOpsSnapshot snapshot, io.pingui.geoip.GeoIpOpsStats geoip) {
         Objects.requireNonNull(snapshot, "snapshot");
-        return "{\"dns\":" + dnsObject(snapshot.resolve()) + ",\"dns_control\":" + dnsObject(snapshot.control()) + "}";
+        io.pingui.geoip.GeoIpOpsStats stats = geoip != null ? geoip : io.pingui.geoip.GeoIpOpsStats.empty();
+        return "{\"dns\":"
+                + dnsObject(snapshot.resolve())
+                + ",\"dns_control\":"
+                + dnsObject(snapshot.control())
+                + ",\"geoip\":"
+                + geoipObject(stats)
+                + "}";
     }
 
     /** Backward-compatible single-layer ops JSON (tests / older callers). */
@@ -99,6 +113,40 @@ final class ReadOnlyApiJson {
                 + dns.coalescedCount()
                 + ",\"timeouts\":"
                 + dns.timeoutCount()
+                + "}";
+    }
+
+    private static String geoipObject(io.pingui.geoip.GeoIpOpsStats geoip) {
+        String reload = geoip.lastSuccessfulReload() == null
+                ? "null"
+                : JsonStrings.quote(geoip.lastSuccessfulReload().toString());
+        return "{"
+                + "\"cache_size\":"
+                + geoip.cacheSize()
+                + ",\"cache_capacity\":"
+                + geoip.cacheCapacity()
+                + ",\"queue_depth\":"
+                + geoip.queueDepth()
+                + ",\"queue_capacity\":"
+                + geoip.queueCapacity()
+                + ",\"pending\":"
+                + geoip.pendingLookups()
+                + ",\"hits\":"
+                + geoip.hits()
+                + ",\"misses\":"
+                + geoip.misses()
+                + ",\"unknowns\":"
+                + geoip.unknowns()
+                + ",\"errors\":"
+                + geoip.errors()
+                + ",\"rejected\":"
+                + geoip.rejected()
+                + ",\"coalesced\":"
+                + geoip.coalesced()
+                + ",\"reload_failures\":"
+                + geoip.reloadFailures()
+                + ",\"last_successful_reload\":"
+                + reload
                 + "}";
     }
 
@@ -163,10 +211,10 @@ final class ReadOnlyApiJson {
                     },
                     "/ops": {
                       "get": {
-                        "summary": "Operator counters (DNS resolve + DNS-control outer queue)",
+                        "summary": "Operator counters (DNS resolve + DNS-control + GeoIP)",
                         "responses": {
                           "200": {
-                            "description": "Ops snapshot",
+                            "description": "Ops snapshot (dns, dns_control, geoip)",
                             "content": {
                               "application/json": {
                                 "schema": {"type": "object"}

@@ -28,6 +28,18 @@ public final class MetricNames {
     public static final String DNS_CONTROL_QUEUE_DEPTH = "pingui_dns_control_queue_depth";
     public static final String DNS_CONTROL_QUEUE_CAPACITY = "pingui_dns_control_queue_capacity";
     public static final String DNS_CONTROL_PENDING = "pingui_dns_control_pending";
+    public static final String GEOIP_HITS_TOTAL = "pingui_geoip_hits_total";
+    public static final String GEOIP_MISSES_TOTAL = "pingui_geoip_misses_total";
+    public static final String GEOIP_UNKNOWNS_TOTAL = "pingui_geoip_unknowns_total";
+    public static final String GEOIP_ERRORS_TOTAL = "pingui_geoip_errors_total";
+    public static final String GEOIP_REJECTED_TOTAL = "pingui_geoip_rejected_total";
+    public static final String GEOIP_COALESCED_TOTAL = "pingui_geoip_coalesced_total";
+    public static final String GEOIP_RELOAD_FAILURES_TOTAL = "pingui_geoip_reload_failures_total";
+    public static final String GEOIP_CACHE_SIZE = "pingui_geoip_cache_size";
+    public static final String GEOIP_CACHE_CAPACITY = "pingui_geoip_cache_capacity";
+    public static final String GEOIP_QUEUE_DEPTH = "pingui_geoip_queue_depth";
+    public static final String GEOIP_QUEUE_CAPACITY = "pingui_geoip_queue_capacity";
+    public static final String GEOIP_PENDING = "pingui_geoip_pending";
 
     public static final String LABEL_PROFILE = "profile";
     public static final String LABEL_PROBE_MODE = "probe_mode";

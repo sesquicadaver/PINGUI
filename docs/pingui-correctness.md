@@ -2,7 +2,7 @@
 
 # Correctness — MTR / projection / side-effects (P33)
 
-> **Архів:** фаза 33 **closed** (P33-001…008). Фаза 34 також **closed** — [pingui-route-persistence.md](pingui-route-persistence.md). Актуальний ROADMAP **NEXT=P36-010** — [pingui-geoip.md](pingui-geoip.md). Stabilization: [pingui-stabilization.md](pingui-stabilization.md).
+> **Архів:** фаза 33 **closed** (P33-001…008). Фаза 34 також **closed** — [pingui-route-persistence.md](pingui-route-persistence.md). Актуальний ROADMAP **NEXT=P36-011** — [pingui-geoip.md](pingui-geoip.md). Stabilization: [pingui-stabilization.md](pingui-stabilization.md).
 
 **Джерело для фази 33.** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
 
@@ -118,7 +118,7 @@ P32 закрито якісно (fresh-hop, `target_sampled`, rollup v14, bounde
 
 **Зроблено:**
 
-* ROADMAP **NEXT=P36-010**; усі P33-001…008 `[x]`; індекс фаз ✅ DONE;
+* ROADMAP **NEXT=P36-011**; усі P33-001…008 `[x]`; індекс фаз ✅ DONE;
 * README більше не посилається на застарілий P29-001;
 * `pingui-stabilization.md` / `pingui-correctness.md` — архівні банери; LIVING_SPEC + JAVA + docs index.
 

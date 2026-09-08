@@ -2,6 +2,7 @@ package io.pingui.observability;
 
 import io.pingui.dns.DnsOpsSnapshot;
 import io.pingui.dns.DnsOpsStats;
+import io.pingui.geoip.GeoIpOpsStats;
 import io.pingui.telemetry.MetricNames;
 import java.util.Map;
 import java.util.Objects;
@@ -10,7 +11,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 /**
- * In-process Prometheus text exposition state (P15-010 / P34-007 / P35-005).
+ * In-process Prometheus text exposition state (P15-010 / P34-007 / P35-005 / P36-010).
  *
  * <p>Thread-safe scrape snapshot for daemon {@code GET /metrics}. Not a remote_write client.
  */
@@ -20,10 +21,16 @@ public final class PrometheusExporter {
     private final ConcurrentHashMap<String, Double> targetReachable = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<DurationKey, Double> traceDurationMs = new ConcurrentHashMap<>();
     private volatile Supplier<DnsOpsSnapshot> dnsOpsSupplier;
+    private volatile Supplier<GeoIpOpsStats> geoIpOpsSupplier;
 
     /** Optional live DNS queue counters for scrape (P34-007 / P35-005). */
     public void setDnsOpsSupplier(Supplier<DnsOpsSnapshot> dnsOpsSupplier) {
         this.dnsOpsSupplier = dnsOpsSupplier;
+    }
+
+    /** Optional live GeoIP enrichment counters for scrape (P36-010). */
+    public void setGeoIpOpsSupplier(Supplier<GeoIpOpsStats> geoIpOpsSupplier) {
+        this.geoIpOpsSupplier = geoIpOpsSupplier;
     }
 
     /** Records last-known RTT for a hop (gauge). */
@@ -104,6 +111,7 @@ public final class PrometheusExporter {
                     .append('\n');
         }
         appendDnsOps(out);
+        appendGeoIpOps(out);
         return out.toString();
     }
 
@@ -179,6 +187,74 @@ public final class PrometheusExporter {
         out.append(MetricNames.DNS_CONTROL_PENDING)
                 .append(' ')
                 .append(control.inFlight())
+                .append('\n');
+    }
+
+    private void appendGeoIpOps(StringBuilder out) {
+        Supplier<GeoIpOpsStats> supplier = geoIpOpsSupplier;
+        GeoIpOpsStats stats = supplier != null ? supplier.get() : null;
+        if (stats == null) {
+            stats = GeoIpOpsStats.empty();
+        }
+        writeCounterHeader(out, MetricNames.GEOIP_HITS_TOTAL, "GeoIP cache hits");
+        out.append(MetricNames.GEOIP_HITS_TOTAL)
+                .append(' ')
+                .append(stats.hits())
+                .append('\n');
+        writeCounterHeader(out, MetricNames.GEOIP_MISSES_TOTAL, "GeoIP cache misses that triggered lookup");
+        out.append(MetricNames.GEOIP_MISSES_TOTAL)
+                .append(' ')
+                .append(stats.misses())
+                .append('\n');
+        writeCounterHeader(out, MetricNames.GEOIP_UNKNOWNS_TOTAL, "GeoIP lookups that resolved to NONE");
+        out.append(MetricNames.GEOIP_UNKNOWNS_TOTAL)
+                .append(' ')
+                .append(stats.unknowns())
+                .append('\n');
+        writeCounterHeader(out, MetricNames.GEOIP_ERRORS_TOTAL, "GeoIP lookup errors");
+        out.append(MetricNames.GEOIP_ERRORS_TOTAL)
+                .append(' ')
+                .append(stats.errors())
+                .append('\n');
+        writeCounterHeader(out, MetricNames.GEOIP_REJECTED_TOTAL, "GeoIP offers rejected because the queue was full");
+        out.append(MetricNames.GEOIP_REJECTED_TOTAL)
+                .append(' ')
+                .append(stats.rejected())
+                .append('\n');
+        writeCounterHeader(out, MetricNames.GEOIP_COALESCED_TOTAL, "GeoIP lookups coalesced onto an in-flight IP");
+        out.append(MetricNames.GEOIP_COALESCED_TOTAL)
+                .append(' ')
+                .append(stats.coalesced())
+                .append('\n');
+        writeCounterHeader(out, MetricNames.GEOIP_RELOAD_FAILURES_TOTAL, "GeoIP MMDB reload failures");
+        out.append(MetricNames.GEOIP_RELOAD_FAILURES_TOTAL)
+                .append(' ')
+                .append(stats.reloadFailures())
+                .append('\n');
+        writeGaugeHeader(out, MetricNames.GEOIP_CACHE_SIZE, "Current GeoIP LRU cache size");
+        out.append(MetricNames.GEOIP_CACHE_SIZE)
+                .append(' ')
+                .append(stats.cacheSize())
+                .append('\n');
+        writeGaugeHeader(out, MetricNames.GEOIP_CACHE_CAPACITY, "GeoIP LRU cache capacity");
+        out.append(MetricNames.GEOIP_CACHE_CAPACITY)
+                .append(' ')
+                .append(stats.cacheCapacity())
+                .append('\n');
+        writeGaugeHeader(out, MetricNames.GEOIP_QUEUE_DEPTH, "Current GeoIP enrichment executor queue depth");
+        out.append(MetricNames.GEOIP_QUEUE_DEPTH)
+                .append(' ')
+                .append(stats.queueDepth())
+                .append('\n');
+        writeGaugeHeader(out, MetricNames.GEOIP_QUEUE_CAPACITY, "GeoIP enrichment executor queue capacity");
+        out.append(MetricNames.GEOIP_QUEUE_CAPACITY)
+                .append(' ')
+                .append(stats.queueCapacity())
+                .append('\n');
+        writeGaugeHeader(out, MetricNames.GEOIP_PENDING, "In-flight GeoIP lookups");
+        out.append(MetricNames.GEOIP_PENDING)
+                .append(' ')
+                .append(stats.pendingLookups())
                 .append('\n');
     }
 
