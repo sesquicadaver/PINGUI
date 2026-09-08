@@ -173,15 +173,7 @@ public final class SessionReportExporter {
         }
         IpMetadata meta = RouteGeoEnrichment.resolveLiteral(row.ip());
         String[] geo = RouteGeoEnrichment.csvGeoCells(meta);
-        return base
-                + ","
-                + csvCell(geo[0])
-                + ","
-                + csvCell(geo[1])
-                + ","
-                + csvCell(geo[2])
-                + ","
-                + csvCell(geo[3]);
+        return base + "," + csvCell(geo[0]) + "," + csvCell(geo[1]) + "," + csvCell(geo[2]) + "," + csvCell(geo[3]);
     }
 
     private static String formatDouble(Double value) {

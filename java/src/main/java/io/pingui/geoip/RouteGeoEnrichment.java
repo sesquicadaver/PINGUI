@@ -33,9 +33,11 @@ public final class RouteGeoEnrichment {
         }
         json.append(",\"organization\":").append(quoteOrNull(meta != null ? meta.organization() : null));
         json.append(",\"source\":")
-                .append(quoteOrNull(meta != null && meta.source() != null ? meta.source().name() : null));
+                .append(quoteOrNull(
+                        meta != null && meta.source() != null ? meta.source().name() : null));
         json.append(",\"scope\":")
-                .append(quoteOrNull(meta != null && meta.scope() != null ? meta.scope().name() : null));
+                .append(quoteOrNull(
+                        meta != null && meta.scope() != null ? meta.scope().name() : null));
         json.append(",\"city\":").append(quoteOrNull(meta != null ? meta.city() : null));
         json.append(",\"subdivision\":").append(quoteOrNull(meta != null ? meta.subdivision() : null));
         json.append(",\"latitude\":");

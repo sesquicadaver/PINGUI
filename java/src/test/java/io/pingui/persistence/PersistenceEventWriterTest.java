@@ -35,7 +35,8 @@ class PersistenceEventWriterTest {
                     List.of("8.8.8.8"),
                     "office",
                     Instant.parse("2026-09-08T12:00:00Z")));
-            PersistenceEventRecord row = database.listEvents(PersistenceEventType.ROUTE_CHANGE, "8.8.8.8", Instant.EPOCH, 10)
+            PersistenceEventRecord row = database.listEvents(
+                            PersistenceEventType.ROUTE_CHANGE, "8.8.8.8", Instant.EPOCH, 10)
                     .get(0);
             assertTrue(row.detailJson().contains("geo_diff"));
             assertTrue(row.detailJson().contains("asn_diff"));
