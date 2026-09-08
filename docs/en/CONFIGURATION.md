@@ -216,7 +216,7 @@ CLI names `--geoip-*` are kept for compatibility; functionally these are **count
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `--geoip-hints` | Path | `config/geoip_hints.yaml` | Country hints: CIDR→ISO for hop labels (`prefixes` v4, `prefixes_v6` v6); no coarse `/8` in defaults (P36-001) |
+| `--geoip-hints` | Path | `config/geoip_hints.yaml` | Country hints / overrides: CIDR→ISO (legacy) or extended mapping (`country`, `city`, coords, `asn`, …); P36-004 `YamlIpMetadataOverrides` |
 | `--no-geoip` | flag | off | Disable country hints |
 | `--asn-hints` | Path | `config/asn_hints.yaml` | CIDR→ASN+org for hop labels (`{asn, org}`) |
 | `--no-asn` | flag | off | Disable ASN hints |

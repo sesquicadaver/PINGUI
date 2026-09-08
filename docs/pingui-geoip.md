@@ -21,7 +21,7 @@
 | **P36-001** | P0 | Контракт і межі | [x] Java-only, offline-only, no probe blocking; «country hints» |
 | **P36-002** | P0 | `IpMetadata` + provider contract | [x] Immutable, nullable fields, IPv4/IPv6 |
 | **P36-003** | P0 | Класифікація special IP | [x] RFC1918, ULA, loopback, link-local, CGNAT, documentation → без фейкової країни |
-| **P36-004** | P1 | YAML override provider | Longest-prefix; старий формат сумісний; розширені поля |
+| **P36-004** | P1 | YAML override provider | [x] Longest-prefix; старий формат сумісний; розширені поля |
 | **P36-005** | P1 | MMDB City/Country + ASN | Тип БД + build epoch; офіційний Java reader |
 | **P36-006** | P1 | Bounded enrichment service | Cache, dedupe, negative cache, atomic reload |
 | **P36-007** | P1 | Bootstrap і CLI | `--geoip-db` / `--geoip-asn-db` / hints / `--no-geoip`; передбачувані помилки |
@@ -55,6 +55,7 @@
 | `EmptyIpMetadataProvider` | Baseline: literal → `NONE` + classified scope |
 | `IpLiterals.canonicalLiteralOrNull` | Канонічний host-address без reverse DNS |
 | `IpAddressClassifier` | RFC1918/ULA → PRIVATE; loopback/link-local/CGNAT/documentation/multicast → SPECIAL |
+| `YamlIpMetadataOverrides` | Legacy `CIDR: US` + extended mapping; longest-prefix; source=`OVERRIDE` |
 
 ## Цільова архітектура
 

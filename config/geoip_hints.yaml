@@ -1,6 +1,8 @@
-# Offline country hints for hop labels (longest-prefix match).
+# Offline country hints / IP metadata overrides (longest-prefix match).
 # Not full GeoIP — see docs/pingui-geoip.md (P36). Coarse public /8 blocks and
 # documentation prefixes were removed in P36-001; extend via --geoip-hints PATH.
+# Legacy form: CIDR → ISO. Extended form (P36-004 YamlIpMetadataOverrides):
+#   10.20.0.0/16: { country: UA, city: Kyiv, latitude: 50.45, longitude: 30.52, asn: 64512 }
 # ISO 3166-1 alpha-2 country codes.
 prefixes:
   # Well-known public DNS (tight /24 only)
