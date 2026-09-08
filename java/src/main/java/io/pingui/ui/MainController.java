@@ -14,8 +14,7 @@ import io.pingui.config.TracingProfile;
 import io.pingui.dns.DnsResolver;
 import io.pingui.geoip.AsnLookup;
 import io.pingui.geoip.GeoCountry;
-import io.pingui.geoip.IpMetadataBootstrap;
-import io.pingui.geoip.IpMetadataService;
+import io.pingui.geoip.IpMetadataRuntime;
 import io.pingui.i18n.UiI18n;
 import io.pingui.i18n.UiLocale;
 import io.pingui.i18n.UiLocaleStore;
@@ -71,7 +70,6 @@ public final class MainController {
     private SessionStore store;
     private MonitorService monitor;
     private TelemetryAttachment telemetry;
-    private IpMetadataService ipMetadata;
     private volatile boolean servicesReady;
     private volatile boolean shutdownRequested;
     private final ObservableList<HostItem> hostItems = FXCollections.observableArrayList();
@@ -113,7 +111,6 @@ public final class MainController {
         applyCliOverridesToActiveProfile();
         GeoCountry.configure(options.geoipEnabled(), options.geoipHintsPath());
         AsnLookup.configure(options.asnEnabled(), options.asnHintsPath(), options.asnTimeoutMs());
-        this.ipMetadata = IpMetadataBootstrap.open(options);
         DnsResolver.configure(true);
         PingPresets.configure(PingPresets.resolvePath(options.configPath()));
         TracingProfile active = profileDocument.active();
@@ -188,21 +185,12 @@ public final class MainController {
     /** Attaches background-loaded services on the FX thread and starts polling. */
     public void attachBootstrap(StartupBootstrap.Result result) {
         if (shutdownRequested) {
-            try {
-                result.store().close();
-            } catch (RuntimeException ignored) {
-                // best-effort
-            }
-            try {
-                result.ipMetadata().close();
-            } catch (RuntimeException ignored) {
-                // best-effort
-            }
+            StartupBootstrap.discard(result);
             return;
         }
         this.profileDocument = result.document();
         this.store = result.store();
-        this.ipMetadata = result.ipMetadata();
+        IpMetadataRuntime.install(result.ipMetadata());
         TracingProfile active = profileDocument.active();
         this.monitor = createMonitor(active, result.sessionHosts());
         this.servicesReady = true;
@@ -314,10 +302,7 @@ public final class MainController {
         if (store != null) {
             store.close();
         }
-        if (ipMetadata != null) {
-            ipMetadata.close();
-            ipMetadata = null;
-        }
+        IpMetadataRuntime.close();
     }
 
     /** Re-applies dirty indicator after the Stage is shown. */

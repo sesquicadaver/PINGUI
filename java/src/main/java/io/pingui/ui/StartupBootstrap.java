@@ -98,6 +98,25 @@ public final class StartupBootstrap {
         }
     }
 
+    /**
+     * Best-effort close of bootstrap resources when the FX shell shut down before attach.
+     */
+    public static void discard(Result result) {
+        if (result == null) {
+            return;
+        }
+        try {
+            result.store().close();
+        } catch (RuntimeException ignored) {
+            // best-effort
+        }
+        try {
+            result.ipMetadata().close();
+        } catch (RuntimeException ignored) {
+            // best-effort
+        }
+    }
+
     static void resetTestHooks() {
         phaseListener = phase -> {};
         delayLatch = null;

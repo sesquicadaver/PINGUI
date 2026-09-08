@@ -60,6 +60,7 @@ Code: `java/.../geoip/package-info.java`, `GeoCountry`, `config/geoip_hints.yaml
 | `IpMetadataService` | Precedence YAML→MMDB→NONE; LRU+negative cache; offer/dedupe; atomic reload |
 | `GeoIpOpsStats` | Cache/queue/hit counters (full `/ops` wiring — P36-010) |
 | `IpMetadataBootstrap` | CLI → service; fail-fast on explicit broken MMDB |
+| `IpMetadataRuntime` | Process-wide install/get/close for GUI/daemon |
 
 ## Target architecture
 

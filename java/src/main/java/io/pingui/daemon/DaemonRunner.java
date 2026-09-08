@@ -13,7 +13,7 @@ import io.pingui.config.TracingProfile;
 import io.pingui.geoip.AsnLookup;
 import io.pingui.geoip.GeoCountry;
 import io.pingui.geoip.IpMetadataBootstrap;
-import io.pingui.geoip.IpMetadataService;
+import io.pingui.geoip.IpMetadataRuntime;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.SessionStore;
@@ -46,7 +46,6 @@ public final class DaemonRunner implements AutoCloseable {
     private SessionStore store;
     private MonitorService monitor;
     private TelemetryAttachment telemetry;
-    private IpMetadataService ipMetadata;
     private MetricsHttpServer metricsServer;
     private ReadOnlyApiServer apiServer;
     private final CountDownLatch running = new CountDownLatch(1);
@@ -65,7 +64,7 @@ public final class DaemonRunner implements AutoCloseable {
         applyCliOverridesToActiveProfile();
         GeoCountry.configure(options.geoipEnabled(), options.geoipHintsPath());
         AsnLookup.configure(options.asnEnabled(), options.asnHintsPath(), options.asnTimeoutMs());
-        ipMetadata = IpMetadataBootstrap.open(options);
+        IpMetadataRuntime.install(IpMetadataBootstrap.open(options));
         try {
             TracingProfile active = profileDocument.active();
             List<HostEntry> sessionHosts = HostViewRules.sessionEntries(active.hosts());
@@ -137,10 +136,7 @@ public final class DaemonRunner implements AutoCloseable {
             store.close();
             store = null;
         }
-        if (ipMetadata != null) {
-            ipMetadata.close();
-            ipMetadata = null;
-        }
+        IpMetadataRuntime.close();
         try {
             DaemonPidFile.deleteIfExists(pidFile);
         } catch (IOException ex) {
