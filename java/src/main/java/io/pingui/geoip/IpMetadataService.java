@@ -16,27 +16,33 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Bounded offline IP enrichment service (P36-006).
+ * Bounded offline IP enrichment service (P36-006 / P36-011).
  *
  * <p>Precedence: YAML override → MMDB → {@link IpMetadataSource#NONE}. Lookups never perform DNS or
  * HTTP. Probe/monitor paths must use {@link #cached(String)} / {@link #offer(String)} only —
- * {@link #resolve(String)} may block on local MMDB I/O and is for bootstrap/tests.
+ * {@link #resolve(String)} may block up to {@link #lookupTimeoutMs()} on local I/O and is for
+ * API/export/bootstrap (not the probe critical path).
  *
  * <p>Resources are bounded: LRU (+ negative) cache, AbortPolicy queue, at most one in-flight lookup
- * per canonical IP. Atomic reload keeps the previous provider when the new file fails to open.
+ * per canonical IP, hard lookup timeout so a stalled provider cannot hang callers forever. Atomic
+ * reload keeps the previous provider when the new file fails to open.
  */
 public final class IpMetadataService implements AutoCloseable {
     public static final int DEFAULT_CACHE_CAPACITY = 4096;
     public static final int DEFAULT_QUEUE_CAPACITY = 64;
     public static final int DEFAULT_POOL_SIZE = 1;
+    /** Hard ceiling for a single resolve/lookup wait (P36-011). */
+    public static final long DEFAULT_LOOKUP_TIMEOUT_MS = 2_000L;
 
     private final int cacheCapacity;
     private final int queueCapacity;
+    private final long lookupTimeoutMs;
     private final ThreadPoolExecutor executor;
     private final Object cacheLock = new Object();
     private final LinkedHashMap<String, IpMetadata> cache;
@@ -65,6 +71,16 @@ public final class IpMetadataService implements AutoCloseable {
             int cacheCapacity,
             int queueCapacity,
             int poolSize) {
+        this(overrides, mmdb, cacheCapacity, queueCapacity, poolSize, DEFAULT_LOOKUP_TIMEOUT_MS);
+    }
+
+    public IpMetadataService(
+            IpMetadataProvider overrides,
+            MmdbIpMetadataProvider mmdb,
+            int cacheCapacity,
+            int queueCapacity,
+            int poolSize,
+            long lookupTimeoutMs) {
         if (cacheCapacity < 1) {
             throw new IllegalArgumentException("cacheCapacity must be >= 1");
         }
@@ -74,8 +90,12 @@ public final class IpMetadataService implements AutoCloseable {
         if (poolSize < 1) {
             throw new IllegalArgumentException("poolSize must be >= 1");
         }
+        if (lookupTimeoutMs < 1L) {
+            throw new IllegalArgumentException("lookupTimeoutMs must be >= 1");
+        }
         this.cacheCapacity = cacheCapacity;
         this.queueCapacity = queueCapacity;
+        this.lookupTimeoutMs = lookupTimeoutMs;
         this.providers = new AtomicReference<>(new Providers(overrides, mmdb));
         this.cache = new LinkedHashMap<>(Math.min(16, cacheCapacity), 0.75f, true) {
             @Override
@@ -117,10 +137,12 @@ public final class IpMetadataService implements AutoCloseable {
     }
 
     /**
-     * Synchronous resolve with LRU/negative cache. Local I/O only — do not call from probe critical
-     * path.
+     * Synchronous resolve with LRU/negative cache and a hard wait ceiling ({@link
+     * #lookupTimeoutMs()}). Local I/O only — do not call from probe critical path; use {@link
+     * #cached(String)} / {@link #offer(String)} instead (P36-011).
      *
-     * @return enrichment, or {@code null} when {@code ip} is not an address literal
+     * @return enrichment, or {@code null} when {@code ip} is not an address literal or the wait
+     *     timed out / was interrupted
      */
     public IpMetadata resolve(String ip) {
         String key = IpLiterals.canonicalLiteralOrNull(ip);
@@ -137,16 +159,7 @@ public final class IpMetadataService implements AutoCloseable {
         CompletableFuture<IpMetadata> shared = inFlight.putIfAbsent(key, created);
         if (shared != null) {
             coalesced.incrementAndGet();
-            try {
-                return shared.get();
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-                errors.incrementAndGet();
-                return null;
-            } catch (ExecutionException ex) {
-                errors.incrementAndGet();
-                return null;
-            }
+            return awaitShared(shared);
         }
         try {
             // Another resolve may have finished between the first cache miss and inFlight win.
@@ -158,12 +171,35 @@ public final class IpMetadataService implements AutoCloseable {
             }
             misses.incrementAndGet();
             Providers snapshot = providers.get();
-            IpMetadata resolved = lookupUncached(snapshot, key);
+            // CommonPool — must not compete with the bounded offer executor under stall (P36-011).
+            CompletableFuture<IpMetadata> lookup = CompletableFuture.supplyAsync(() -> lookupUncached(snapshot, key));
+            IpMetadata resolved;
+            try {
+                resolved = lookup.get(lookupTimeoutMs, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException ex) {
+                lookup.cancel(true);
+                errors.incrementAndGet();
+                IpMetadata timedOut = unknownForKey(key);
+                if (providers.get() == snapshot) {
+                    putCache(key, timedOut);
+                }
+                created.complete(timedOut);
+                return timedOut;
+            }
             if (providers.get() == snapshot) {
                 putCache(key, resolved);
             }
             created.complete(resolved);
             return resolved;
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            errors.incrementAndGet();
+            created.completeExceptionally(ex);
+            return null;
+        } catch (ExecutionException ex) {
+            errors.incrementAndGet();
+            created.completeExceptionally(ex);
+            return null;
         } catch (RuntimeException ex) {
             errors.incrementAndGet();
             created.completeExceptionally(ex);
@@ -171,6 +207,33 @@ public final class IpMetadataService implements AutoCloseable {
         } finally {
             inFlight.remove(key, created);
         }
+    }
+
+    /** Hard ceiling for resolve / coalesced waits (milliseconds). */
+    public long lookupTimeoutMs() {
+        return lookupTimeoutMs;
+    }
+
+    private IpMetadata awaitShared(CompletableFuture<IpMetadata> shared) {
+        try {
+            return shared.get(lookupTimeoutMs, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException ex) {
+            errors.incrementAndGet();
+            return null;
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            errors.incrementAndGet();
+            return null;
+        } catch (ExecutionException ex) {
+            errors.incrementAndGet();
+            return null;
+        }
+    }
+
+    private static IpMetadata unknownForKey(String canonicalIp) {
+        InetAddress address = IpLiterals.parseLiteralOrNull(canonicalIp);
+        IpAddressScope scope = address != null ? IpAddressClassifier.scopeOf(address) : IpAddressScope.PUBLIC;
+        return IpMetadata.unknown(canonicalIp, scope);
     }
 
     /**

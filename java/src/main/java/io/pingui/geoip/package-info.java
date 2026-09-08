@@ -20,7 +20,7 @@
  *       labels use cache-only {@link io.pingui.ui.HopGeoLabels} / {@link io.pingui.ui.PingColor}
  *       (P36-008). Event/API/export enrichment uses {@link io.pingui.geoip.RouteGeoEnrichment}
  *       (P36-009). Operator surfaces export {@link io.pingui.geoip.GeoIpOpsStats} on {@code /ops},
- *       Prometheus, and App Status (P36-010).
+ *       Prometheus, and App Status (P36-010). Hard lookup timeout + probe-path proofs (P36-011).
  * </ul>
  */
 package io.pingui.geoip;

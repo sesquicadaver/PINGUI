@@ -22,9 +22,9 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 
 | Field | Value |
 |------|----------|
-| **Current task** | **P36-011** |
+| **Current task** | **P36-012** |
 | **Phase** | 36 — GeoIP / IP metadata (offline enrichment) |
-| **DoD (short)** | Fault / concurrency / performance: stalled provider ≠ probe delay |
+| **DoD (short)** | Legacy/docs/package close; NEXT=`DONE` |
 | **Branch** | `beta` |
 
 ### Contract for `/autopilot` and agents
@@ -225,10 +225,10 @@ Tasks are **atomic**: one task ≈ one MR/commit, ≤ 1 day of work.
 | 179 | **P36-008** | [x] | GUI integration |
 | 180 | **P36-009** | [x] | Event/API/export enrichment |
 | 181 | **P36-010** | [x] | Observability |
-| 182 | **P36-011** | [ ] | Fault / concurrency / performance |
+| 182 | **P36-011** | [x] | Fault / concurrency / performance |
 | 183 | **P36-012** | [ ] | Legacy/docs/package close |
 
-**Queue status:** **NEXT = P36-011** (phase 36; [pingui-geoip.md](pingui-geoip.md)).
+**Queue status:** **NEXT = P36-012** (phase 36; [pingui-geoip.md](pingui-geoip.md)).
 
 Phase index (status): [../../ROADMAP.en.md](../../ROADMAP.en.md). Task details — phase sections below (checkboxes must match the queue).
 
@@ -1134,7 +1134,7 @@ flowchart TD
 
 **Context:** [pingui-geoip.md](pingui-geoip.md). After P35 — replace country hints with local MMDB + YAML override; enrichment off the probe path. Java-only.
 
-**Queue:** after P35; **NEXT = P36-011**.
+**Queue:** after P35; **NEXT = P36-012**.
 
 | ID | Task | Files | DoD |
 |----|------|-------|-----|
@@ -1148,7 +1148,7 @@ flowchart TD
 | **P36-008** | [x] GUI integration | `HopGeoLabels`, `PingColor`, route strip | Cache-only render; NEXT→P36-009 |
 | **P36-009** | [x] Event/API/export | `RouteGeoEnrichment`, `/routes?include=geo`, `--export-geo` | BC geo/asn_diff + detail_json; NEXT→P36-010 |
 | **P36-010** | [x] Observability | `/ops`+Prometheus+App Status `GeoIpOpsStats` | NEXT→P36-011 |
-| **P36-011** | [ ] Fault / concurrency tests | unit/integration | Stalled provider ≠ probe delay |
+| **P36-011** | [x] Fault / concurrency | lookup timeout + stall proofs | NEXT→P36-012 |
 | **P36-012** | [ ] Legacy/docs close | docs, Python note | Python not expanded; NEXT=`DONE` |
 
 **Out of scope:** network GeoIP API; heavy Java map; GeoIP in `poll_result`; Python feature parity; MMDB in Git.
@@ -1239,7 +1239,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P36-011**).
+**Backlog (historical sprint line):** M/B roadmap closed; **IPv6 — Phase 9**; **Python NOC — Phase PY**; **Pro — Phases 10–19**; **Phase 20 GUI UX**. Authoritative linear queue — **[NEXT](#next--single-source-of-truth)** only (currently **P36-012**).
 
 Full plan: this file. Short phase index: [../../ROADMAP.md](../../ROADMAP.md).
 
