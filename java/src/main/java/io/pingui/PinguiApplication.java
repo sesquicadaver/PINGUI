@@ -781,7 +781,7 @@ public final class PinguiApplication extends Application {
                   --status            Print daemon running/stopped
                   --no-persist-route-change  Disable route_change events in session DB
                   --no-persist-probe-error     Disable probe_error events in session DB
-                  --geoip-hints PATH  CIDR→country YAML (default: config/geoip_hints.yaml)
+                  --geoip-hints PATH  Country hints YAML CIDR→ISO (not full GeoIP; default: config/geoip_hints.yaml)
                   --no-geoip        Disable country hints in hop labels
                   --asn-hints PATH    CIDR→ASN YAML (default: config/asn_hints.yaml)
                   --no-asn          Disable ASN hints in hop labels

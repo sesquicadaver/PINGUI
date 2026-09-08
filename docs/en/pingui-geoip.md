@@ -4,24 +4,24 @@
 
 **Source for phase 36.** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
 
-GeoIP audit @ `066469c` / `beta` (2026-09-08, after P35-010) — external report `pingui-GeoIP-1.md`; **canonical in-repo copy is this file**.
+GeoIP audit @ `066469c` / `beta` (2026-09-08, after P35-010) — external report [`pingui-GeoIP-1.md`](../../GITFOLDER/p-only/pingui-GeoIP-1.md); **repo canon is this file**.
 
 > Historical: [pingui-unattended.md](pingui-unattended.md) (P35), [pingui-route-persistence.md](pingui-route-persistence.md) (P34), [pingui-correctness.md](pingui-correctness.md) (P33) — **archival**.
 
 ## Summary
 
-What PINGUI calls “GeoIP” today is only static **country hints** (YAML CIDR → ISO), not full geolocation. Embedded defaults include coarse `/8` blocks, a wrong documentation IPv6 prefix `2001:db8::/32 → US`, separate `GeoCountry` / `AsnLookup` paths, and a Python map built from country centroids plus artificial hop jitter.
+What PINGUI calls “GeoIP” today is only static **country hints** (YAML CIDR → ISO), not full geolocation. After P36-001, embedded/defaults keep only tight public-DNS prefixes; coarse `/8` blocks and the wrong documentation IPv6 `2001:db8::/32 → US` mapping are gone. Separate `GeoCountry` / `AsnLookup` remain temporary until `IpMetadata*`. The Python map (centroids + jitter) is legacy and is not extended in P36.
 
-**Phase goal:** local MMDB (Country/City + ASN) + YAML overrides + bounded enrichment off the probe path; Java-only; no network lookups during monitoring; no `poll_result` / SQLite schema bloat.
+**Phase goal:** local MMDB (Country/City + ASN) + YAML override + bounded enrichment off the probe path; Java-only; no network lookups during monitoring; no bloating `poll_result` / SQLite schema.
 
-## Linear queue
+## Queue (linear)
 
 | ID | Priority | Task | DoD (short) |
 |----|----------|------|-------------|
-| **P36-001** | P0 | Contract and boundaries | Java-only, offline-only, no probe blocking; rename “country hints” |
+| **P36-001** | P0 | Contract and boundaries | [x] Java-only, offline-only, no probe blocking; “country hints” |
 | **P36-002** | P0 | `IpMetadata` + provider contract | Immutable, nullable fields, IPv4/IPv6 |
 | **P36-003** | P0 | Special-IP classification | RFC1918, ULA, loopback, link-local, CGNAT, documentation → no fake country |
-| **P36-004** | P1 | YAML override provider | Longest-prefix; old format compatible; extended fields |
+| **P36-004** | P1 | YAML override provider | Longest-prefix; legacy format OK; extended fields |
 | **P36-005** | P1 | MMDB City/Country + ASN | DB type + build epoch; official Java reader |
 | **P36-006** | P1 | Bounded enrichment service | Cache, dedupe, negative cache, atomic reload |
 | **P36-007** | P1 | Bootstrap and CLI | `--geoip-db` / `--geoip-asn-db` / hints / `--no-geoip`; predictable errors |
@@ -29,7 +29,20 @@ What PINGUI calls “GeoIP” today is only static **country hints** (YAML CIDR 
 | **P36-009** | P2 | Event/API/export enrichment | Backward-compatible; no SQLite schema change |
 | **P36-010** | P2 | Observability | `/ops`, Prometheus, App Status |
 | **P36-011** | P2 | Fault / concurrency / performance | Stalled provider must not delay polling |
-| **P36-012** | P2 | Legacy/docs/package close | Python not expanded; docs parity; NEXT=`DONE` |
+| **P36-012** | P2 | Legacy/docs/package close | Python not extended; docs parity; NEXT=`DONE` |
+
+## Contract (P36-001) — locked
+
+| Invariant | Meaning |
+|-----------|---------|
+| **Java-only** | New GeoIP/MMDB code only in Java Pro; Python is legacy / bugfix-only. |
+| **Offline-only** | No HTTP/whois/DNS for enrichment during monitoring; literals via `IpLiterals`. |
+| **No probe blocking** | Enrichment must not hold `inFlight` or share locks with probe/monitor (bounded service — P36-006+). |
+| **Naming** | Current API/CLI is **country hints** (not “full GeoIP”); `GeoCountry` / `AsnLookup` are temporary. |
+| **Defaults** | No coarse `/8` and no `2001:db8::/32 → country`; unknown public IP → `null`/unknown. |
+| **Persistence** | Do not add GeoIP columns to `poll_result` (phase 36). |
+
+Code: `java/.../geoip/package-info.java`, `GeoCountry`, `config/geoip_hints.yaml`, `java/.../resources/geoip_hints.yaml`.
 
 ## Target architecture
 
@@ -48,6 +61,6 @@ Entities: `IpMetadata`, `IpMetadataProvider`, `YamlIpMetadataOverrides`, `MmdbIp
 
 Network GeoIP APIs; heavy tile/web map in Java core; copying GeoIP into every `poll_result`; Python feature parity; credentials/`geoipupdate` inside PINGUI; MMDB files in Git.
 
-## Done when
+## Exit criterion
 
-Real offline Country/City/ASN + corporate overrides; enrichment never blocks probes; bounded resources; data accuracy visible (accuracy / approximate); no GeoIP columns on `poll_result`.
+Real offline Country/City/ASN plus corporate overrides; enrichment does not block probes; bounded resources; data accuracy visible (accuracy / approximate); SQLite schema without GeoIP columns on `poll_result`.
