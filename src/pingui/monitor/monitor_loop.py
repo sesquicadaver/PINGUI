@@ -195,6 +195,10 @@ class MonitorLoop:
     def is_running(self) -> bool:
         return self._running and self._thread is not None and self._thread.is_alive()
 
+    def is_alive(self) -> bool:
+        """True while the background poll thread has not terminated (P35-010)."""
+        return self._thread is not None and self._thread.is_alive()
+
     def _run(self) -> None:
         while self._running:
             for host in self.enabled_hosts():

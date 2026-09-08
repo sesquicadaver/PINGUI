@@ -87,6 +87,51 @@ def test_queue_emitter_drops_oldest_when_full() -> None:
     assert any(s.hop == 3 for s in received)
 
 
+def test_queue_emitter_close_skips_caller_drain_while_stuck() -> None:
+    """P35-010: close must not drain leftovers on the caller while the emit worker is stuck."""
+    import threading
+    import time
+
+    from pingui.telemetry_emit import QueueTelemetryEmitter
+
+    entered = threading.Event()
+    release = threading.Event()
+    second_applied: list[MetricSample] = []
+
+    def handler(sample: MetricSample) -> None:
+        if sample.hop == 1:
+            entered.set()
+            while not release.is_set():
+                time.sleep(0.02)
+            return
+        second_applied.append(sample)
+
+    emitter = QueueTelemetryEmitter(
+        capacity=8,
+        on_sample=handler,
+        close_join_timeout=0.15,
+    )
+    assert emitter.offer_sample(MetricSample.rtt_ms("h", 1, 1.0, timestamp=datetime.now(UTC)))
+    assert entered.wait(2)
+    assert emitter.offer_sample(MetricSample.rtt_ms("h", 2, 2.0, timestamp=datetime.now(UTC)))
+
+    started = time.perf_counter()
+    emitter.close()
+    elapsed = time.perf_counter() - started
+
+    assert emitter.worker_alive()
+    assert second_applied == []
+    assert elapsed < 2.0
+
+    release.set()
+    deadline = time.perf_counter() + 5.0
+    while emitter.worker_alive() and time.perf_counter() < deadline:
+        time.sleep(0.02)
+    assert not emitter.worker_alive()
+    assert len(second_applied) == 1
+    assert second_applied[0].hop == 2
+
+
 def test_monitor_loop_emits_probe_error(monkeypatch) -> None:
     emitter = RecordingEmitter()
     loop = MonitorLoop(hosts=["8.8.8.8"], telemetry=emitter)

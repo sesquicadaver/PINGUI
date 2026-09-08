@@ -203,14 +203,31 @@ def run_headless_monitor(
     cleaned_up = False
 
     def _cleanup() -> None:
-        """Idempotent flush of loop/telemetry/store/PID (P34-009; mirrors Java shutdown hook)."""
+        """Idempotent flush of loop/telemetry/store/PID (P34-009 / P35-010)."""
         nonlocal cleaned_up
         if cleaned_up:
             return
         cleaned_up = True
         loop.stop()
         loop.join(timeout=5.0)
+        if loop.is_alive():
+            # Do not close sink/DB under a live monitor thread (P35-010).
+            logger.error(
+                "Monitor loop still alive after join; "
+                "skipping telemetry/DB close under live worker"
+            )
+            if pid is not None:
+                pid.release()
+            return
         telemetry.close()
+        if isinstance(telemetry, QueueTelemetryEmitter) and telemetry.worker_alive():
+            logger.error(
+                "Telemetry emit worker still alive after close; "
+                "skipping sink/DB close under live worker"
+            )
+            if pid is not None:
+                pid.release()
+            return
         if ts_sink is not None:
             ts_sink.close()
         store.close()

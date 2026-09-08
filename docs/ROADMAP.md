@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **P35-010** |
+| **Поточна задача** | **DONE** |
 | **Фаза** | 35 — Unattended NOC (probe identity / loss / persistence) |
-| **DoD (коротко)** | join/drain без close DB під живим Python worker |
+| **DoD (коротко)** | черга вичерпана |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -214,9 +214,9 @@
 | 168 | **P35-007** | [x] | Unified SQLite persistence pipeline |
 | 169 | **P35-008** | [x] | Stuck-writer fault test |
 | 170 | **P35-009** | [x] | Route signature ≡ hops_json |
-| 171 | **P35-010** | [ ] | Python lifecycle harden |
+| 171 | **P35-010** | [x] | Python lifecycle harden |
 
-**Стан черги:** **NEXT = P35-010** (фаза 35; [pingui-unattended.md](pingui-unattended.md)).
+**Стан черги:** **NEXT = DONE** (фаза 35 closed; [pingui-unattended.md](pingui-unattended.md)).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -1101,7 +1101,7 @@ flowchart TD
 
 **Контекст:** [pingui-unattended.md](pingui-unattended.md). Аудит після P34 — TRACE/MTR identity, loss window, persistence pipeline. Java-first.
 
-**Черга:** після P34; **NEXT = P35-010**.
+**Черга:** після P34; **NEXT = DONE** (фаза 35 closed).
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
@@ -1114,7 +1114,7 @@ flowchart TD
 | **P35-007** | [x] Unified SQLite persistence | `PollPersistenceBatch`, `SessionPersistenceWriter.offerPollHistory` | CompletedPoll → control-lane tx (events+poll+route); NEXT→P35-008 |
 | **P35-008** | [x] Stuck-writer fault test | SessionPersistenceWriter | close не drain-ить паралельно зі stuck worker; NEXT→P35-009 |
 | **P35-009** | [x] Route signature ≡ hops_json | RouteSignature | Один hop-indexed source; NEXT→P35-010 |
-| **P35-010** | [ ] Python lifecycle harden | `src/pingui/` | join/drain без close DB під живим worker |
+| **P35-010** | [x] Python lifecycle harden | `src/pingui/` | join/drain без close DB під живим worker; NEXT→DONE |
 
 **Поза scope:** нові протоколи; ORM; великі GUI-екрани; Python feature parity; silent delete `.db`.
 
@@ -1204,7 +1204,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P35-010**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **DONE**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

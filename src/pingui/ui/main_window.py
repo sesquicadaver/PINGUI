@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -39,6 +40,8 @@ from pingui.ui.graph_canvas import GraphCanvas
 from pingui.ui.map_view import RouteMapView
 
 HOST_KEY_ROLE = Qt.ItemDataRole.UserRole
+
+logger = logging.getLogger(__name__)
 
 
 class MainWindow(QMainWindow):
@@ -416,8 +419,26 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event: QCloseEvent | None) -> None:
         self._worker.stop()
         self._worker.wait(5000)
+        if self._worker.isRunning():
+            # Do not close sink/DB under a live Qt monitor thread (P35-010).
+            logger.error(
+                "Monitor worker still alive after wait; "
+                "skipping telemetry/DB close under live worker"
+            )
+            if event is not None:
+                event.accept()
+            return
         if self._telemetry is not None:
             self._telemetry.close()
+            if self._telemetry.worker_alive():
+                logger.error(
+                    "Telemetry emit worker still alive after close; "
+                    "skipping sink/DB close under live worker"
+                )
+                self._telemetry = None
+                if event is not None:
+                    event.accept()
+                return
             self._telemetry = None
         if self._ts_sink is not None:
             self._ts_sink.close()
