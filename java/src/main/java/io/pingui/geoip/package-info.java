@@ -11,8 +11,8 @@
  *       probe/monitor path (bounded async service lands in P36-006+; until then lookups stay
  *       synchronous and local only).
  *   <li>Current {@link io.pingui.geoip.GeoCountry} / {@link io.pingui.geoip.AsnLookup} are temporary
- *       <em>country/ASN hints</em> (YAML CIDR → label), not full geolocation — replaced by {@code
- *       IpMetadata*} from P36-002 onward.
+ *       <em>country/ASN hints</em> (YAML CIDR → label), not full geolocation — replaced by {@link
+ *       io.pingui.geoip.IpMetadata} / {@link io.pingui.geoip.IpMetadataProvider} (P36-002+).
  * </ul>
  */
 package io.pingui.geoip;

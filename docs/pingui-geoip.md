@@ -19,7 +19,7 @@
 | ID | Пріоритет | Задача | DoD (коротко) |
 |----|-----------|--------|---------------|
 | **P36-001** | P0 | Контракт і межі | [x] Java-only, offline-only, no probe blocking; «country hints» |
-| **P36-002** | P0 | `IpMetadata` + provider contract | Immutable, nullable fields, IPv4/IPv6 |
+| **P36-002** | P0 | `IpMetadata` + provider contract | [x] Immutable, nullable fields, IPv4/IPv6 |
 | **P36-003** | P0 | Класифікація special IP | RFC1918, ULA, loopback, link-local, CGNAT, documentation → без фейкової країни |
 | **P36-004** | P1 | YAML override provider | Longest-prefix; старий формат сумісний; розширені поля |
 | **P36-005** | P1 | MMDB City/Country + ASN | Тип БД + build epoch; офіційний Java reader |
@@ -43,6 +43,17 @@
 | **Persistence** | Не розширювати `poll_result` GeoIP-колонками (фаза 36). |
 
 Код: `java/.../geoip/package-info.java`, `GeoCountry`, `config/geoip_hints.yaml`, `java/.../resources/geoip_hints.yaml`.
+
+## Контракт типів (P36-002) — зафіксовано
+
+| Тип | Роль |
+|-----|------|
+| `IpMetadata` | Immutable snapshot: ip + scope + source обовʼязкові; geo/ASN поля nullable |
+| `IpAddressScope` | `PUBLIC` / `PRIVATE` / `SPECIAL` |
+| `IpMetadataSource` | `OVERRIDE` / `MMDB` / `NONE` (NONE без payload) |
+| `IpMetadataProvider` | Offline lookup; hostname → `null`; без DNS/HTTP |
+| `EmptyIpMetadataProvider` | Baseline: literal → `NONE` + `PUBLIC` (класифікація — P36-003) |
+| `IpLiterals.canonicalLiteralOrNull` | Канонічний host-address без reverse DNS |
 
 ## Цільова архітектура
 
