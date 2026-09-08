@@ -216,11 +216,13 @@ CLI-назви `--geoip-*` збережені для сумісності; фу�
 
 | Опція | Тип | За замовч. | Опис |
 |-------|-----|------------|------|
-| `--geoip-hints` | Path | `config/geoip_hints.yaml` | Country hints / overrides: CIDR→ISO (legacy) або extended mapping (`country`, `city`, coords, `asn`, …); P36-004 `YamlIpMetadataOverrides` |
-| `--no-geoip` | flag | off | Вимкнути country hints |
-| `--asn-hints` | Path | `config/asn_hints.yaml` | CIDR→ASN+org для міток hop (`{asn, org}`) |
-| `--no-asn` | flag | off | Вимкнути ASN hints |
-| `--asn-timeout-ms` | int | `2000` | Зарезервовано під майбутній whois fallback |
+| `--geoip-hints` | Path | `config/geoip_hints.yaml` | YAML overrides / country hints (legacy CIDR→ISO або extended); P36-004 |
+| `--geoip-db` | Path | — | Offline City/Country MMDB; explicit missing/corrupt → config error (P36-007) |
+| `--geoip-asn-db` | Path | — | Offline ASN MMDB (потребує `--geoip-db`) |
+| `--no-geoip` | flag | off | Вимкнути enrichment / country hints |
+| `--asn-hints` | Path | `config/asn_hints.yaml` | Legacy CIDR→ASN+org для міток hop |
+| `--no-asn` | flag | off | Вимкнути ASN hints / пропустити ASN MMDB |
+| `--asn-timeout-ms` | int | `2000` | **Deprecated** (немає network ASN fallback) |
 | `--no-geo-map` | flag | off | Вимкнути вкладку folium geo-map |
 
 Expert ping presets (Java GUI, P14-040 / P17-010): `config/ping_presets.yaml` поруч із hosts-конфігом (або CWD `config/ping_presets.yaml`); інакше bundled resource. Рівно 4 пресети (`mtu_probe`, `df`, `dscp`, `burst`). Обовʼязкові поля: `id`, `label`, `args`, `summary`, `expect`; опційно `caution`. Кнопки в `PingExpertDialog` підставляють args (збережений AF `-4`/`-6`) і показують status/tooltip з UX-копією. Пресети **не** запускають MTU sweep.

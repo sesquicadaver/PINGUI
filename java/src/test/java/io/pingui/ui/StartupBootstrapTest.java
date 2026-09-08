@@ -205,6 +205,8 @@ class StartupBootstrapTest {
                 false,
                 false,
                 defaults.geoipHintsPath(),
+                Optional.empty(),
+                Optional.empty(),
                 false,
                 defaults.asnHintsPath(),
                 defaults.asnTimeoutMs(),
