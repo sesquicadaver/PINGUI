@@ -13,7 +13,7 @@ Module → unit test matrix. Update when adding features.
 | Build metadata | `AppInfo`, `generateBuildProperties`, `jpackageAppVersion` | `AppInfoTest`, `./gradlew jpackage*` uses Gradle `version` |
 | Version source (P19-001) | `build.gradle.kts` `version`, `AppInfo`, `ReadOnlyApiJson` | `AppInfoTest.version_matchesBuildPropertiesWhenGenerated`; `ReadOnlyApiContractTest.openApiStubDocumentsRequiredPaths` |
 | Layer deps (no ui in config) | `scripts/check-layer-deps.sh` | `./gradlew layerCheck` |
-| GeoIP hints | `GeoCountry` | `GeoCountryTest` (longest-prefix, LAN/IPv6, invalid YAML, 0.0.0.0/0) |
+| GeoIP country hints (pre-P36) | `GeoCountry` | `GeoCountryTest` (longest-prefix, LAN/IPv6, invalid YAML, 0.0.0.0/0); phase 36 → [pingui-geoip.md](pingui-geoip.md) |
 | YAML profiles v2 + legacy | `ProfilesConfig`, `ProfileDocument` | `ProfilesConfigTest` (host flags, type errors, save max hosts), `ProfileDocumentTest` |
 | CLI profile override | `CliProfileOverrides`, `PinguiApplication` | `PinguiApplicationTest` |
 | Monitor polling | `MonitorService`, `RoutePoller`, `ExpertPingEnricher` | `MonitorServiceTest`, `ExpertPingEnricherTest` (stub ping) |
@@ -120,7 +120,8 @@ Module → unit test matrix. Update when adding features.
 | Stabilization MTR/history (P32) | phase closed [x] | [pingui-stabilization.md](pingui-stabilization.md) — archival; P32-008 [x] |
 | Correctness MTR/projection (P33) | P33-001…008 [x]; phase closed | [pingui-correctness.md](pingui-correctness.md) — archival |
 | Correctness follow-up (P34) | P34-001…010 [x]; phase closed | [pingui-route-persistence.md](pingui-route-persistence.md) — archival; soak/fault matrix |
-| Unattended NOC (P35) | NEXT=**DONE**; P35-001…010 [x] | [pingui-unattended.md](pingui-unattended.md) |
+| Unattended NOC (P35) | closed P35-001…010 [x] | [pingui-unattended.md](pingui-unattended.md) |
+| GeoIP / IP metadata (P36) | NEXT=**P36-001**; queue P36-001…012 | [pingui-geoip.md](pingui-geoip.md) |
 | TRACE real target identity (P35-001) | `TraceTargetIp`, `ProcessRouteProbe`, `RouteChangeDetector.targetReached` | `TraceTargetIpTest`, `RouteChangeDetectorTest.targetReachedFalseWhenOnlyIntermediateRouterReachable` |
 | MTR TARGET_UNKNOWN scope (P35-002) | `PollSampleScope.UNSAMPLED`, `RoutePoller.pollHostMtr`, `MtrProbe` backoff | `RoutePollerTest.pollHostMtrTargetUnknownIdleUsesUnsampledScope`, `MtrProbeTest.rediscoveryEntersBackoffThenRetries` |
 | Loss window semantics (P35-003) | `HopProbeStats` attempt window, `HopStats.lossPctInWindow` | `HopStatsTest.lossUsesSlidingWindowNotLifetimeCounters`, `lossInWindowRequiresTwoProbes` |

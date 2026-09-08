@@ -2,6 +2,8 @@
 
 # Unattended NOC — probe identity / loss / persistence (P35)
 
+> **Архів:** фаза 35 **closed** (P35-001…010). Актуальний ROADMAP **NEXT=P36-001** — [pingui-geoip.md](pingui-geoip.md).
+
 **Джерело для фази 35.** ROADMAP: [ROADMAP.md](ROADMAP.md) § NEXT.
 
 Аудит `main`≡`beta` @ `a1ee5aa` (2026-09-07, після P34-010) — [pingui-current.md](../../GITFOLDER/p-only/pingui-current.md) (зовнішній звіт; канон у репо — цей файл).

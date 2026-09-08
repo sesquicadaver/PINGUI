@@ -10,7 +10,7 @@
 
 | Поле | Значення |
 |------|----------|
-| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (фаза **35** — Unattended NOC). Обидві: Java Pro (P9–P19) + Python після merge |
+| **Гілка** | `main` — стабільний зріз після merge; `beta` — розробка (фаза **36** — GeoIP / IP metadata). Обидві: Java Pro (P9–P19) + Python після merge |
 | **Пріоритет** | P0 критично · P1 важливо · P2 бажано |
 | **DoD** | Definition of Done — умова закриття задачі |
 
@@ -22,9 +22,9 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **DONE** |
-| **Фаза** | 35 — Unattended NOC (probe identity / loss / persistence) |
-| **DoD (коротко)** | черга вичерпана |
+| **Поточна задача** | **P36-001** |
+| **Фаза** | 36 — GeoIP / IP metadata (offline enrichment) |
+| **DoD (коротко)** | Java-only, offline-only, no probe blocking; country hints positioning |
 | **Гілка** | `beta` |
 
 ### Контракт для `/autopilot` і агентів
@@ -215,8 +215,20 @@
 | 169 | **P35-008** | [x] | Stuck-writer fault test |
 | 170 | **P35-009** | [x] | Route signature ≡ hops_json |
 | 171 | **P35-010** | [x] | Python lifecycle harden |
+| 172 | **P36-001** | [ ] | GeoIP contract + boundaries (country hints) |
+| 173 | **P36-002** | [ ] | IpMetadata + provider contract |
+| 174 | **P36-003** | [ ] | Special-IP classification |
+| 175 | **P36-004** | [ ] | YAML override provider |
+| 176 | **P36-005** | [ ] | MMDB City/Country + ASN |
+| 177 | **P36-006** | [ ] | Bounded enrichment service |
+| 178 | **P36-007** | [ ] | Bootstrap і CLI |
+| 179 | **P36-008** | [ ] | GUI integration |
+| 180 | **P36-009** | [ ] | Event/API/export enrichment |
+| 181 | **P36-010** | [ ] | Observability |
+| 182 | **P36-011** | [ ] | Fault / concurrency / performance |
+| 183 | **P36-012** | [ ] | Legacy/docs/package close |
 
-**Стан черги:** **NEXT = DONE** (фаза 35 closed; [pingui-unattended.md](pingui-unattended.md)).
+**Стан черги:** **NEXT = P36-001** (фаза 36; [pingui-geoip.md](pingui-geoip.md)).
 
 Індекс фаз (статус): [../ROADMAP.md](../ROADMAP.md). Деталі задач — у секціях фаз нижче (чекбокси мають збігатися з чергою).
 
@@ -1101,7 +1113,7 @@ flowchart TD
 
 **Контекст:** [pingui-unattended.md](pingui-unattended.md). Аудит після P34 — TRACE/MTR identity, loss window, persistence pipeline. Java-first.
 
-**Черга:** після P34; **NEXT = DONE** (фаза 35 closed).
+**Черга:** після P34; **NEXT = DONE** (фаза 35 closed; далі — P36).
 
 | ID | Задача | Файли | DoD |
 |----|--------|-------|-----|
@@ -1117,6 +1129,29 @@ flowchart TD
 | **P35-010** | [x] Python lifecycle harden | `src/pingui/` | join/drain без close DB під живим worker; NEXT→DONE |
 
 **Поза scope:** нові протоколи; ORM; великі GUI-екрани; Python feature parity; silent delete `.db`.
+
+## Фаза 36 — GeoIP / IP metadata: offline enrichment (`beta`, P0)
+
+**Контекст:** [pingui-geoip.md](pingui-geoip.md). Після P35 — замінити country hints на локальну MMDB + YAML override; enrichment поза probe-path. Java-only.
+
+**Черга:** після P35; **NEXT = P36-001**.
+
+| ID | Задача | Файли | DoD |
+|----|--------|-------|-----|
+| **P36-001** | [ ] Контракт і межі | docs, `GeoCountry` positioning | Java-only, offline-only, no probe blocking; «country hints» |
+| **P36-002** | [ ] `IpMetadata` + provider | `IpMetadata`, `IpMetadataProvider` | Immutable, nullable, IPv4/IPv6 |
+| **P36-003** | [ ] Special-IP classification | `IpLiterals` / classifier | RFC1918, ULA, loopback, link-local, CGNAT, documentation |
+| **P36-004** | [ ] YAML override provider | `YamlIpMetadataOverrides`, `geoip_hints.yaml` | Longest-prefix; legacy format OK |
+| **P36-005** | [ ] MMDB City/Country + ASN | `MmdbIpMetadataProvider` | Type + build epoch; official reader |
+| **P36-006** | [ ] Bounded enrichment service | `IpMetadataService` | Cache, dedupe, negative, atomic reload |
+| **P36-007** | [ ] Bootstrap і CLI | `AppOptions`, `PinguiApplication` | `--geoip-db` / asn / hints / `--no-geoip` |
+| **P36-008** | [ ] GUI integration | `PingColor`, hop details, route strip | Cache-only render |
+| **P36-009** | [ ] Event/API/export | route_change detail, `/routes?include=geo` | Backward-compatible; no schema change |
+| **P36-010** | [ ] Observability | `/ops`, Prometheus, App Status | GeoIpOpsStats |
+| **P36-011** | [ ] Fault / concurrency tests | unit/integration | Stalled provider ≠ probe delay |
+| **P36-012** | [ ] Legacy/docs close | docs, Python note | Python не розширено; NEXT=`DONE` |
+
+**Поза scope:** мережевий GeoIP API; важка Java-карта; GeoIP у `poll_result`; Python feature parity; MMDB у Git.
 
 ---
 ## Поза scope (опційно, в перспективі)
@@ -1204,7 +1239,7 @@ flowchart LR
 **Sprint 1 (`main`):** M-001, M-002, M-010…M-014  
 **Sprint 2 (`main`→`beta` merge):** M-020…M-023, B-001…B-010  
 **Sprint 3 (`beta`):** B-020…B-023, B-030…B-035  
-**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **DONE**).
+**Backlog (історичний sprint-рядок):** M/B roadmap закрито; **IPv6 — Фаза 9**; **Python NOC — Фаза PY**; **Pro — Фази 10–19**; **Фаза 20 GUI UX**. Актуальна лінійна черга — лише секція **[NEXT](#next--єдине-джерело-правди)** (зараз **P36-001**).
 
 Детальний план: цей файл. Короткий індекс фаз: [../ROADMAP.md](../ROADMAP.md).
 

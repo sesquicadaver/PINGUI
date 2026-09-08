@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **P36 NEXT activated:** ROADMAP **NEXT = P36-001** (GeoIP / IP metadata: offline MMDB + YAML override); queue P36-001…012; [pingui-geoip.md](docs/en/pingui-geoip.md).
 - **P35 NEXT activated:** ROADMAP **NEXT = P35-001** → **DONE** after P35-001…010; queue P35-001…010; [pingui-unattended.md](docs/en/pingui-unattended.md).
 - **P34 NEXT activated:** ROADMAP **NEXT = P34-001** (Correctness follow-up: route / target / persistence); queue P34-001…010; [pingui-route-persistence.md](docs/en/pingui-route-persistence.md). `beta`≡`main@45374cc`.
 - **P33 NEXT activated:** ROADMAP **NEXT = P33-001** (Correctness: MTR / projection / side-effects); queue P33-001…008; [pingui-correctness.md](docs/en/pingui-correctness.md). `beta` synced to `main@28bdb41`.

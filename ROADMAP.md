@@ -8,10 +8,10 @@
 
 | Поле | Значення |
 |------|----------|
-| **Поточна задача** | **[DONE](docs/ROADMAP.md#next--єдине-джерело-правди)** |
+| **Поточна задача** | **[P36-001](docs/ROADMAP.md#next--єдине-джерело-правди)** |
 | **Правило** | якщо не `DONE` — `/autopilot` = цей ID; якщо `DONE` — зупинитись / чекати явного нового ID. **Не питати** «який пункт?». |
 
-Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна) (фаза 35; NEXT=**DONE**).
+Повна лінійна черга: [docs/ROADMAP.md — Черга виконання](docs/ROADMAP.md#черга-виконання-лінійна) (фаза 36; NEXT=**P36-001**).
 
 **Статус MVP:** ✅ реалізовано (2026-06-26)
 
@@ -57,6 +57,7 @@
 | **33** | Correctness (MTR / projection / side-effects) | ✅ **DONE** |
 | **34** | Correctness follow-up (route / target / persistence) | ✅ **DONE** |
 | **35** | Unattended NOC (probe identity / loss / persistence) | ✅ **DONE** |
+| **36** | GeoIP / IP metadata (offline enrichment) | 🔄 **P36-001** |
 
 ---
 
