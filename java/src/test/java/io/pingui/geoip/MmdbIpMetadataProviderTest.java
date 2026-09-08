@@ -80,15 +80,20 @@ class MmdbIpMetadataProviderTest {
     }
 
     @Test
-    void rejectsMissingAndCorruptFiles(@TempDir Path tempDir) throws Exception {
-        assertThrows(
-                IllegalArgumentException.class, () -> MmdbIpMetadataProvider.open(tempDir.resolve("missing.mmdb")));
-        Path corrupt = tempDir.resolve("corrupt.mmdb");
-        Files.writeString(corrupt, "not-an-mmdb");
-        assertThrows(IllegalStateException.class, () -> MmdbIpMetadataProvider.open(corrupt));
+    void rejectsMissingAndCorruptFiles() throws Exception {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> MmdbIpMetadataProvider.open(CITY, tempDir.resolve("missing-asn.mmdb")));
+                () -> MmdbIpMetadataProvider.open(Path.of("pingui-missing-geoip-db.mmdb")));
+        Path corrupt = Files.createTempFile("pingui-corrupt-", ".mmdb");
+        try {
+            Files.writeString(corrupt, "not-an-mmdb");
+            assertThrows(IllegalStateException.class, () -> MmdbIpMetadataProvider.open(corrupt));
+        } finally {
+            Files.deleteIfExists(corrupt);
+        }
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> MmdbIpMetadataProvider.open(CITY, Path.of("pingui-missing-asn-db.mmdb")));
     }
 
     private static Path copyResource(String resource) {
