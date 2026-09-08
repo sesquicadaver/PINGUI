@@ -2,7 +2,7 @@
 
 # Документація PINGUI
 
-На **`main`** і **`beta`** — повний пакет (Java Pro + Python) після merge; **`beta`** — гілка розробки, **`main`** — останній стабільний зріз. Лінійна черга ROADMAP: **NEXT = P36-012** (фаза 36 — [ROADMAP.md § NEXT](ROADMAP.md#next--єдине-джерело-правди)). «Гілки» — [README.md](../README.md).
+На **`main`** і **`beta`** — повний пакет (Java Pro + Python) після merge; **`beta`** — гілка розробки, **`main`** — останній стабільний зріз. Лінійна черга ROADMAP: **NEXT = DONE** (фаза 36 closed — [ROADMAP.md § NEXT](ROADMAP.md#next--єдине-джерело-правди)). «Гілки» — [README.md](../README.md).
 
 ## Навігація
 
@@ -13,7 +13,7 @@
 | [JAVA.md](JAVA.md) | Розробник | Probe, monitor, UI, YAML |
 | [ROADMAP.md](ROADMAP.md) | Розробник | Офіційний план: фази 0–36; NEXT=P36-009 |
 | [pingui-evo-gui.md](pingui-evo-gui.md) | Розробник | GUI evolution (фаза 31) |
-| [pingui-geoip.md](pingui-geoip.md) | Розробник | GeoIP / IP metadata → фаза 36 (**активна**) |
+| [pingui-geoip.md](pingui-geoip.md) | Розробник | GeoIP / IP metadata → фаза 36 (**closed**) |
 | [pingui-unattended.md](pingui-unattended.md) | Розробник | Unattended NOC → фаза 35 (**архів**) |
 | [pingui-correctness.md](pingui-correctness.md) | Розробник | Correctness audit → фаза 33 (**архів**) |
 | [pingui-route-persistence.md](pingui-route-persistence.md) | Розробник | Correctness follow-up → фаза 34 (**архів**) |

@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 /**
- * Builds {@link IpMetadataService} from {@link AppOptions} (P36-007).
+ * Builds {@link IpMetadataService} from {@link AppOptions} (P36-007 / P36-012).
  *
  * <p>Rules:
  *
@@ -16,11 +16,14 @@ import java.util.Objects;
  *       error ({@link IllegalArgumentException});
  *   <li>MMDB unset → YAML overrides only (bundled defaults when the hints file is absent);
  *   <li>{@code --geoip-asn-db} requires {@code --geoip-db};
- *   <li>{@code --no-asn} skips opening the ASN MMDB even when {@code --geoip-asn-db} is set.
+ *   <li>{@code --no-asn} skips opening the ASN MMDB and skips merging {@code --asn-hints};
+ *   <li>country hints ({@code --geoip-hints}) merge with ASN hints ({@code --asn-hints}) via {@link
+ *       MergingIpMetadataProvider} — legacy {@code GeoCountry}/{@code AsnLookup} removed in P36-012.
  * </ul>
  */
 public final class IpMetadataBootstrap {
     private static final String DEFAULT_HINTS_RESOURCE = "geoip_hints.yaml";
+    private static final String DEFAULT_ASN_HINTS_RESOURCE = "asn_hints.yaml";
 
     private IpMetadataBootstrap() {}
 
@@ -42,7 +45,7 @@ public final class IpMetadataBootstrap {
             throw new IllegalArgumentException("--geoip-asn-db requires --geoip-db PATH");
         }
 
-        IpMetadataProvider overrides = loadOverrides(options.geoipHintsPath());
+        IpMetadataProvider overrides = loadMergedOverrides(options);
         MmdbIpMetadataProvider mmdb = null;
         if (options.geoipDbPath().isPresent()) {
             Path geoDb = options.geoipDbPath().get();
@@ -65,16 +68,25 @@ public final class IpMetadataBootstrap {
         return new IpMetadataService(overrides, mmdb);
     }
 
-    static IpMetadataProvider loadOverrides(Path hintsPath) {
+    static IpMetadataProvider loadMergedOverrides(AppOptions options) {
+        IpMetadataProvider geo = loadOverrides(options.geoipHintsPath(), DEFAULT_HINTS_RESOURCE, "--geoip-hints");
+        if (!options.asnEnabled()) {
+            return geo;
+        }
+        IpMetadataProvider asn = loadOverrides(options.asnHintsPath(), DEFAULT_ASN_HINTS_RESOURCE, "--asn-hints");
+        return MergingIpMetadataProvider.of(geo, asn);
+    }
+
+    static IpMetadataProvider loadOverrides(Path hintsPath, String bundledResource, String flagLabel) {
         if (hintsPath != null && Files.isRegularFile(hintsPath)) {
             try {
                 return YamlIpMetadataOverrides.fromFile(hintsPath);
             } catch (RuntimeException ex) {
                 throw new IllegalArgumentException(
-                        "Failed to load --geoip-hints (" + hintsPath + "): " + rootMessage(ex), ex);
+                        "Failed to load " + flagLabel + " (" + hintsPath + "): " + rootMessage(ex), ex);
             }
         }
-        return YamlIpMetadataOverrides.fromResource(DEFAULT_HINTS_RESOURCE);
+        return YamlIpMetadataOverrides.fromResource(bundledResource);
     }
 
     private static String rootMessage(Throwable ex) {

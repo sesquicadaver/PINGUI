@@ -4,12 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.dns.DnsResolver;
-import io.pingui.geoip.AsnLookup;
-import io.pingui.geoip.GeoCountry;
 import io.pingui.geoip.IpMetadata;
 import io.pingui.geoip.IpMetadataRuntime;
 import io.pingui.geoip.IpMetadataService;
 import io.pingui.geoip.IpMetadataSource;
+import io.pingui.geoip.MergingIpMetadataProvider;
 import io.pingui.geoip.YamlIpMetadataOverrides;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.HopStatsSummary;
@@ -20,11 +19,10 @@ import org.junit.jupiter.api.Test;
 
 class PingColorTest {
     @BeforeEach
-    void configureGeoipAndAsn() {
-        GeoCountry.configure(true, java.nio.file.Path.of("config/geoip_hints.yaml"));
-        AsnLookup.configure(true, java.nio.file.Path.of("config/asn_hints.yaml"));
-        IpMetadataRuntime.install(
-                IpMetadataService.overridesOnly(YamlIpMetadataOverrides.fromResource("geoip_hints.yaml")));
+    void configureIpMetadata() {
+        IpMetadataRuntime.install(IpMetadataService.overridesOnly(MergingIpMetadataProvider.of(
+                YamlIpMetadataOverrides.fromResource("geoip_hints.yaml"),
+                YamlIpMetadataOverrides.fromResource("asn_hints.yaml"))));
         // Disable live PTR so labels stay deterministic; seed cache where needed.
         DnsResolver.configureForTests(true, Duration.ofMinutes(5), java.time.Clock.systemUTC(), addr -> null);
     }
@@ -76,7 +74,7 @@ class PingColorTest {
     }
 
     @Test
-    void prefersCachedIpMetadataOverLegacyHints() {
+    void prefersInstalledOverridesOverBundledHints() {
         YamlIpMetadataOverrides overrides = YamlIpMetadataOverrides.fromYaml(
                 """
                 prefixes:

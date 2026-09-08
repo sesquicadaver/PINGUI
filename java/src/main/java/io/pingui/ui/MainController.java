@@ -12,8 +12,6 @@ import io.pingui.config.ProfileDocument;
 import io.pingui.config.ProfilesConfig;
 import io.pingui.config.TracingProfile;
 import io.pingui.dns.DnsResolver;
-import io.pingui.geoip.AsnLookup;
-import io.pingui.geoip.GeoCountry;
 import io.pingui.geoip.IpMetadataRuntime;
 import io.pingui.i18n.UiI18n;
 import io.pingui.i18n.UiLocale;
@@ -109,8 +107,6 @@ public final class MainController {
         this.options = options;
         this.profileDocument = document;
         applyCliOverridesToActiveProfile();
-        GeoCountry.configure(options.geoipEnabled(), options.geoipHintsPath());
-        AsnLookup.configure(options.asnEnabled(), options.asnHintsPath(), options.asnTimeoutMs());
         DnsResolver.configure(true);
         PingPresets.configure(PingPresets.resolvePath(options.configPath()));
         TracingProfile active = profileDocument.active();

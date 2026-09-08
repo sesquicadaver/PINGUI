@@ -10,7 +10,7 @@
 
 ## Висновок
 
-«GeoIP» у PINGUI зараз — лише статичні **country hints** (YAML CIDR → ISO), не повноцінна геолокація. Після P36-001 embedded/defaults містять лише тісні public-DNS префікси; грубі `/8` і помилковий documentation IPv6 `2001:db8::/32 → US` прибрані. Окремі `GeoCountry` / `AsnLookup` тимчасові до `IpMetadata*`. Python-карта (центроїди + jitter) — legacy, не розширюється в P36.
+«GeoIP» у PINGUI — offline enrichment через `IpMetadata*` (YAML overrides + optional MMDB). Після P36-001 embedded/defaults містять лише тісні public-DNS префікси; грубі `/8` і помилковий documentation IPv6 `2001:db8::/32 → US` прибрані. Паралельні `GeoCountry` / `AsnLookup` / `AsnInfo` **видалені** в P36-012 (`MergingIpMetadataProvider` зливає geo+ASN hints). Python-карта (центроїди + jitter) — legacy, не розширювалась у P36. Фаза 36 **closed**; ROADMAP **NEXT=DONE**.
 
 **Ціль фази:** локальна MMDB (Country/City + ASN) + YAML override + bounded enrichment поза probe-path; Java-only; без мережевих lookup під час моніторингу; без роздування `poll_result` / SQLite schema.
 
@@ -29,7 +29,7 @@
 | **P36-009** | P2 | Event/API/export enrichment | [x] `/routes?include=geo`; route_change `geo_diff`/`asn_diff` + `detail_json`; `--export-geo` |
 | **P36-010** | P2 | Observability | [x] `/ops` + Prometheus + App Status (`GeoIpOpsStats`) |
 | **P36-011** | P2 | Fault / concurrency / performance | [x] lookup timeout; cached/offer stall proofs |
-| **P36-012** | P2 | Legacy/docs/package close | Python не розширено; docs parity; NEXT=`DONE` |
+| **P36-012** | P2 | Legacy/docs/package close | [x] прибрано GeoCountry/AsnLookup/AsnInfo; Python не розширено; docs parity; NEXT=`DONE` |
 
 ## Контракт (P36-001) — зафіксовано
 
@@ -38,11 +38,11 @@
 | **Java-only** | Новий GeoIP/MMDB код лише в Java Pro; Python — legacy / bugfix-only. |
 | **Offline-only** | Жодного HTTP/whois/DNS для enrichment під час моніторингу; літерали через `IpLiterals`. |
 | **No probe blocking** | Enrichment не тримає `inFlight` і не ділить lock з probe/monitor (bounded service — P36-006+). |
-| **Назва** | Поточне API/CLI — **country hints** (не «повний GeoIP»); `GeoCountry` / `AsnLookup` — тимчасові. |
+| **Назва** | API/CLI — **country/ASN hints** + optional MMDB (не «повний online GeoIP»); legacy parallel APIs removed. |
 | **Defaults** | Без грубих `/8` і без `2001:db8::/32 → country`; невідомий public IP → `null`/unknown. |
 | **Persistence** | Не розширювати `poll_result` GeoIP-колонками (фаза 36). |
 
-Код: `java/.../geoip/package-info.java`, `GeoCountry`, `config/geoip_hints.yaml`, `java/.../resources/geoip_hints.yaml`.
+Код: `java/.../geoip/package-info.java`, `YamlIpMetadataOverrides`, `MergingIpMetadataProvider`, `config/geoip_hints.yaml` + `asn_hints.yaml`, bundled resources.
 
 ## Контракт типів (P36-002) — зафіксовано
 
@@ -61,8 +61,9 @@
 | `GeoIpOpsStats` | Cache/queue/hit counters on `/ops`, Prometheus, App Status |
 | `IpMetadataBootstrap` | CLI → service; fail-fast on explicit broken MMDB |
 | `IpMetadataRuntime` | Process-wide install/get/close for GUI/daemon |
-| `HopGeoLabels` | Cache-only compact/details/strip; legacy GeoCountry/AsnLookup gap-fill |
+| `HopGeoLabels` | Cache-only compact/details/strip (IpMetadataRuntime only) |
 | `RouteGeoEnrichment` | API hop fields; webhook/persist `geo_diff`/`asn_diff`; enriched CSV/HTML |
+| `MergingIpMetadataProvider` | Compose geo hints + ASN hints (P36-012) |
 
 ## Цільова архітектура
 
@@ -75,7 +76,7 @@ Hop IP
   → bounded cache → GUI / API / route-change enrichment
 ```
 
-Сутності: `IpMetadata`, `IpMetadataProvider`, `YamlIpMetadataOverrides`, `MmdbIpMetadataProvider`, `IpMetadataService`, `GeoIpOpsStats`. Після міграції прибрати паралельні `GeoCountry` / `AsnLookup` / `AsnInfo`.
+Сутності: `IpMetadata`, `IpMetadataProvider`, `YamlIpMetadataOverrides`, `MergingIpMetadataProvider`, `MmdbIpMetadataProvider`, `IpMetadataService`, `GeoIpOpsStats`. Legacy `GeoCountry` / `AsnLookup` / `AsnInfo` removed (P36-012).
 
 ## Поза scope
 
@@ -84,3 +85,10 @@ Hop IP
 ## Кінцевий критерій
 
 Реальні офлайн Country/City/ASN + корпоративні override; enrichment не блокує probe; bounded ресурси; точність даних видима (accuracy / approximate); SQLite schema без GeoIP-колонок у `poll_result`.
+
+## Закриття фази (P36-012)
+
+- Видалено Java parallel APIs: `GeoCountry`, `AsnLookup`, `AsnInfo`.
+- ASN hints підключаються через `MergingIpMetadataProvider` у `IpMetadataBootstrap` (`--no-asn` пропускає merge).
+- Python `src/pingui/geoip/` не розширено.
+- ROADMAP **NEXT=DONE**.

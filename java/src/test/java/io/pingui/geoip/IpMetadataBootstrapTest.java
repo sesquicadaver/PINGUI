@@ -36,8 +36,21 @@ class IpMetadataBootstrapTest {
         AppOptions options = withGeoip(true, Path.of("config/geoip_hints.yaml"), null, null, true);
         try (IpMetadataService service = IpMetadataBootstrap.open(options)) {
             assertNull(service.mmdb());
-            assertEquals("US", service.resolve("8.8.8.8").countryIso());
-            assertEquals(IpMetadataSource.OVERRIDE, service.resolve("8.8.8.8").source());
+            IpMetadata meta = service.resolve("8.8.8.8");
+            assertEquals("US", meta.countryIso());
+            assertEquals(15169, meta.asn());
+            assertEquals("Google", meta.organization());
+            assertEquals(IpMetadataSource.OVERRIDE, meta.source());
+        }
+    }
+
+    @Test
+    void noAsnSkipsAsnHintsMerge() {
+        AppOptions options = withGeoip(true, Path.of("config/geoip_hints.yaml"), null, null, false);
+        try (IpMetadataService service = IpMetadataBootstrap.open(options)) {
+            IpMetadata meta = service.resolve("8.8.8.8");
+            assertEquals("US", meta.countryIso());
+            assertNull(meta.asn());
         }
     }
 

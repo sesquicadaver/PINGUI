@@ -13,14 +13,18 @@
 | Build metadata | `AppInfo`, `generateBuildProperties`, `jpackageAppVersion` | `AppInfoTest`, `./gradlew jpackage*` uses Gradle `version` |
 | Version source (P19-001) | `build.gradle.kts` `version`, `AppInfo`, `ReadOnlyApiJson` | `AppInfoTest.version_matchesBuildPropertiesWhenGenerated`; `ReadOnlyApiContractTest.openApiStubDocumentsRequiredPaths` |
 | Layer deps (no ui in config) | `scripts/check-layer-deps.sh` | `./gradlew layerCheck` |
-| GeoIP country hints (P36-001+) | `GeoCountry`, `package-info` | `GeoCountryTest` (longest-prefix, LAN/IPv6, no documentation→country, invalid YAML, 0.0.0.0/0); [pingui-geoip.md](pingui-geoip.md) |
+| GeoIP country hints (P36-001+) | `YamlIpMetadataOverrides`, `package-info` | `YamlIpMetadataOverridesTest` (longest-prefix, LAN/IPv6, no documentation→country); [pingui-geoip.md](pingui-geoip.md) |
 | IpMetadata contract (P36-002) | `IpMetadata`, `IpMetadataProvider`, `EmptyIpMetadataProvider`, `IpAddressScope`, `IpMetadataSource` | `IpMetadataTest`, `IpMetadataProviderTest`, `IpLiteralsTest.canonicalLiteralOrNull*` |
-| Special-IP classification (P36-003) | `IpAddressClassifier`, `GeoCountry`, `IpLiterals` | `IpAddressClassifierTest`, `GeoCountryTest.specialRangesNeverGetCountry*`, IPv4-mapped literals |
+| Special-IP classification (P36-003) | `IpAddressClassifier`, `IpLiterals` | `IpAddressClassifierTest`, IPv4-mapped literals |
 | YAML IP metadata overrides (P36-004) | `YamlIpMetadataOverrides` | `YamlIpMetadataOverridesTest` (legacy + extended, longest-prefix, private coords) |
 | MMDB City/Country + ASN (P36-005) | `MmdbIpMetadataProvider`, `MmdbDatabaseInfo` | `MmdbIpMetadataProviderTest` (City/Country/ASN fixtures, wrong edition, corrupt) |
 | Bounded enrichment service (P36-006) | `IpMetadataService`, `GeoIpOpsStats` | `IpMetadataServiceTest` (precedence, LRU, negative, offer reject, atomic reload) |
 | GeoIP bootstrap/CLI (P36-007) | `IpMetadataBootstrap`, `AppOptions` | `IpMetadataBootstrapTest`, `PinguiApplicationTest` geoip flags |
 | GeoIP GUI (P36-008) | `HopGeoLabels`, `PingColor`, `RouteGraphPanel` strip | `PingColorTest`, `HopGeoLabelsTest` |
+| GeoIP event/API/export (P36-009) | `RouteGeoEnrichment` | `RouteGeoEnrichmentTest`, `ReadOnlyApiContractTest`, `SessionReportExporterTest`, `WebhookTelemetrySinkTest` |
+| GeoIP observability (P36-010) | `GeoIpOpsStats` | ops/Prometheus/App Status tests |
+| GeoIP fault/concurrency (P36-011) | `IpMetadataService` | `IpMetadataServiceFaultTest` |
+| GeoIP legacy close (P36-012) | `MergingIpMetadataProvider` | `MergingIpMetadataProviderTest`; removed `GeoCountry`/`AsnLookup`/`AsnInfo` |
 | YAML profiles v2 + legacy | `ProfilesConfig`, `ProfileDocument` | `ProfilesConfigTest` (host flags, type errors, save max hosts), `ProfileDocumentTest` |
 | CLI override профілю | `CliProfileOverrides`, `PinguiApplication` | `PinguiApplicationTest` |
 | Monitor polling | `MonitorService`, `RoutePoller`, `ExpertPingEnricher` | `MonitorServiceTest`, `ExpertPingEnricherTest` (stub ping) |
@@ -34,7 +38,7 @@
 | Route graph (ex-P14-010 Diff removed) | `RouteGraphPresenter`, `GraphCanvas`, `RouteGraphPanel` | `RouteGraphPresenterTest` (live/replay без Diff panel) |
 | Host tags YAML (P14-020) | `HostTags`, `HostEntry`, `ProfilesConfig`, `HostItem`, `MainController` | `HostTagsTest`, `HostEntryTest.withTagsPreservesOtherFields`, `ProfilesConfigTest.loadHostTagsRoundTrip` |
 | Tag filter chips + edit (P14-021) | `HostListPresenter`, `HostTagsDialog`, `SessionStore.setTags` | `HostTagsDialogTest`, `HostListPresenterTest`, `SessionStoreTest.setTagsUpdatesSessionAndToHostEntries` |
-| ASN hop labels (P14-030) | `AsnLookup`, `AsnInfo`, `IpLiterals`, `PingColor`, `AppOptions` | `AsnLookupTest`, `IpLiteralsTest`, `PingColorTest.nodeLabelUsesAvgPing`, `PinguiApplicationTest` ASN flags |
+| ASN hop labels (P14-030 / P36-012) | `YamlIpMetadataOverrides`, `MergingIpMetadataProvider`, `PingColor`, `AppOptions` | `MergingIpMetadataProviderTest`, `IpLiteralsTest`, `PingColorTest.nodeLabelUsesAvgPing`, `PinguiApplicationTest` ASN flags |
 | rDNS hop labels (P14-031) | `DnsResolver`, `PingColor`, `MainController`, `GraphCanvas` | `DnsResolverTest`, `PingColorTest.nodeLabelIncludesCachedRdns` |
 | Expert ping presets (P14-040) | `PingPresets`, `PingPreset`, `PingExpertDialog`, `ping_presets.yaml` | `PingPresetsTest` |
 | USER_GUIDE pro/NOC (P14-050) | `docs/USER_GUIDE.md`, `docs/en/USER_GUIDE.md`, `docs/en/DEPLOYMENT.md` | `scripts/check_doc_parity.py` |
@@ -128,7 +132,7 @@
 | Correctness MTR/projection (P33) | P33-001…008 [x]; phase closed | [pingui-correctness.md](pingui-correctness.md) — архів |
 | Correctness follow-up (P34) | P34-001…010 [x]; phase closed | [pingui-route-persistence.md](pingui-route-persistence.md) — **архів**; soak/fault matrix |
 | Unattended NOC (P35) | closed P35-001…010 [x] | [pingui-unattended.md](pingui-unattended.md) |
-| GeoIP / IP metadata (P36) | NEXT=**P36-012**; P36-001…011 [x]; queue P36-012 | [pingui-geoip.md](pingui-geoip.md) |
+| GeoIP / IP metadata (P36) | NEXT=**DONE**; P36-001…012 [x] | [pingui-geoip.md](pingui-geoip.md) |
 | TRACE real target identity (P35-001) | `TraceTargetIp`, `ProcessRouteProbe`, `RouteChangeDetector.targetReached` | `TraceTargetIpTest`, `RouteChangeDetectorTest.targetReachedFalseWhenOnlyIntermediateRouterReachable` |
 | MTR TARGET_UNKNOWN scope (P35-002) | `PollSampleScope.UNSAMPLED`, `RoutePoller.pollHostMtr`, `MtrProbe` backoff | `RoutePollerTest.pollHostMtrTargetUnknownIdleUsesUnsampledScope`, `MtrProbeTest.rediscoveryEntersBackoffThenRetries` |
 | Loss window semantics (P35-003) | `HopProbeStats` attempt window, `HopStats.lossPctInWindow` | `HopStatsTest.lossUsesSlidingWindowNotLifetimeCounters`, `lossInWindowRequiresTwoProbes` |
