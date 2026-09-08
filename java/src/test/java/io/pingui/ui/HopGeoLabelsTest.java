@@ -3,12 +3,11 @@ package io.pingui.ui;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.pingui.geoip.AsnLookup;
-import io.pingui.geoip.GeoCountry;
 import io.pingui.geoip.IpMetadata;
 import io.pingui.geoip.IpMetadataRuntime;
 import io.pingui.geoip.IpMetadataService;
 import io.pingui.geoip.IpMetadataSource;
+import io.pingui.geoip.MergingIpMetadataProvider;
 import io.pingui.geoip.YamlIpMetadataOverrides;
 import io.pingui.model.Models.HopNode;
 import java.util.List;
@@ -19,10 +18,9 @@ import org.junit.jupiter.api.Test;
 class HopGeoLabelsTest {
     @BeforeEach
     void setUp() {
-        GeoCountry.configure(true, java.nio.file.Path.of("config/geoip_hints.yaml"));
-        AsnLookup.configure(true, java.nio.file.Path.of("config/asn_hints.yaml"));
-        IpMetadataRuntime.install(
-                IpMetadataService.overridesOnly(YamlIpMetadataOverrides.fromResource("geoip_hints.yaml")));
+        IpMetadataRuntime.install(IpMetadataService.overridesOnly(MergingIpMetadataProvider.of(
+                YamlIpMetadataOverrides.fromResource("geoip_hints.yaml"),
+                YamlIpMetadataOverrides.fromResource("asn_hints.yaml"))));
     }
 
     @AfterEach

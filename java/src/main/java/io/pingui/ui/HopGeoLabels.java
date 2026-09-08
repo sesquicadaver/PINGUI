@@ -1,15 +1,15 @@
 package io.pingui.ui;
 
-import io.pingui.geoip.AsnInfo;
-import io.pingui.geoip.AsnLookup;
-import io.pingui.geoip.GeoCountry;
+import io.pingui.geoip.IpAddressClassifier;
 import io.pingui.geoip.IpAddressScope;
+import io.pingui.geoip.IpLiterals;
 import io.pingui.geoip.IpMetadata;
 import io.pingui.geoip.IpMetadataRuntime;
 import io.pingui.geoip.IpMetadataService;
 import io.pingui.geoip.IpMetadataSource;
 import io.pingui.model.Models;
 import io.pingui.model.Models.HopNode;
+import java.net.InetAddress;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -17,12 +17,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Cache-first hop GeoIP/ASN label helpers for the graph (P36-008).
+ * Cache-first hop GeoIP/ASN label helpers for the graph (P36-008 / P36-012).
  *
- * <p>Reads {@link IpMetadataRuntime} cache only (offers background fill on miss). Legacy {@link
- * GeoCountry} / {@link AsnLookup} fill gaps until P36-012 removes them.
+ * <p>Reads {@link IpMetadataRuntime} cache only (offers background fill on miss). No legacy {@code
+ * GeoCountry}/{@code AsnLookup} gap-fill — enrichment comes from {@link IpMetadataService} only.
  */
 public final class HopGeoLabels {
+    static final String LAN_TAG = "LAN";
+
     private static final DateTimeFormatter EPOCH_FMT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneOffset.UTC);
 
@@ -51,7 +53,7 @@ public final class HopGeoLabels {
      */
     public static String compactLine(String ip, IpMetadata meta) {
         String country = countryCode(ip, meta);
-        String asn = asnLabel(ip, meta);
+        String asn = asnLabel(meta);
         if (country != null && asn != null) {
             return country + " · " + asn;
         }
@@ -70,7 +72,7 @@ public final class HopGeoLabels {
             return "";
         }
         String country = countryCode(ip, meta);
-        Integer asn = asnNumber(ip, meta);
+        Integer asn = asnNumber(meta);
         if (country != null && asn != null) {
             return country + "/AS" + asn;
         }
@@ -147,26 +149,29 @@ public final class HopGeoLabels {
             return meta.countryIso();
         }
         if (meta != null && meta.scope() == IpAddressScope.PRIVATE) {
-            return GeoCountry.LAN_TAG;
+            return LAN_TAG;
         }
-        return GeoCountry.lookup(ip);
+        if (meta == null) {
+            InetAddress address = IpLiterals.parseLiteralOrNull(ip);
+            if (address != null && IpAddressClassifier.scopeOf(address) == IpAddressScope.PRIVATE) {
+                return LAN_TAG;
+            }
+        }
+        return null;
     }
 
-    private static String asnLabel(String ip, IpMetadata meta) {
-        if (meta != null && meta.asn() != null) {
-            String org = meta.organization() != null ? meta.organization() : "";
-            return new AsnInfo(meta.asn(), org).label();
+    private static String asnLabel(IpMetadata meta) {
+        if (meta == null || meta.asn() == null) {
+            return null;
         }
-        AsnInfo legacy = AsnLookup.lookup(ip);
-        return legacy != null ? legacy.label() : null;
+        if (meta.organization() == null || meta.organization().isBlank()) {
+            return "AS" + meta.asn();
+        }
+        return "AS" + meta.asn() + " " + meta.organization();
     }
 
-    private static Integer asnNumber(String ip, IpMetadata meta) {
-        if (meta != null && meta.asn() != null) {
-            return meta.asn();
-        }
-        AsnInfo legacy = AsnLookup.lookup(ip);
-        return legacy != null ? legacy.asn() : null;
+    private static Integer asnNumber(IpMetadata meta) {
+        return meta != null ? meta.asn() : null;
     }
 
     private static void line(StringBuilder out, String value) {

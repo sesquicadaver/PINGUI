@@ -18,6 +18,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P36-012 — Legacy/docs close:** removed `GeoCountry`/`AsnLookup`/`AsnInfo`; `MergingIpMetadataProvider` + ASN hints in bootstrap; Python not extended; phase 36 **NEXT=DONE**.
 - **P36-011 — GeoIP fault/concurrency:** hard `resolve` lookup timeout (commonPool); stall proofs for `cached`/`offer`/`HopGeoLabels`; NEXT→**P36-012**.
 - **P36-010 — GeoIP observability:** `GeoIpOpsStats` on `GET /ops`, Prometheus (`pingui_geoip_*`), App Status pressure line; NEXT→**P36-011**.
 - **P36-009 — Event/API/export enrichment:** `RouteGeoEnrichment`; `GET /routes/{host}?include=geo`; webhook/persist `geo_diff`/`asn_diff`; CLI `--export-geo`; NEXT→**P36-010**.
@@ -125,6 +126,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P36-012 — Legacy/docs close:** removed `GeoCountry`/`AsnLookup`/`AsnInfo`; `MergingIpMetadataProvider` + ASN hints in bootstrap; Python not extended; phase 36 **NEXT=DONE**.
 - **Desktop alerts = in-app popup:** JavaFX `Alert` via `JavaFxDesktopAlertSink` (no `notify-send` / D-Bus / tray). Python — injectable popup or INFO log. ADR_ALERTS / CHECKLIST / CLI help updated.
 - **Trace concurrency default:** `max_concurrent_traces` default **10** (= `HostsConfig.MAX_HOSTS`). Enabled TRACE hosts in a session (up to 10) may run in parallel; lower the YAML value only for deliberate throttling.
 - **P22-005 — Auto session DB name:** “Create…” button → `data/YYYY-MM-DD_HH-mm-ss_<lan-ip>.db`; phase 22 → **DONE**.
@@ -260,6 +262,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P36-012 — Legacy/docs close:** removed `GeoCountry`/`AsnLookup`/`AsnInfo`; `MergingIpMetadataProvider` + ASN hints in bootstrap; Python not extended; phase 36 **NEXT=DONE**.
 - **Version:** Java `0.2.0-SNAPSHOT`, Python `0.2.0` on `beta`.
 
 ## [0.1.0 development notes] *(historical)*
@@ -315,6 +318,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P36-012 — Legacy/docs close:** removed `GeoCountry`/`AsnLookup`/`AsnInfo`; `MergingIpMetadataProvider` + ASN hints in bootstrap; Python not extended; phase 36 **NEXT=DONE**.
 - **Branches:** `main` — working code and docs; `beta` — full dev repo (tests, CI, specs).
 - **Launcher split:** `pingui.sh` — Python only; Java — `java/pingui-java.sh` (Unix) / `java/pingui-java.bat` (Windows).
 
@@ -357,6 +361,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **P36-012 — Legacy/docs close:** removed `GeoCountry`/`AsnLookup`/`AsnInfo`; `MergingIpMetadataProvider` + ASN hints in bootstrap; Python not extended; phase 36 **NEXT=DONE**.
 - Replaced `scripts/deploy.sh` with `pingui.sh` at repo root.
 - Quiet GUI launch (logging ERROR, Qt message filter).
 
