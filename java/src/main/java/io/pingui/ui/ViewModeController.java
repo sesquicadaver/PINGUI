@@ -3,10 +3,8 @@ package io.pingui.ui;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import javafx.geometry.Insets;
-import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.SplitPane;
-import javafx.scene.control.TextArea;
 import javafx.scene.control.Toggle;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Region;
@@ -22,8 +20,6 @@ final class ViewModeController {
     private final VBox leftPanel;
     private final BorderPane root;
     private final SplitPane mainSplit;
-    private final TextArea logArea;
-    private final Label statusLabel;
     private final Runnable redrawRoute;
     private final Runnable showEasterEggCanvas;
     private final BooleanSupplier easterEggActive;
@@ -35,8 +31,6 @@ final class ViewModeController {
             VBox leftPanel,
             BorderPane root,
             SplitPane mainSplit,
-            TextArea logArea,
-            Label statusLabel,
             Runnable redrawRoute,
             Runnable showEasterEggCanvas,
             BooleanSupplier easterEggActive) {
@@ -44,8 +38,6 @@ final class ViewModeController {
         this.leftPanel = leftPanel;
         this.root = root;
         this.mainSplit = mainSplit;
-        this.logArea = logArea;
-        this.statusLabel = statusLabel;
         this.redrawRoute = redrawRoute;
         this.showEasterEggCanvas = showEasterEggCanvas;
         this.easterEggActive = easterEggActive;
@@ -93,11 +85,6 @@ final class ViewModeController {
         boolean extended = viewMode == UiViewMode.EXTENDED;
         graphPanel.setVisible(extended);
         graphPanel.setManaged(extended);
-        logArea.setVisible(extended);
-        logArea.setManaged(extended);
-        // P20-001: status stays visible in Simple (operator feedback) and Extended (live tick).
-        statusLabel.setVisible(true);
-        statusLabel.setManaged(true);
         BorderPane.setMargin(leftPanel, extended ? new Insets(0, 4, 0, 0) : Insets.EMPTY);
         if (extended) {
             leftPanel.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
@@ -115,9 +102,6 @@ final class ViewModeController {
             root.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
             detachSimpleLayout();
             root.setCenter(leftPanel);
-            if (EmptyStateHints.isReplaceableSimpleStatus(statusLabel.getText())) {
-                statusLabel.setText(EmptyStateHints.simpleNoLog());
-            }
         }
     }
 

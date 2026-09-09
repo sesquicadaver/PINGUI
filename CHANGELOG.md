@@ -7,6 +7,12 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **Extended UI clutter:** прибрано постійний рядок Monitoring і лівий лог змін маршруту; inspector — компактна смуга без поля «Зміна маршруту»; «Історія інцидентів» лише з БД, інакше компактний hint.
+- **Ping only RTT detail:** після P31 `curr/min/avg/max` лишались лише в tooltip; для Ping only / TCP знову inline у рядку хоста (`HostTargetStats.lastMs` + `showInlineMetrics`).
+- **Route graph / inspector truth:** Ping only більше не малює фейковий 1-hop «маршрут»; inspector показує `lastTargetIp`, а не останній досяжний hop (проміжний роутер).
+
 ### Added
 
 - **P36 NEXT activated:** ROADMAP **NEXT = P36-001** (GeoIP / IP metadata: offline MMDB + YAML override); черга P36-001…012; [pingui-geoip.md](docs/pingui-geoip.md).

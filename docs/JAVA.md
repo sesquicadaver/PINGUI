@@ -141,7 +141,7 @@ Store/history/change detection — `SessionStore`, `RouteHistory`, `RouteChangeD
 
 `MainController` (JavaFX) — orchestration + coordinators/presenters.
 
-Chrome збірка (P24-007): пакет `io.pingui.ui.view` — `MainView` + `ProfileToolbar`, `MonitorModeToolbar`, `HostListPanel`, `StatusPanel`, `RouteGraphPanel`, `HistoryPanel`; callbacks через `MainViewActions`. `createScene()` делегує `MainView.assemble(...)`. Після P26-005 `MainController` shell ≈ **546 LOC** (LocGate ≤550).
+Chrome збірка (P24-007): пакет `io.pingui.ui.view` — `MainView` + `ProfileToolbar`, `MonitorModeToolbar`, `HostListPanel`, `StatusPanel` (ops/progress), `RouteGraphPanel`, `HostInspectorPanel` (компактна смуга), `HistoryPanel` (повний chrome лише з БД); callbacks через `MainViewActions`. `createScene()` делегує `MainView.assemble(...)`. Після P26-005 `MainController` shell ≈ **546 LOC** (LocGate ≤550).
 
 Тема (P24-008): `UiPalette` + `classpath:io/pingui/ui/pingui.css` (light-first); `UiPalette.applyTo(scene)`; GraphCanvas paint з тих самих hex-констант; dark — лише reserved `.theme-dark` stub.
 
@@ -153,7 +153,7 @@ Chrome збірка (P24-007): пакет `io.pingui.ui.view` — `MainView` + `
 - Вибір **профілю трасування** (ComboBox + новий/видалити); усі профілі в одному YAML
 - Чекбокс **«Експерт»** → **Exten.** / **MTU** на рядку хоста → `PingExpertDialog` (каталог з `pingMan.txt`, без `-c/-w/-W/-i` тощо); 4 quick presets з `ping_presets.yaml` (MTU probe, DF, DSCP, Burst); **MTU wizard…** (`MtuDiscoveryDialog`); **Self-check** (`PresetSelfCheckUi`)
 - Меню **Налаштування → Телеметрія…** — `TelemetrySettingsDialog` + bus via `TelemetryAttachment`
-- `ListView<HostItem>` + CheckBox у комірці; окремий рядок liveness `спроб N  помилки E  P%` (reset на Ping only / probe_mode) і рядок RTT `loss/min/avg/max`; текст рядка завжди темний (контраст на pastel RTT-фоні)
+- `ListView<HostItem>` + CheckBox у комірці; окремий рядок liveness `спроб N  помилки E  P%` (reset на Ping only / probe_mode) і рядок RTT `curr/min/avg/max` (+ loss %) для **Ping only / TCP** (inline; TRACE/MTR — у tooltip); текст рядка завжди темний (контраст на pastel RTT-фоні)
 - **GraphCanvas** — вертикальний граф, inactive/active колонки
 - Log `TextArea`
 

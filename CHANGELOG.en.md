@@ -7,6 +7,12 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Extended UI clutter:** removed durable Monitoring line and left-column route-change log spam; inspector is a compact strip without “Route change”; incident history only with DB, else a one-line enable-DB hint.
+- **Ping only RTT detail:** after P31, `curr/min/avg/max` lived only in the tooltip; Ping only / TCP show them inline again on the host row (`HostTargetStats.lastMs` + `showInlineMetrics`).
+- **Route graph / inspector truth:** Ping only no longer draws a fake 1-hop “route”; inspector uses `lastTargetIp`, not the last reachable hop (intermediate router).
+
 ### Added
 
 - **P36 NEXT activated:** ROADMAP **NEXT = P36-001** (GeoIP / IP metadata: offline MMDB + YAML override); queue P36-001…012; [pingui-geoip.md](docs/en/pingui-geoip.md).

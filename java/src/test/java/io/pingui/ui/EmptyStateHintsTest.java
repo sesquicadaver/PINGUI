@@ -15,10 +15,10 @@ class EmptyStateHintsTest {
     }
 
     @Test
-    void noSqliteHintPointsToDatabaseMenu() {
+    void noSqliteHintAsksToEnableDb() {
         String hint = EmptyStateHints.noSqlite();
-        assertTrue(hint.contains("SQLite"));
-        assertTrue(hint.contains("База даних"));
+        assertTrue(hint.contains("БД"));
+        assertTrue(hint.contains("інцидент"));
     }
 
     @Test

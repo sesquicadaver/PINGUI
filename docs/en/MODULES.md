@@ -315,8 +315,8 @@ JavaFX chrome assembly separate from orchestration:
 |-------|------|
 | `MainView` | BorderPane/SplitPane assemble; accessors for coordinators |
 | `ProfileToolbar` / `MonitorModeToolbar` | profile + Simple/Extended/Expert |
-| `HostListPanel` / `StatusPanel` | list/CRUD/save + status/log |
-| `RouteGraphPanel` / `HistoryPanel` | canvas + history chrome |
+| `HostListPanel` / `StatusPanel` | list/CRUD/save + transient ops/progress (no Monitoring line / event log) |
+| `RouteGraphPanel` / `HostInspectorPanel` / `HistoryPanel` | canvas + compact inspector strip; history list only with DB |
 | `MainViewActions` | callbacks into `MainController` |
 
 `MainController.createScene()` is a thin assembler. After P26-005 the shell is ≈ **546 LOC** (`MainControllerLocGateTest` ≤550); dialogs/geometry/lifecycle live in coordinators.

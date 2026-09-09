@@ -127,7 +127,7 @@ Module → unit test matrix. Update when adding features.
 | Hardening queue (P26) | ROADMAP phase 26 closed: telemetry isolation, SQLite reopen, launchers, MainController/MonitorService split, JaCoCo packages, latency EWMA; [ADR_HARDENING.md](ADR_HARDENING.md) | P26-001…009 [x]; CHECKLIST § Hardening smoke |
 | SQLite format normalize (P27) | schema v5–v7: telemetry columns SSOT; typed `persistence_event`; normalized `host_session` | Java-only; no legacy migrate (delete `.db`); [x] in queue |
 | SQLite schema evolution (P30) | schema v8–v12 complete | P30-006 [x]; NEXT→**P31-001** |
-| GUI information hierarchy (P31) | a11y [x] | [pingui-evo-gui.md](pingui-evo-gui.md); P31-007 [x]; phase closed |
+| GUI information hierarchy (P31) | a11y [x]; post-P31 UX: no Monitoring/log spam, compact inspector, history iff DB | [pingui-evo-gui.md](pingui-evo-gui.md); P31-007 [x]; phase closed; `HistoryPanelTest`, `UiFeedbackRouterTest` |
 | Stabilization MTR/history (P32) | phase closed [x] | [pingui-stabilization.md](pingui-stabilization.md) — archival; P32-008 [x] |
 | Correctness MTR/projection (P33) | P33-001…008 [x]; phase closed | [pingui-correctness.md](pingui-correctness.md) — archival |
 | Correctness follow-up (P34) | P34-001…010 [x]; phase closed | [pingui-route-persistence.md](pingui-route-persistence.md) — archival; soak/fault matrix |
@@ -177,6 +177,7 @@ Module → unit test matrix. Update when adding features.
 | Raw ICMP packet | `IcmpPacket`, `IcmpV6Packet` | `IcmpPacketTest`, `IcmpV6PacketTest` |
 | Expert ping flags | `PingExpertValidator`, `ProcessExpertPing`, `ExpertPingArgs`, `HostAddressResolver` | `PingExpertValidatorTest`, `ExpertPingArgsTest`, `ProcessExpertPingTest`, `ExpertPingUiRulesTest`, `HostAddressResolverTest`, `PingTargetResolverTest` |
 | Host poll liveness counters | `HostPollCounters`, `HostRegistry`, `MonitorService`, `HostItem`, `HostListPresenter` | `HostPollCountersTest`, `HostRegistryTest.pollCounters*`, `HostItemMetricsTest`, `MonitorServiceTest.pollCounters*` |
+| Ping only inline RTT (curr/min/avg/max) | `HostTargetStats.lastMs`, `HostItem.showInlineMetrics`, `HostListCell` | `HostItemMetricsTest.pingOnlyShowsInlineCurrMinAvgMax`, `HopStatsTest.targetStatsAggregatesTerminalHop` |
 | GUI / MonitorService | `MainController`, `MonitorService` | *(manual / TestFX — backlog)* |
 | UI coordinators | `ProfileUiCoordinator`, `HostListPresenter`, `MonitorLifecycle`, `ViewModeController`, `RouteGraphPresenter` | `./gradlew check`; B-035 manual smoke |
 | CI gate | `.github/workflows/java.yml` | `./gradlew check` (ubuntu + windows jobs block merge; Monocle headless for FX UI tests) |

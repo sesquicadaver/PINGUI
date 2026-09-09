@@ -60,7 +60,24 @@ public final class HostInspectorFormatter {
                 formatProblem(problem));
     }
 
-    /** Last reachable hop IP, else empty. */
+    /**
+     * Authoritative endpoint address for inspector/copy (P35-001 / NOC truth).
+     *
+     * <p>Prefers {@code lastTargetIp} from the monitor (traceroute header / DNS / ping resolve). Does
+     * <em>not</em> fall back to the last reachable hop — that is often an intermediate router on an
+     * incomplete path and must not be labeled as the destination.
+     */
+    public static String resolvedEndpointIp(String configuredAddress, String lastTargetIp) {
+        if (lastTargetIp != null && !lastTargetIp.isBlank()) {
+            return lastTargetIp.strip();
+        }
+        return "";
+    }
+
+    /**
+     * @deprecated Misleading: last reachable hop ≠ destination. Use {@link #resolvedEndpointIp}.
+     */
+    @Deprecated
     public static String resolvedIpFromHops(List<HopNode> hops) {
         if (hops == null || hops.isEmpty()) {
             return "";
@@ -72,6 +89,19 @@ public final class HostInspectorFormatter {
             }
         }
         return "";
+    }
+
+    /** Omits duplicate {@code address → address} noise when resolved equals the configured target. */
+    public static String formatAddressLine(String address, String resolvedIp) {
+        String safeAddress = nullToNa(address);
+        if (resolvedIp == null || resolvedIp.isBlank()) {
+            return safeAddress;
+        }
+        String safeResolved = resolvedIp.strip();
+        if (safeAddress.equals(safeResolved) || UiI18n.get("host.ms_na").equals(safeAddress)) {
+            return safeAddress;
+        }
+        return UiI18n.get("inspector.address", safeAddress, safeResolved);
     }
 
     static String formatInstant(Instant instant) {

@@ -141,7 +141,7 @@ Store/history/change detection — `SessionStore`, `RouteHistory`, `RouteChangeD
 
 `MainController` (JavaFX) — orchestration + coordinators/presenters.
 
-Chrome assembly (P24-007): package `io.pingui.ui.view` — `MainView` + `ProfileToolbar`, `MonitorModeToolbar`, `HostListPanel`, `StatusPanel`, `RouteGraphPanel`, `HistoryPanel`; callbacks via `MainViewActions`. `createScene()` delegates to `MainView.assemble(...)`. After P26-005 `MainController` shell is ≈ **546 LOC** (LocGate ≤550).
+Chrome assembly (P24-007): package `io.pingui.ui.view` — `MainView` + `ProfileToolbar`, `MonitorModeToolbar`, `HostListPanel`, `StatusPanel` (ops/progress), `RouteGraphPanel`, `HostInspectorPanel` (compact strip), `HistoryPanel` (full chrome only with DB); callbacks via `MainViewActions`. `createScene()` delegates to `MainView.assemble(...)`. After P26-005 `MainController` shell is ≈ **546 LOC** (LocGate ≤550).
 
 Theme (P24-008): `UiPalette` + `classpath:io/pingui/ui/pingui.css` (light-first); `UiPalette.applyTo(scene)`; GraphCanvas paint from the same hex constants; dark is only a reserved `.theme-dark` stub.
 
@@ -153,7 +153,7 @@ Paint/geometry policy (P24-010): [ADR_GUI_PAINT.md](ADR_GUI_PAINT.md) — coales
 - **Trace profile** selection (ComboBox + new/delete); all profiles in one YAML
 - **“Expert”** checkbox → **Exten.** / **MTU** on host row → `PingExpertDialog` (catalog from `pingMan.txt`, without `-c/-w/-W/-i` etc.); 4 quick presets from `ping_presets.yaml` (MTU probe, DF, DSCP, Burst); **MTU wizard…** (`MtuDiscoveryDialog`); **Self-check** (`PresetSelfCheckUi`)
 - **Settings → Telemetry…** — `TelemetrySettingsDialog` + bus via `TelemetryAttachment`
-- `ListView<HostItem>` + CheckBox in cell; separate liveness row `спроб N  помилки E  P%` (reset on Ping only / probe_mode) and RTT row `loss/min/avg/max`; host-row text always dark (contrast on pastel RTT backgrounds)
+- `ListView<HostItem>` + CheckBox in cell; separate liveness row `спроб N  помилки E  P%` (reset on Ping only / probe_mode) and RTT row `curr/min/avg/max` (+ loss %) for **Ping only / TCP** (inline; TRACE/MTR — tooltip); host-row text always dark (contrast on pastel RTT backgrounds)
 - **GraphCanvas** — vertical graph, inactive/active columns
 - Log `TextArea`
 

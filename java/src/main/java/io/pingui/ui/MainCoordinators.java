@@ -70,8 +70,6 @@ final class MainCoordinators {
                 wiring.mainView.leftPanel(),
                 wiring.mainView.root(),
                 wiring.mainView.mainSplit(),
-                wiring.mainView.logArea(),
-                wiring.mainView.statusLabel(),
                 wiring.redrawRouteGraph,
                 wiring.showEasterEggCanvas,
                 wiring.easterEggActive);
@@ -167,7 +165,6 @@ final class MainCoordinators {
                 wiring.mainView,
                 routeGraph,
                 routeHistory,
-                userFeedback,
                 appStatus,
                 wiring.redrawRouteGraph);
         SettingsDialogsCoordinator settingsDialogs = new SettingsDialogsCoordinator(

@@ -140,6 +140,11 @@ public final class GraphCanvas extends Region {
         requestRedraw();
     }
 
+    /** Test hook: message shown when no hop graph is drawn. */
+    String staticViewMessageForTests() {
+        return staticViewMessage == null ? "" : staticViewMessage;
+    }
+
     /** Package-visible for tests. */
     ViewTransform viewTransform() {
         return transform;

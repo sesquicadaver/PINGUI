@@ -153,7 +153,7 @@ export PINGUI_JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64   # if needed
 ### Smoke test
 
 - [ ] Add `8.8.8.8`, enable checkbox
-- [ ] Simple: loss %, min/avg/max RTT
+- [ ] Simple: curr / min / avg / max RTT (+ loss %) for Ping only / TCP
 - [ ] Extended: graph + change log
 - [ ] Save YAML → restart → target persists
 - [ ] Expert ON → **Exten.** → `-4 -s 128` → RTT updates
@@ -309,7 +309,7 @@ Run on **Linux** (regression for “black frame” after profile CRUD):
 - [ ] **P20-010 Profile params:** Settings → Profile… → interval/max_hops/timeout/probe → Apply → Save YAML
 - [ ] **P20-009 log_aggregates:** Telemetry → enable log_aggregates → rtt_aggregate after poll/close (no «backlog» tooltip)
 - [ ] **P20-008 Self-check ProgressBar:** Expert → Self-check → ProgressBar; buttons disabled until done; result Alert
-- [ ] **P20-007 Empty states:** Extended without SQLite → Database hint; empty history → placeholder; Simple → status points to Extended
+- [ ] **P20-007 Empty states:** Extended without SQLite → compact enable-DB hint (no history list); empty history with DB → placeholder; Simple — no left event log
 - [ ] **P20-006 Hotkeys:** Ctrl/Cmd+S Save, Ctrl/Cmd+N Add, F1 Help; typing in host field still works
 - [ ] **P20-005 Export:** Settings → Export now… → CSV/HTML; without SQLite → clear error
 - [ ] **P20-003 Dirty/unsaved:** mutate host → «Save *»; profile switch → Confirm; Save clears *

@@ -35,7 +35,7 @@ import javafx.scene.control.ButtonType;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 
-/** Main JavaFX window: profiles, host list, optional route graph and event log. */
+/** Main JavaFX window: profiles, host list, optional route graph and incident history. */
 public final class MainController {
     private static final DateTimeFormatter TIME_FMT =
             DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
@@ -417,14 +417,7 @@ public final class MainController {
 
     private void updateHistoryPanelVisibility() {
         boolean persistence = store != null && store.hasPersistence();
-        mainView.historyLabel().setVisible(true);
-        mainView.historyLabel().setManaged(true);
-        mainView.historyList().setVisible(true);
-        mainView.historyList().setManaged(true);
-        mainView.historyFilterBar().setVisible(persistence);
-        mainView.historyFilterBar().setManaged(persistence);
-        mainView.historyRangeBar().setVisible(persistence);
-        mainView.historyRangeBar().setManaged(persistence);
+        mainView.historyPanel().setPersistenceEnabled(persistence);
         refreshRouteHistory();
     }
 

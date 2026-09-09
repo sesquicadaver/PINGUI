@@ -1,6 +1,8 @@
 package io.pingui.monitor;
 
+import io.pingui.config.HostAddressResolver;
 import io.pingui.config.PingExpertEntry;
+import io.pingui.geoip.IpLiterals;
 import io.pingui.model.Models;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;
@@ -13,6 +15,7 @@ import io.pingui.probe.RouteProbe;
 import io.pingui.probe.TcpConnectProbe;
 import io.pingui.probe.TcpConnectResult;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.List;
 import java.util.OptionalDouble;
 import java.util.concurrent.ConcurrentHashMap;
@@ -166,15 +169,17 @@ public final class RoutePoller {
         }
     }
 
-    /** Direct ping to target; single-hop snapshot, no traceroute. */
+    /** Direct ping to target; single-hop sample for metrics — not a traceroute path. */
     public HostPollOutcome pollHostPingOnly(
             String host, List<String> previousIps, double timeoutSeconds, PingExpertEntry expert) {
         try {
             OptionalDouble rtt = hostPing.pingOnce(host, expert, timeoutSeconds);
+            String endpointIp = resolvePingEndpointIp(host, expert);
             List<HopNode> nodes = rtt.isPresent()
-                    ? List.of(new HopNode(1, host, rtt.getAsDouble(), false))
+                    ? List.of(new HopNode(1, endpointIp, rtt.getAsDouble(), false))
                     : List.of(Models.timeout(1));
-            RouteSnapshot snapshot = new RouteSnapshot(host, host, nodes);
+            // targetIp = resolved A/AAAA (or literal); never pretend the hostname is a hop IP.
+            RouteSnapshot snapshot = new RouteSnapshot(host, endpointIp, nodes);
             List<String> currentIps = snapshot.routeIps();
             RouteChangeDetector.RouteChangeResult change = RouteChangeDetector.observe(
                     fsmFor(host), snapshot, RouteChangeDetector.targetReached(snapshot), previousIps);
@@ -190,6 +195,19 @@ public final class RoutePoller {
             return HostPollOutcome.error(previousIps, ex.getMessage(), ProbeOutcome.NETWORK_ERROR);
         } catch (RuntimeException ex) {
             return HostPollOutcome.error(previousIps, ex.getMessage(), ProbeOutcome.NETWORK_ERROR);
+        }
+    }
+
+    /**
+     * Literal or DNS-resolved endpoint for Ping only identity (matches what ping(8) actually hits).
+     */
+    static String resolvePingEndpointIp(String host, PingExpertEntry expert) {
+        boolean ipv6 = expert != null && expert.args().contains("-6");
+        try {
+            return HostAddressResolver.resolveForPing(host, ipv6);
+        } catch (RuntimeException ex) {
+            InetAddress literal = IpLiterals.parseLiteralOrNull(host == null ? "" : host);
+            return literal != null ? literal.getHostAddress() : host;
         }
     }
 

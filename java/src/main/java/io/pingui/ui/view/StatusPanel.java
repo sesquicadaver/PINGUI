@@ -10,7 +10,11 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
-/** Status area: durable monitoring summary, transient ops, optional progress, event log. */
+/**
+ * Compact status chrome: transient ops + optional progress. Durable monitoring summary and the event
+ * log are kept as API fields for tests/bootstrap but are not shown in the left column (route changes
+ * belong in incident history when DB is on).
+ */
 public final class StatusPanel {
     private final Label monitoringLabel = new Label(EmptyStateHints.waitingForData());
     private final Label opsLabel = new Label();
@@ -23,8 +27,12 @@ public final class StatusPanel {
     public StatusPanel() {
         logArea.setEditable(false);
         logArea.setWrapText(true);
+        logArea.setVisible(false);
+        logArea.setManaged(false);
         monitoringLabel.setWrapText(true);
         monitoringLabel.setMaxWidth(HostListPanel.PANEL_MIN_WIDTH - 16);
+        monitoringLabel.setVisible(false);
+        monitoringLabel.setManaged(false);
         opsLabel.setWrapText(true);
         opsLabel.setMaxWidth(HostListPanel.PANEL_MIN_WIDTH - 16);
         opsLabel.getStyleClass().add("pingui-muted");
@@ -42,11 +50,10 @@ public final class StatusPanel {
         progressRow.getChildren().setAll(progressBar, cancelButton);
         progressRow.setManaged(false);
         progressRow.setVisible(false);
-        VBox.setVgrow(logArea, Priority.ALWAYS);
-        chrome.getChildren().setAll(monitoringLabel, opsLabel, progressRow, logArea);
+        chrome.getChildren().setAll(opsLabel, progressRow);
     }
 
-    /** Root chrome for the left column (monitoring + ops + progress + log). */
+    /** Root chrome for the left column (ops + progress only). */
     public VBox chrome() {
         return chrome;
     }
@@ -55,7 +62,7 @@ public final class StatusPanel {
         return monitoringLabel;
     }
 
-    /** Backward-compatible alias for the durable monitoring line. */
+    /** Backward-compatible alias for the durable monitoring line (hidden from chrome). */
     public Label statusLabel() {
         return monitoringLabel;
     }
@@ -76,6 +83,7 @@ public final class StatusPanel {
         return progressRow;
     }
 
+    /** Retained for bootstrap/error append paths; not shown in the left column. */
     public TextArea logArea() {
         return logArea;
     }
