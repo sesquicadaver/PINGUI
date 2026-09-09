@@ -19,10 +19,10 @@ class UiFeedbackRouterTest {
     }
 
     @Test
-    void extendedInfoUpdatesLogAndOps() {
+    void extendedInfoUpdatesOpsOnlyWithoutLogSpam() {
         Recording rec = new Recording(true);
         rec.router.info("ok");
-        assertEquals(List.of("ok"), rec.log);
+        assertTrue(rec.log.isEmpty());
         assertEquals(List.of("ok"), rec.ops);
         assertTrue(rec.alerts.isEmpty());
     }

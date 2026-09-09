@@ -18,10 +18,24 @@ import org.junit.jupiter.api.Test;
 
 class HostInspectorFormatterTest {
     @Test
-    void resolvedIpUsesLastReachableHop() {
-        List<HopNode> hops = List.of(new HopNode(1, "10.0.0.1", 1.0, false), Models.timeout(2));
-        assertEquals("10.0.0.1", HostInspectorFormatter.resolvedIpFromHops(hops));
-        assertEquals("", HostInspectorFormatter.resolvedIpFromHops(List.of()));
+    void resolvedEndpointPrefersTargetIpNotLastHop() {
+        assertEquals("8.8.8.8", HostInspectorFormatter.resolvedEndpointIp("google.com", "8.8.8.8"));
+        assertEquals("", HostInspectorFormatter.resolvedEndpointIp("google.com", null));
+        // Incomplete path must not invent a destination from the last router.
+        assertEquals("", HostInspectorFormatter.resolvedEndpointIp("8.8.8.8", null));
+        assertEquals(
+                "10.0.0.1",
+                HostInspectorFormatter.resolvedIpFromHops(
+                        List.of(new HopNode(1, "10.0.0.1", 1.0, false), Models.timeout(2))));
+    }
+
+    @Test
+    void addressLineOmitsDuplicateResolved() {
+        assertEquals("8.8.8.8", HostInspectorFormatter.formatAddressLine("8.8.8.8", "8.8.8.8"));
+        assertEquals("8.8.8.8", HostInspectorFormatter.formatAddressLine("8.8.8.8", ""));
+        String withArrow = HostInspectorFormatter.formatAddressLine("google.com", "8.8.8.8");
+        assertTrue(withArrow.contains("google.com"));
+        assertTrue(withArrow.contains("8.8.8.8"));
     }
 
     @Test

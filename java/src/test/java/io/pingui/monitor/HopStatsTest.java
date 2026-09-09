@@ -1,6 +1,7 @@
 package io.pingui.monitor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -97,6 +98,8 @@ class HopStatsTest {
         assertEquals(10.0, result.minMs());
         assertEquals(20.0, result.maxMs());
         assertEquals(15.0, result.avgMs());
+        assertEquals(15.0, result.lastMs());
+        assertFalse(result.timeout());
     }
 
     @Test

@@ -59,7 +59,14 @@ final class RouteGraphPresenter {
         }
         String host = selected.getHost();
         SessionStore session = store.get();
-        var current = session.get(host).getCurrentRoute();
+        var data = session.get(host);
+        // Ping only / TCP are endpoint checks — a 1-node "route" is not a path and misleads NOC.
+        if (data.getProbeMode().isTargetOnly()) {
+            graphCanvas.renderStaticView(io.pingui.i18n.UiI18n.get("graph.no_path_target_only"));
+            geoStrip.accept("");
+            return;
+        }
+        var current = data.getCurrentRoute();
         var previous = session.inactiveRoute(host);
         graphCanvas.renderRoute(
                 current, ip -> session.avgPing(host, ip), previous, hop -> session.hopStatsSummary(host, hop));

@@ -20,4 +20,6 @@ The UI is already feature-rich; the goal is **information hierarchy**, not a win
 
 Full specification (UK): [../pingui-evo-gui.md](../pingui-evo-gui.md).
 
+**Post-P31 UX (layout declutter):** no durable Monitoring summary or left event-log spam; compact inspector strip without route-change field; incident history chrome only when SQLite is on (else one-line enable-DB hint).
+
 **Backlog (not in linear queue):** settings grouping, graph legend/tweaks, structured error messages.

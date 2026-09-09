@@ -17,7 +17,6 @@ final class MonitorUiHandler {
     private final MainView mainView;
     private final RouteGraphPresenter routeGraphPresenter;
     private final RouteHistoryPresenter routeHistoryPresenter;
-    private final UserFeedback userFeedback;
     private final AppStatusPresenter appStatus;
     private final Runnable redrawRouteGraph;
 
@@ -30,7 +29,6 @@ final class MonitorUiHandler {
             MainView mainView,
             RouteGraphPresenter routeGraphPresenter,
             RouteHistoryPresenter routeHistoryPresenter,
-            UserFeedback userFeedback,
             AppStatusPresenter appStatus,
             Runnable redrawRouteGraph) {
         this.store = store;
@@ -41,7 +39,6 @@ final class MonitorUiHandler {
         this.mainView = mainView;
         this.routeGraphPresenter = routeGraphPresenter;
         this.routeHistoryPresenter = routeHistoryPresenter;
-        this.userFeedback = userFeedback;
         this.appStatus = appStatus;
         this.redrawRouteGraph = redrawRouteGraph;
     }
@@ -94,11 +91,7 @@ final class MonitorUiHandler {
         }
         ViewModeController mode = viewModeController.get();
         if (mode.isExtended() && !easterEggActive.getAsBoolean()) {
-            if (!oldIps.isEmpty()) {
-                String oldStr = String.join(" -> ", oldIps);
-                userFeedback.info(
-                        io.pingui.i18n.UiI18n.get("status.route_change", host, oldStr, String.join(" -> ", newIps)));
-            }
+            // Route-change noise stays out of the left ops strip; host badge + DB history cover it.
             routeHistoryPresenter.onRouteChanged(host);
             String activeHost = viewHost();
             if (activeHost != null && host.equals(activeHost)) {

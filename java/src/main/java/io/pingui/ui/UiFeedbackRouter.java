@@ -9,9 +9,9 @@ import java.util.function.Consumer;
  *
  * <ul>
  *   <li>Simple/info → transient ops line only
- *   <li>Extended/info → log + transient ops (monitoring summary stays)
+ *   <li>Extended/info → transient ops only (no left-column event log spam)
  *   <li>Simple/error → ops + Alert
- *   <li>Extended/error → log + ops (no Alert)
+ *   <li>Extended/error → ops only (no Alert); optional log sink kept for diagnostics appenders
  * </ul>
  */
 final class UiFeedbackRouter implements UserFeedback {
@@ -45,11 +45,7 @@ final class UiFeedbackRouter implements UserFeedback {
 
     @Override
     public void info(String message) {
-        String text = nullToEmpty(message);
-        if (extended.getAsBoolean()) {
-            appendLogLine.accept(text);
-        }
-        showTransient.accept(text);
+        showTransient.accept(nullToEmpty(message));
     }
 
     @Override

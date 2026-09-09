@@ -20,8 +20,8 @@ class HostItemMetricsTest {
 
     @Test
     void rttMetricsStayOnSeparateFormat() {
-        HostTargetStats stats = new HostTargetStats(0.0, 10.0, 12.0, 15.0, false);
-        assertEquals("loss 0%  min 10  avg 12  max 15 ms", HostItem.formatRttMetrics(stats));
+        HostTargetStats stats = new HostTargetStats(0.0, 10.0, 12.0, 15.0, false, 14.0);
+        assertEquals("curr 14  min 10  avg 12  max 15  loss 0%", HostItem.formatRttMetrics(stats));
     }
 
     @Test
@@ -54,12 +54,14 @@ class HostItemMetricsTest {
     void applyMetricsUpdatesUnifiedColumnsAndTooltip() {
         HostItem item = new HostItem("8.8.8.8", true);
         item.setProbeMode(HostProbeMode.TRACE);
-        item.applyMetrics(new HostTargetStats(0.0, 10.0, 12.0, 15.0, false), new HostPollCounters(4, 1));
+        item.applyMetrics(new HostTargetStats(0.0, 10.0, 12.0, 15.0, false, 12.0), new HostPollCounters(4, 1));
         assertTrue(item.showPollCountersProperty().get());
         assertTrue(item.showMetricsProperty().get());
+        assertFalse(item.showInlineMetricsProperty().get());
         assertEquals("спроб 4  помилки 1  25%", item.pollCountersTextProperty().get());
         assertEquals(
-                "loss 0%  min 10  avg 12  max 15 ms", item.metricsTextProperty().get());
+                "curr 12  min 10  avg 12  max 15  loss 0%",
+                item.metricsTextProperty().get());
         assertEquals("●", item.stateGlyphProperty().get());
         assertEquals("12", item.rttColumnTextProperty().get());
         assertEquals("0%", item.lossColumnTextProperty().get());
@@ -73,6 +75,20 @@ class HostItemMetricsTest {
         assertTrue(item.rowDetailsTooltipProperty().get().contains("Severity:"));
         assertTrue(item.rowDetailsTooltipProperty().get().contains("спроб 4"));
         assertTrue(item.rowDetailsTooltipProperty().get().contains("avg 12"));
+    }
+
+    @Test
+    void pingOnlyShowsInlineCurrMinAvgMax() {
+        HostItem item = new HostItem("8.8.8.8", true, true);
+        item.applyMetrics(new HostTargetStats(0.0, 10.0, 12.0, 15.0, false, 11.0), HostPollCounters.ZERO);
+        assertTrue(item.showMetricsProperty().get());
+        assertTrue(item.showInlineMetricsProperty().get());
+        assertEquals(
+                "curr 11  min 10  avg 12  max 15  loss 0%",
+                item.metricsTextProperty().get());
+        item.setProbeMode(HostProbeMode.TRACE);
+        assertFalse(item.showInlineMetricsProperty().get());
+        assertTrue(item.showMetricsProperty().get());
     }
 
     @Test

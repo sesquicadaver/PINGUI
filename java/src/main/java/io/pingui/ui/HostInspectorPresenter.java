@@ -8,12 +8,8 @@ import io.pingui.monitor.HostTargetStats;
 import io.pingui.monitor.MonitorService;
 import io.pingui.monitor.ProblemCorrelation;
 import io.pingui.monitor.SessionStore;
-import io.pingui.persistence.PersistenceEventRecord;
-import io.pingui.persistence.PersistenceEventType;
-import io.pingui.persistence.SessionDatabase;
 import io.pingui.ui.view.HostInspectorPanel;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -23,9 +19,6 @@ import javafx.stage.Window;
 
 /** Selected-host inspector: binds {@link HostInspectorPanel} to session/monitor state (P31-003). */
 final class HostInspectorPresenter {
-    private static final int ROUTE_CHANGE_LOOKBACK_DAYS = 7;
-    private static final int ROUTE_CHANGE_SCAN_LIMIT = 40;
-
     private final HostInspectorPanel panel;
     private final Supplier<SessionStore> store;
     private final Supplier<MonitorService> monitor;
@@ -81,23 +74,23 @@ final class HostInspectorPresenter {
         HostTargetStats stats = null;
         HopStatsSummary hopStats = null;
         Instant lastPoll = null;
-        Instant lastRouteChange = null;
         HostProblemSummary problem = item.problemSummary();
+        String resolved = "";
         if (session != null && session.containsHost(item.getHost())) {
             hops = session.get(item.getHost()).getCurrentRoute();
             stats = session.targetStats(item.getHost());
+            resolved = HostInspectorFormatter.resolvedEndpointIp(
+                    item.getHost(), session.get(item.getHost()).getLastTargetIp());
             if (!hops.isEmpty()) {
                 hopStats = session.hopStatsSummary(
                         item.getHost(), hops.get(hops.size() - 1).hop());
             }
-            lastRouteChange = findLastRouteChange(session.database(), item.getHost());
         }
         if (service != null) {
             lastPoll = service.lastPollAt(item.getHost()).orElse(null);
             problem = service.hostProblemSummary(item.getHost()).orElse(problem);
             item.applyProblem(problem);
         }
-        String resolved = HostInspectorFormatter.resolvedIpFromHops(hops);
         HostInspectorFormatter.Snapshot snap = HostInspectorFormatter.from(
                 item.getHost(),
                 resolved,
@@ -107,7 +100,7 @@ final class HostInspectorPresenter {
                 hopStats,
                 item.endpointState(),
                 item.routeState(),
-                lastRouteChange,
+                null,
                 problem);
         boolean canAck = problem != null && problem.showBadge();
         boolean canDiagnose = problem != null;
@@ -121,7 +114,6 @@ final class HostInspectorPresenter {
                 snap.loss(),
                 snap.endpoint(),
                 snap.route(),
-                snap.lastRouteChange(),
                 snap.problem(),
                 canAck,
                 canDiagnose);
@@ -134,8 +126,8 @@ final class HostInspectorPresenter {
         String text = bound.getHost();
         SessionStore session = store.get();
         if (session != null && session.containsHost(text)) {
-            String resolved =
-                    HostInspectorFormatter.resolvedIpFromHops(session.get(text).getCurrentRoute());
+            String resolved = HostInspectorFormatter.resolvedEndpointIp(
+                    text, session.get(text).getLastTargetIp());
             if (!resolved.isBlank() && !resolved.equals(text)) {
                 text = text + " (" + resolved + ")";
             }
@@ -186,19 +178,5 @@ final class HostInspectorPresenter {
             bound.applyProblem(service.hostProblemSummary(bound.getHost()).orElse(null));
             refresh();
         }
-    }
-
-    private static Instant findLastRouteChange(SessionDatabase database, String host) {
-        if (database == null || host == null || host.isBlank()) {
-            return null;
-        }
-        Instant since = Instant.now().minus(ROUTE_CHANGE_LOOKBACK_DAYS, ChronoUnit.DAYS);
-        List<PersistenceEventRecord> rows = database.listHostEvents(host, since, ROUTE_CHANGE_SCAN_LIMIT);
-        for (PersistenceEventRecord row : rows) {
-            if (row.eventType() == PersistenceEventType.ROUTE_CHANGE) {
-                return row.observedAt();
-            }
-        }
-        return null;
     }
 }

@@ -24,6 +24,9 @@ public final class HostItem {
     private final BooleanProperty pingOnly = new SimpleBooleanProperty(false);
     private final BooleanProperty showPollCounters = new SimpleBooleanProperty(false);
     private final BooleanProperty showMetrics = new SimpleBooleanProperty(false);
+    /** Inline RTT detail for Ping only / TCP (no hop graph to carry curr/min/avg/max). */
+    private final BooleanProperty showInlineMetrics = new SimpleBooleanProperty(false);
+
     private final BooleanProperty expertConfigured = new SimpleBooleanProperty(false);
     private final BooleanProperty problemUnread = new SimpleBooleanProperty(false);
     private final StringProperty pollCountersText = new SimpleStringProperty("");
@@ -94,6 +97,14 @@ public final class HostItem {
 
     public BooleanProperty showMetricsProperty() {
         return showMetrics;
+    }
+
+    /**
+     * When true, the host row shows {@link #metricsTextProperty()} under the columns — used for
+     * target-only modes where the route graph cannot surface curr/min/avg/max.
+     */
+    public BooleanProperty showInlineMetricsProperty() {
+        return showInlineMetrics;
     }
 
     public BooleanProperty expertConfiguredProperty() {
@@ -263,6 +274,7 @@ public final class HostItem {
     public void clearMetrics() {
         showPollCounters.set(false);
         showMetrics.set(false);
+        showInlineMetrics.set(false);
         pollCountersText.set("");
         metricsText.set("");
         rttColumnText.set(formatRttColumn(null));
@@ -290,8 +302,10 @@ public final class HostItem {
         }
         showPollCounters.set(!pollText.isEmpty());
         pollCountersText.set(pollText);
-        showMetrics.set(!rttText.isEmpty());
+        boolean hasRtt = !rttText.isEmpty();
+        showMetrics.set(hasRtt);
         metricsText.set(rttText);
+        showInlineMetrics.set(hasRtt && probeMode.isTargetOnly());
         rttColumnText.set(formatRttColumn(stats != null ? stats.avgMs() : null));
         lossColumnText.set(formatLossColumn(stats));
         lastStats = stats;
@@ -390,10 +404,11 @@ public final class HostItem {
         }
         return UiI18n.get(
                 "host.rtt_metrics",
-                Math.round(stats.lossPct()),
+                formatMs(stats.lastMs()),
                 formatMs(stats.minMs()),
                 formatMs(stats.avgMs()),
-                formatMs(stats.maxMs()));
+                formatMs(stats.maxMs()),
+                Math.round(stats.lossPct()));
     }
 
     static String formatRowDetailsTooltip(
@@ -415,6 +430,7 @@ public final class HostItem {
 
     private void refreshModeColumn() {
         modeColumnText.set(formatModeLabel(probeMode));
+        showInlineMetrics.set(showMetrics.get() && probeMode.isTargetOnly());
     }
 
     private void refreshNetworkStates(HostTargetStats stats) {

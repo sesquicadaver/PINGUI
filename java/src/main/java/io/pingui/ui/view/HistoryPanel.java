@@ -1,6 +1,7 @@
 package io.pingui.ui.view;
 
 import io.pingui.i18n.UiI18n;
+import io.pingui.ui.EmptyStateHints;
 import io.pingui.ui.RouteHistoryItem;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -11,9 +12,13 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
-/** Route-history chrome (filter, range, list). Visibility rules stay in MainController. */
+/**
+ * Route / incident history chrome. Full list + filters only when SQLite persistence is on; otherwise
+ * a one-line DB hint.
+ */
 public final class HistoryPanel {
     private final Label historyLabel = new Label();
+    private final Label dbHintLabel = new Label();
     private final ListView<RouteHistoryItem> historyList = new ListView<>();
     private final RadioButton historyRange24h = new RadioButton();
     private final RadioButton historyRange7d = new RadioButton();
@@ -23,13 +28,17 @@ public final class HistoryPanel {
     private final HBox historyRangeBar = new HBox(8);
     private final Button refreshHistory = new Button();
 
-    HistoryPanel() {
+    public HistoryPanel() {
         historyList.setPrefHeight(120);
         historyHostFilter.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(historyHostFilter, Priority.ALWAYS);
         historyFilterBar.getChildren().addAll(targetLabel, historyHostFilter);
         historyRangeBar.getChildren().addAll(historyRange24h, historyRange7d, refreshHistory);
+        dbHintLabel.getStyleClass().add("pingui-muted");
+        dbHintLabel.setWrapText(true);
+        dbHintLabel.setMaxWidth(Double.MAX_VALUE);
         retranslate();
+        setPersistenceEnabled(false);
     }
 
     void wire(MainViewActions actions) {
@@ -37,7 +46,7 @@ public final class HistoryPanel {
     }
 
     void installInto(VBox graphPanel) {
-        graphPanel.getChildren().addAll(historyLabel, historyFilterBar, historyRangeBar, historyList);
+        graphPanel.getChildren().addAll(historyLabel, dbHintLabel, historyFilterBar, historyRangeBar, historyList);
     }
 
     void retranslate() {
@@ -47,33 +56,56 @@ public final class HistoryPanel {
         historyHostFilter.setPromptText(UiI18n.get("history.target_prompt"));
         targetLabel.setText(UiI18n.get("history.target"));
         refreshHistory.setText(UiI18n.get("history.refresh"));
+        dbHintLabel.setText(EmptyStateHints.noSqlite());
     }
 
-    Label historyLabel() {
+    /**
+     * Shows full history chrome when SQLite session is active; otherwise only a compact DB hint.
+     *
+     * @param enabled {@code true} when {@code SessionStore.hasPersistence()}
+     */
+    public void setPersistenceEnabled(boolean enabled) {
+        historyLabel.setVisible(enabled);
+        historyLabel.setManaged(enabled);
+        historyFilterBar.setVisible(enabled);
+        historyFilterBar.setManaged(enabled);
+        historyRangeBar.setVisible(enabled);
+        historyRangeBar.setManaged(enabled);
+        historyList.setVisible(enabled);
+        historyList.setManaged(enabled);
+        dbHintLabel.setVisible(!enabled);
+        dbHintLabel.setManaged(!enabled);
+    }
+
+    public Label historyLabel() {
         return historyLabel;
     }
 
-    ListView<RouteHistoryItem> historyList() {
+    public Label dbHintLabel() {
+        return dbHintLabel;
+    }
+
+    public ListView<RouteHistoryItem> historyList() {
         return historyList;
     }
 
-    RadioButton historyRange24h() {
+    public RadioButton historyRange24h() {
         return historyRange24h;
     }
 
-    RadioButton historyRange7d() {
+    public RadioButton historyRange7d() {
         return historyRange7d;
     }
 
-    ComboBox<String> historyHostFilter() {
+    public ComboBox<String> historyHostFilter() {
         return historyHostFilter;
     }
 
-    HBox historyFilterBar() {
+    public HBox historyFilterBar() {
         return historyFilterBar;
     }
 
-    HBox historyRangeBar() {
+    public HBox historyRangeBar() {
         return historyRangeBar;
     }
 }

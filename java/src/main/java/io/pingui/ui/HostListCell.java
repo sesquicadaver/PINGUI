@@ -17,11 +17,13 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
 /**
  * Unified host list row (P31-001): {@code [state] name RTT loss mode [problem]} with fixed columns;
- * poll/RTT detail and tags in tooltip. Accessibility names/tooltips (P31-007).
+ * poll/RTT detail and tags in tooltip. For Ping only / TCP, RTT detail ({@code curr/min/avg/max}) is
+ * also shown inline because those modes have no hop graph.
  */
 final class HostListCell extends ListCell<HostItem> {
     private static final double COL_RTT = 36.0;
@@ -39,6 +41,7 @@ final class HostListCell extends ListCell<HostItem> {
     private final Label rttLabel = new Label();
     private final Label lossLabel = new Label();
     private final Label modeLabel = new Label();
+    private final Label metricsLabel = new Label();
     private final HBox mainRow = new HBox(
             6,
             stateLabel,
@@ -50,7 +53,8 @@ final class HostListCell extends ListCell<HostItem> {
             problemButton,
             extenButton,
             mtuButton);
-    private final HBox root = new HBox(8, checkBox, mainRow, pingOnlyCheck);
+    private final VBox textColumn = new VBox(2, mainRow, metricsLabel);
+    private final HBox root = new HBox(8, checkBox, textColumn, pingOnlyCheck);
     private final BiConsumer<HostItem, Boolean> onEnabledChanged;
     private final BiConsumer<HostItem, Boolean> onPingOnlyChanged;
     private final BooleanProperty expertMode;
@@ -64,6 +68,8 @@ final class HostListCell extends ListCell<HostItem> {
     private ChangeListener<String> rttColumnListener;
     private ChangeListener<String> lossColumnListener;
     private ChangeListener<String> modeColumnListener;
+    private ChangeListener<String> metricsTextListener;
+    private ChangeListener<Boolean> showInlineMetricsListener;
     private ChangeListener<String> rowTooltipListener;
     private ChangeListener<Boolean> expertConfiguredListener;
     private ChangeListener<Boolean> expertModeListener;
@@ -88,6 +94,9 @@ final class HostListCell extends ListCell<HostItem> {
         configureColumn(rttLabel, COL_RTT, "pingui-host-col-rtt", Pos.CENTER_RIGHT);
         configureColumn(lossLabel, COL_LOSS, "pingui-host-col-loss", Pos.CENTER_RIGHT);
         configureColumn(modeLabel, COL_MODE, "pingui-host-col-mode", Pos.CENTER);
+        metricsLabel.getStyleClass().add("pingui-metrics");
+        metricsLabel.setVisible(false);
+        metricsLabel.setManaged(false);
         extenButton.setMinWidth(Region.USE_PREF_SIZE);
         mtuButton.setMinWidth(Region.USE_PREF_SIZE);
         mtuButton.setTooltip(new Tooltip(UiI18n.get("host.mtu_tooltip")));
@@ -100,6 +109,7 @@ final class HostListCell extends ListCell<HostItem> {
         UiAccessibility.name(rttLabel, UiI18n.get("a11y.host_rtt"));
         UiAccessibility.name(lossLabel, UiI18n.get("a11y.host_loss"));
         UiAccessibility.name(modeLabel, UiI18n.get("a11y.host_mode"));
+        UiAccessibility.name(metricsLabel, UiI18n.get("a11y.host_rtt"));
         extenButton.setOnAction(e -> {
             HostItem item = getItem();
             if (item != null) {
@@ -119,7 +129,7 @@ final class HostListCell extends ListCell<HostItem> {
             }
         });
         hostLabel.getStyleClass().add("pingui-host-name");
-        HBox.setHgrow(mainRow, Priority.ALWAYS);
+        HBox.setHgrow(textColumn, Priority.ALWAYS);
         HBox.setHgrow(hostLabel, Priority.ALWAYS);
         root.getStyleClass().add("pingui-host-row");
         root.setAlignment(Pos.CENTER_LEFT);
@@ -198,6 +208,15 @@ final class HostListCell extends ListCell<HostItem> {
         };
         item.modeColumnTextProperty().addListener(modeColumnListener);
         modeLabel.setText(item.modeColumnTextProperty().get());
+        metricsTextListener = (obs, was, text) -> {
+            metricsLabel.setText(text == null ? "" : text);
+            refreshRowAccessibility(getItem());
+        };
+        item.metricsTextProperty().addListener(metricsTextListener);
+        metricsLabel.setText(item.metricsTextProperty().get());
+        showInlineMetricsListener = (obs, was, show) -> applyInlineMetricsVisibility(Boolean.TRUE.equals(show));
+        item.showInlineMetricsProperty().addListener(showInlineMetricsListener);
+        applyInlineMetricsVisibility(item.showInlineMetricsProperty().get());
         rowTooltipListener = (obs, was, text) -> applyRowTooltip(text);
         item.rowDetailsTooltipProperty().addListener(rowTooltipListener);
         applyRowTooltip(item.rowDetailsTooltipProperty().get());
@@ -217,6 +236,11 @@ final class HostListCell extends ListCell<HostItem> {
         UiAccessibility.name(hostLabel, item.getHost());
         updating = false;
         setGraphic(root);
+    }
+
+    private void applyInlineMetricsVisibility(boolean show) {
+        metricsLabel.setVisible(show);
+        metricsLabel.setManaged(show);
     }
 
     private static void configureColumn(Label label, double width, String styleClass, Pos alignment) {
@@ -322,6 +346,14 @@ final class HostListCell extends ListCell<HostItem> {
         if (modeColumnListener != null) {
             boundItem.modeColumnTextProperty().removeListener(modeColumnListener);
             modeColumnListener = null;
+        }
+        if (metricsTextListener != null) {
+            boundItem.metricsTextProperty().removeListener(metricsTextListener);
+            metricsTextListener = null;
+        }
+        if (showInlineMetricsListener != null) {
+            boundItem.showInlineMetricsProperty().removeListener(showInlineMetricsListener);
+            showInlineMetricsListener = null;
         }
         if (rowTooltipListener != null) {
             boundItem.rowDetailsTooltipProperty().removeListener(rowTooltipListener);

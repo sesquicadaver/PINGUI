@@ -1,5 +1,6 @@
 package io.pingui.ui;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -61,6 +62,28 @@ class RouteGraphPresenterTest {
             presenter.redrawIfExtended();
             canvas.paintForTest();
             assertTrue(canvas.layoutBuildCount() >= 1);
+        });
+    }
+
+    @Test
+    void pingOnlyDoesNotRenderFakeRouteGraph() throws Exception {
+        FxTestSupport.runOnFxThread(() -> {
+            GraphCanvas canvas = new GraphCanvas();
+            var items = javafx.collections.FXCollections.observableArrayList(new HostItem("8.8.8.8", true, true));
+            javafx.scene.control.ListView<HostItem> hostList = new javafx.scene.control.ListView<>(items);
+            hostList.getSelectionModel().select(0);
+            SessionStore store =
+                    SessionStore.fromEntries(List.of(new HostEntry("8.8.8.8", true, true, PingExpertEntry.empty())));
+            store.updateRoute(
+                    "8.8.8.8", new RouteSnapshot("8.8.8.8", "8.8.8.8", List.of(new HopNode(1, "8.8.8.8", 5.0, false))));
+            String[] geo = {null};
+            RouteGraphPresenter presenter = new RouteGraphPresenter(
+                    canvas, hostList, () -> store, () -> true, () -> false, text -> geo[0] = text);
+            presenter.redrawIfExtended();
+            assertEquals("", geo[0]);
+            assertTrue(canvas.staticViewMessageForTests().contains("Ping only")
+                    || canvas.staticViewMessageForTests().contains("TCP")
+                    || !canvas.staticViewMessageForTests().isBlank());
         });
     }
 

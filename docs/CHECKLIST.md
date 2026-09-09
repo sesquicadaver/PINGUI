@@ -153,7 +153,7 @@ export PINGUI_JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64   # за потреб
 ### Smoke-test
 
 - [ ] Додати `8.8.8.8`, увімкнути чекбокс
-- [ ] Simple: loss %, min/avg/max RTT
+- [ ] Simple: curr / min / avg / max RTT (+ loss %) for Ping only / TCP
 - [ ] Extended: граф + лог змін
 - [ ] Зберегти YAML → перезапуск → ціль на місці
 - [ ] Expert ON → **Exten.** → `-4 -s 128` → RTT оновлюється
@@ -309,7 +309,7 @@ chmod +x pingui-java.sh gradlew
 - [ ] **P20-010 Profile params:** Налаштування → Профіль… → interval/max_hops/timeout/probe → Apply → Зберегти YAML
 - [ ] **P20-009 log_aggregates:** Телеметрія → увімкнути log_aggregates → після poll/закриття з’являються rtt_aggregate (не «backlog»)
 - [ ] **P20-008 Self-check ProgressBar:** Expert → Self-check → ProgressBar; кнопки disabled до кінця; Alert з результатом
-- [ ] **P20-007 Empty states:** Extended без SQLite → підказка База даних; порожня історія → placeholder; Simple → status про Розширений
+- [ ] **P20-007 Empty states:** Extended без SQLite → компактний hint увімкнути БД (без списку історії); порожня історія з БД → placeholder; Simple — без лівого event-log
 - [ ] **P20-006 Hotkeys:** Ctrl/Cmd+S Save, Ctrl/Cmd+N Add, F1 Help; typing in host field still works
 - [ ] **P20-005 Export:** Налаштування → Експорт зараз… → CSV/HTML; без SQLite → зрозуміла помилка
 - [ ] **P20-003 Dirty/unsaved:** змінити хост → «Зберегти *»; switch profile → Confirm; Save очищає *

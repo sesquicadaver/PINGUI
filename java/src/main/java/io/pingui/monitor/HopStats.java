@@ -166,11 +166,8 @@ public final class HopStats {
             return null;
         }
         java.util.List<Double> samples = stats.getRttSamples();
-        return new HostTargetStats(
-                lossPct(stats),
-                minRtt(samples),
-                avgRtt(samples),
-                maxRtt(samples),
-                terminal.timeout() || !terminal.isReachable());
+        boolean timedOut = terminal.timeout() || !terminal.isReachable();
+        Double curr = !timedOut && terminal.pingMs() != null ? terminal.pingMs() : null;
+        return new HostTargetStats(lossPct(stats), minRtt(samples), avgRtt(samples), maxRtt(samples), timedOut, curr);
     }
 }

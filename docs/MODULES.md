@@ -315,8 +315,8 @@ Chrome-збірка JavaFX окремо від orchestration:
 |------|------|
 | `MainView` | BorderPane/SplitPane assemble; accessors для coordinators |
 | `ProfileToolbar` / `MonitorModeToolbar` | профіль + Simple/Extended/Expert |
-| `HostListPanel` / `StatusPanel` | list/CRUD/save + status/log |
-| `RouteGraphPanel` / `HistoryPanel` | canvas + history chrome |
+| `HostListPanel` / `StatusPanel` | list/CRUD/save + transient ops/progress (no Monitoring line / event log) |
+| `RouteGraphPanel` / `HostInspectorPanel` / `HistoryPanel` | canvas + compact inspector strip; history list only with DB |
 | `MainViewActions` | callbacks у `MainController` |
 
 `MainController.createScene()` — тонкий assembler. Після P26-005 shell ≈ **546 LOC** (`MainControllerLocGateTest` ≤550); dialogs/geometry/lifecycle — у coordinators.

@@ -3,15 +3,12 @@ package io.pingui.ui;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
 import javafx.scene.control.SplitPane;
-import javafx.scene.control.TextArea;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -20,58 +17,14 @@ import org.junit.jupiter.api.Test;
 
 class ViewModeControllerTest {
     @Test
-    void statusLabelRemainsVisibleInSimpleMode() throws Exception {
-        FxTestSupport.runOnFxThread(() -> {
-            Label status = new Label(EmptyStateHints.waitingForData());
-            TextArea log = new TextArea();
-            ViewModeController controller = newController(log, status);
-            controller.apply();
-            assertTrue(status.isVisible());
-            assertTrue(status.isManaged());
-            assertTrue(!log.isVisible());
-            assertTrue(!log.isManaged());
-            assertEquals(EmptyStateHints.simpleNoLog(), status.getText());
-        });
-    }
-
-    @Test
-    void simpleModeKeepsLiveFeedbackStatus() throws Exception {
-        FxTestSupport.runOnFxThread(() -> {
-            Label status = new Label("Додано ціль: 8.8.8.8");
-            TextArea log = new TextArea();
-            ViewModeController controller = newController(log, status);
-            controller.apply();
-            assertEquals("Додано ціль: 8.8.8.8", status.getText());
-        });
-    }
-
-    @Test
-    void statusLabelRemainsVisibleInExtendedMode() throws Exception {
-        FxTestSupport.runOnFxThread(() -> {
-            Label status = new Label("status");
-            TextArea log = new TextArea();
-            ViewModeController controller = newController(log, status);
-            controller.forceExtended(() -> null);
-            controller.apply();
-            assertTrue(status.isVisible());
-            assertTrue(status.isManaged());
-            assertTrue(log.isVisible());
-            assertTrue(log.isManaged());
-            assertEquals("status", status.getText());
-        });
-    }
-
-    @Test
     void applyDoesNotChangeStageSizeAcrossModeToggle() throws Exception {
         FxTestSupport.runOnFxThread(() -> {
             VBox graphPanel = new VBox();
             VBox leftPanel = new VBox();
             BorderPane root = new BorderPane();
             SplitPane split = new SplitPane();
-            Label status = new Label(EmptyStateHints.waitingForData());
-            TextArea log = new TextArea();
-            ViewModeController controller = new ViewModeController(
-                    graphPanel, leftPanel, root, split, log, status, () -> {}, () -> {}, () -> false);
+            ViewModeController controller =
+                    new ViewModeController(graphPanel, leftPanel, root, split, () -> {}, () -> {}, () -> false);
 
             Stage stage = new Stage();
             stage.setScene(new Scene(root, 900, 600));
@@ -104,10 +57,8 @@ class ViewModeControllerTest {
             VBox leftPanel = new VBox();
             BorderPane root = new BorderPane();
             SplitPane split = new SplitPane();
-            Label status = new Label("status");
-            TextArea log = new TextArea();
-            ViewModeController controller = new ViewModeController(
-                    graphPanel, leftPanel, root, split, log, status, () -> {}, () -> {}, () -> false);
+            ViewModeController controller =
+                    new ViewModeController(graphPanel, leftPanel, root, split, () -> {}, () -> {}, () -> false);
 
             new Scene(new StackPane(root), 1000, 700);
             root.resize(1000, 700);
@@ -136,20 +87,12 @@ class ViewModeControllerTest {
             VBox leftPanel = new VBox();
             BorderPane root = new BorderPane();
             SplitPane split = new SplitPane();
-            ViewModeController controller = new ViewModeController(
-                    graphPanel,
-                    leftPanel,
-                    root,
-                    split,
-                    new TextArea(),
-                    new Label("s"),
-                    () -> {},
-                    () -> {},
-                    () -> false);
+            ViewModeController controller =
+                    new ViewModeController(graphPanel, leftPanel, root, split, () -> {}, () -> {}, () -> false);
             controller.restoreMode(UiViewMode.EXTENDED, () -> null, () -> null);
             controller.apply();
-            assertTrue(controller.isExtended());
             assertSame(split, root.getCenter());
+            assertEquals(true, controller.isExtended());
         });
     }
 
@@ -164,18 +107,5 @@ class ViewModeControllerTest {
         assertFalse(text.contains("setHeight("), "ViewModeController must not resize the window");
         assertFalse(text.contains("EXTENDED_WIDTH"), "hardcoded Extended resize constants must stay removed");
         assertFalse(text.contains("EXTENDED_HEIGHT"), "hardcoded Extended resize constants must stay removed");
-    }
-
-    private static ViewModeController newController(TextArea log, Label status) {
-        return new ViewModeController(
-                new VBox(),
-                new VBox(),
-                new BorderPane(),
-                new SplitPane(),
-                log,
-                status,
-                () -> {},
-                () -> {},
-                () -> false);
     }
 }
