@@ -1,6 +1,5 @@
 package io.pingui.probe;
 
-import io.pingui.config.HostAddressKind;
 import io.pingui.config.HostAddressParser;
 
 /** Trace subprocess target: literal address family and CLI argument. */
@@ -16,7 +15,7 @@ public final class TraceTarget {
     /** Parses a configured host entry for trace argv (literal v6 only, not hostname AAAA). */
     public static TraceTarget forTrace(String input) {
         String normalized = HostAddressParser.normalize(input);
-        boolean ipv6 = HostAddressParser.kindOf(normalized) == HostAddressKind.IPV6;
+        boolean ipv6 = AddressFamilyPolicy.isIpv6Literal(normalized);
         return new TraceTarget(normalized, ipv6);
     }
 

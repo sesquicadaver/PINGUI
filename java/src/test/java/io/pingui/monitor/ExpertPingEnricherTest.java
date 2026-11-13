@@ -4,11 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.pingui.config.ConfigError;
 import io.pingui.config.PingExpertEntry;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;
 import io.pingui.probe.ProcessExpertPing;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalDouble;
 import org.junit.jupiter.api.Test;
@@ -96,17 +98,28 @@ class ExpertPingEnricherTest {
 
     @Test
     void addressFamilyMismatchOnChainDoesNotAbort() {
-        // Real ProcessExpertPing: -6 + IPv4 hop throws ConfigError in argv build; must not propagate.
-        ExpertPingEnricher enricher = new ExpertPingEnricher();
-        RouteSnapshot snapshot =
-                snapshot(List.of(new HopNode(1, "10.0.0.1", 1.0, false), new HopNode(2, "8.8.8.8", 2.0, false)));
-        PingExpertEntry expert = new PingExpertEntry(true, List.of("-6"));
-        RouteSnapshot result = enricher.enrich(snapshot, expert, 0.5);
-        assertEquals(2, result.nodes().size());
+        // Fail-soft still applies if argv build throws (e.g. invalid hop token).
+        StubExpertPing stub = new StubExpertPing().withConfigError();
+        ExpertPingEnricher enricher = new ExpertPingEnricher(stub);
+        RouteSnapshot snapshot = snapshot(List.of(new HopNode(1, "10.0.0.1", 1.0, false)));
+        RouteSnapshot result = enricher.enrich(snapshot, new PingExpertEntry(true, List.of("-6")), 0.5);
         assertTrue(result.nodes().get(0).timeout());
-        assertTrue(result.nodes().get(1).timeout());
         assertEquals("10.0.0.1", result.nodes().get(0).ip());
-        assertEquals("8.8.8.8", result.nodes().get(1).ip());
+    }
+
+    @Test
+    void chainModeAlignsExpertAfToHopLiteral() {
+        StubExpertPing stub = new StubExpertPing().withRtt(4.4);
+        ExpertPingEnricher enricher = new ExpertPingEnricher(stub);
+        RouteSnapshot snapshot =
+                snapshot(List.of(new HopNode(1, "10.0.0.1", 1.0, false), new HopNode(2, "2001:db8::1", 2.0, false)));
+        PingExpertEntry expert = new PingExpertEntry(true, List.of("-6", "-s", "64"));
+        RouteSnapshot result = enricher.enrich(snapshot, expert, 0.5);
+        assertEquals(2, stub.calls);
+        assertEquals(List.of("-4", "-s", "64"), stub.expertArgsPerCall.get(0));
+        assertEquals(List.of("-6", "-s", "64"), stub.expertArgsPerCall.get(1));
+        assertEquals(4.4, result.nodes().get(0).pingMs());
+        assertEquals(4.4, result.nodes().get(1).pingMs());
     }
 
     private static RouteSnapshot snapshot(List<HopNode> nodes) {
@@ -116,8 +129,10 @@ class ExpertPingEnricherTest {
     private static final class StubExpertPing extends ProcessExpertPing {
         private OptionalDouble rtt = OptionalDouble.empty();
         private boolean throwIo;
+        private boolean throwConfig;
         int calls;
         String lastTarget;
+        final List<List<String>> expertArgsPerCall = new ArrayList<>();
 
         StubExpertPing withRtt(double value) {
             rtt = OptionalDouble.of(value);
@@ -134,11 +149,20 @@ class ExpertPingEnricherTest {
             return this;
         }
 
+        StubExpertPing withConfigError() {
+            throwConfig = true;
+            return this;
+        }
+
         @Override
         public OptionalDouble pingOnce(String target, PingExpertEntry expert, double timeoutSeconds)
                 throws IOException {
             calls++;
             lastTarget = target;
+            expertArgsPerCall.add(expert != null ? expert.args() : List.of());
+            if (throwConfig) {
+                throw new ConfigError("stub AF mismatch");
+            }
             if (throwIo) {
                 throw new IOException("stub failure");
             }

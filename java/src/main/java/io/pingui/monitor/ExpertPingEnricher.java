@@ -4,6 +4,7 @@ import io.pingui.config.ConfigError;
 import io.pingui.config.PingExpertEntry;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;
+import io.pingui.probe.AddressFamilyPolicy;
 import io.pingui.probe.ProcessExpertPing;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,7 +34,9 @@ public final class ExpertPingEnricher {
         List<HopNode> updated = new ArrayList<>(nodes.size());
         if (expert.applyToChain()) {
             for (HopNode node : nodes) {
-                updated.add(enrichNode(node, node.ip(), expert, timeoutSeconds));
+                // Hop literal AF overrides UI -4/-6 so dual-stack chains stay pingable.
+                PingExpertEntry hopExpert = AddressFamilyPolicy.alignExpertToTarget(expert, node.ip());
+                updated.add(enrichNode(node, node.ip(), hopExpert, timeoutSeconds));
             }
         } else {
             for (int i = 0; i < nodes.size(); i++) {

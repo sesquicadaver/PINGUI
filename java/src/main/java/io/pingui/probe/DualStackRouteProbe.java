@@ -1,8 +1,6 @@
 package io.pingui.probe;
 
 import io.pingui.config.ConfigError;
-import io.pingui.config.HostAddressKind;
-import io.pingui.config.HostAddressParser;
 import io.pingui.model.Models.RouteSnapshot;
 import java.io.IOException;
 
@@ -37,7 +35,6 @@ public final class DualStackRouteProbe implements RouteProbe {
      * @throws ConfigError if {@code targetHost} is not a valid host entry (fail-closed; do not send to raw)
      */
     static boolean requiresProcessTrace(String targetHost) {
-        String normalized = HostAddressParser.normalize(targetHost);
-        return HostAddressParser.kindOf(normalized) == HostAddressKind.IPV6;
+        return AddressFamilyPolicy.requiresProcessTrace(targetHost);
     }
 }
