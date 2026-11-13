@@ -7,6 +7,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **Expert ping safety (CR-A):** YAML `ping_expert.args` валідується через `PingExpertValidator` на load; argv без одночасних `-n`/`-H`; AF mismatch у chain enrich → timeout hop, не abort poll worker.
+
 ### Added
 
 - **P36 NEXT activated:** ROADMAP **NEXT = P36-001** (GeoIP / IP metadata: offline MMDB + YAML override); черга P36-001…012; [pingui-geoip.md](docs/pingui-geoip.md).

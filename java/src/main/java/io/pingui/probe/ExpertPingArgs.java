@@ -15,7 +15,8 @@ final class ExpertPingArgs {
     static List<String> forTarget(String target, PingExpertEntry expert) {
         List<String> args = new ArrayList<>();
         if (expert != null && expert.isConfigured()) {
-            args.addAll(expert.args());
+            // Defense in depth: UI/YAML should already normalize; reject excluded flags at argv build.
+            args.addAll(PingExpertValidator.validateAndNormalize(expert.args()));
         }
         HostAddressKind kind = kindOfTarget(target);
         if (kind != null) {

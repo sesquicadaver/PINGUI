@@ -1,5 +1,6 @@
 package io.pingui.monitor;
 
+import io.pingui.config.ConfigError;
 import io.pingui.config.PingExpertEntry;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;
@@ -58,7 +59,8 @@ public final class ExpertPingEnricher {
                 return new HopNode(node.hop(), node.ip(), rtt.getAsDouble(), false);
             }
             return new HopNode(node.hop(), node.ip(), null, true);
-        } catch (IOException ex) {
+        } catch (IOException | ConfigError ex) {
+            // ConfigError: AF mismatch (-6 vs v4 hop) must not abort the poll worker.
             return new HopNode(node.hop(), node.ip(), null, true);
         }
     }

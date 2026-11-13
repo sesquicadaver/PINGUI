@@ -27,7 +27,7 @@
 | GeoIP legacy close (P36-012) | `MergingIpMetadataProvider` | `MergingIpMetadataProviderTest`; removed `GeoCountry`/`AsnLookup`/`AsnInfo` |
 | YAML profiles v2 + legacy | `ProfilesConfig`, `ProfileDocument` | `ProfilesConfigTest` (host flags, type errors, save max hosts), `ProfileDocumentTest` |
 | CLI override профілю | `CliProfileOverrides`, `PinguiApplication` | `PinguiApplicationTest` |
-| Monitor polling | `MonitorService`, `RoutePoller`, `ExpertPingEnricher` | `MonitorServiceTest`, `ExpertPingEnricherTest` (stub ping) |
+| Monitor polling | `MonitorService`, `RoutePoller`, `ExpertPingEnricher` | `MonitorServiceTest`, `ExpertPingEnricherTest` (stub ping + AF mismatch fail-soft) |
 | MTR per-hop probe (P13-010 / P33-001 / P34-001) | `MtrProbe`, `MtrProbeState` (`targetHop`/`monitoringSpan`), `RoutePoller.pollHostMtr`, `CandidateRouteFsm` | `MtrProbeTest` (timeout span / target recovery), `RoutePollerTest.pollHostMtrConfirmsRouteChangeOnlyAfterTarget` |
 | YAML `probe_mode` (P13-011) | `HostProbeMode`, `ProfilesConfig`, `MonitorService` | `HostProbeModeTest`, `HostEntryProbeModeTest`, `ProfilesConfigTest.loadProbeModeOnProfileAndHost` |
 | Smart poll interval (P13-020) | `HostPollSchedule`, `MonitorService`, `HostEntry`, `SessionStore` | `HostPollScheduleTest`, `HostEntryTest.effectiveIntervalUsesModeDefaultsAndOverride`, `ProfilesConfigTest.loadHostIntervalOverride`, `MonitorServiceTest.pollsHostsOnIndependentSchedules` |
@@ -181,7 +181,7 @@
 | Java headless daemon (P12) | `DaemonRunner`, `DaemonPidFile`, `PinguiApplication` | `DaemonPidFileTest`, `PinguiApplicationTest` daemon/stop/status |
 | SQLite disk/retention (P11-050) | `docs/DEPLOYMENT.md` | Manual smoke; purge via GUI; no auto-TTL on `host_session` |
 | Raw ICMP packet | `IcmpPacket`, `IcmpV6Packet` | `IcmpPacketTest`, `IcmpV6PacketTest` |
-| Expert ping flags | `PingExpertValidator`, `ProcessExpertPing`, `ExpertPingArgs`, `HostAddressResolver` | `PingExpertValidatorTest`, `ExpertPingArgsTest`, `ProcessExpertPingTest`, `ExpertPingUiRulesTest`, `HostAddressResolverTest`, `PingTargetResolverTest` |
+| Expert ping flags | `PingExpertValidator`, `ProcessExpertPing`, `ExpertPingArgs`, `HostAddressResolver`, `ProfilesConfig` | `PingExpertValidatorTest`, `ExpertPingArgsTest`, `ProcessExpertPingTest` (`-n`/`-H`), `ProfilesConfigTest` (YAML excluded args), `ExpertPingUiRulesTest`, `HostAddressResolverTest`, `PingTargetResolverTest` |
 | Host poll liveness counters | `HostPollCounters`, `HostRegistry`, `MonitorService`, `HostItem`, `HostListPresenter` | `HostPollCountersTest`, `HostRegistryTest.pollCounters*`, `HostItemMetricsTest`, `MonitorServiceTest.pollCounters*` |
 | GUI / MonitorService | `MainController`, `MonitorService` | *(manual / TestFX — backlog)* |
 | UI coordinators | `ProfileUiCoordinator`, `HostListPresenter`, `MonitorLifecycle`, `ViewModeController`, `RouteGraphPresenter` | `./gradlew check`; B-035 manual smoke |

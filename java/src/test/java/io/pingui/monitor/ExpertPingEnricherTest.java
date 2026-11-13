@@ -94,6 +94,21 @@ class ExpertPingEnricherTest {
         assertTrue(result.nodes().get(0).timeout());
     }
 
+    @Test
+    void addressFamilyMismatchOnChainDoesNotAbort() {
+        // Real ProcessExpertPing: -6 + IPv4 hop throws ConfigError in argv build; must not propagate.
+        ExpertPingEnricher enricher = new ExpertPingEnricher();
+        RouteSnapshot snapshot =
+                snapshot(List.of(new HopNode(1, "10.0.0.1", 1.0, false), new HopNode(2, "8.8.8.8", 2.0, false)));
+        PingExpertEntry expert = new PingExpertEntry(true, List.of("-6"));
+        RouteSnapshot result = enricher.enrich(snapshot, expert, 0.5);
+        assertEquals(2, result.nodes().size());
+        assertTrue(result.nodes().get(0).timeout());
+        assertTrue(result.nodes().get(1).timeout());
+        assertEquals("10.0.0.1", result.nodes().get(0).ip());
+        assertEquals("8.8.8.8", result.nodes().get(1).ip());
+    }
+
     private static RouteSnapshot snapshot(List<HopNode> nodes) {
         return new RouteSnapshot("8.8.8.8", "8.8.8.8", nodes);
     }
