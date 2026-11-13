@@ -3,6 +3,7 @@ package io.pingui.probe;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.pingui.config.PingExpertEntry;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +25,24 @@ class ProcessHostPingTest {
         assertTrue(cmd.contains("1"));
         assertTrue(cmd.contains("-w"));
         assertEquals("8.8.8.8", cmd.get(cmd.size() - 1));
+    }
+
+    @Test
+    void buildCommandMacResolvesTargetViaPingTargetResolver() {
+        PingExpertEntry expert = new PingExpertEntry(false, List.of("-4"));
+        List<String> cmd = ProcessHostPing.buildCommand("8.8.8.8", 0.5, false, expert, "Mac OS X");
+        assertEquals("ping", cmd.get(0));
+        assertTrue(cmd.contains("-c"));
+        assertTrue(cmd.contains("-4"));
+        assertEquals("8.8.8.8", cmd.get(cmd.size() - 1));
+    }
+
+    @Test
+    void buildCommandMacUsesPingTargetResolverForIpv6Literal() {
+        PingExpertEntry expert = new PingExpertEntry(false, List.of("-6"));
+        List<String> cmd = ProcessHostPing.buildCommand("2001:db8::1", 0.5, false, expert, "Mac OS X");
+        assertTrue(cmd.contains("-6"));
+        assertEquals("2001:db8::1", cmd.get(cmd.size() - 1));
     }
 
     @Test

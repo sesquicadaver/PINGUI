@@ -181,7 +181,8 @@
 | Java headless daemon (P12) | `DaemonRunner`, `DaemonPidFile`, `PinguiApplication` | `DaemonPidFileTest`, `PinguiApplicationTest` daemon/stop/status |
 | SQLite disk/retention (P11-050) | `docs/DEPLOYMENT.md` | Manual smoke; purge via GUI; no auto-TTL on `host_session` |
 | Raw ICMP packet | `IcmpPacket`, `IcmpV6Packet` | `IcmpPacketTest`, `IcmpV6PacketTest` |
-| Expert ping flags | `PingExpertValidator`, `ProcessExpertPing`, `ExpertPingArgs`, `HostAddressResolver`, `ProfilesConfig` | `PingExpertValidatorTest`, `ExpertPingArgsTest`, `ProcessExpertPingTest` (`-n`/`-H`), `ProfilesConfigTest` (YAML excluded args), `ExpertPingUiRulesTest`, `HostAddressResolverTest`, `PingTargetResolverTest` |
+| Expert ping flags | `PingExpertValidator`, `ProcessExpertPing`, `ProcessHostPing`, `ExpertPingArgs`, `HostAddressResolver`, `ProfilesConfig` | `PingExpertValidatorTest` (`-I` sanitize), `ExpertPingArgsTest`, `ProcessExpertPingTest` (`-n`/`-H`), `ProcessHostPingTest` (Mac resolve), `ProfilesConfigTest` (YAML excluded args), `ExpertPingUiRulesTest`, `HostAddressResolverTest`, `PingTargetResolverTest` |
+| Dual-stack AUTO probe | `DualStackRouteProbe`, `RouteProbeFactory` | `DualStackRouteProbeTest` (v6→process, invalid fail-closed) |
 | Host poll liveness counters | `HostPollCounters`, `HostRegistry`, `MonitorService`, `HostItem`, `HostListPresenter` | `HostPollCountersTest`, `HostRegistryTest.pollCounters*`, `HostItemMetricsTest`, `MonitorServiceTest.pollCounters*` |
 | GUI / MonitorService | `MainController`, `MonitorService` | *(manual / TestFX — backlog)* |
 | UI coordinators | `ProfileUiCoordinator`, `HostListPresenter`, `MonitorLifecycle`, `ViewModeController`, `RouteGraphPresenter` | `./gradlew check`; B-035 manual smoke |

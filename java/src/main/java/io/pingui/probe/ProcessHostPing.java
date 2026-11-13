@@ -59,21 +59,36 @@ public final class ProcessHostPing {
 
     static List<String> buildCommand(
             String target, double timeoutSeconds, boolean windows, io.pingui.config.PingExpertEntry expert) {
+        return buildCommand(target, timeoutSeconds, windows, expert, System.getProperty("os.name", ""));
+    }
+
+    /** Package-visible for OS-path unit tests ({@code osName} e.g. {@code "Mac OS X"}). */
+    static List<String> buildCommand(
+            String target,
+            double timeoutSeconds,
+            boolean windows,
+            io.pingui.config.PingExpertEntry expert,
+            String osName) {
         if (windows) {
             String ping = resolvePingExecutable();
             int waitMs = Math.max(1000, (int) Math.ceil(timeoutSeconds * 1000));
             return List.of(ping, "-n", "1", "-w", String.valueOf(waitMs), target);
         }
-        String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
+        List<String> expertArgs = ExpertPingArgs.forTarget(target, expert);
+        String os = osName == null ? "" : osName.toLowerCase(Locale.ROOT);
         if (os.contains("mac")) {
             int waitMs = Math.max(1000, (int) Math.ceil(timeoutSeconds * 1000));
-            List<String> command = new ArrayList<>(List.of("ping", "-c", "1", "-W", String.valueOf(waitMs)));
-            appendExpertArgs(command, expert, target);
-            command.add(target);
+            List<String> command = new ArrayList<>();
+            command.add("ping");
+            command.add("-c");
+            command.add("1");
+            command.add("-W");
+            command.add(String.valueOf(waitMs));
+            command.addAll(expertArgs);
+            command.add(PingTargetResolver.resolve(target, expert));
             return List.copyOf(command);
         }
         int waitSec = Math.max(1, (int) Math.ceil(timeoutSeconds));
-        List<String> expertArgs = ExpertPingArgs.forTarget(target, expert);
         List<String> command = new ArrayList<>();
         command.add("ping");
         if (!expertArgs.contains("-H")) {
@@ -90,13 +105,6 @@ public final class ProcessHostPing {
 
     static List<String> buildCommand(String target, double timeoutSeconds, boolean windows) {
         return buildCommand(target, timeoutSeconds, windows, null);
-    }
-
-    private static void appendExpertArgs(List<String> command, io.pingui.config.PingExpertEntry expert, String target) {
-        List<String> args = ExpertPingArgs.forTarget(target, expert);
-        if (!args.isEmpty()) {
-            command.addAll(args);
-        }
     }
 
     static String resolvePingExecutable() {

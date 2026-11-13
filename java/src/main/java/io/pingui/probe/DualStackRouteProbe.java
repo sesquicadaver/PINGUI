@@ -21,19 +21,23 @@ public final class DualStackRouteProbe implements RouteProbe {
 
     @Override
     public RouteSnapshot trace(String targetHost, int maxHops, double timeoutSeconds) throws IOException {
-        if (requiresProcessTrace(targetHost)) {
-            return processProbe.trace(targetHost, maxHops, timeoutSeconds);
+        try {
+            if (requiresProcessTrace(targetHost)) {
+                return processProbe.trace(targetHost, maxHops, timeoutSeconds);
+            }
+        } catch (ConfigError ex) {
+            throw new IOException("Invalid trace target: " + targetHost, ex);
         }
         return rawProbe.trace(targetHost, maxHops, timeoutSeconds);
     }
 
-    /** IPv6 literals must use subprocess trace ({@code traceroute -6}). */
+    /**
+     * IPv6 literals must use subprocess trace ({@code traceroute -6}).
+     *
+     * @throws ConfigError if {@code targetHost} is not a valid host entry (fail-closed; do not send to raw)
+     */
     static boolean requiresProcessTrace(String targetHost) {
-        try {
-            String normalized = HostAddressParser.normalize(targetHost);
-            return HostAddressParser.kindOf(normalized) == HostAddressKind.IPV6;
-        } catch (ConfigError ex) {
-            return false;
-        }
+        String normalized = HostAddressParser.normalize(targetHost);
+        return HostAddressParser.kindOf(normalized) == HostAddressKind.IPV6;
     }
 }
