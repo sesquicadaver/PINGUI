@@ -1,6 +1,7 @@
 package io.pingui.probe;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.pingui.config.PingExpertEntry;
@@ -37,5 +38,21 @@ class ProcessExpertPingTest {
         assertTrue(cmd.contains("-4"));
         String target = cmd.get(cmd.size() - 1);
         assertTrue(target.contains(".") || target.contains(":"));
+    }
+
+    @Test
+    void buildCommandOmitsNumericFlagWhenReverseDnsRequested() {
+        PingExpertEntry expert = new PingExpertEntry(false, List.of("-H"));
+        List<String> cmd = ProcessExpertPing.buildCommand("8.8.8.8", expert, 0.5);
+        assertTrue(cmd.contains("-H"));
+        assertFalse(cmd.contains("-n"));
+    }
+
+    @Test
+    void buildCommandKeepsNumericFlagWithoutReverseDns() {
+        PingExpertEntry expert = new PingExpertEntry(false, List.of("-4"));
+        List<String> cmd = ProcessExpertPing.buildCommand("8.8.8.8", expert, 0.5);
+        assertTrue(cmd.contains("-n"));
+        assertFalse(cmd.contains("-H"));
     }
 }

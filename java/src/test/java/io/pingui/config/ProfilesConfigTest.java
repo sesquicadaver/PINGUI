@@ -674,6 +674,41 @@ class ProfilesConfigTest {
     }
 
     @Test
+    void loadPingExpertRejectsExcludedFloodFlags() throws Exception {
+        Path path = tempDir.resolve("expert-flood.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    hosts:
+                      - address: "8.8.8.8"
+                        ping_expert:
+                          args: ["-f"]
+                """);
+        ConfigError error = assertThrows(ConfigError.class, () -> ProfilesConfig.load(path));
+        assertTrue(error.getMessage().contains("ping_expert.args"));
+    }
+
+    @Test
+    void loadPingExpertRejectsMutuallyExclusiveAddressFamily() throws Exception {
+        Path path = tempDir.resolve("expert-af.yaml");
+        Files.writeString(
+                path,
+                """
+                active_profile: default
+                profiles:
+                  default:
+                    hosts:
+                      - address: "8.8.8.8"
+                        ping_expert:
+                          args: ["-4", "-6"]
+                """);
+        assertThrows(ConfigError.class, () -> ProfilesConfig.load(path));
+    }
+
+    @Test
     void loadNegativeIntervalRejected() throws Exception {
         Path path = tempDir.resolve("neg.yaml");
         Files.writeString(

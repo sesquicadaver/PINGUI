@@ -7,6 +7,12 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **Expert ping safety (CR-A):** YAML `ping_expert.args` валідується через `PingExpertValidator` на load; argv без одночасних `-n`/`-H`; AF mismatch у chain enrich → timeout hop, не abort poll worker.
+- **Expert ping safety (CR-B):** Mac path використовує `PingTargetResolver`; `-I` TEXT sanitize (no leading `-`/whitespace); `DualStackRouteProbe` fail-closed на invalid target.
+- **IPv6 AF policy (CR-C):** `AddressFamilyPolicy` — спільний AF для Trace/AUTO/Expert; chain enrich вирівнює `-4`/`-6` за hop literal; ADR_IPV6 AF matrix.
+
 ### Added
 
 - **P36 NEXT activated:** ROADMAP **NEXT = P36-001** (GeoIP / IP metadata: offline MMDB + YAML override); черга P36-001…012; [pingui-geoip.md](docs/pingui-geoip.md).

@@ -1,6 +1,7 @@
 package io.pingui.config;
 
 import io.pingui.monitor.HostProbeMode;
+import io.pingui.probe.PingExpertValidator;
 import io.pingui.probe.ProbeMode;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -503,7 +504,13 @@ public final class ProfilesConfig {
             Object expertObj = hostMap.get("ping_expert");
             if (expertObj instanceof Map<?, ?> expertMap) {
                 boolean chain = readBoolean(expertMap.get("chain"), false);
-                List<String> args = readStringList(expertMap.get("args"), "ping_expert.args", profileName);
+                List<String> rawArgs = readStringList(expertMap.get("args"), "ping_expert.args", profileName);
+                List<String> args;
+                try {
+                    args = PingExpertValidator.validateAndNormalize(rawArgs);
+                } catch (ConfigError ex) {
+                    throw new ConfigError("Host in profile '" + profileName + "' ping_expert.args: " + ex.getMessage());
+                }
                 expert = new PingExpertEntry(chain, args);
             }
             Double intervalOverride = null;

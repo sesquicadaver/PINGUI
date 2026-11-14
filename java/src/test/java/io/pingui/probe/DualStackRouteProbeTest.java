@@ -1,8 +1,10 @@
 package io.pingui.probe;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.pingui.config.ConfigError;
 import io.pingui.model.Models.HopNode;
 import io.pingui.model.Models.RouteSnapshot;
 import java.io.IOException;
@@ -51,5 +53,24 @@ class DualStackRouteProbeTest {
         DualStackRouteProbe probe = new DualStackRouteProbe(raw, process);
         probe.trace("8.8.8.8", 5, 1.0);
         assertTrue(rawCalled.get());
+    }
+
+    @Test
+    void invalidTargetFailsClosedWithoutCallingRaw() {
+        AtomicBoolean rawCalled = new AtomicBoolean();
+        AtomicBoolean processCalled = new AtomicBoolean();
+        RouteProbe raw = (host, maxHops, timeout) -> {
+            rawCalled.set(true);
+            throw new IOException("raw should not run");
+        };
+        RouteProbe process = (host, maxHops, timeout) -> {
+            processCalled.set(true);
+            throw new IOException("process should not run");
+        };
+        DualStackRouteProbe probe = new DualStackRouteProbe(raw, process);
+        assertThrows(IOException.class, () -> probe.trace("not:valid:ipv6:xyz", 5, 1.0));
+        assertThrows(ConfigError.class, () -> DualStackRouteProbe.requiresProcessTrace(" "));
+        assertFalse(rawCalled.get());
+        assertFalse(processCalled.get());
     }
 }

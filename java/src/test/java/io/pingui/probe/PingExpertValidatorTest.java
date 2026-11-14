@@ -150,4 +150,17 @@ class PingExpertValidatorTest {
         PingOption pmtu = PingOptionCatalog.find("-M");
         assertTrue(PingExpertValidator.describeValueSpec(pmtu).contains("want"));
     }
+
+    @Test
+    void validateInterfaceAcceptsIfaceAndAddress() {
+        assertEquals(List.of("-I", "eth0"), PingExpertValidator.validateAndNormalize(List.of("-I", "eth0")));
+        assertEquals(List.of("-I", "10.0.0.1"), PingExpertValidator.validateAndNormalize(List.of("-I", "10.0.0.1")));
+    }
+
+    @Test
+    void validateInterfaceRejectsFlagLikeAndWhitespace() {
+        assertThrows(ConfigError.class, () -> PingExpertValidator.validateAndNormalize(List.of("-I", "-f")));
+        assertThrows(ConfigError.class, () -> PingExpertValidator.validateAndNormalize(List.of("-I", "eth 0")));
+        assertThrows(ConfigError.class, () -> PingExpertValidator.validateAndNormalize(List.of("-I", "a".repeat(65))));
+    }
 }

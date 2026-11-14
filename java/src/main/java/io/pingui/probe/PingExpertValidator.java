@@ -72,8 +72,22 @@ public final class PingExpertValidator {
             case HEX_PATTERN -> normalizeHexPattern(value);
             case HEX_FLOW_LABEL -> normalizeHexFlowLabel(value);
             case TIMESTAMP -> normalizeTimestamp(value);
-            case TEXT -> value;
+            case TEXT -> normalizeText(option.flag(), value);
         };
+    }
+
+    /** Rejects flag-like / control / whitespace TEXT values (e.g. {@code -I} interface/source). */
+    static String normalizeText(String flag, String value) {
+        if (value.startsWith("-")) {
+            throw new ConfigError(flag + " value must not start with '-'");
+        }
+        if (value.codePoints().anyMatch(cp -> Character.isISOControl(cp) || Character.isWhitespace(cp))) {
+            throw new ConfigError(flag + " value must not contain whitespace or control characters");
+        }
+        if (value.length() > 64) {
+            throw new ConfigError(flag + " value is too long (max 64)");
+        }
+        return value;
     }
 
     /** Returns human-readable allowed range/choices for UI hints. */

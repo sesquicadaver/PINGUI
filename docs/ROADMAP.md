@@ -409,6 +409,7 @@
 | **V6-053** | [x] `-F` flow label — лише з v6 target (UI hint) | `PingExpertDialog.java`, `ExpertPingUiRules.java` | Tooltip / disable when target v4 |
 | **V6-054** | [x] Expert ping: один AF (-4 або -6), default IPv4 | `ExpertPingArgs.java`, `PingExpertDialog.java` | Без dual-stack ping; hostname/v4 → `-4` |
 | **V6-055** | [x] Expert ping `-6`: hostname → AAAA resolve перед ping | `HostAddressResolver.java`, `PingTargetResolver.java` | Unit-тест literals + localhost |
+| **V6-056** | [x] `AddressFamilyPolicy` + chain enrich AF від hop | `AddressFamilyPolicy.java`, `ExpertPingEnricher`, ADR | Unit-тести align/Trace/AUTO |
 
 ### 9.6 — UI / docs (P1)
 

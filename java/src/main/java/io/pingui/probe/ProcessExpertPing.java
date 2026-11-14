@@ -49,14 +49,18 @@ public class ProcessExpertPing {
     }
 
     static List<String> buildCommand(String target, PingExpertEntry expert, double timeoutSeconds) {
+        List<String> expertArgs = ExpertPingArgs.forTarget(target, expert);
         List<String> command = new ArrayList<>();
         command.add("ping");
         command.add("-c");
         command.add("1");
-        command.add("-n");
+        // iputils: -n and -H conflict; skip numeric-only when reverse DNS is requested.
+        if (!expertArgs.contains("-H")) {
+            command.add("-n");
+        }
         command.add("-W");
         command.add(String.valueOf(Math.max(1, (int) Math.ceil(timeoutSeconds))));
-        command.addAll(ExpertPingArgs.forTarget(target, expert));
+        command.addAll(expertArgs);
         command.add(PingTargetResolver.resolve(target, expert));
         return List.copyOf(command);
     }
